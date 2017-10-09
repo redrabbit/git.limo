@@ -1,12 +1,5 @@
 defmodule GitGud.Application do
-  @moduledoc """
-  The GitGud Application Service.
-
-  The gitgud system business domain lives in this application.
-
-  Exposes API to clients such as the `GitGudWeb` application
-  for use in channels, controllers, and elsewhere.
-  """
+  @moduledoc false
   use Application
 
   def start(_type, _args) do

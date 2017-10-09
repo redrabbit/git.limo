@@ -1,21 +1,16 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
 use Mix.Config
 
 # General application configuration
 config :gitgud_web,
-  namespace: GitGudWeb,
+  namespace: GitGud.Web,
   ecto_repos: [GitGud.Repo]
 
 # Configures the endpoint
-config :gitgud_web, GitGudWeb.Endpoint,
+config :gitgud_web, GitGud.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Orcr/BYzysTwrdJaOA7vu7miC2V5M2ivU6yMY7hW1cUnegxFej5GLalozFC+f6uA",
-  render_errors: [view: GitGudWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: GitGudWeb.PubSub,
+  render_errors: [view: GitGud.Web.ErrorView, accepts: ~w(json)],
+  pubsub: [name: GitGud.Web.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger

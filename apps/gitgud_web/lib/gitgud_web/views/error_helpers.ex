@@ -1,4 +1,4 @@
-defmodule GitGudWeb.ErrorHelpers do
+defmodule GitGud.Web.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -21,9 +21,9 @@ defmodule GitGudWeb.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(GitGudWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(GitGud.Web.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(GitGudWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(GitGud.Web.Gettext, "errors", msg, opts)
     end
   end
 end

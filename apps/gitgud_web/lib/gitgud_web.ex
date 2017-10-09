@@ -1,12 +1,12 @@
-defmodule GitGudWeb do
+defmodule GitGud.Web do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use GitGudWeb, :controller
-      use GitGudWeb, :view
+      use GitGud.Web, :controller
+      use GitGud.Web, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,24 +19,24 @@ defmodule GitGudWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: GitGudWeb
+      use Phoenix.Controller, namespace: GitGud.Web
       import Plug.Conn
-      import GitGudWeb.Router.Helpers
-      import GitGudWeb.Gettext
+      import GitGud.Web.Router.Helpers
+      import GitGud.Web.Gettext
     end
   end
 
   def view do
     quote do
       use Phoenix.View, root: "lib/gitgud_web/templates",
-                        namespace: GitGudWeb
+                        namespace: GitGud.Web
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
-      import GitGudWeb.Router.Helpers
-      import GitGudWeb.ErrorHelpers
-      import GitGudWeb.Gettext
+      import GitGud.Web.Router.Helpers
+      import GitGud.Web.ErrorHelpers
+      import GitGud.Web.Gettext
     end
   end
 
@@ -51,7 +51,7 @@ defmodule GitGudWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import GitGudWeb.Gettext
+      import GitGud.Web.Gettext
     end
   end
 

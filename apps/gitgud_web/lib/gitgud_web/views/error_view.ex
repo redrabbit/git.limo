@@ -1,5 +1,5 @@
-defmodule GitGudWeb.ErrorView do
-  use GitGudWeb, :view
+defmodule GitGud.Web.ErrorView do
+  use GitGud.Web, :view
 
   def render("404.json", _assigns) do
     %{errors: %{detail: "Page not found"}}

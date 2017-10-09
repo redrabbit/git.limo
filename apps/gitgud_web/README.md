@@ -1,4 +1,4 @@
-# GitGudWeb
+# GitGud.Web
 
 To start your Phoenix server:
 
