@@ -25,7 +25,9 @@ defmodule GitGud.Mixfile do
 
   defp deps do
     [{:postgrex, ">= 0.0.0"},
-     {:ecto, "~> 2.2"}]
+     {:ecto, "~> 2.2"},
+     {:comeonin, "~> 4.0"},
+     {:argon2_elixir, "~> 1.2"}]
   end
 
   defp aliases do

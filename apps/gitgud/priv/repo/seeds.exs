@@ -1,7 +1,8 @@
 alias GitGud.Repo
 alias GitGud.User
+alias GitGud.SSHAuthenticationKey
 alias GitGud.Repository
 
-u = Repo.insert!(%User{username: "redrabbit", name: "Mario Flach", email: "m.flach@almightycouch.com"})
-r = Repo.insert!(%Repository{owner: u, path: "gitgud", name: "GitGud", description: "Git gud or git rekt!"})
-IO.inspect r
+u = Repo.insert!(User.registration_changeset(%{username: "redrabbit", name: "Mario Flach", email: "m.flach@almightycouch.com", password: "michael"}))
+_ = Repo.insert!(%SSHAuthenticationKey{user_id: 1, key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCuTxpQMuEr1PQBCv17emvQm/7EoEYI/REez45LTYWk7v+gU8H6nWYbvN6pXcx6wDa+jvbQI/FddRy4KUIYrNOsmiPzgPoHf6lgt25ysnEOoI9webXs3cluHp1jMXOzCeaMwvFBb6bUHc02Wv8IuInByg7AFJHkNZdbNks6SVHi7DH/mdvWCbIZ2wbcYJx1v9PhtLQ6Q1IGy+jKej7hEPPz7OeKMuIb5K4epXAuWHlMydwzqvkZUinTu/6GvjJIpGTOyKF0eKM7E8nszzm3iAxXn5DQrNIvLvC0Wvaz4u9JV37jGYQZfy/8npf3AWOdJTHQ15ZJQbgqMdMNAQNt8QVr info@almightycouch.org"})
+_ = Repo.insert!(%Repository{owner: u, path: "gitgud", name: "GitGud", description: "Git gud or git rekt!"})

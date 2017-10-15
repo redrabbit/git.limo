@@ -3,9 +3,10 @@ defmodule GitGud.Repo.Migrations.AddUsersTable do
 
   def change do
     create table("users") do
-      add :username,  :string, null: false, size: 20
-      add :name,      :string
-      add :email,     :string, null: false
+      add :username,      :string, null: false, size: 20
+      add :name,          :string
+      add :email,         :string, null: false
+      add :password_hash, :string, null: false
       timestamps()
     end
 
