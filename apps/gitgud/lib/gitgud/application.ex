@@ -7,7 +7,7 @@ defmodule GitGud.Application do
 
     Supervisor.start_link([
       {GitGud.Repo, []},
-      {GitGud.SSHServer, [8989, [system_dir: '/tmp/ssh_daemon', user_dir: '/tmp/ssh_daemon_keys']]},
+      {GitGud.SSHServer, [8989]},
     ], strategy: :one_for_one, name: GitGud.Supervisor)
   end
 end
