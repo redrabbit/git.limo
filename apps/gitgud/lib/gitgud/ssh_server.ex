@@ -13,7 +13,7 @@ defmodule GitGud.SSHServer do
 
   @root_path Application.fetch_env!(:gitgud, :git_dir)
 
-  defstruct [:conn, :chan, :proc]
+  defstruct [:conn, :chan, :user, :proc]
 
   @type t :: %__MODULE__{
     conn: :ssh_connection.ssh_connection_ref,
@@ -50,13 +50,14 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def init(props) do
-    {:ok, struct(__MODULE__, props)}
+  def init(_args) do
+    {:ok, %__MODULE__{}}
   end
 
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
-    {:ok, struct(state, conn: conn, chan: chan)}
+    [user: username] = :ssh.connection_info(conn, [:user])
+    {:ok, struct(state, conn: conn, chan: chan, user: resolve_user(username))}
   end
 
   @impl true
@@ -87,15 +88,14 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan} = state) do
+  def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = Enum.map(String.split(to_string(cmd)), &to_charlist/1)
-    case execute_cmd(exec, args, :ssh.connection_info(conn, [:user])) do
+    case execute_cmd(exec, args, user) do
       {:ok, proc} ->
         {:ok, struct(state, proc: proc)}
       {:error, :unauthorized} ->
-      # :ssh_connection.send(conn, chan, "You are not allowed to execute \"#{exec}\".\r\n")
-        :ssh_connection.exit_status(conn, chan, 401)
         :ssh_connection.send_eof(conn, chan)
+        :ssh_connection.exit_status(conn, chan, 401)
         {:stop, chan, state}
     end
   end
@@ -137,16 +137,19 @@ defmodule GitGud.SSHServer do
     !!User.check_credentials(to_string(username), to_string(password))
   end
 
-  defp has_permission?(username, path, 'git-receive-pack') do
-    resolve_repo(path).owner_id == resolve_user(username).id
+  defp has_permission?(user, path, exec) when exec == 'git-receive-pack' do
+    Repository.can_write?(user, resolve_repo(path))
   end
 
-  defp has_permission?(_username, _path, exec) when exec in ['git-upload-pack', 'git-upload-archive'], do: true
+  defp has_permission?(user, path, exec) when exec in ['git-upload-pack', 'git-upload-archive'] do
+    Repository.can_read?(user, resolve_repo(path))
+  end
+
   defp has_permission?(_username, _path, _exec), do: false
 
-  defp execute_cmd(exec, args, [user: username]) do
+  defp execute_cmd(exec, args, user) do
     {path, args} = transform_args(args)
-    if has_permission?(username, path, exec),
+    if has_permission?(user, path, exec),
       do: {:ok, Port.open({:spawn_executable, :os.find_executable(exec)}, [args: [path|args]] ++ port_opts())},
     else: {:error, :unauthorized}
   end
