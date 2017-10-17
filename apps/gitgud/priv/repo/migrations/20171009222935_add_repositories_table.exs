@@ -9,7 +9,6 @@ defmodule GitGud.Repo.Migrations.AddRepositoriesTable do
       add :description, :string
       timestamps()
     end
-
-    create unique_index("repositories", [:path])
+    create unique_index("repositories", [:path, :owner_id])
   end
 end
