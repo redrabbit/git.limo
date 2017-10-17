@@ -39,6 +39,8 @@ defmodule GitGud.SSHServer do
   alias GitGud.User
   alias GitGud.Repository
 
+  import Ecto.Query, only: [from: 2]
+
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
 
@@ -160,8 +162,9 @@ defmodule GitGud.SSHServer do
     Repo.get_by(User, username: to_string(username))
   end
 
-  defp resolve_repo(path) do
-    Repo.get_by(Repository, path: Path.relative_to(to_string(path), @root_path))
+  defp resolve_repo(user, path) do
+    relpath = Path.relative_to(to_string(path), Path.join(@root_path, user.username))
+    Repo.one(from r in Repository, where: r.path == ^relpath, where: r.owner_id == ^user.id)
   end
 
   defp check_credentials(username, password) do
@@ -169,11 +172,11 @@ defmodule GitGud.SSHServer do
   end
 
   defp has_permission?(user, path, exec) when exec == 'git-receive-pack' do
-    Repository.can_write?(user, resolve_repo(path))
+    Repository.can_write?(user, resolve_repo(user, path))
   end
 
   defp has_permission?(user, path, exec) when exec in ['git-upload-pack', 'git-upload-archive'] do
-    Repository.can_read?(user, resolve_repo(path))
+    Repository.can_read?(user, resolve_repo(user, path))
   end
 
   defp has_permission?(_username, _path, _exec), do: false
