@@ -1,22 +1,14 @@
 defmodule GitGud.Web do
   @moduledoc """
-  The entrypoint for defining your web interface, such
-  as controllers, views, channels and so on.
+  Module providing helper function for controllers, views, channels and so on.
 
   This can be used in your application as:
 
       use GitGud.Web, :controller
       use GitGud.Web, :view
-
-  The definitions below will be executed for every view,
-  controller, etc, so keep them short and clean, focused
-  on imports, uses and aliases.
-
-  Do NOT define functions inside the quoted expressions
-  below. Instead, define any helper function in modules
-  and import those modules here.
   """
 
+  @doc false
   def controller do
     quote do
       use Phoenix.Controller, namespace: GitGud.Web
@@ -26,6 +18,7 @@ defmodule GitGud.Web do
     end
   end
 
+  @doc false
   def view do
     quote do
       use Phoenix.View, root: "lib/gitgud_web/templates",
@@ -40,6 +33,7 @@ defmodule GitGud.Web do
     end
   end
 
+  @doc false
   def router do
     quote do
       use Phoenix.Router
@@ -48,6 +42,7 @@ defmodule GitGud.Web do
     end
   end
 
+  @doc false
   def channel do
     quote do
       use Phoenix.Channel
@@ -55,9 +50,7 @@ defmodule GitGud.Web do
     end
   end
 
-  @doc """
-  When used, dispatch to the appropriate controller/view/etc.
-  """
+  @doc false
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])
   end

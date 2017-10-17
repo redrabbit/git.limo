@@ -1,4 +1,8 @@
 defmodule GitGud.Repository do
+  @moduledoc """
+  Git repository schema and helper functions.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -30,6 +34,34 @@ defmodule GitGud.Repository do
   }
 
   @doc """
+  Returns `true` if `user` has read access to `repo`; elsewhise returns `false`.
+  """
+  @spec can_read?(User.t, t) :: boolean
+  def can_read?(%User{} = _user, %__MODULE__{} = _repo), do: true
+  def can_read?(_user, _repo), do: false
+
+  @doc """
+  Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
+  """
+  @spec can_write?(User.t, t) :: boolean
+  def can_write?(%User{id: user_id} = _user, %__MODULE__{owner_id: user_id} = _repo), do: true
+  def can_write?(_user, _repo), do: false
+
+  @doc """
+  Returns a repository changeset for the given `params`.
+  """
+  @spec changeset(t, map) :: Ecto.Changeset.t
+  def changeset(%__MODULE__{} = repository, params \\ %{}) do
+    repository
+    |> cast(params, [:owner_id, :path, :name, :description])
+    |> validate_required([:owner_id, :path, :name])
+    |> validate_format(:path, ~r/^[a-zA-Z0-9_-]+$/)
+    |> validate_length(:name, min: 3, max: 80)
+    |> unique_constraint(:path)
+    |> assoc_constraint(:owner)
+  end
+
+  @doc """
   Creates a new repository.
   """
   @spec create(map, keyword) :: {:ok, t, pid} | {:error, term}
@@ -45,7 +77,7 @@ defmodule GitGud.Repository do
   end
 
   @doc """
-  Similar to `create/2`, but raises an ArgumentError if an error occurs.
+  Similar to `create/2`, but raises an `ArgumentError` if an error occurs.
   """
   @spec create!(map, keyword) :: {t, pid}
   def create!(params, opts \\ []) do
@@ -64,7 +96,7 @@ defmodule GitGud.Repository do
   end
 
   @doc """
-  Similar to `init/2`, but raises an ArgumentError if an error occurs.
+  Similar to `init/2`, but raises an `ArgumentError` if an error occurs.
   """
   @spec init!(t, boolean) :: pid
   def init!(repo, bare? \\ true) do
@@ -72,31 +104,6 @@ defmodule GitGud.Repository do
       {:ok, pid} -> pid
       {:error, reason} -> raise ArgumentError, message: reason
     end
-  end
-
-  @doc """
-  Returns `true` if `user` has read access to `repo`; elsewhise returns `false`.
-  """
-  @spec can_read?(User.t, t) :: boolean
-  def can_read?(%User{} = _user, %__MODULE__{} = _repo), do: true
-  def can_read?(_user, _repo), do: false
-
-  @doc """
-  Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
-  """
-  @spec can_write?(User.t, t) :: boolean
-  def can_write?(%User{id: user_id} = _user, %__MODULE__{owner_id: user_id} = _repo), do: true
-  def can_write?(_user, _repo), do: false
-
-  @spec changeset(t, map) :: Ecto.Changeset.t
-  def changeset(%__MODULE__{} = repository, params \\ %{}) do
-    repository
-    |> cast(params, [:owner_id, :path, :name, :description])
-    |> validate_required([:owner_id, :path, :name])
-    |> validate_format(:path, ~r/^[a-zA-Z0-9_-]+$/)
-    |> validate_length(:name, min: 3, max: 80)
-    |> unique_constraint(:path)
-    |> assoc_constraint(:owner)
   end
 
   #

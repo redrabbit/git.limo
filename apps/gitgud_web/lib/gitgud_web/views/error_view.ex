@@ -1,4 +1,8 @@
 defmodule GitGud.Web.ErrorView do
+  @moduledoc """
+  Module providing error views for most common errors.
+  """
+
   use GitGud.Web, :view
 
   def render("404.json", _assigns) do

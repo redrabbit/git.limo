@@ -1,4 +1,8 @@
 defmodule GitGud.User do
+  @moduledoc """
+  User account schema and helper functions.
+  """
+
   use Ecto.Schema
 
   import Ecto.Query, only: [from: 2]
@@ -35,6 +39,9 @@ defmodule GitGud.User do
     updated_at: NaiveDateTime.t
   }
 
+  @doc """
+  Returns a user changeset for the given `params`.
+  """
   @spec registration_changeset(map) :: Ecto.Changeset.t
   def registration_changeset(params \\ %{}) do
     %__MODULE__{}
@@ -49,6 +56,9 @@ defmodule GitGud.User do
     |> unique_constraint(:email)
   end
 
+  @doc """
+  Returns the matching user for the given credentials; elsewhise returns `nil`.
+  """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
     user = Repo.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)

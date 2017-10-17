@@ -1,4 +1,8 @@
 defmodule GitGud.SSHAuthenticationKey do
+  @moduledoc """
+  Secure Shell (SSH) authentication key schema.
+  """
+
   use Ecto.Schema
 
   alias GitGud.User

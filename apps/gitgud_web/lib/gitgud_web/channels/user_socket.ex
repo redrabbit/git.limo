@@ -1,4 +1,7 @@
 defmodule GitGud.Web.UserSocket do
+  @moduledoc """
+  Module providing support for bidirectional communication between clients and server.
+  """
   use Phoenix.Socket
 
   transport :websocket, Phoenix.Transports.WebSocket

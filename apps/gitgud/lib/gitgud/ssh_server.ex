@@ -1,6 +1,37 @@
 defmodule GitGud.SSHServer do
   @moduledoc """
   Secure Shell (SSH) server providing support for Git server commands.
+
+  In the current implementation, the server is restricted to the following Git commands:
+
+  * `git-receive-pack` - corresponding server-side command to `git push`.
+  * `git-upload-pack` - corresponding server-side command to `git fetch`.
+  * `git-upload-archive` - corresponding server-side command to `git archive`.
+
+  A port is spawned for each running command. Both the connection and the
+  connected SSH client stdios are forwarded to each other.
+
+  *In future implementations, the server might support those commands natively.*
+
+  ## Authentication
+
+  User authentication is handled by the application, it does not depend on available users on the machine.
+
+  A registered `GitGud.User` can authenticate with following methods:
+
+  * *auth-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
+  * *password* - if the given user credentials are correct.
+  * *keyboard* - interactive login prompt which allows several tries.
+
+  In order to clone a repository you would run following command:
+
+      git clone 'ssh://redrabbit@localhost:8989/USER/REPO'
+
+  ## Authorization
+
+  In order to read and/or write to a repository, a user needs to have the required permissions.
+
+  See `GitGud.Repository.can_read?/2` and `GitGud.Repository.can_write?/2` for more details.
   """
 
   alias GitGud.Repo
@@ -148,19 +179,16 @@ defmodule GitGud.SSHServer do
   defp has_permission?(_username, _path, _exec), do: false
 
   defp execute_cmd(exec, args, user) do
-    {path, args} = transform_args(args)
+    {path, args} = extract_path(args)
     if has_permission?(user, path, exec),
       do: {:ok, Port.open({:spawn_executable, :os.find_executable(exec)}, [args: [path|args]] ++ port_opts())},
     else: {:error, :unauthorized}
   end
 
-  defp transform_args(args) do
+  defp extract_path(args) do
     idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--")))
     {path, args} = List.pop_at(args, idx)
-    abspath =
-      @root_path
-      |> Path.join(String.trim(to_string(path), "'"))
-      |> to_charlist()
-    {abspath, args}
+    abspath = Path.join(@root_path, String.trim(to_string(path), "'"))
+    {to_charlist(abspath), args}
   end
 end

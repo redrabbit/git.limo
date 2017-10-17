@@ -1,4 +1,5 @@
 defmodule GitGud.Repo do
+  @moduledoc false
   use Ecto.Repo, otp_app: :gitgud
 
   @doc """
