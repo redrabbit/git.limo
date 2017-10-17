@@ -4,6 +4,7 @@ defmodule GitGud.Web.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug AuthenticationPlug
   end
 
   scope "/api", GitGud.Web do

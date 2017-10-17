@@ -7,6 +7,8 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.Repo
   alias GitGud.Repository
 
+  plug :ensure_authenticated when action in [:create, :update, :delete]
+
   action_fallback GitGud.Web.FallbackController
 
   def index(conn, %{"user" => username}) do

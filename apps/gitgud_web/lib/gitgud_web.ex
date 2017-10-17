@@ -15,6 +15,7 @@ defmodule GitGud.Web do
       import Plug.Conn
       import GitGud.Web.Router.Helpers
       import GitGud.Web.Gettext
+      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, ensure_authenticated: 2]
     end
   end
 
@@ -39,6 +40,8 @@ defmodule GitGud.Web do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
+
+      alias GitGud.Web.AuthenticationPlug
     end
   end
 
