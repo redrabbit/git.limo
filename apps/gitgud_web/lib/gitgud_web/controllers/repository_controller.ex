@@ -2,66 +2,68 @@ defmodule GitGud.Web.RepositoryController do
   @moduledoc false
   use GitGud.Web, :controller
 
-  import Ecto.Query, only: [from: 2, where: 2]
+  alias GitGud.User
+  alias GitGud.UserQuerySet
 
-  alias GitGud.Repo
   alias GitGud.Repository
+  alias GitGud.RepositoryQuerySet
 
   plug :ensure_authenticated when action in [:create, :update, :delete]
 
   action_fallback GitGud.Web.FallbackController
 
   def index(conn, %{"user" => username}) do
-    repositories = user_repositories(username)
-    render(conn, "index.json", repositories: repositories)
-  end
-
-  def create(conn, %{"repository" => repository_params}) do
-    with {:ok, repository, _pid} <- Repository.create(repository_params) do
-      repository = Repo.preload(repository, :owner)
-      conn
-      |> put_status(:created)
-      |> put_resp_header("location", repository_path(conn, :show, repository.owner.username, repository.path))
-      |> render("show.json", repository: repository)
-    end
+    repos = RepositoryQuerySet.user_repositories(username)
+    render(conn, "index.json", repositories: repos)
   end
 
   def show(conn, %{"user" => username, "repo" => path}) do
-    repository = user_repository(username, path)
-    render(conn, "show.json", repository: repository)
+    with user when not is_nil(user) <- UserQuerySet.get(username),
+         repo when not is_nil(repo) <- RepositoryQuerySet.user_repository(user, path),
+         true <- Repository.can_read?(user, repo) do
+      render(conn, "show.json", repository: repo)
+    else
+      nil -> {:error, :not_found}
+      false -> {:error, :unauthorized}
+    end
   end
 
-  def update(conn, %{"user" => username, "repo" => path, "repository" => repository_params}) do
-    repository = user_repository(username, path)
-    with {:ok, repository} <- Repository.update(repository, repository_params) do
-      render(conn, "show.json", repository: repository)
+  def create(conn, %{"repository" => repo_params}) do
+    repo_params = Map.put(repo_params, "owner_id", conn.assigns.user.id)
+    case Repository.create(repo_params) do
+      {:ok, repo, _pid} ->
+        repo = struct(repo, owner: conn.assigns.user)
+        conn
+        |> put_status(:created)
+        |> put_resp_header("location", repository_path(conn, :show, repo.owner.username, repo.path))
+        |> render("show.json", repository: repo)
+      {:error, reason} ->
+        {:error, reason}
     end
+  end
+
+  def update(conn, %{"user" => username, "repo" => path, "repository" => repo_params}) do
+    repo_params = Map.delete(repo_params, "owner_id")
+    with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
+         {:ok, repo} <- Repository.update(repo, repo_params), do:
+      render(conn, "show.json", repository: repo)
   end
 
   def delete(conn, %{"user" => username, "repo" => path}) do
-    repository = user_repository(username, path)
-    with {:ok, _repository} <- Repository.delete(repository) do
+    with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
+         {:ok, _del} <- Repository.delete(repo), do:
       send_resp(conn, :no_content, "")
-    end
   end
 
   #
   # Helpers
   #
 
-  defp user_repositories(username) do
-    Repo.all(repo_query(username))
+  defp fetch_and_ensure_owner({username, path}, %User{username: username}) do
+    if repository = RepositoryQuerySet.user_repository(username, path),
+      do: {:ok, repository},
+    else: {:error, :not_found}
   end
 
-  defp user_repository(username, path) do
-    Repo.one(repo_query(username, path))
-  end
-
-  defp repo_query(username) do
-    from(r in Repository, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
-  end
-
-  defp repo_query(username, path) do
-    where(repo_query(username), path: ^path)
-  end
+  defp fetch_and_ensure_owner(_repo, _user), do: {:error, :unauthorized}
 end

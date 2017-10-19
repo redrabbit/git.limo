@@ -5,3 +5,6 @@ use Mix.Config
 config :gitgud_web, GitGud.Web.Endpoint,
   http: [port: 4001],
   server: false
+
+# Reduce number of rounds for password hashing
+config :argon2_elixir, t_cost: 2, m_cost: 12

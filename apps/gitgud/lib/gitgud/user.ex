@@ -5,8 +5,9 @@ defmodule GitGud.User do
 
   use Ecto.Schema
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto, only: [build_assoc: 2]
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
@@ -40,6 +41,28 @@ defmodule GitGud.User do
   }
 
   @doc """
+  Creates a new user with the given `params`.
+  """
+  @spec register(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def register(params) do
+    params
+    |> Map.new()
+    |> registration_changeset()
+    |> Repo.insert()
+  end
+
+  @doc """
+  Similar to `register/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec register!(map|keyword) :: t
+  def register!(params) do
+    case register(params) do
+      {:ok, user} -> user
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
+  end
+
+  @doc """
   Returns a user changeset for the given `params`.
   """
   @spec registration_changeset(map) :: Ecto.Changeset.t
@@ -54,6 +77,17 @@ defmodule GitGud.User do
     |> put_password_hash(:password)
     |> unique_constraint(:username)
     |> unique_constraint(:email)
+  end
+
+  @doc """
+  Puts the given SSH `key` to the `user`'s authentication keys.
+  """
+  @spec put_ssh_key(t, binary) :: {:ok, SSHAuthenticationKey.t} | {:error, Ecto.Changeset.t}
+  def put_ssh_key(%__MODULE__{} = repo, key) do
+    repo
+    |> build_assoc(:authentication_keys)
+    |> struct(key: key)
+    |> Repo.insert()
   end
 
   @doc """

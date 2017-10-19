@@ -41,6 +41,15 @@ defmodule GitGud.Repository do
   def can_read?(_user, _repo), do: false
 
   @doc """
+  Returns the absolute path to the given `repo`.
+  """
+  @spec git_dir(t) :: Path.t
+  def git_dir(%__MODULE__{} = repo) do
+    repo = Repo.preload(repo, :owner)
+    Path.join([@root_path, repo.owner.username, repo.path])
+  end
+
+  @doc """
   Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
   """
   @spec can_write?(User.t, t) :: boolean
@@ -56,6 +65,7 @@ defmodule GitGud.Repository do
     |> cast(params, [:owner_id, :path, :name, :description])
     |> validate_required([:owner_id, :path, :name])
     |> validate_format(:path, ~r/^[a-zA-Z0-9_-]+$/)
+    |> validate_length(:path, min: 3)
     |> validate_length(:name, min: 3, max: 80)
     |> assoc_constraint(:owner)
     |> unique_constraint(:path, name: :repositories_path_owner_id_index)
@@ -64,66 +74,48 @@ defmodule GitGud.Repository do
   @doc """
   Creates a new repository.
   """
-  @spec create(map, keyword) :: {:ok, t, pid} | {:error, Ecto.Changeset.t}
+  @spec create(map|keyword, keyword) :: {:ok, t, pid} | {:error, Ecto.Changeset.t}
   def create(params, opts \\ []) do
     bare? = Keyword.get(opts, :bare?, true)
-    changeset = changeset(%__MODULE__{}, params)
+    changeset = changeset(%__MODULE__{}, Map.new(params))
     case insert_and_init(changeset, bare?) do
-      {:ok, %{insert: repo, geef_repo: pid}} ->
-        {:ok, repo, pid}
-      {:error, :insert, changeset, _changes} ->
-        {:error, changeset}
+      {:ok, %{insert: repo, init_repo: pid}} -> {:ok, repo, pid}
+      {:error, :insert, changeset, _changes} -> {:error, changeset}
     end
   end
 
   @doc """
   Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map, keyword) :: {t, pid}
+  @spec create!(map|keyword, keyword) :: {t, pid}
   def create!(params, opts \\ []) do
-    case create!(params, opts) do
+    case create(params, opts) do
       {:ok, repo, pid} -> {repo, pid}
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
   end
 
   @doc """
-  Initializes a new Git repository from the given `repo`.
-  """
-  @spec init(t, boolean) :: {:ok, pid} | {:error, term}
-  def init(repo, bare? \\ true) do
-    repo = Repo.preload(repo, :owner)
-    @root_path
-    |> Path.join(repo.owner.username)
-    |> Path.join(repo.path)
-    |> Geef.Repository.init(bare?)
-  end
-
-  @doc """
-  Similar to `init/2`, but raises an `ArgumentError` if an error occurs.
-  """
-  @spec init!(t, boolean) :: pid
-  def init!(repo, bare? \\ true) do
-    case init(repo, bare?) do
-      {:ok, pid} -> pid
-      {:error, reason} -> raise ArgumentError, message: reason
-    end
-  end
-
-  @doc """
   Updates the given `repo` with the given `params`.
   """
-  @spec update(t, map) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = repo, params) do
-    Repo.update(changeset(repo, params))
+    changeset = changeset(repo, Map.new(params))
+    case update_and_fix_path(changeset) do
+      {:ok, %{update: repo}} -> {:ok, repo}
+      {:error, :update, changeset, _changes} -> {:error, changeset}
+    end
   end
 
   @doc """
   Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, map) :: t
+  @spec update!(t, map|keyword) :: t
   def update!(%__MODULE__{} = repo, params) do
-    Repo.update!(changeset(repo, params))
+    case update(repo, params) do
+      {:ok, repo} -> repo
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -131,7 +123,10 @@ defmodule GitGud.Repository do
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = repo) do
-    Repo.delete(repo)
+    case delete_and_cleanup(repo) do
+      {:ok, %{delete: repo}} -> {:ok, repo}
+      {:error, :delete, changeset, _changes} -> {:error, changeset}
+    end
   end
 
   @doc """
@@ -139,7 +134,10 @@ defmodule GitGud.Repository do
   """
   @spec delete!(t) :: t
   def delete!(%__MODULE__{} = repo) do
-    Repo.delete!(repo)
+    case delete(repo) do
+      {:ok, repo} -> repo
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   #
@@ -149,7 +147,51 @@ defmodule GitGud.Repository do
   defp insert_and_init(changeset, bare?) do
     Multi.new()
     |> Multi.insert(:insert, changeset)
-    |> Multi.run(:geef_repo, fn %{insert: repo} -> init(repo, bare?) end)
+    |> Multi.run(:init_repo, fn %{insert: repo} -> init_repo(repo, bare?) end)
     |> Repo.transaction()
+  end
+
+  defp init_repo(repo, bare?) do
+    repo = Repo.preload(repo, :owner)
+    @root_path
+    |> Path.join(repo.owner.username)
+    |> Path.join(repo.path)
+    |> Geef.Repository.init(bare?)
+  end
+
+  defp update_and_fix_path(changeset) do
+    Multi.new()
+    |> Multi.update(:update, changeset)
+    |> Multi.run(:rename_repo, fn %{update: repo} -> rename_repo(changeset.data, repo) end)
+    |> Repo.transaction()
+  end
+
+  defp rename_repo(%__MODULE__{} = old_repo, %__MODULE__{} = new_repo) do
+    old_repo = Repo.preload(old_repo, :owner)
+    old_path = Path.join(old_repo.owner.username, old_repo.path)
+    new_repo = Repo.preload(new_repo, :owner)
+    new_path = Path.join(new_repo.owner.username, new_repo.path)
+    if old_path != new_path,
+      do: rename_repo(old_path, new_path),
+    else: {:ok, :noop}
+  end
+
+  defp rename_repo(old_path, new_path) do
+    case File.rename(Path.join(@root_path, old_path), Path.join(@root_path, new_path)) do
+      :ok -> {:ok, new_path}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp delete_and_cleanup(repo) do
+    Multi.new()
+    |> Multi.delete(:delete, repo)
+    |> Multi.run(:remove_repo, fn %{delete: repo} -> remove_repo(repo) end)
+    |> Repo.transaction()
+  end
+
+  defp remove_repo(repo) do
+    repo = Repo.preload(repo, :owner)
+    File.rm_rf(Path.join([@root_path, repo.owner.username, repo.path]))
   end
 end

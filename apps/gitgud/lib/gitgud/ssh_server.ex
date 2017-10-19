@@ -8,10 +8,7 @@ defmodule GitGud.SSHServer do
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
   * `git-upload-archive` - corresponding server-side command to `git archive`.
 
-  A port is spawned for each running command. Both the connection and the
-  connected SSH client stdios are forwarded to each other.
-
-  *In future implementations, the server might support those commands natively.*
+  A port is spawned for each running command. In future implementations, the server might support those commands natively.
 
   ## Authentication
 
@@ -21,9 +18,9 @@ defmodule GitGud.SSHServer do
 
   * *auth-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
   * *password* - if the given user credentials are correct.
-  * *keyboard* - interactive login prompt which allows several tries.
+  * *keyboard* - interactive login prompt allowing several tries.
 
-  In order to clone a repository you would run following command:
+  For example, to clone a repository you would run following command:
 
       git clone 'ssh://redrabbit@localhost:8989/USER/REPO'
 
@@ -34,12 +31,11 @@ defmodule GitGud.SSHServer do
   See `GitGud.Repository.can_read?/2` and `GitGud.Repository.can_write?/2` for more details.
   """
 
-  alias GitGud.Repo
-
   alias GitGud.User
-  alias GitGud.Repository
+  alias GitGud.UserQuerySet
 
-  import Ecto.Query, only: [from: 2]
+  alias GitGud.Repository
+  alias GitGud.RepositoryQuerySet
 
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
@@ -75,8 +71,7 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def is_auth_key(key, username, _opts) do
-    user = resolve_user(username)
-    user = Repo.preload(user, :authentication_keys)
+    user = UserQuerySet.get(to_string(username), preload: :authentication_keys)
     Enum.any?(user.authentication_keys, fn auth ->
       if [{^key, _attrs}] = :public_key.ssh_decode(auth.key, :public_key), do: true
     end)
@@ -87,37 +82,16 @@ defmodule GitGud.SSHServer do
     {:ok, %__MODULE__{}}
   end
 
-  @impl true
-  def handle_msg({:ssh_channel_up, chan, conn}, state) do
-    [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, struct(state, conn: conn, chan: chan, user: resolve_user(username))}
-  end
-
-  @impl true
-  def handle_msg({proc, {:data, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) do
-    :ssh_connection.send(conn, chan, data)
-    {:ok, state}
-  end
-
-  @impl true
-  def handle_msg({proc, {:exit_status, status}}, %__MODULE__{conn: conn, chan: chan, proc: proc}) do
-    :ssh_connection.send_eof(conn, chan)
-    :ssh_connection.exit_status(conn, chan, status)
-    :ssh_connection.close(conn, chan)
-    {:stop, conn, chan}
-  end
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
     :erlang.port_command(proc, data)
     {:ok, state}
   end
-
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:shell, chan, _reply}}, %__MODULE__{conn: conn, chan: chan} = state) do
-    :ssh_connection.send(conn, chan, "You are not allowed to start a shell.\r\n")
-    :ssh_connection.send_eof(conn, chan)
-    {:stop, chan, state}
+  def handle_msg({:ssh_channel_up, chan, conn}, state) do
+    [user: username] = :ssh.connection_info(conn, [:user])
+    {:ok, struct(state, conn: conn, chan: chan, user: UserQuerySet.get(to_string(username)))}
   end
 
   @impl true
@@ -134,8 +108,35 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
+    :erlang.port_command(proc, data)
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_ssh_msg({:ssh_cm, conn, {:shell, chan, _reply}}, %__MODULE__{conn: conn, chan: chan} = state) do
+    :ssh_connection.send(conn, chan, "You are not allowed to start a shell.\r\n")
+    :ssh_connection.send_eof(conn, chan)
+    {:stop, chan, state}
+  end
+
+  @impl true
   def handle_ssh_msg({:ssh_cm, conn, _msg}, %__MODULE__{conn: conn} = state) do
     {:ok, state}
+  end
+
+  @impl true
+  def handle_msg({proc, {:data, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
+    :ssh_connection.send(conn, chan, data)
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_msg({proc, {:exit_status, status}}, %__MODULE__{conn: conn, chan: chan, proc: proc}) when is_port(proc) do
+    :ssh_connection.send_eof(conn, chan)
+    :ssh_connection.exit_status(conn, chan, status)
+    :ssh_connection.close(conn, chan)
+    {:stop, conn, chan}
   end
 
   @impl true
@@ -158,13 +159,9 @@ defmodule GitGud.SSHServer do
     [:stream, :binary, :exit_status]
   end
 
-  defp resolve_user(username) do
-    Repo.get_by(User, username: to_string(username))
-  end
-
   defp resolve_repo(user, path) do
     relpath = Path.relative_to(to_string(path), Path.join(@root_path, user.username))
-    Repo.one(from r in Repository, where: r.path == ^relpath, where: r.owner_id == ^user.id)
+    RepositoryQuerySet.user_repository(user, relpath)
   end
 
   defp check_credentials(username, password) do
@@ -182,16 +179,19 @@ defmodule GitGud.SSHServer do
   defp has_permission?(_username, _path, _exec), do: false
 
   defp execute_cmd(exec, args, user) do
-    {path, args} = extract_path(args)
+    [path|args] = extract_path(args)
     if has_permission?(user, path, exec),
       do: {:ok, Port.open({:spawn_executable, :os.find_executable(exec)}, [args: [path|args]] ++ port_opts())},
     else: {:error, :unauthorized}
   end
 
   defp extract_path(args) do
-    idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--")))
-    {path, args} = List.pop_at(args, idx)
-    abspath = Path.join(@root_path, String.trim(to_string(path), "'"))
-    {to_charlist(abspath), args}
+    if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
+      {path, args} = List.pop_at(args, idx)
+      abspath = Path.join(@root_path, String.trim(to_string(path), "'"))
+      [to_charlist(abspath)|args]
+    else
+      [nil|args]
+    end
   end
 end
