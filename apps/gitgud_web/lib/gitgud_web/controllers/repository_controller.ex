@@ -1,5 +1,8 @@
 defmodule GitGud.Web.RepositoryController do
-  @moduledoc false
+  @moduledoc """
+  Module responsible for handling CRUD repository requests.
+  """
+
   use GitGud.Web, :controller
 
   alias GitGud.User
@@ -23,7 +26,7 @@ defmodule GitGud.Web.RepositoryController do
          true <- Repository.can_read?(user, repo) do
       render(conn, "show.json", repository: repo)
     else
-      nil -> {:error, :not_found}
+      nil   -> {:error, :not_found}
       false -> {:error, :unauthorized}
     end
   end
