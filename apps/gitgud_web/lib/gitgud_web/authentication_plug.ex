@@ -34,6 +34,11 @@ defmodule GitGud.Web.AuthenticationPlug do
     end
   end
 
+  @spec generate_token(pos_integer) :: binary
+  def generate_token(user_id) do
+    Phoenix.Token.sign(GitGud.Web.Endpoint, secret_key_base(), user_id)
+  end
+
   #
   # Callbacks
   #
@@ -45,7 +50,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   def call(conn, _opts) do
     salt = secret_key_base()
     token = bearer_token(conn)
-    case Phoenix.Token.verify(conn, salt, token) do
+    case Phoenix.Token.verify(conn, salt, token, max_age: 86400) do
       {:ok, user_id} -> assign(conn, :user, UserQuery.get(user_id))
       {:error, :invalid} -> conn
       {:error, :missing} -> conn

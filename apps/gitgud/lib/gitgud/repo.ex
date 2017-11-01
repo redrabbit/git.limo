@@ -16,6 +16,7 @@ defmodule GitGud.Repo do
 
   @root_path Application.fetch_env!(:gitgud, :git_dir)
 
+  @derive {Phoenix.Param, key: :path}
   schema "repositories" do
     belongs_to  :owner,       User
     field       :path,        :string

@@ -16,6 +16,7 @@ defmodule GitGud.User do
   alias GitGud.Repo
   alias GitGud.SSHAuthenticationKey
 
+  @derive {Phoenix.Param, key: :username}
   schema "users" do
     field     :username,             :string
     field     :name,                 :string

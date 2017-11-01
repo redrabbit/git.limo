@@ -1,4 +1,4 @@
-defmodule GitGud.Web.RepoView do
+defmodule GitGud.Web.RepositoryView do
   @moduledoc false
   use GitGud.Web, :view
 
