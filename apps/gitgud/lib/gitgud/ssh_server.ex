@@ -8,7 +8,7 @@ defmodule GitGud.SSHServer do
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
   * `git-upload-archive` - corresponding server-side command to `git archive`.
 
-  A port is spawned for each running command. In future implementations, the server might support those commands natively.
+  A port is spawned for each running command. *In future implementations, the server might support those commands natively*.
 
   ## Authentication
 
@@ -16,9 +16,9 @@ defmodule GitGud.SSHServer do
 
   A registered `GitGud.User` can authenticate with following methods:
 
-  * *auth-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
+  * *public-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
   * *password* - if the given user credentials are correct.
-  * *keyboard* - interactive login prompt allowing several tries.
+  * *interactive* - interactive login prompt allowing several tries.
 
   For example, to clone a repository you would run following command:
 
@@ -82,16 +82,30 @@ defmodule GitGud.SSHServer do
     {:ok, %__MODULE__{}}
   end
 
+  @impl true
+  def handle_msg({:ssh_channel_up, chan, conn}, state) do
+    [user: username] = :ssh.connection_info(conn, [:user])
+    {:ok, struct(state, conn: conn, chan: chan, user: UserQuerySet.get(to_string(username)))}
+  end
+
+  @impl true
+  def handle_msg({proc, {:data, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
+    :ssh_connection.send(conn, chan, data)
+    {:ok, state}
+  end
+
+  @impl true
+  def handle_msg({proc, {:exit_status, status}}, %__MODULE__{conn: conn, chan: chan, proc: proc}) when is_port(proc) do
+    :ssh_connection.send_eof(conn, chan)
+    :ssh_connection.exit_status(conn, chan, status)
+    :ssh_connection.close(conn, chan)
+    {:stop, conn, chan}
+  end
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
     :erlang.port_command(proc, data)
     {:ok, state}
-  end
-  @impl true
-  def handle_msg({:ssh_channel_up, chan, conn}, state) do
-    [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, struct(state, conn: conn, chan: chan, user: UserQuerySet.get(to_string(username)))}
   end
 
   @impl true
@@ -123,20 +137,6 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, _msg}, %__MODULE__{conn: conn} = state) do
     {:ok, state}
-  end
-
-  @impl true
-  def handle_msg({proc, {:data, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
-    :ssh_connection.send(conn, chan, data)
-    {:ok, state}
-  end
-
-  @impl true
-  def handle_msg({proc, {:exit_status, status}}, %__MODULE__{conn: conn, chan: chan, proc: proc}) when is_port(proc) do
-    :ssh_connection.send_eof(conn, chan)
-    :ssh_connection.exit_status(conn, chan, status)
-    :ssh_connection.close(conn, chan)
-    {:stop, conn, chan}
   end
 
   @impl true
