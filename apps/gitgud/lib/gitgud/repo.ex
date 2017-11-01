@@ -40,7 +40,7 @@ defmodule GitGud.Repo do
   """
   @spec can_read?(User.t, t) :: boolean
   def can_read?(%User{} = _user, %__MODULE__{} = _repo), do: true
-  def can_read?(_user, _repo), do: false
+  def can_read?(_user, _repo), do: true
 
   @doc """
   Returns the absolute path to the given `repo`.
