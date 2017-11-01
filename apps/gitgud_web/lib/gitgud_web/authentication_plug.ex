@@ -7,7 +7,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   import Plug.Conn
   import Phoenix.Controller, only: [render: 3]
 
-  alias GitGud.UserQuerySet
+  alias GitGud.UserQuery
   alias GitGud.Web.ErrorView
 
   @doc """
@@ -46,7 +46,7 @@ defmodule GitGud.Web.AuthenticationPlug do
     salt = secret_key_base()
     token = bearer_token(conn)
     case Phoenix.Token.verify(conn, salt, token) do
-      {:ok, user_id} -> assign(conn, :user, UserQuerySet.get(user_id))
+      {:ok, user_id} -> assign(conn, :user, UserQuery.get(user_id))
       {:error, :invalid} -> conn
       {:error, :missing} -> conn
     end

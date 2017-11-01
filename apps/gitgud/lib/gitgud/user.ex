@@ -11,16 +11,16 @@ defmodule GitGud.User do
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
-  alias GitGud.Repo
+  alias GitGud.QuerySet
 
-  alias GitGud.Repository
+  alias GitGud.Repo
   alias GitGud.SSHAuthenticationKey
 
   schema "users" do
     field     :username,             :string
     field     :name,                 :string
     field     :email,                :string
-    has_many  :repositories,         Repository, foreign_key: :owner_id
+    has_many  :repositories,         Repo, foreign_key: :owner_id
     has_many  :authentication_keys,  SSHAuthenticationKey
     field     :password,             :string, virtual: true
     field     :password_hash,        :string
@@ -32,7 +32,7 @@ defmodule GitGud.User do
     username: binary,
     name: binary,
     email: binary,
-    repositories: [Repository.t],
+    repositories: [Repo.t],
     authentication_keys: [SSHAuthenticationKey.t],
     password: binary,
     password_hash: binary,
@@ -48,7 +48,7 @@ defmodule GitGud.User do
     params
     |> Map.new()
     |> registration_changeset()
-    |> Repo.insert()
+    |> QuerySet.insert()
   end
 
   @doc """
@@ -87,7 +87,7 @@ defmodule GitGud.User do
     repo
     |> build_assoc(:authentication_keys)
     |> struct(key: key)
-    |> Repo.insert()
+    |> QuerySet.insert()
   end
 
   @doc """
@@ -95,7 +95,7 @@ defmodule GitGud.User do
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
-    user = Repo.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
+    user = QuerySet.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
     case check_pass(user, password) do
       {:ok, user} -> user
       {:error, _reason} -> nil

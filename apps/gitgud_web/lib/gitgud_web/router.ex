@@ -11,7 +11,7 @@ defmodule GitGud.Web.Router do
     pipe_through :api
 
     scope "/users/:user" do
-      resources "/repos",     RepositoryController, param: "repo", except: [:new, :edit]
+      resources "/repos",      RepositoryController, param: "repo", except: [:new, :edit]
     end
   end
 

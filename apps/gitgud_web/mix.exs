@@ -21,16 +21,20 @@ defmodule GitGud.Web.Mixfile do
      extra_applications: [:logger, :runtime_tools]]
   end
 
+  #
+  # Helpers
+  #
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:phoenix, "~> 1.3"},
+    [{:cowboy, "~> 1.1"},
+     {:phoenix, "~> 1.3"},
      {:phoenix_pubsub, "~> 1.0"},
      {:phoenix_ecto, "~> 3.3"},
      {:gettext, "~> 0.13"},
-     {:gitgud, in_umbrella: true},
-     {:cowboy, "~> 1.1"}]
+     {:gitgud, in_umbrella: true}]
   end
 
   defp aliases do

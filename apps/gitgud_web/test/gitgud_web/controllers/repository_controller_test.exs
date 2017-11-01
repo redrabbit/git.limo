@@ -1,8 +1,8 @@
-defmodule GitGud.Web.RepositoryControllerTest do
+defmodule GitGud.Web.RepoControllerTest do
   use GitGud.Web.ConnCase
 
   alias Gitgud.Repositories
-  alias Gitgud.Repositories.Repository
+  alias Gitgud.Repositories.Repo
 
   @create_attrs %{description: "some description", name: "some name", path: "some path"}
   @update_attrs %{description: "some updated description", name: "some updated name", path: "some updated path"}
@@ -46,7 +46,7 @@ defmodule GitGud.Web.RepositoryControllerTest do
   describe "update repository" do
     setup [:create_repository]
 
-    test "renders repository when data is valid", %{conn: conn, repository: %Repository{id: id} = repository} do
+    test "renders repository when data is valid", %{conn: conn, repository: %Repo{id: id} = repository} do
       conn = put conn, repository_path(conn, :update, repository), repository: @update_attrs
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 

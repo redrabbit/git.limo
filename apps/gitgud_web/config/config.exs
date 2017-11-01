@@ -3,7 +3,7 @@ use Mix.Config
 # General application configuration
 config :gitgud_web,
   namespace: GitGud.Web,
-  ecto_repos: [GitGud.Repo]
+  ecto_repos: [GitGud.QuerySet]
 
 # Configures the endpoint
 config :gitgud_web, GitGud.Web.Endpoint,

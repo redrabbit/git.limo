@@ -1,8 +1,9 @@
-defmodule GitGud.UserQuerySet do
+defmodule GitGud.UserQuery do
   @moduledoc """
   Conveniences for `GitGud.User` related queries.
   """
-  alias GitGud.Repo
+
+  alias GitGud.QuerySet
   alias GitGud.User
 
   @doc """
@@ -13,9 +14,9 @@ defmodule GitGud.UserQuerySet do
   def get(username_or_id, []) do
     cond do
       is_integer(username_or_id) ->
-        Repo.get(User, username_or_id)
+        QuerySet.get(User, username_or_id)
       is_binary(username_or_id) ->
-        Repo.get_by(User, username: username_or_id)
+        QuerySet.get_by(User, username: username_or_id)
       true ->
         nil
     end
@@ -23,7 +24,6 @@ defmodule GitGud.UserQuerySet do
 
   def get(username_or_id, opts) do
     {preload, opts} = Keyword.pop(opts, :preload)
-    Repo.preload(get(username_or_id, opts), preload)
+    QuerySet.preload(get(username_or_id, opts), preload)
   end
-
 end

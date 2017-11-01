@@ -1,7 +1,7 @@
 use Mix.Config
 
 # Configure your database
-config :gitgud, GitGud.Repo,
+config :gitgud, GitGud.QuerySet,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",

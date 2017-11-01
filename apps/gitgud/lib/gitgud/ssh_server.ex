@@ -28,14 +28,14 @@ defmodule GitGud.SSHServer do
 
   In order to read and/or write to a repository, a user needs to have the required permissions.
 
-  See `GitGud.Repository.can_read?/2` and `GitGud.Repository.can_write?/2` for more details.
+  See `GitGud.Repo.can_read?/2` and `GitGud.Repository.can_write?/2` for more details.
   """
 
   alias GitGud.User
-  alias GitGud.UserQuerySet
+  alias GitGud.UserQuery
 
-  alias GitGud.Repository
-  alias GitGud.RepositoryQuerySet
+  alias GitGud.Repo
+  alias GitGud.RepoQuery
 
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
@@ -71,7 +71,7 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def is_auth_key(key, username, _opts) do
-    user = UserQuerySet.get(to_string(username), preload: :authentication_keys)
+    user = UserQuery.get(to_string(username), preload: :authentication_keys)
     Enum.any?(user.authentication_keys, fn auth ->
       if [{^key, _attrs}] = :public_key.ssh_decode(auth.key, :public_key), do: true
     end)
@@ -85,7 +85,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
     [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, struct(state, conn: conn, chan: chan, user: UserQuerySet.get(to_string(username)))}
+    {:ok, struct(state, conn: conn, chan: chan, user: UserQuery.get(to_string(username)))}
   end
 
   @impl true
@@ -161,7 +161,7 @@ defmodule GitGud.SSHServer do
 
   defp resolve_repo(user, path) do
     relpath = Path.relative_to(to_string(path), Path.join(@root_path, user.username))
-    RepositoryQuerySet.user_repository(user, relpath)
+    RepoQuery.user_repository(user, relpath)
   end
 
   defp check_credentials(username, password) do
@@ -169,11 +169,11 @@ defmodule GitGud.SSHServer do
   end
 
   defp has_permission?(user, path, exec) when exec == 'git-receive-pack' do
-    Repository.can_write?(user, resolve_repo(user, path))
+    Repo.can_write?(user, resolve_repo(user, path))
   end
 
   defp has_permission?(user, path, exec) when exec in ['git-upload-pack', 'git-upload-archive'] do
-    Repository.can_read?(user, resolve_repo(user, path))
+    Repo.can_read?(user, resolve_repo(user, path))
   end
 
   defp has_permission?(_username, _path, _exec), do: false

@@ -2,7 +2,7 @@ defmodule GitGud.UserTest do
   use GitGud.DataCase
 
   alias GitGud.User
-  alias GitGud.UserQuerySet
+  alias GitGud.UserQuery
 
   @valid_attrs %{name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234"}
 
@@ -25,12 +25,12 @@ defmodule GitGud.UserTest do
 
   test "gets user by id" do
     assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuerySet.get(user.id)
+    assert ^user = UserQuery.get(user.id)
   end
 
   test "gets user by username" do
     assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuerySet.get(user.username)
+    assert ^user = UserQuery.get(user.username)
   end
 
   test "authenticates user with email and username" do

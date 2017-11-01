@@ -3,7 +3,6 @@ defmodule GitGud.Mixfile do
 
   def project do
     [app: :gitgud,
-     name: "Git Rekt",
      version: "0.0.1",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
@@ -21,6 +20,10 @@ defmodule GitGud.Mixfile do
      extra_applications: [:logger, :runtime_tools, :ssh]]
   end
 
+  #
+  # Helpers
+  #
+
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
 
@@ -30,7 +33,7 @@ defmodule GitGud.Mixfile do
      {:comeonin, "~> 4.0"},
      {:argon2_elixir, "~> 1.2"},
      {:geef, github: "carlosmn/geef"},
-     {:ex_doc, "~> 0.18", only: :dev, runtime: false}]
+     ]
   end
 
   defp aliases do

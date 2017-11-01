@@ -6,7 +6,7 @@ defmodule GitGud.Application do
     import Supervisor.Spec, warn: false
 
     Supervisor.start_link([
-      {GitGud.Repo, []},
+      {GitGud.QuerySet, []},
       {GitGud.SSHServer, [8989]},
     ], strategy: :one_for_one, name: GitGud.Supervisor)
   end
