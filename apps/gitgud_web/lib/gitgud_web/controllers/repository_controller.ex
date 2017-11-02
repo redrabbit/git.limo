@@ -15,12 +15,20 @@ defmodule GitGud.Web.RepositoryController do
 
   action_fallback GitGud.Web.FallbackController
 
-  def index(conn, %{"user" => username}) do
+  @doc """
+  Returns all repository for a given user.
+  """
+  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
+  def index(conn, %{"user" => username} = _params) do
     repos = RepoQuery.user_repositories(username)
     render(conn, "index.json", repositories: repos)
   end
 
-  def show(conn, %{"user" => username, "repo" => path}) do
+  @doc """
+  Returns a single repository.
+  """
+  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
+  def show(conn, %{"user" => username, "repo" => path} = _params) do
     with user when not is_nil(user) <- UserQuery.get(username),
          repo when not is_nil(repo) <- RepoQuery.user_repository(user, path),
          true <- Repo.can_read?(user, repo) do
@@ -31,7 +39,11 @@ defmodule GitGud.Web.RepositoryController do
     end
   end
 
-  def create(conn, %{"repository" => repo_params}) do
+  @doc """
+  Creates a new repository.
+  """
+  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  def create(conn, %{"repository" => repo_params} = _params) do
     repo_params = Map.put(repo_params, "owner_id", conn.assigns.user.id)
     case Repo.create(repo_params) do
       {:ok, repo, _pid} ->
@@ -45,6 +57,10 @@ defmodule GitGud.Web.RepositoryController do
     end
   end
 
+  @doc """
+  Updates an existing repository.
+  """
+  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"user" => username, "repo" => path, "repository" => repo_params}) do
     repo_params = Map.delete(repo_params, "owner_id")
     with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
@@ -52,7 +68,11 @@ defmodule GitGud.Web.RepositoryController do
       render(conn, "show.json", repository: repo)
   end
 
-  def delete(conn, %{"user" => username, "repo" => path}) do
+  @doc """
+  Deletes an existing repository.
+  """
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"user" => username, "repo" => path} = _params) do
     with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
          {:ok, _del} <- Repo.delete(repo), do:
       send_resp(conn, :no_content, "")

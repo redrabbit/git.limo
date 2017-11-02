@@ -1,6 +1,6 @@
 defmodule GitGud.Web.AuthenticationPlug do
   @moduledoc """
-  Plug for authenticating API request with bearer token.
+  Plug for authenticating API requests with bearer token.
   """
   @behaviour Plug
 

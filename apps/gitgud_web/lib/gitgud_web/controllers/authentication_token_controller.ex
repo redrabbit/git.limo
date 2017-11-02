@@ -11,7 +11,11 @@ defmodule GitGud.Web.AuthenticationTokenController do
 
   action_fallback GitGud.Web.FallbackController
 
-  def create(conn, %{"username" => username, "password" => password}) do
+  @doc """
+  Creates a new bearer token for the given user credentials.
+  """
+  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  def create(conn, %{"username" => username, "password" => password} = _params) do
     if user = User.check_credentials(username, password) do
       render(conn, "token.json", token: generate_token(user.id))
     else

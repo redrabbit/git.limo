@@ -2,25 +2,21 @@ defmodule GitGud.SSHServer do
   @moduledoc """
   Secure Shell (SSH) server providing support for Git server commands.
 
-  In the current implementation, the server is restricted to the following Git commands:
+  The server handles following Git commands:
 
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
   * `git-upload-archive` - corresponding server-side command to `git archive`.
 
-  A port is spawned for each running command. *In future implementations, the server might support those commands natively*.
-
   ## Authentication
-
-  User authentication is handled by the application, it does not depend on available users on the machine.
 
   A registered `GitGud.User` can authenticate with following methods:
 
   * *public-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
-  * *password* - if the given user credentials are correct.
+  * *password* - if the given credentials are correct.
   * *interactive* - interactive login prompt allowing several tries.
 
-  For example, to clone a repository you would run following command:
+  To clone a repository, run following command:
 
       git clone 'ssh://redrabbit@localhost:8989/USER/REPO'
 
@@ -28,7 +24,7 @@ defmodule GitGud.SSHServer do
 
   In order to read and/or write to a repository, a user needs to have the required permissions.
 
-  See `GitGud.Repo.can_read?/2` and `GitGud.Repository.can_write?/2` for more details.
+  See `GitGud.Repo.can_read?/2` and `GitGud.Repo.can_write?/2` for more details.
   """
 
   alias GitGud.User
