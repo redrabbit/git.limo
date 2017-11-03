@@ -143,7 +143,7 @@ defmodule GitGud.SSHServer do
   #
 
   defp daemon_opts() do
-    system_dir = Application.fetch_env!(:gitgud, :ssh_system_dir)
+    system_dir = Application.fetch_env!(:gitgud, :ssh_key_dir)
     [key_cb: {__MODULE__, []},
      ssh_cli: {__MODULE__, []},
      parallel_login: true,
