@@ -10,7 +10,7 @@ defmodule GitGud.Web.Router do
   scope "/api", GitGud.Web do
     pipe_through :api
 
-    post "/token",             AuthenticationTokenContoller, :create, as: :auth_token
+    post "/token",             AuthenticationContoller, :create, as: :auth_token
 
     scope "/users/:user" do
       resources "/repos",      RepositoryController, param: "repo", except: [:new, :edit]

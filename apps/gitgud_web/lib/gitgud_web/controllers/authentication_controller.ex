@@ -1,4 +1,4 @@
-defmodule GitGud.Web.AuthenticationTokenController do
+defmodule GitGud.Web.AuthenticationController do
   @moduledoc """
   Module responsible for bearer token authentication.
   """

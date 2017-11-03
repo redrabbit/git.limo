@@ -1,4 +1,4 @@
-defmodule GitGud.Web.AuthenticationTokenView do
+defmodule GitGud.Web.AuthenticationView do
   @moduledoc false
   use GitGud.Web, :view
 
