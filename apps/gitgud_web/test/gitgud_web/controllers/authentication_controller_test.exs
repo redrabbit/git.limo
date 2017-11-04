@@ -23,14 +23,25 @@ defmodule GitGud.Web.AuthenticationControllerTest do
     refute AuthenticationPlug.authenticated?(conn)
   end
 
+  test "ensures user is authenticated when accessing restricted page", %{conn: conn, user: user} do
+    conn = put_token(conn, user.id)
+    conn = authenticate(conn)
+    conn = AuthenticationPlug.ensure_authenticated(conn, [])
+    assert conn.state == :unset
+  end
+
+  test "fails to access restricted page when user is not authenticated", %{conn: conn, user: user} do
+    conn = put_token(conn, user.id)
+    conn = AuthenticationPlug.ensure_authenticated(conn, [])
+    assert response(conn, 401)
+  end
+
   #
   # Helpers
   #
 
   defp authenticate(conn) do
-  conn
-  |> bypass_through()
-  |> AuthenticationPlug.call(AuthenticationPlug.init([]))
+    AuthenticationPlug.call(conn, [])
   end
 
   defp put_token(conn, user_id) do

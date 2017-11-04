@@ -80,9 +80,8 @@ defmodule GitGud.Web.RepoControllerTest do
     test "deletes chosen repository", %{conn: conn, user: user, repo: repo} do
       conn = delete conn, repository_path(conn, :delete, user, repo)
       assert response(conn, 204)
-    # assert_error_sent :not_found, fn ->
-    #   IO.inspect(get conn, repository_path(conn, :show, user, repo))
-    # end
+      conn = get conn, repository_path(conn, :show, user, repo)
+      assert response(conn, 404)
     end
   end
 
