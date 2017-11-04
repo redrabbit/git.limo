@@ -17,7 +17,7 @@ defmodule GitGud.RepoTest do
     {:ok, %{user: user}}
   end
 
-  test "creates a bare repository and ensures that git directory exists", %{user: user} do
+  test "creates a bare repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, pid} = Repo.create(params)
     assert File.dir?(Repo.git_dir(repo))
@@ -50,14 +50,14 @@ defmodule GitGud.RepoTest do
     assert repos == RepoQuery.user_repositories(user)
   end
 
-  test "gets a single repository by a user/path pair", %{user: user} do
+  test "gets a single user repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
     repo = QuerySet.preload(repo, :owner)
     assert ^repo = RepoQuery.user_repository(user, repo.path)
   end
 
-  test "updates a repository and ensures that git directory has been renamed", %{user: user} do
+  test "updates a repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, old_repo, _pid} = Repo.create(params)
     assert {:ok, new_repo} = Repo.update(old_repo, path: "project-super-awesome", name: "My Super Awesome Project")
@@ -65,10 +65,17 @@ defmodule GitGud.RepoTest do
     assert File.dir?(Repo.git_dir(new_repo))
   end
 
-  test "deletes a repository and ensures that git directly has been removed", %{user: user} do
+  test "deletes a repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
     assert {:ok, repo} = Repo.delete(repo)
     refute File.dir?(Repo.git_dir(repo))
+  end
+
+  test "ensures user has read and write permissions to own repository", %{user: user} do
+    params = Map.put(@valid_attrs, :owner_id, user.id)
+    assert {:ok, repo, _pid} = Repo.create(params)
+    assert Repo.can_read?(user, repo)
+    assert Repo.can_write?(user, repo)
   end
 end
