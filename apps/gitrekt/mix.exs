@@ -9,6 +9,7 @@ defmodule GitRekt.Mixfile do
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
      elixir: "~> 1.5",
+     compilers: [:elixir_make] ++ Mix.compilers,
      start_permanent: Mix.env == :prod,
      deps: deps()]
   end
@@ -18,6 +19,6 @@ defmodule GitRekt.Mixfile do
   end
 
   defp deps do
-    []
+    [{:elixir_make, "~> 0.4"}]
   end
 end
