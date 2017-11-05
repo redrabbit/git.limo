@@ -27,7 +27,7 @@ geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin;
 	ERL_NIF_TERM term_repo;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &bin))
+	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&bin))
@@ -54,7 +54,7 @@ geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin;
 	ERL_NIF_TERM term_repo;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &bin))
+	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&bin))
@@ -78,7 +78,7 @@ geef_repository_discover(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin, path;
 	int error;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &bin))
+	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&bin))
@@ -232,7 +232,7 @@ geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_odb_type, (void **) &odb))
 		return enif_make_badarg(env);
 
-	if (!enif_inspect_iolist_as_binary(env, argv[1], &contents))
+	if (!enif_inspect_binary(env, argv[1], &contents))
 		return enif_make_badarg(env);
 
 	type = geef_object_atom2type(argv[2]);

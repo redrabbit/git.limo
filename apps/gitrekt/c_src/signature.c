@@ -21,10 +21,10 @@ int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *e
 	if (arity != 4)
 		goto on_badarg;
 
-	if (!enif_inspect_iolist_as_binary(env, tuple[1], &name))
+	if (!enif_inspect_binary(env, tuple[1], &name))
 		goto on_badarg;
 
-	if (!enif_inspect_iolist_as_binary(env, tuple[2], &email))
+	if (!enif_inspect_binary(env, tuple[2], &email))
 		goto on_badarg;
 
 	if (!geef_terminate_binary(&name))
@@ -148,10 +148,10 @@ geef_signature_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	int error;
 	unsigned int at;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &name))
+	if (!enif_inspect_binary(env, argv[0], &name))
 		return enif_make_badarg(env);
 
-	if (!enif_inspect_iolist_as_binary(env, argv[1], &email))
+	if (!enif_inspect_binary(env, argv[1], &email))
 		return enif_make_badarg(env);
 
 	if (argc == 3 && !enif_get_uint(env, argv[2], &at))

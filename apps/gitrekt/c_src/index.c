@@ -154,7 +154,7 @@ geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 	entry.flags_extended = tmp;
 
-	if (!enif_inspect_iolist_as_binary(env, eentry[12], &path))
+	if (!enif_inspect_binary(env, eentry[12], &path))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&path))
@@ -248,7 +248,7 @@ geef_index_get(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_uint(env, argv[2], &stage))
 		return enif_make_badarg(env);
 
-	if (!enif_inspect_iolist_as_binary(env, argv[1], &path))
+	if (!enif_inspect_binary(env, argv[1], &path))
 		return enif_make_badarg(env);
 
 	if (geef_terminate_binary(&path) < 0) {

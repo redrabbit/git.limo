@@ -68,7 +68,7 @@ geef_commit_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	if (enif_compare(argv[1], atoms.undefined)) {
-		if (!enif_inspect_iolist_as_binary(env, argv[1], &bin))
+		if (!enif_inspect_binary(env, argv[1], &bin))
 		     return enif_make_badarg(env);
 		ref = strndup((char *)bin.data, bin.size);
 		if (ref == NULL)
@@ -84,14 +84,14 @@ geef_commit_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	}
 
 	if (enif_compare(argv[4], atoms.undefined)) {
-		if (!enif_inspect_iolist_as_binary(env, argv[4], &bin))
+		if (!enif_inspect_binary(env, argv[4], &bin))
 		     return enif_make_badarg(env);
 		encoding = strndup((char *)bin.data, bin.size);
 		if (encoding == NULL)
 			return geef_oom(env);
 	}
 
-	if (!enif_inspect_iolist_as_binary(env, argv[5], &bin))
+	if (!enif_inspect_binary(env, argv[5], &bin))
 		return enif_make_badarg(env);
 
 	message = strndup((char *)bin.data, bin.size);

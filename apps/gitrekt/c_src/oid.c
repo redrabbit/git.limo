@@ -40,7 +40,7 @@ geef_oid_parse(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin, bin_out;
 	git_oid id;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &bin))
+	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
 	git_oid_fromstrn(&id, (const char *)bin.data, bin.size);

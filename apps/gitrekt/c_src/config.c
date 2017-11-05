@@ -16,7 +16,7 @@ geef_config_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ERL_NIF_TERM term_cfg;
 	int error;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[0], &bin))
+	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&bin))
@@ -41,7 +41,7 @@ static ERL_NIF_TERM extract(geef_config **cfg, ErlNifBinary *bin, ErlNifEnv *env
 	if (!enif_get_resource(env, argv[0], geef_config_type, (void **) cfg))
 		return enif_make_badarg(env);
 
-	if (!enif_inspect_iolist_as_binary(env, argv[1], bin))
+	if (!enif_inspect_binary(env, argv[1], bin))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(bin))
@@ -160,7 +160,7 @@ geef_config_set_string(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (ret != atoms.ok)
 		return ret;
 
-	if (!enif_inspect_iolist_as_binary(env, argv[2], &val))
+	if (!enif_inspect_binary(env, argv[2], &val))
 		return enif_make_badarg(env);
 
 	if (!geef_terminate_binary(&val))
