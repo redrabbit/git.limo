@@ -7,10 +7,9 @@ defmodule GitGud.Repo do
 
   import Ecto.Changeset
 
-  import GitRekt.Geef, only: [repository_init: 2]
-
   alias Ecto.Multi
 
+  alias GitRekt.Git
 
   alias GitGud.User
   alias GitGud.QuerySet
@@ -77,7 +76,7 @@ defmodule GitGud.Repo do
   @doc """
   Creates a new repository.
   """
-  @spec create(map|keyword, keyword) :: {:ok, t, GitRekt.Geef.repo} | {:error, Ecto.Changeset.t}
+  @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t}
   def create(params, opts \\ []) do
     bare? = Keyword.get(opts, :bare?, true)
     changeset = changeset(%__MODULE__{}, Map.new(params))
@@ -159,7 +158,7 @@ defmodule GitGud.Repo do
     @root_path
     |> Path.join(repo.owner.username)
     |> Path.join(repo.path)
-    |> repository_init(bare?)
+    |> Git.repository_init(bare?)
   end
 
   defp update_and_fix_path(changeset) do

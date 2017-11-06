@@ -1,7 +1,7 @@
 defmodule GitGud.RepoTest do
   use GitGud.DataCase
 
-  import GitRekt.Geef, only: [repository_bare?: 1]
+  alias GitRekt.Git
 
   alias GitGud.User
   alias GitGud.Repo
@@ -23,7 +23,7 @@ defmodule GitGud.RepoTest do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, ref} = Repo.create(params)
     assert File.dir?(Repo.git_dir(repo))
-    assert repository_bare?(ref)
+    assert Git.repository_bare?(ref)
   end
 
   test "fails to create a repository with invalid params", %{user: user} do

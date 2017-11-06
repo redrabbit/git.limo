@@ -224,4 +224,4 @@ static ErlNifFunc geef_funcs[] =
 	{"config_open",     1, geef_config_open},
 };
 
-ERL_NIF_INIT(Elixir.GitRekt.Geef, geef_funcs, load, NULL, upgrade, unload)
+ERL_NIF_INIT(Elixir.GitRekt.Git, geef_funcs, load, NULL, upgrade, unload)

@@ -1,4 +1,4 @@
-defmodule GitRekt.Geef do
+defmodule GitRekt.Git do
   @moduledoc """
   Erlang NIF that exposes some of *libgit2*'s library functions.
   """

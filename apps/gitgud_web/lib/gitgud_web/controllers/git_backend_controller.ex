@@ -26,9 +26,10 @@ defmodule GitGud.Web.GitBackendController do
 
   use GitGud.Web, :controller
 
-  import GitRekt.Geef, only: [repository_open: 1, reference_lookup: 2]
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
+
+  alias GitRekt.Git
 
   alias GitGud.User
   alias GitGud.Repo
@@ -144,8 +145,8 @@ defmodule GitGud.Web.GitBackendController do
   end
 
   defp head_reference(repo) do
-    with {:ok, handle} <- repository_open(Repo.git_dir(repo)),
-         {:ok, _type, ref_name} <- reference_lookup(handle, "HEAD") do
+    with {:ok, handle} <- Git.repository_open(Repo.git_dir(repo)),
+         {:ok, _type, ref_name} <- Git.reference_lookup(handle, "HEAD") do
       ref_name
     else
       {:error, _reason} -> nil
