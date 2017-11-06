@@ -6,7 +6,8 @@ defmodule GitGud.Repo do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Geef.Repository, only: [init: 2]
+
+  import GitRekt.Geef, only: [repository_init: 2]
 
   alias Ecto.Multi
 
@@ -16,7 +17,6 @@ defmodule GitGud.Repo do
 
   @root_path Application.fetch_env!(:gitgud, :git_dir)
 
-  @derive {Phoenix.Param, key: :path}
   schema "repositories" do
     belongs_to  :owner,       User
     field       :path,        :string
@@ -77,12 +77,12 @@ defmodule GitGud.Repo do
   @doc """
   Creates a new repository.
   """
-  @spec create(map|keyword, keyword) :: {:ok, t, pid} | {:error, Ecto.Changeset.t}
+  @spec create(map|keyword, keyword) :: {:ok, t, GitRekt.Geef.repo} | {:error, Ecto.Changeset.t}
   def create(params, opts \\ []) do
     bare? = Keyword.get(opts, :bare?, true)
     changeset = changeset(%__MODULE__{}, Map.new(params))
     case insert_and_init(changeset, bare?) do
-      {:ok, %{insert: repo, init_repo: pid}} -> {:ok, repo, pid}
+      {:ok, %{insert: repo, init_repo: ref}} -> {:ok, repo, ref}
       {:error, :insert, changeset, _changes} -> {:error, changeset}
     end
   end
@@ -159,7 +159,7 @@ defmodule GitGud.Repo do
     @root_path
     |> Path.join(repo.owner.username)
     |> Path.join(repo.path)
-    |> init(bare?)
+    |> repository_init(bare?)
   end
 
   defp update_and_fix_path(changeset) do

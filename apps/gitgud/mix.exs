@@ -32,8 +32,7 @@ defmodule GitGud.Mixfile do
      {:ecto, "~> 2.2"},
      {:comeonin, "~> 4.0"},
      {:argon2_elixir, "~> 1.2"},
-     {:geef, github: "carlosmn/geef"},
-     ]
+     {:gitrekt, in_umbrella: true}]
   end
 
   defp aliases do
