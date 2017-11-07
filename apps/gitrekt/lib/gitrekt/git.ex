@@ -5,13 +5,38 @@ defmodule GitRekt.Git do
 
   require Logger
 
-  @type repo :: reference
-  @type config :: reference
+  @type repo          :: reference
+
+  @type oid           :: binary
+  @type signature     :: term
+
+  @type odb           :: reference
+  @type odb_type      :: atom
+
+  @type ref_iter      :: reference
+  @type ref_type      :: :oid | :symbolic
+
+  @type config        :: reference
+  @type blob          :: reference
+  @type commit        :: reference
+  @type tree          :: reference
+  @type tag           :: reference
+
+  @type obj           :: blob | commit | tree | tag
+  @type obj_type      :: :blob | :commit | :tree | :tag
+
+  @type reflog        :: {binary, binary, non_neg_integer, non_neg_integer, oid, oid, binary}
+
+  @type revwalk       :: reference
+  @type revwalk_sort  :: :topsort | :timesort | :reversesort
+
+  @type index         :: reference
+  @type index_entry   :: term
+
+  @on_load :load_nif
 
   @nif_path Path.join(:code.priv_dir(:gitrekt), "geef_nif")
   @nif_path_lib @nif_path <> ".so"
-
-  @on_load :load_nif
 
   @doc false
   def load_nif do
@@ -24,7 +49,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns a repository handle for the `path`.
   """
-  @spec repository_open(binary) :: {:ok, repo} | {:error, term}
+  @spec repository_open(Path.t) :: {:ok, repo} | {:error, term}
   def repository_open(_path) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -40,7 +65,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns the absolute path for the given `repo`.
   """
-  @spec repository_get_path(repo) :: binary
+  @spec repository_get_path(repo) :: Path.t
   def repository_get_path(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -48,12 +73,15 @@ defmodule GitRekt.Git do
   @doc """
   Returns the normalized path to the working directory for the given `repo`.
   """
-  @spec repository_get_workdir(repo) :: binary
+  @spec repository_get_workdir(repo) :: Path.t
   def repository_get_workdir(_repo) do
       raise Code.LoadError, file: @nif_path_lib
     end
 
-  @doc false
+  @doc """
+  Returns the ODB for the given `repository`.
+  """
+  @spec repository_get_odb(repo) :: {:ok, odb} | {:error, term}
   def repository_get_odb(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -69,7 +97,7 @@ defmodule GitRekt.Git do
   @doc """
   Initializes a new repository at the given `path`.
   """
-  @spec repository_init(binary, boolean) :: repo
+  @spec repository_init(Path.t, boolean) :: repo
   def repository_init(_path, _bare) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -77,7 +105,7 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a repository and returns its path.
   """
-  @spec repository_discover(binary) :: {:ok, binary} | :error
+  @spec repository_discover(Path.t) :: {:ok, Path.t} | :error
   def repository_discover(_path) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -93,7 +121,7 @@ defmodule GitRekt.Git do
   @doc """
   Creates a new reference name which points to an object or to an other reference.
   """
-  @spec reference_create(repo, binary, :geef_ref.type, binary | :geef_oid.oid, boolean) :: :ok | {:error, term}
+  @spec reference_create(repo, binary, ref_type, binary | oid, boolean) :: :ok | {:error, term}
   def reference_create(_repo, _ref_name, _type, _target, _force) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -101,15 +129,15 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a reference by `ref_name` and returns its id.
   """
-  @spec reference_to_id(repo, binary) :: {:ok, binary} | {:error, term}
+  @spec reference_to_id(repo, binary) :: {:ok, oid} | {:error, term}
   def reference_to_id(_repo, _ref_name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
   @doc """
-  Similar to `reference_resolve/2` but allows glob patterns.
+  Similar to `reference_list/1` but allows glob patterns.
   """
-  @spec reference_glob(repo, binary) :: {:ok, binary, binary} | {:error, term}
+  @spec reference_glob(repo, binary) :: [binary]
   def reference_glob(_repo, _glob) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -117,7 +145,7 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a reference by `ref_name`.
   """
-  @spec reference_lookup(repo, binary) :: {:ok, :geef_ref.type, binary} | {:error, term}
+  @spec reference_lookup(repo, binary) :: {:ok, ref_type, binary} | {:error, term}
   def reference_lookup(_repo, _ref_name) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -125,15 +153,15 @@ defmodule GitRekt.Git do
   @doc """
   Returns an iterator for the references that match the specific `glob`.
   """
-  @spec reference_iterator(repo, binary | :undefined) :: {:ok, :geef_ref.iterator} | {:error, term}
-  def reference_iterator(_repo, _glob) do
+  @spec reference_iterator(repo, binary | :undefined) :: {:ok, ref_iter} | {:error, term}
+  def reference_iterator(_repo, _glob \\ :undefined) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
   @doc """
   Returns the next reference.
   """
-  @spec reference_next(:geef_ref.iterator) :: {:ok, binary, :geef_ref.type, binary} | {:error, :iterover | term}
+  @spec reference_next(ref_iter) :: {:ok, binary, ref_type, binary} | {:error, :iterover | term}
   def reference_next(_iter) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -141,7 +169,7 @@ defmodule GitRekt.Git do
   @doc """
   Resolves the reference with the given `name`.
   """
-  @spec reference_resolve(repo, binary) :: {:ok, binary, binary} | {:error, term}
+  @spec reference_resolve(repo, binary) :: {:ok, binary, oid} | {:error, term}
   def reference_resolve(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -149,7 +177,7 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a reference by DWIMing its `short_name`.
   """
-  @spec reference_dwim(repo, binary) :: {:ok, :geef_ref.type, :geef_ref.oid, binary} | {:error, term}
+  @spec reference_dwim(repo, binary) :: {:ok, binary, ref_type, binary} | {:error, term}
   def reference_dwim(_repo, _short_name) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -162,105 +190,147 @@ defmodule GitRekt.Git do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec reflog_read(term(), iolist()) -> {ok, binary(), binary(), non_neg_integer(), non_neg_integer()} | {error, term()}.
-  def reflog_read(_Handle, _Name) do
+  @doc """
+  Reads the reflog for the given reference `name`.
+  """
+  @spec reflog_read(repo, binary) :: {:ok, [reflog]} | {:error, term}
+  def reflog_read(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec reflog_delete(term(), iolist()) -> ok | {error, term()}.
-  def reflog_delete(_Handle, _Name) do
+  @doc """
+  Deletes the reflog for the given reference `name`.
+  """
+  @spec reflog_delete(repo, binary) :: :ok | {:error, term}
+  def reflog_delete(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def odb_object_exists(_one, _two) do
+  @doc """
+  Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
+  """
+  @spec odb_object_exists?(odb, oid) :: boolean
+  def odb_object_exists?(_odb, _oid) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec odb_write(term(), iolist(), atom()) -> term().
-  def odb_write(_Handle, _Contents, _Type) do
+  @doc """
+  Writes the given `data` into the `odb`.
+  """
+  @spec odb_write(odb, binary, odb_type) :: {:ok, oid} | {:error, term}
+  def odb_write(_odb, _data, _type) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def oid_fmt(_Oid) do
+  @doc """
+  Returns the SHA `hash` for the given `oid`.
+  """
+  @spec oid_fmt(oid) :: binary
+  def oid_fmt(_oid) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def oid_parse(_Sha) do
+  @doc """
+  Returns the OID for the given SHA `hash`.
+  """
+  @spec oid_parse(binary) :: oid
+  def oid_parse(_hash) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def object_lookup(_Repo, _Oid) do
+  @doc """
+  Looks for an object with the given `oid`.
+  """
+  @spec object_lookup(repo, oid) :: {:ok, obj_type, obj} | {:error, term}
+  def object_lookup(_repo, _oid) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def object_id(_Handle) do
+  @doc """
+  Returns the OID for the given `obj`.
+  """
+  @spec object_id(obj) :: {:ok, oid} | {:error, term}
+  def object_id(_obj) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec commit_tree_id(term) -> binary().
-  def commit_tree_id(_Handle) do
+  @doc """
+  Returns the tree id for the given `commit`.
+  """
+  @spec commit_tree_id(commit) :: oid
+  def commit_tree_id(_commit) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec commit_tree(term) -> term().
-  def commit_tree(_Handle) do
+  @doc """
+  Returns the tree for the given `commit`.
+  """
+  @spec commit_tree(commit) :: {:ok, oid, tree} | {:error, term}
+  def commit_tree(_commit) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def commit_create(_RepoHandle, _Ref, _Author, _Committer, _Encoding, _Message, _Tree, _Parents) do
+  @doc """
+  Creates a new commit with the given params.
+  """
+  @spec commit_create(repo, binary | :undefined, signature, signature, binary | :undefined, binary, oid, [binary]) :: {:ok, oid} | {:error, term}
+  def commit_create(_repo, _ref, _author, _commiter, _encoding, _message, _tree, _parents) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec commit_message(term) -> {ok, binary()} | {error, term()}.
-  def commit_message(_CommitHandle) do
+  @doc """
+  Returns the message for the given `commit`.
+  """
+  @spec commit_message(commit) :: {:ok, binary} | {:error, term}
+  def commit_message(_commit) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec tree_bypath(term, iolist()) -> term().
-  def tree_bypath(_TreeHandle, _Path) do
+  @doc """
+  Retrieves a tree entry contained in the given `tree` or in any of its subtrees, given its relative path.
+  """
+  @spec tree_bypath(tree, Path.t) :: tree
+  def tree_bypath(_tree, _path) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec tree_nth(term, non_neg_integer()) -> term().
-  def tree_nth(_TreeHandle, _Nth) do
+  @doc """
+  Looks for a tree entry by its position in the given `tree`.
+  """
+  @spec tree_nth(tree, non_neg_integer) :: tree
+  def tree_nth(_tree, _nth) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec tree_count(term) -> non_neg_integer().
-  def tree_count(_TreeHande) do
+  @doc """
+  Returns the number of entries listed in the given `tree`.
+  """
+  @spec tree_count(tree) :: non_neg_integer
+  def tree_count(_tree) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec blob_size(term) -> {ok, integer()} | error.
-  def blob_size(_ObjHandle) do
+  @doc """
+  Returns the size in bytes of the given `blob`.
+  """
+  @spec blob_size(blob) :: {:ok, integer} | :error
+  def blob_size(_blob) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec blob_content(term) -> {ok, binary()} | error.
-  def blob_content(_ObjHandle) do
+  @doc """
+  Returns the raw content of the given `blob`.
+  """
+  @spec blob_content(blob) :: {:ok, binary} | :error
+  def blob_content(_blob) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec tag_peel(term()) -> {ok, atom(), binary(), term()} | {error, term()}.
-  def tag_peel(_Tag) do
+  @doc """
+  Recursively peels the given `tag` until a non tag object is found.
+  """
+  @spec tag_peel(tag) :: {:ok, obj_type, oid, obj} | {:error, term}
+  def tag_peel(_tag) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -272,108 +342,163 @@ defmodule GitRekt.Git do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
+  @doc """
+  Creates a new revision walk object for the given `repo`.
+  """
+  @spec revwalk_new(repo) :: {:ok, reference} | {:error, term}
   def revwalk_new(_Repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def revwalk_push(_Walk, _Id, _Hide) do
+  @doc """
+  Adds a new root for the traversal.
+  """
+  @spec revwalk_push(revwalk, oid, boolean) :: :ok | {:error, term}
+  def revwalk_push(_walk, _oid, _hide) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def revwalk_next(_Walk) do
+  @doc """
+  Returns the next commit from the given revision `walk`.
+  """
+  @spec revwalk_next(revwalk) :: {:ok, oid} | {:error, term}
+  def revwalk_next(_walk) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def revwalk_sorting(_Walk, _Sort) do
+  @doc """
+  Changes the sorting mode when iterating through the repository's contents.
+  """
+  @spec revwalk_sorting(revwalk, [revwalk_sort]) :: :ok | {:error, term}
+  def revwalk_sorting(_walk, _sort_mode) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def revwalk_simplify_first_parent(_Walk) do
+  @doc """
+  Simplifies the history by first-parent.
+  """
+  @spec revwalk_simplify_first_parent(revwalk) :: :ok | {:error, term}
+  def revwalk_simplify_first_parent(_walk) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def revwalk_reset(_Walk) do
+  @doc """
+  Resets the revision `walk` for reuse.
+  """
+  @spec revwalk_reset(revwalk) :: revwalk
+  def revwalk_reset(_walk) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_new() do
+  @doc """
+  Create an new in-memory index object.
+  """
+  @spec index_new() :: {:ok, index} | {:error, term}
+  def index_new do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_write(_Handle) do
+  @doc """
+  Writes the given `index` from memory back to disk using an atomic file lock.
+  """
+  @spec index_write(index) :: :ok | {:error, term}
+  def index_write(_index) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_write_tree(_Handle) do
+  @doc """
+  Writes the given `index` as a tree.
+  """
+  @spec index_write_tree(index) :: {:ok, oid} | {:error, term}
+  def index_write_tree(_index) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_write_tree(_Handle, _RepoHandle) do
+  @doc """
+  Writes the given `index` as a tree.
+  """
+  @spec index_write_tree(index, repo) :: {:ok, oid} | {:error, term}
+  def index_write_tree(_index, _repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_read_tree(_Handle, _TreeHandle) do
+  @doc """
+  Read the given `tree` into the given `index` file with stats.
+  """
+  @spec index_read_tree(index, tree) :: :ok | {:error, term}
+  def index_read_tree(_index, _tree) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec index_count(term()) -> non_neg_integer().
-  def index_count(_Handle) do
+  @doc """
+  Returns the number of entries in the given `index`.
+  """
+  @spec index_count(index) :: non_neg_integer()
+  def index_count(_index) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec index_nth(term(), non_neg_integer()) -> {ok, geef_index:entry()} | {error, term()}.
-  def index_nth(_Handle, _Nth) do
+  @doc """
+  Looks for an entry by its position in the given `index`.
+  """
+  @spec index_nth(index, non_neg_integer) :: {:ok, index_entry} | {:error, term}
+  def index_nth(_index, _nth) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec index_get(term(), iolist(), non_neg_integer()) -> {ok, geef_index:entry()} | {error, term()}.
-  def index_get(_Handle, _Path, _Stage) do
+  @doc """
+  Retrieves an entry contained in the `index` given its relative path.
+  """
+  @spec index_bypath(index, Path.t, non_neg_integer) :: {:ok, index_entry} | {:error, term}
+  def index_bypath(_index, _path, _stage) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_add(_Handle, _Entry) do
+  @doc """
+  Adds or updates the given `entry`.
+  """
+  @spec index_add(index, index_entry) :: :ok | {:error, term}
+  def index_add(_index, _entry) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def index_clear(_Handle) do
+  @doc """
+  Clear the contents (all the entries) of the given `index`.
+  """
+  @spec index_clear(index) :: :ok | {:error, term}
+  def index_clear(_index) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec signature_default(term()) -> {ok, binary(), binary(), non_neg_integer(), non_neg_integer()} | {error, term()}.
-  def signature_default(_Repo) do
+  @doc """
+  Returns the default signature for the given `repo`.
+  """
+  @spec signature_default(repo) :: {:ok, :binary, :binary, non_neg_integer, non_neg_integer} | {:error, term}
+  def signature_default(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def signature_new(_Name, _Email) do
+  @doc """
+  Creates a new signature with the given `name` and `email`.
+  """
+  @spec signature_new(binary, binary) :: {:ok, binary, binary}
+  def signature_new(_name, _email) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  def signature_new(_Name, _Email, _Time) do
+  @doc """
+  Creates a new signature with the given `name`, `email` and `time`.
+  """
+  @spec signature_new(binary, binary, non_neg_integer) :: {:ok, binary, binary, non_neg_integer, non_neg_integer} | {:error, term}
+  def signature_new(_name, _email, _time) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
-  @doc false
-  #spec revparse_single(term(), iolist()) -> {ok, term(), atom(), geef_oid:oid()} | {error, term()}.
-  def revparse_single(_Handle, _Str) do
+  @doc """
+  Finds a single object, as specified by the given `revision`.
+  """
+  @spec revparse_single(repo, binary) :: {:ok, obj, obj_type, oid} | {:error, term}
+  def revparse_single(_repo, _revision) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
