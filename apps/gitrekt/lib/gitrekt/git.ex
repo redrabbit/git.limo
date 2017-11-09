@@ -25,13 +25,34 @@ defmodule GitRekt.Git do
   @type obj           :: blob | commit | tree | tag
   @type obj_type      :: :blob | :commit | :tree | :tag
 
-  @type reflog        :: {binary, binary, non_neg_integer, non_neg_integer, oid, oid, binary}
+  @type reflog        :: {
+    binary,
+    binary,
+    non_neg_integer,
+    non_neg_integer,
+    oid,
+    oid,
+    binary
+  }
+
+  @type index         :: reference
+  @type index_entry   :: {
+    integer,
+    integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    non_neg_integer,
+    integer,
+    binary,
+    non_neg_integer,
+    non_neg_integer,
+    binary
+  }
 
   @type revwalk       :: reference
   @type revwalk_sort  :: :topsort | :timesort | :reversesort
-
-  @type index         :: reference
-  @type index_entry   :: term
 
   @on_load :load_nif
 
@@ -121,16 +142,16 @@ defmodule GitRekt.Git do
   @doc """
   Creates a new reference name which points to an object or to an other reference.
   """
-  @spec reference_create(repo, binary, ref_type, binary | oid, boolean) :: :ok | {:error, term}
-  def reference_create(_repo, _ref_name, _type, _target, _force) do
+  @spec reference_create(repo, ref_type, binary, binary | oid, boolean) :: :ok | {:error, term}
+  def reference_create(_repo, _type, _name, _target, _force) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
   @doc """
-  Looks for a reference by `ref_name` and returns its id.
+  Looks for a reference by `name` and returns its id.
   """
   @spec reference_to_id(repo, binary) :: {:ok, oid} | {:error, term}
-  def reference_to_id(_repo, _ref_name) do
+  def reference_to_id(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -143,15 +164,15 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Looks for a reference by `ref_name`.
+  Looks for a reference by `name`.
   """
-  @spec reference_lookup(repo, binary) :: {:ok, ref_type, binary} | {:error, term}
-  def reference_lookup(_repo, _ref_name) do
+  @spec reference_lookup(repo, binary) :: {:ok, binary, ref_type, binary} | {:error, term}
+  def reference_lookup(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
   @doc """
-  Returns an iterator for the references that match the specific `glob`.
+  Returns an iterator for the references that match the specific `glob` pattern.
   """
   @spec reference_iterator(repo, binary | :undefined) :: {:ok, ref_iter} | {:error, term}
   def reference_iterator(_repo, _glob \\ :undefined) do
@@ -161,13 +182,22 @@ defmodule GitRekt.Git do
   @doc """
   Returns the next reference.
   """
-  @spec reference_next(ref_iter) :: {:ok, binary, ref_type, binary} | {:error, :iterover | term}
+  @spec reference_next(ref_iter) :: {:ok, binary, binary, ref_type, binary} | {:error, :iterover | term}
   def reference_next(_iter) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
   @doc """
-  Resolves the reference with the given `name`.
+  Returns a stream for the references that match the specific `glob` pattern.
+  """
+  def reference_stream(repo, glob \\ :undefined) do
+    case reference_iterator(repo, glob) do
+      {:ok, iter} -> Stream.resource(fn -> iter end, &reference_stream_next/1,fn _iter -> :ok end)
+    end
+  end
+
+  @doc """
+  Resolve a symbolic reference to a direct reference.
   """
   @spec reference_resolve(repo, binary) :: {:ok, binary, oid} | {:error, term}
   def reference_resolve(_repo, _name) do
@@ -289,7 +319,7 @@ defmodule GitRekt.Git do
   @doc """
   Retrieves a tree entry contained in the given `tree` or in any of its subtrees, given its relative path.
   """
-  @spec tree_bypath(tree, Path.t) :: tree
+  @spec tree_bypath(tree, Path.t) :: {:ok, integer, atom, binary, binary} | {:error, term}
   def tree_bypath(_tree, _path) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -297,7 +327,7 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a tree entry by its position in the given `tree`.
   """
-  @spec tree_nth(tree, non_neg_integer) :: tree
+  @spec tree_nth(tree, non_neg_integer) :: {:ok, integer, atom, binary, binary} | {:error, term}
   def tree_nth(_tree, _nth) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -441,7 +471,21 @@ defmodule GitRekt.Git do
   @doc """
   Looks for an entry by its position in the given `index`.
   """
-  @spec index_nth(index, non_neg_integer) :: {:ok, index_entry} | {:error, term}
+  @spec index_nth(index, non_neg_integer) ::
+  {:ok, integer,
+        integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        integer,
+        binary,
+        non_neg_integer,
+        non_neg_integer,
+        binary} |
+  {:error, term}
+
   def index_nth(_index, _nth) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -449,7 +493,20 @@ defmodule GitRekt.Git do
   @doc """
   Retrieves an entry contained in the `index` given its relative path.
   """
-  @spec index_bypath(index, Path.t, non_neg_integer) :: {:ok, index_entry} | {:error, term}
+  @spec index_bypath(index, Path.t, non_neg_integer) ::
+  {:ok, integer,
+        integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        non_neg_integer,
+        integer,
+        binary,
+        non_neg_integer,
+        non_neg_integer,
+        binary} |
+  {:error, term}
   def index_bypath(_index, _path, _stage) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -540,5 +597,18 @@ defmodule GitRekt.Git do
   @spec config_open(binary) :: {:ok, config} | {:error, term}
   def config_open(_path) do
     raise Code.LoadError, file: @nif_path_lib
+  end
+
+  #
+  # Helpers
+  #
+
+  defp reference_stream_next(iter) do
+    case reference_next(iter) do
+      {:ok, name, type, shortname, target} ->
+        {[{name, type, shortname, target}], iter}
+      {:error, :iterover} ->
+        {:halt, iter}
+    end
   end
 end

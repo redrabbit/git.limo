@@ -86,12 +86,30 @@ static ERL_NIF_TERM ref_type(git_reference *ref)
 	return type;
 }
 
+static ERL_NIF_TERM ref_shorthand(ERL_NIF_TERM *out, ErlNifEnv *env, git_reference *ref)
+{
+    ErlNifBinary bin;
+    const char *shorthand;
+    size_t len;
+
+    shorthand = git_reference_shorthand(ref);
+    len = strlen(shorthand);
+
+    if (enif_alloc_binary(len, &bin) < 0)
+        return -1;
+
+    memcpy(bin.data, shorthand, len);
+
+    *out = enif_make_binary(env, &bin);
+    return 0;
+}
+
 ERL_NIF_TERM
 geef_reference_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_repository *repo;
 	git_reference *ref = NULL;
-	ERL_NIF_TERM target, type;
+	ERL_NIF_TERM target, type, shorthand;
 	ErlNifBinary bin;
 	int error;
 
@@ -113,7 +131,10 @@ geef_reference_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (ref_target(&target, env, ref) < 0)
 		goto on_oom;
 
-	return enif_make_tuple3(env, atoms.ok, type, target);
+	if (ref_shorthand(&shorthand, env, ref) < 0)
+		goto on_oom;
+
+	return enif_make_tuple4(env, atoms.ok, shorthand, type, target);
 
 on_oom:
 	git_reference_free(ref);
@@ -174,7 +195,7 @@ geef_reference_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	git_reference *ref;
 	ErlNifBinary bin;
 	geef_ref_iter *iter;
-	ERL_NIF_TERM type, target;
+	ERL_NIF_TERM type, target, shorthand;
 
 	if (!enif_get_resource(env, argv[0], geef_ref_iter_type, (void **) &iter))
 		return enif_make_badarg(env);
@@ -191,6 +212,11 @@ geef_reference_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 	}
 
+	if (ref_shorthand(&shorthand, env, ref) < 0) {
+		git_reference_free(ref);
+		return geef_oom(env);
+	}
+
 	name = git_reference_name(ref);
 	len = strlen(name);
 	if (!enif_alloc_binary(len, &bin)) {
@@ -200,7 +226,7 @@ geef_reference_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	memcpy(bin.data, name, len);
 
-	return enif_make_tuple4(env, atoms.ok, enif_make_binary(env, &bin), type, target);
+	return enif_make_tuple5(env, atoms.ok, enif_make_binary(env, &bin), shorthand, type, target);
 }
 
 void geef_ref_iter_free(ErlNifEnv *env, void *cd)
