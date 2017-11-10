@@ -43,10 +43,10 @@ defmodule GitGud.Repo do
   def can_read?(_user, _repo), do: true
 
   @doc """
-  Returns the absolute path to the given `repo`.
+  Returns the absolute path to the Git workdir for the given `repo`.
   """
-  @spec git_dir(t) :: Path.t
-  def git_dir(%__MODULE__{} = repo) do
+  @spec workdir(t) :: Path.t
+  def workdir(%__MODULE__{} = repo) do
     repo = QuerySet.preload(repo, :owner)
     Path.join([@root_path, repo.owner.username, repo.path])
   end

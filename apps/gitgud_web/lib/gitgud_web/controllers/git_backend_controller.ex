@@ -105,7 +105,7 @@ defmodule GitGud.Web.GitBackendController do
 
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
-      case System.cmd(service, ["--advertise-refs", Repo.git_dir(repo)]) do
+      case System.cmd(service, ["--advertise-refs", Repo.workdir(repo)]) do
         {resp, 0} ->
           conn
           |> put_resp_content_type("application/x-#{service}-advertisement")
@@ -126,7 +126,7 @@ defmodule GitGud.Web.GitBackendController do
       {:ok, body, conn} = read_body(conn)
       conn
       |> put_resp_content_type("application/x-#{service}-result")
-      |> send_resp(:ok, execute_port(service, Repo.git_dir(repo), body))
+      |> send_resp(:ok, execute_port(service, Repo.workdir(repo), body))
     end
   end
 
@@ -145,7 +145,7 @@ defmodule GitGud.Web.GitBackendController do
   end
 
   defp head_reference(repo) do
-    with {:ok, handle} <- Git.repository_open(Repo.git_dir(repo)),
+    with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD") do
       target
     else

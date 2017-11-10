@@ -22,7 +22,7 @@ defmodule GitGud.RepoTest do
   test "creates a bare repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, ref} = Repo.create(params)
-    assert File.dir?(Repo.git_dir(repo))
+    assert File.dir?(Repo.workdir(repo))
     assert Git.repository_bare?(ref)
   end
 
@@ -63,15 +63,15 @@ defmodule GitGud.RepoTest do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, old_repo, _pid} = Repo.create(params)
     assert {:ok, new_repo} = Repo.update(old_repo, path: "project-super-awesome", name: "My Super Awesome Project")
-    refute File.dir?(Repo.git_dir(old_repo))
-    assert File.dir?(Repo.git_dir(new_repo))
+    refute File.dir?(Repo.workdir(old_repo))
+    assert File.dir?(Repo.workdir(new_repo))
   end
 
   test "deletes a repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
     assert {:ok, repo} = Repo.delete(repo)
-    refute File.dir?(Repo.git_dir(repo))
+    refute File.dir?(Repo.workdir(repo))
   end
 
   test "ensures user has read and write permissions to own repository", %{user: user} do

@@ -42,7 +42,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => paths} = _params) do
     with {:ok, repo} <- fetch({username, path} , conn.assigns[:user], :read),
-         {:ok, handle} <- Git.repository_open(Repo.git_dir(repo)),
+         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
          {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
          {:ok, _oid, tree} <- Git.commit_tree(commit),
