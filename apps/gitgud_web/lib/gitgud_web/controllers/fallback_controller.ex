@@ -25,4 +25,10 @@ defmodule GitGud.Web.FallbackController do
     |> put_status(:not_found)
     |> render(ErrorView, :"404")
   end
+
+  def call(conn, {:error, reason}) when is_binary(reason) do
+    conn
+    |> put_status(:bad_request)
+    |> render(ErrorView, :"400", details: reason)
+  end
 end

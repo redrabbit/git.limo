@@ -117,7 +117,7 @@ defmodule GitGud.Web.GitBackendController do
   defp git_head_ref(conn, repo) do
     if has_permission?(conn, repo, :read) do
       head = head_reference(repo)
-      send_resp(conn, :ok, "ref: #{head.target}")
+      send_resp(conn, :ok, "ref: #{head}")
     end
   end
 
@@ -146,10 +146,11 @@ defmodule GitGud.Web.GitBackendController do
 
   defp head_reference(repo) do
     with {:ok, handle} <- Git.repository_open(Repo.git_dir(repo)),
-         {:ok, _type, ref_name} <- Git.reference_lookup(handle, "HEAD") do
-      ref_name
+         {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD") do
+      target
     else
-      {:error, _reason} -> nil
+      {:error, _reason} ->
+        nil
     end
   end
 
