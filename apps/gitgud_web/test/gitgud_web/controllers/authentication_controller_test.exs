@@ -10,7 +10,19 @@ defmodule GitGud.Web.AuthenticationControllerTest do
     {:ok, conn: conn, user: user}
   end
 
-  test "authenticate with valid token", %{conn: conn, user: user} do
+  test "creates token with user credentials", %{conn: conn} do
+      conn = post conn, auth_token_path(conn, :create), username: "redrabbit", password: "test1234"
+      resp = json_response(conn, :created)
+      assert byte_size(resp["token"]) == 100
+      assert resp["expiration_time"] == AuthenticationPlug.token_expiration_time()
+  end
+
+  test "fails to create token with invalid user credentials", %{conn: conn} do
+      conn = post conn, auth_token_path(conn, :create), username: "redrabbit", password: "testpasswd"
+      assert json_response(conn, :unauthorized)
+  end
+
+  test "authenticates with valid token", %{conn: conn, user: user} do
     conn = put_token(conn, user.id)
     conn = authenticate(conn)
     assert AuthenticationPlug.authenticated?(conn)
@@ -33,7 +45,7 @@ defmodule GitGud.Web.AuthenticationControllerTest do
   test "fails to access restricted page when user is not authenticated", %{conn: conn, user: user} do
     conn = put_token(conn, user.id)
     conn = AuthenticationPlug.ensure_authenticated(conn, [])
-    assert response(conn, 401)
+    assert response(conn, :unauthorized)
   end
 
   #

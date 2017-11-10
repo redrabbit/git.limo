@@ -34,9 +34,22 @@ defmodule GitGud.Web.AuthenticationPlug do
     end
   end
 
-  @spec generate_token(pos_integer) :: binary
-  def generate_token(user_id) do
-    Phoenix.Token.sign(GitGud.Web.Endpoint, secret_key_base(), user_id)
+  @doc """
+  Generates a token for the give `user_id`.
+
+  See `Phoenix.Token.sign/4` for more details.
+  """
+  @spec generate_token(pos_integer, keyword) :: binary
+  def generate_token(user_id, opts \\ []) do
+    Phoenix.Token.sign(GitGud.Web.Endpoint, secret_key_base(), user_id, opts)
+  end
+
+  @doc """
+  Returns the default expiration time of a token.
+  """
+  @spec token_expiration_time() :: integer
+  def token_expiration_time do
+    86400
   end
 
   #
@@ -47,13 +60,14 @@ defmodule GitGud.Web.AuthenticationPlug do
   def init(opts), do: opts
 
   @impl true
-  def call(conn, _opts) do
+  def call(conn, opts) do
+    opts = Keyword.put_new(opts, :max_age, token_expiration_time())
     salt = secret_key_base()
     token = bearer_token(conn)
-    case Phoenix.Token.verify(GitGud.Web.Endpoint, salt, token, max_age: 86400) do
+    case Phoenix.Token.verify(GitGud.Web.Endpoint, salt, token, opts) do
       {:ok, user_id} -> assign(conn, :user, UserQuery.get(user_id))
-      {:error, :invalid} -> conn
       {:error, :missing} -> conn
+      {:error, :invalid} -> conn
     end
   end
 

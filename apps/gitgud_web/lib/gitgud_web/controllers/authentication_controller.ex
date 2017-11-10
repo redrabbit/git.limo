@@ -17,7 +17,9 @@ defmodule GitGud.Web.AuthenticationController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"username" => username, "password" => password} = _params) do
     if user = User.check_credentials(username, password) do
-      render(conn, "token.json", token: generate_token(user.id))
+      conn
+      |> put_status(:created)
+      |> render("token.json", token: generate_token(user.id))
     else
       {:error, :unauthorized}
     end
