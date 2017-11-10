@@ -5,6 +5,8 @@ defmodule GitGud.Web.RepositoryController do
 
   use GitGud.Web, :controller
 
+  alias GitRekt.Git
+
   alias GitGud.User
   alias GitGud.UserQuery
 
@@ -29,14 +31,25 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user" => username, "repo" => path} = _params) do
-    with user when not is_nil(user) <- UserQuery.get(username),
-         repo when not is_nil(repo) <- RepoQuery.user_repository(user, path),
-         true <- Repo.can_read?(user, repo) do
-      render(conn, "show.json", repository: repo)
-    else
-      nil   -> {:error, :not_found}
-      false -> {:error, :unauthorized}
+    case fetch({username, path}, conn.assigns[:user], :read) do
+      {:ok, repo} -> render(conn, "show.json", repository: repo)
+      {:error, reason} -> {:error, reason}
     end
+  end
+
+  @doc """
+  Browses a repository's tree by path.
+  """
+  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => paths} = _params) do
+    with {:ok, repo} <- fetch({username, path} , conn.assigns[:user], :read),
+         {:ok, handle} <- Git.repository_open(Repo.git_dir(repo)),
+         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
+         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
+         {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, _mode, :blob, oid, _name} <- Git.tree_bypath(tree, Path.join(paths)),
+         {:ok, :blob, blob} <- Git.object_lookup(handle, oid),
+         {:ok, data} <- Git.blob_content(blob), do:
+      json(conn, %{"size" => Git.blob_size(blob), "data" => data})
   end
 
   @doc """
@@ -63,7 +76,7 @@ defmodule GitGud.Web.RepositoryController do
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"user" => username, "repo" => path, "repository" => repo_params}) do
     repo_params = Map.delete(repo_params, "owner_id")
-    with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
+    with {:ok, repo} <- fetch({username, path}, conn.assigns[:user], :write),
          {:ok, repo} <- Repo.update(repo, repo_params), do:
       render(conn, "show.json", repository: repo)
   end
@@ -73,7 +86,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"user" => username, "repo" => path} = _params) do
-    with {:ok, repo} <- fetch_and_ensure_owner({username, path}, conn.assigns[:user]),
+    with {:ok, repo} <- fetch({username, path}, conn.assigns[:user], :write),
          {:ok, _del} <- Repo.delete(repo), do:
       send_resp(conn, :no_content, "")
   end
@@ -82,11 +95,23 @@ defmodule GitGud.Web.RepositoryController do
   # Helpers
   #
 
-  defp fetch_and_ensure_owner({username, path}, %User{username: username}) do
+  defp fetch({username, path}, %User{username: username}, _auth_mode) do
     if repository = RepoQuery.user_repository(username, path),
       do: {:ok, repository},
     else: {:error, :not_found}
   end
 
-  defp fetch_and_ensure_owner(_repo, _user), do: {:error, :unauthorized}
+  defp fetch({username, path}, auth_user, auth_mode) do
+    with user when not is_nil(user) <- UserQuery.get(username),
+         repo when not is_nil(repo) <- RepoQuery.user_repository(user, path),
+         true <- has_access?(auth_user, repo, auth_mode) do
+      {:ok, repo}
+    else
+      nil   -> {:error, :not_found}
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp has_access?(user, repo, :read), do: Repo.can_read?(user, repo)
+  defp has_access?(user, repo, :write), do: Repo.can_write?(user, repo)
 end
