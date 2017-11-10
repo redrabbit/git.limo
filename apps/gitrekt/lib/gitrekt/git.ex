@@ -343,7 +343,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns the size in bytes of the given `blob`.
   """
-  @spec blob_size(blob) :: {:ok, integer} | :error
+  @spec blob_size(blob) :: integer | :error
   def blob_size(_blob) do
     raise Code.LoadError, file: @nif_path_lib
   end
