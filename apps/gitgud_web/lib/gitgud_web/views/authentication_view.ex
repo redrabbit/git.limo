@@ -3,6 +3,6 @@ defmodule GitGud.Web.AuthenticationView do
   use GitGud.Web, :view
 
   def render("token.json", %{token: token}) do
-    %{owner: token}
+    %{token: token}
   end
 end
