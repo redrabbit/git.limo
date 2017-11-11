@@ -19,7 +19,6 @@ defmodule GitRekt.Git do
   @type config        :: reference
   @type blob          :: reference
   @type commit        :: reference
-  @type tree          :: reference
   @type tag           :: reference
 
   @type obj           :: blob | commit | tree | tag
@@ -34,6 +33,9 @@ defmodule GitRekt.Git do
     oid,
     binary
   }
+
+  @type tree          :: reference
+  @type tree_entry    :: {integer, :blob | :tree, oid, binary}
 
   @type index         :: reference
   @type index_entry   :: {
@@ -190,6 +192,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns a stream for the references that match the specific `glob` pattern.
   """
+  @spec reference_stream(repo, binary | :undefined) :: Stream.t
   def reference_stream(repo, glob \\ :undefined) do
     case reference_iterator(repo, glob) do
       {:ok, iter} -> Stream.resource(fn -> iter end, &reference_stream_next/1,fn _iter -> :ok end)
@@ -325,6 +328,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the number of entries listed in the given `tree`.
+  """
+  @spec tree_count(tree) :: non_neg_integer
+  def tree_count(_tree) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Looks for a tree entry by its position in the given `tree`.
   """
   @spec tree_nth(tree, non_neg_integer) :: {:ok, integer, atom, binary, binary} | {:error, term}
@@ -333,11 +344,19 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Returns the number of entries listed in the given `tree`.
+  Returns all entries in the given `tree`.
   """
-  @spec tree_count(tree) :: non_neg_integer
-  def tree_count(_tree) do
-    raise Code.LoadError, file: @nif_path_lib
+  @spec tree_list(tree) :: [tree_entry]
+  def tree_list(tree) do
+    try do
+      for i <- 0..tree_count(tree)-1 do
+        {:ok, mode, type, oid, path} = tree_nth(tree, i)
+        {mode, type, oid, path}
+      end
+    rescue
+      MatchError ->
+        []
+    end
   end
 
   @doc """
