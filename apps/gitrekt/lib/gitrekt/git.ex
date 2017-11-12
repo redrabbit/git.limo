@@ -320,6 +320,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Retrieves a tree entry owned by the given `tree`, given its id.
+  """
+  @spec tree_byid(tree, oid) :: {:ok, integer, atom, binary, binary} | {:error, term}
+  def tree_byid(_tree, _oid) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Retrieves a tree entry contained in the given `tree` or in any of its subtrees, given its relative path.
   """
   @spec tree_bypath(tree, Path.t) :: {:ok, integer, atom, binary, binary} | {:error, term}

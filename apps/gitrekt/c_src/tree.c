@@ -38,6 +38,36 @@ static ERL_NIF_TERM tree_entry_to_term(ErlNifEnv *env, const git_tree_entry *ent
 }
 
 ERL_NIF_TERM
+geef_tree_byid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	ErlNifBinary bin;
+	geef_object *obj;
+    git_oid id;
+	git_tree_entry *entry;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (bin.size != GIT_OID_RAWSZ)
+		return enif_make_badarg(env);
+
+	git_oid_fromraw(&id, bin.data);
+
+	entry = git_tree_entry_byid((git_tree *)obj->obj, &id);
+    if (entry == NULL)
+        return geef_oom(env);
+
+	return tree_entry_to_term(env, entry);
+}
+
+ERL_NIF_TERM
 geef_tree_bypath(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_object *obj;
