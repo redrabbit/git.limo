@@ -43,15 +43,6 @@ defmodule GitGud.Repo do
   def can_read?(_user, _repo), do: true
 
   @doc """
-  Returns the absolute path to the Git workdir for the given `repo`.
-  """
-  @spec workdir(t) :: Path.t
-  def workdir(%__MODULE__{} = repo) do
-    repo = QuerySet.preload(repo, :owner)
-    Path.join([@root_path, repo.owner.username, repo.path])
-  end
-
-  @doc """
   Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
   """
   @spec can_write?(User.t, t) :: boolean
@@ -140,6 +131,15 @@ defmodule GitGud.Repo do
       {:ok, repo} -> repo
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
+  end
+
+  @doc """
+  Returns the absolute path to the Git workdir for the given `repo`.
+  """
+  @spec workdir(t) :: Path.t
+  def workdir(%__MODULE__{} = repo) do
+    repo = QuerySet.preload(repo, :owner)
+    Path.join([@root_path, repo.owner.username, repo.path])
   end
 
   #
