@@ -38,6 +38,28 @@ static ERL_NIF_TERM tree_entry_to_term(ErlNifEnv *env, const git_tree_entry *ent
 }
 
 ERL_NIF_TERM
+geef_tree_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_object *obj;
+	git_repository *repo;
+	geef_repository *res_repo;
+	ERL_NIF_TERM term_repo;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	repo = git_tree_owner((git_tree *)obj->obj);
+	if (repo == NULL)
+        return geef_error(env);
+
+	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
+	res_repo->repo = repo;
+	term_repo = enif_make_resource(env, res_repo);
+
+	return enif_make_tuple2(env, atoms.ok, term_repo);
+}
+
+ERL_NIF_TERM
 geef_tree_byid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	ErlNifBinary bin;

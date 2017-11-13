@@ -320,6 +320,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the repository that contains the given `tree`.
+  """
+  @spec tree_repository(tree) :: {:ok, repo} | {:error, term}
+  def tree_repository(_tree) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Retrieves a tree entry owned by the given `tree`, given its id.
   """
   @spec tree_byid(tree, oid) :: {:ok, integer, atom, binary, binary} | {:error, term}
