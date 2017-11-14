@@ -12,6 +12,11 @@ defmodule GitGud.Web.RepositoryView do
     %{data: render_one(repository, __MODULE__, "repository.json")}
   end
 
+  def render("branches.json", %{refs: refs}) do
+    branches =  Enum.into(refs, %{}, fn {_ref, shorthand, :oid, oid} -> {shorthand, Git.oid_fmt(oid)} end)
+    %{data: branches}
+  end
+
   def render("browse.json", %{tree: tree, entry: {:blob, oid, path, mode}}) do
     {:ok, handle} = Git.tree_repository(tree)
     {:ok, :blob, blob} = Git.object_lookup(handle, oid)

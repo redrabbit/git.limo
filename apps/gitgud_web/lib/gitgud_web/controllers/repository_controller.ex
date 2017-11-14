@@ -38,28 +38,6 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Browses a repository's tree by path.
-  """
-  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => []} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
-         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
-         {:ok, _oid, tree} <- Git.commit_tree(commit), do:
-      render(conn, "browse.json", tree: tree)
-  end
-
-  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => paths} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
-         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
-         {:ok, _oid, tree} <- Git.commit_tree(commit),
-         {:ok, mode, type, oid, path} <- Git.tree_bypath(tree, Path.join(paths)), do:
-      render(conn, "browse.json", tree: tree, entry: {type, oid, path, mode})
-  end
-
-  @doc """
   Creates a new repository.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
@@ -96,6 +74,38 @@ defmodule GitGud.Web.RepositoryController do
     with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
          {:ok, _del} <- Repo.delete(repo), do:
       send_resp(conn, :no_content, "")
+  end
+
+  @doc """
+  Returns a repository's list of available branches.
+  """
+  @spec branches(Plug.t, map) :: Plug.t
+  def branches(conn, %{"user" => username, "repo" => path} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)), do:
+      render(conn, "branches.json", refs: Git.reference_stream(handle, "refs/heads/*"))
+  end
+
+  @doc """
+  Browses a repository's tree by path.
+  """
+  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => []} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
+         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
+         {:ok, _oid, tree} <- Git.commit_tree(commit), do:
+      render(conn, "browse.json", tree: tree)
+  end
+
+  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => paths} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
+         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
+         {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, mode, type, oid, path} <- Git.tree_bypath(tree, Path.join(paths)), do:
+      render(conn, "browse.json", tree: tree, entry: {type, oid, path, mode})
   end
 
   #
