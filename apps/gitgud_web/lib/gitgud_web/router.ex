@@ -2,9 +2,23 @@ defmodule GitGud.Web.Router do
   @moduledoc false
   use GitGud.Web, :router
 
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
     plug AuthenticationPlug
+  end
+
+  scope "/", GitGud.Web do
+    pipe_through :browser
+
+    get "/",                        PageController, :index
   end
 
   scope "/api", GitGud.Web do

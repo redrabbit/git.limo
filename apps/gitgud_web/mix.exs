@@ -31,6 +31,7 @@ defmodule GitGud.Web.Mixfile do
   defp deps do
     [{:cowboy, "~> 1.1"},
      {:phoenix, "~> 1.3"},
+     {:phoenix_html, "~> 2.10"},
      {:phoenix_pubsub, "~> 1.0"},
      {:phoenix_ecto, "~> 3.3"},
      {:gettext, "~> 0.13"},
