@@ -24,7 +24,7 @@ defmodule GitGud.Web.Router do
   scope "/api", GitGud.Web do
     pipe_through :api
 
-    post "/token",                  AuthenticationController, :create, as: :auth_token
+    post "/token",                  AuthenticationController, :create, as: :user_token
 
     scope "/users/:user" do
       scope "/repos" do
