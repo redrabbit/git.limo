@@ -1,6 +1,6 @@
 defmodule GitGud.Web.PageController do
   @moduledoc """
-  Module responsible for handling CRUD repository requests.
+  Module responsible for rendering a single page application with Vue.js.
   """
 
   use GitGud.Web, :controller
