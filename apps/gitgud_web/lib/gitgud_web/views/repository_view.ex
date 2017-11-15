@@ -5,29 +5,28 @@ defmodule GitGud.Web.RepositoryView do
   alias GitRekt.Git
 
   def render("index.json", %{repositories: repositories}) do
-    %{data: render_many(repositories, __MODULE__, "repository.json")}
+    %{repositories: render_many(repositories, __MODULE__, "repository.json")}
   end
 
   def render("show.json", %{repository: repository}) do
-    %{data: render_one(repository, __MODULE__, "repository.json")}
+    %{repository: render_one(repository, __MODULE__, "repository.json")}
   end
 
   def render("branches.json", %{refs: refs}) do
-    %{data: render_many(refs, __MODULE__, "branch.json", as: :branch)}
+    %{branches: render_many(refs, __MODULE__, "branch.json", as: :branch)}
   end
 
   def render("commits.json", %{revwalk: walk}) do
     {:ok, handle} = Git.revwalk_repository(walk)
     commits = render_many(Enum.map(Git.revwalk_stream(walk), &resolve_revwalk_commit(&1, handle)), __MODULE__, "commit.json", as: :commit)
-    IO.inspect commits
-    %{data: commits}
+    %{commits: commits}
   end
 
   def render("browse.json", %{tree: tree, entry: {:blob, oid, path, mode}}) do
     {:ok, handle} = Git.tree_repository(tree)
     {:ok, :blob, blob} = Git.object_lookup(handle, oid)
     entry = render_one({:blob, blob, path, mode}, __MODULE__, "tree.json", as: :tree)
-    %{data: entry}
+    %{blob: entry}
   end
 
   def render("browse.json", %{tree: tree, entry: {:tree, oid, path, mode}}) do
@@ -35,14 +34,14 @@ defmodule GitGud.Web.RepositoryView do
     {:ok, :tree, tree} = Git.object_lookup(handle, oid)
     entry = render_one({:tree, tree, path, mode}, __MODULE__, "tree.json", as: :tree)
     leafs = render_many(Enum.map(Git.tree_list(tree), &resolve_tree_entry(&1, handle)), __MODULE__, "tree.json", as: :tree)
-    %{data: Map.put(entry, :tree, leafs)}
+    %{tree: Map.put(entry, :tree, leafs)}
   end
 
   def render("browse.json", %{tree: tree}) do
     {:ok, handle} = Git.tree_repository(tree)
     entry = render_one({:tree, tree, "/", 16384}, __MODULE__, "tree.json", as: :tree)
     leafs = render_many(Enum.map(Git.tree_list(tree), &resolve_tree_entry(&1, handle)), __MODULE__, "tree.json", as: :tree)
-    %{data: Map.put(entry, :tree, leafs)}
+    %{tree: Map.put(entry, :tree, leafs)}
   end
 
   def render("repository.json", %{repository: repository}) do
