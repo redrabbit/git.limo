@@ -1,7 +1,7 @@
 import axios from 'axios'
-import Hello from './vue/hello.vue'
+import BranchSelect from './vue/repo/branch-select.vue'
 
 new Vue({
   el: '#app',
-  components: { Hello }
+  components: { BranchSelect }
 });
