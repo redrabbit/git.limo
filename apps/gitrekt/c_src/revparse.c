@@ -28,7 +28,6 @@ geef_revparse_single(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	if (git_revparse_single(&obj->obj, repo->repo, (char *) bin.data) < 0) {
 		enif_release_binary(&bin);
-		enif_release_resource(obj);
 		return geef_error(env);
 	}
 
