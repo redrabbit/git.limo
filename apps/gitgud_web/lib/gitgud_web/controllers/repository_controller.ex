@@ -77,13 +77,26 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns a repository's list of available branches.
+  Returns all available branch for a repository.
   """
   @spec branches(Plug.t, map) :: Plug.t
   def branches(conn, %{"user" => username, "repo" => path} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle} <- Git.repository_open(Repo.workdir(repo)), do:
       render(conn, "branches.json", refs: Git.reference_stream(handle, "refs/heads/*"))
+  end
+
+  @doc """
+  Returns all parent commits for a repository revision.
+  """
+  @spec commits(Plug.t, map) :: Plug.t
+  def commits(conn, %{"user" => username, "repo" => path} = params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+         {:ok, _commit, :commit, oid} <- Git.revparse_single(handle, Map.get(params, "spec", "HEAD")),
+         {:ok, walk} <- Git.revwalk_new(handle),
+          :ok <- Git.revwalk_push(walk, oid), do:
+      render(conn, "commits.json", revwalk: walk)
   end
 
   @doc """
