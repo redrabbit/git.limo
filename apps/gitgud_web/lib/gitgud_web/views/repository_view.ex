@@ -57,7 +57,9 @@ defmodule GitGud.Web.RepositoryView do
 
   def render("commit.json", %{commit: {oid, commit}}) do
     {:ok, message} = Git.commit_message(commit)
-    %{sha: Git.oid_fmt(oid), message: message}
+    {:ok, name, email, time, _offset} = Git.commit_author(commit)
+    {:ok, date_time} = DateTime.from_unix(time)
+    %{sha: Git.oid_fmt(oid), message: message, author: %{name: name, email: email, date: DateTime.to_iso8601(date_time)}}
   end
 
   def render("tree.json", %{tree: {:blob, nil, path, mode}}) do
