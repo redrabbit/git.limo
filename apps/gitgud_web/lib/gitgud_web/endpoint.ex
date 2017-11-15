@@ -11,7 +11,11 @@ defmodule GitGud.Web.Endpoint do
     at: "/", from: :gitgud_web, gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
-  if code_reloading?, do: plug Phoenix.CodeReloader
+  if code_reloading? do
+    socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
+    plug Phoenix.LiveReloader
+    plug Phoenix.CodeReloader
+  end
 
   plug Plug.RequestId
   plug Plug.Logger

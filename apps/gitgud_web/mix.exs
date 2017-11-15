@@ -33,6 +33,7 @@ defmodule GitGud.Web.Mixfile do
      {:phoenix, "~> 1.3"},
      {:phoenix_html, "~> 2.10"},
      {:phoenix_pubsub, "~> 1.0"},
+     {:phoenix_live_reload, "~> 1.1", only: :dev},
      {:phoenix_ecto, "~> 3.3"},
      {:gettext, "~> 0.13"},
      {:gitgud, in_umbrella: true}]
