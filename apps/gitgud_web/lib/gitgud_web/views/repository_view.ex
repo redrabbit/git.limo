@@ -26,7 +26,7 @@ defmodule GitGud.Web.RepositoryView do
     {:ok, handle} = Git.tree_repository(tree)
     {:ok, :blob, blob} = Git.object_lookup(handle, oid)
     entry = render_one({:blob, blob, path, mode}, __MODULE__, "tree.json", as: :tree)
-    %{blob: entry}
+    %{tree: entry}
   end
 
   def render("browse.json", %{tree: tree, entry: {:tree, oid, path, mode}}) do

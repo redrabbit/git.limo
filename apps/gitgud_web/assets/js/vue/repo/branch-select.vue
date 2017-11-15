@@ -1,6 +1,8 @@
 <template>
     <select v-if="branches.length">
-      <option v-for="branch of branches" :value="branch.sha">{{ branch.name }}</option>
+      <option v-for="branch of branches" :value="branch.sha">
+        {{ branch.name }}
+      </option>
     </select>
 </template>
 

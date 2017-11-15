@@ -15,17 +15,9 @@ defmodule GitGud.Web.Router do
     plug AuthenticationPlug
   end
 
-  scope "/", GitGud.Web do
-    pipe_through :browser
-
-    get "/",                        PageController, :index
-  end
-
   scope "/api", GitGud.Web do
     pipe_through :api
-
     post "/token",                  AuthenticationController, :create, as: :user_token
-
     scope "/users/:user" do
       scope "/repos" do
         resources "/",              RepositoryController, param: "repo", except: [:new, :edit]
@@ -43,5 +35,10 @@ defmodule GitGud.Web.Router do
     get "/HEAD",                   GitBackendController, :head
     post "/git-upload-pack",       GitBackendController, :upload_pack
     post "/git-receive-pack",      GitBackendController, :receive_pack
+  end
+
+  scope "/", GitGud.Web do
+    pipe_through :browser
+    get "/*page",                   PageController, :index
   end
 end
