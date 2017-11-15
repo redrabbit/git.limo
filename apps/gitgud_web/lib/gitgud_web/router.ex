@@ -31,7 +31,7 @@ defmodule GitGud.Web.Router do
         resources "/",              RepositoryController, param: "repo", except: [:new, :edit]
         scope "/:repo" do
           get "/branches",          RepositoryController, :branches
-          get "/tree/:dwim/*path",  RepositoryController, :browse
+          get "/tree/:spec/*path",  RepositoryController, :browse
         end
       end
     end

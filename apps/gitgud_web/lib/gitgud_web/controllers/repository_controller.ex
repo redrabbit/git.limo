@@ -89,20 +89,18 @@ defmodule GitGud.Web.RepositoryController do
   @doc """
   Browses a repository's tree by path.
   """
-  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => []} = _params) do
+  def browse(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
-         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
+         {:ok, commit, :commit, _oid} <- Git.revparse_single(handle, spec),
          {:ok, _oid, tree} <- Git.commit_tree(commit), do:
       render(conn, "browse.json", tree: tree)
   end
 
-  def browse(conn, %{"user" => username, "repo" => path, "dwim" => shorthand, "path" => paths} = _params) do
+  def browse(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, _ref, :oid, oid} <- Git.reference_dwim(handle, shorthand),
-         {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
+         {:ok, commit, :commit, _oid} <- Git.revparse_single(handle, spec),
          {:ok, _oid, tree} <- Git.commit_tree(commit),
          {:ok, mode, type, oid, path} <- Git.tree_bypath(tree, Path.join(paths)), do:
       render(conn, "browse.json", tree: tree, entry: {type, oid, path, mode})
