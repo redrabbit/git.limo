@@ -14,8 +14,10 @@
   },
   "devDependencies": {
     "babel-brunch": "6.1.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "brunch": "2.10.9",
     "clean-css-brunch": "2.10.0",
-    "uglify-js-brunch": "2.10.0"
+    "uglify-js-brunch": "2.10.0",
+    "vue-brunch": "^2.0.1"
   }
 }
