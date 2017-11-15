@@ -121,7 +121,7 @@ defmodule GitRekt.Git do
   Initializes a new repository at the given `path`.
   """
   @spec repository_init(Path.t, boolean) :: repo
-  def repository_init(_path, _bare) do
+  def repository_init(_path, _bare \\ false) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -419,7 +419,7 @@ defmodule GitRekt.Git do
   Adds a new root for the traversal.
   """
   @spec revwalk_push(revwalk, oid, boolean) :: :ok | {:error, term}
-  def revwalk_push(_walk, _oid, _hide) do
+  def revwalk_push(_walk, _oid, _hide \\ false) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
