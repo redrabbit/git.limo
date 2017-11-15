@@ -464,6 +464,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the repository on which the given `walker` is operating.
+  """
+  @spec revwalk_repository(revwalk) :: {:ok, repo} | {:error, term}
+  def revwalk_repository(_walk) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Create an new in-memory index object.
   """
   @spec index_new() :: {:ok, index} | {:error, term}

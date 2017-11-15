@@ -12,6 +12,23 @@ void geef_revwalk_free(ErlNifEnv *env, void *cd)
 }
 
 ERL_NIF_TERM
+geef_revwalk_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_revwalk *walk;
+	geef_repository *res_repo;
+	ERL_NIF_TERM term_repo;
+
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+		return enif_make_badarg(env);
+
+	res_repo = walk->repo;
+	term_repo = enif_make_resource(env, res_repo);
+	enif_release_resource(res_repo);
+
+	return enif_make_tuple2(env, atoms.ok, term_repo);
+}
+
+ERL_NIF_TERM
 geef_revwalk_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_repository *repo;
