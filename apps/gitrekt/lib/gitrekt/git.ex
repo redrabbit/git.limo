@@ -184,7 +184,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns the next reference.
   """
-  @spec reference_next(ref_iter) :: {:ok, binary, binary, ref_type, binary} | {:error, :iterover | term}
+  @spec reference_next(ref_iter) :: {:ok, binary, binary, ref_type, binary} | {:error, term}
   def reference_next(_iter) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -195,7 +195,7 @@ defmodule GitRekt.Git do
   @spec reference_stream(repo, binary | :undefined) :: Stream.t
   def reference_stream(repo, glob \\ :undefined) do
     case reference_iterator(repo, glob) do
-      {:ok, iter} -> Stream.resource(fn -> iter end, &reference_stream_next/1,fn _iter -> :ok end)
+      {:ok, iter} -> Stream.resource(fn -> iter end, &reference_stream_next/1, fn _iter -> :ok end)
     end
   end
 
@@ -411,7 +411,7 @@ defmodule GitRekt.Git do
   Creates a new revision walk object for the given `repo`.
   """
   @spec revwalk_new(repo) :: {:ok, reference} | {:error, term}
-  def revwalk_new(_Repo) do
+  def revwalk_new(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -453,6 +453,14 @@ defmodule GitRekt.Git do
   @spec revwalk_reset(revwalk) :: revwalk
   def revwalk_reset(_walk) do
     raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a stream for the given revision `walk`.
+  """
+  @spec revwalk_stream(revwalk) :: Stream.t
+  def revwalk_stream(walk) do
+    Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)
   end
 
   @doc """
@@ -644,6 +652,15 @@ defmodule GitRekt.Git do
         {[{name, type, shortname, target}], iter}
       {:error, :iterover} ->
         {:halt, iter}
+    end
+  end
+
+  defp revwalk_stream_next(walk) do
+    case revwalk_next(walk) do
+      {:ok, oid} ->
+        {[oid], walk}
+      {:error, :iterover} ->
+        {:halt, walk}
     end
   end
 end
