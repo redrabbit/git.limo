@@ -55,7 +55,6 @@ geef_tree_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
 	res_repo->repo = repo;
 	term_repo = enif_make_resource(env, res_repo);
-	enif_release_resource(res_repo);
 
 	return enif_make_tuple2(env, atoms.ok, term_repo);
 }

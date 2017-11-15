@@ -23,7 +23,6 @@ geef_revwalk_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	res_repo = walk->repo;
 	term_repo = enif_make_resource(env, res_repo);
-	enif_release_resource(res_repo);
 
 	return enif_make_tuple2(env, atoms.ok, term_repo);
 }
