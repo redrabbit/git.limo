@@ -60,13 +60,13 @@ defmodule GitGud.Web.RepositoryView do
     %{sha: Git.oid_fmt(oid), message: message}
   end
 
+  def render("tree.json", %{tree: {:blob, nil, path, mode}}) do
+    %{type: :blob, path: path, mode: mode}
+  end
+
   def render("tree.json", %{tree: {:blob, blob, path, mode}}) do
-    unless is_nil(blob) do
-      {:ok, data} = Git.blob_content(blob)
-      %{type: :blob, path: path, mode: mode, blob: data}
-    else
-      %{type: :blob, path: path, mode: mode}
-    end
+    {:ok, data} = Git.blob_content(blob)
+    %{type: :blob, path: path, mode: mode, blob: data}
   end
 
   def render("tree.json", %{tree: {:tree, _tree, path, mode}}) do

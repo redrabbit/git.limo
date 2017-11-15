@@ -77,7 +77,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns all available branch for a repository.
+  Returns all available branches for a repository.
   """
   @spec branches(Plug.t, map) :: Plug.t
   def branches(conn, %{"user" => username, "repo" => path} = _params) do
@@ -87,7 +87,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns all parent commits for a repository revision.
+  Returns all commits for a repository revision.
   """
   @spec commits(Plug.t, map) :: Plug.t
   def commits(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
