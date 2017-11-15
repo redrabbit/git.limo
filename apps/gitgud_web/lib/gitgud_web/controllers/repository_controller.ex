@@ -90,10 +90,10 @@ defmodule GitGud.Web.RepositoryController do
   Returns all parent commits for a repository revision.
   """
   @spec commits(Plug.t, map) :: Plug.t
-  def commits(conn, %{"user" => username, "repo" => path} = params) do
+  def commits(conn, %{"user" => username, "repo" => path, "spec" => spec} = params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, _commit, :commit, oid} <- Git.revparse_single(handle, Map.get(params, "spec", "HEAD")),
+         {:ok, _commit, :commit, oid} <- Git.revparse_single(handle, spec),
          {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_push(walk, oid), do:
       render(conn, "commits.json", revwalk: walk)
