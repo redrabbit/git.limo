@@ -8,7 +8,7 @@ defmodule GitRekt.Git do
   @type repo          :: reference
 
   @type oid           :: binary
-  @type signature     :: term
+  @type signature     :: {binary, binary, non_neg_integer, non_neg_integer}
 
   @type odb           :: reference
   @type odb_type      :: atom
@@ -320,6 +320,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the author of the given `commit`.
+  """
+  @spec commit_author(commit) :: {:ok, binary, binary, non_neg_integer, non_neg_integer} | {:error, term}
+  def commit_author(_commit) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns the repository that contains the given `tree`.
   """
   @spec tree_repository(tree) :: {:ok, repo} | {:error, term}
@@ -581,7 +589,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns the default signature for the given `repo`.
   """
-  @spec signature_default(repo) :: {:ok, :binary, :binary, non_neg_integer, non_neg_integer} | {:error, term}
+  @spec signature_default(repo) :: {:ok, binary, binary, non_neg_integer, non_neg_integer} | {:error, term}
   def signature_default(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
