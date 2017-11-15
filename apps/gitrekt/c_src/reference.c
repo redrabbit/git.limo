@@ -242,6 +242,7 @@ geef_reference_resolve(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	size_t len;
 	const char *name;
 	ErlNifBinary bin, id;
+    ERL_NIF_TERM shorthand;
 	geef_repository *repo;
 	git_reference *ref, *resolved;
 
@@ -272,9 +273,13 @@ geef_reference_resolve(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (geef_oid_bin(&id, git_reference_target(resolved)) < 0)
 		goto on_oom;
 
+
+	if (ref_shorthand(&shorthand, env, resolved) < 0)
+		goto on_oom;
+
 	git_reference_free(resolved);
 
-	return enif_make_tuple3(env, atoms.ok, enif_make_binary(env, &bin), enif_make_binary(env, &id));
+	return enif_make_tuple4(env, atoms.ok, enif_make_binary(env, &bin), shorthand, enif_make_binary(env, &id));
 
 on_oom:
 	git_reference_free(resolved);

@@ -202,7 +202,7 @@ defmodule GitRekt.Git do
   @doc """
   Resolve a symbolic reference to a direct reference.
   """
-  @spec reference_resolve(repo, binary) :: {:ok, binary, oid} | {:error, term}
+  @spec reference_resolve(repo, binary) :: {:ok, binary, binary, oid} | {:error, term}
   def reference_resolve(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
