@@ -12,6 +12,7 @@ typedef struct {
 	geef_repository *repo;
 } geef_object;
 
+ERL_NIF_TERM geef_object_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_object_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 

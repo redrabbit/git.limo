@@ -34,23 +34,6 @@ static ERL_NIF_TERM tree_entry_to_term(ErlNifEnv *env, const git_tree_entry *ent
 	return enif_make_tuple5(env, atoms.ok, enif_make_int(env, git_tree_entry_filemode(entry)),
 				 geef_object_type2atom(git_tree_entry_type(entry)),
 				 enif_make_binary(env, &oid), enif_make_binary(env, &name));
-
-}
-
-ERL_NIF_TERM
-geef_tree_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{
-	geef_object *obj;
-	geef_repository *res_repo;
-	ERL_NIF_TERM term_repo;
-
-	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
-		return enif_make_badarg(env);
-
-	res_repo = obj->repo;
-	term_repo = enif_make_resource(env, res_repo);
-
-	return enif_make_tuple2(env, atoms.ok, term_repo);
 }
 
 ERL_NIF_TERM
@@ -135,5 +118,5 @@ geef_tree_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
 		return enif_make_badarg(env);
 
-	return enif_make_uint64(env, git_tree_entrycount((git_tree *) obj->obj));
+	return enif_make_tuple2(env, atoms.ok, enif_make_uint64(env, git_tree_entrycount((git_tree *) obj->obj)));
 }

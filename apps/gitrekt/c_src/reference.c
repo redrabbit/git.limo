@@ -5,41 +5,6 @@
 #include <string.h>
 #include <git2.h>
 
-ERL_NIF_TERM
-geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
-{
-	size_t i;
-	git_strarray array;
-	geef_repository *repo;
-	ERL_NIF_TERM list;
-
-	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
-		return enif_make_badarg(env);
-
-	if (git_reference_list(&array, repo->repo) < 0)
-		return geef_error(env);
-
-	list = enif_make_list(env, 0);
-	for (i = 0; i < array.count; i++) {
-		ErlNifBinary bin;
-		size_t len = strlen(array.strings[i]);
-
-		if (!enif_alloc_binary(len, &bin))
-			goto on_error;
-
-		memcpy(bin.data, array.strings[i], len);
-		list = enif_make_list_cell(env, enif_make_binary(env, &bin), list);
-	}
-
-	git_strarray_free(&array);
-
-	return list;
-
-on_error:
-	git_strarray_free(&array);
-	return geef_oom(env);
-}
-
 static int ref_target(ERL_NIF_TERM *out, ErlNifEnv *env, git_reference *ref)
 {
 	ErlNifBinary bin;
@@ -102,6 +67,41 @@ static ERL_NIF_TERM ref_shorthand(ERL_NIF_TERM *out, ErlNifEnv *env, git_referen
 
     *out = enif_make_binary(env, &bin);
     return 0;
+}
+
+ERL_NIF_TERM
+geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	size_t i;
+	git_strarray array;
+	geef_repository *repo;
+	ERL_NIF_TERM list;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	if (git_reference_list(&array, repo->repo) < 0)
+		return geef_error(env);
+
+	list = enif_make_list(env, 0);
+	for (i = 0; i < array.count; i++) {
+		ErlNifBinary bin;
+		size_t len = strlen(array.strings[i]);
+
+		if (!enif_alloc_binary(len, &bin))
+			goto on_error;
+
+		memcpy(bin.data, array.strings[i], len);
+		list = enif_make_list_cell(env, enif_make_binary(env, &bin), list);
+	}
+
+	git_strarray_free(&array);
+
+	return enif_make_tuple2(env, atoms.ok, list);
+
+on_error:
+	git_strarray_free(&array);
+	return geef_oom(env);
 }
 
 ERL_NIF_TERM

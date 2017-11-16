@@ -16,7 +16,7 @@ geef_blob_size(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	blob = (git_blob *)obj->obj;
 
-	return enif_make_uint64(env, git_blob_rawsize(blob)); 
+	return enif_make_tuple2(env, atoms.ok, enif_make_uint64(env, git_blob_rawsize(blob)));
 }
 
 ERL_NIF_TERM

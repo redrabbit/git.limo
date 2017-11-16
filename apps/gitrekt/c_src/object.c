@@ -43,6 +43,22 @@ git_otype geef_object_atom2type(ERL_NIF_TERM term)
 }
 
 ERL_NIF_TERM
+geef_object_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_object *obj;
+	geef_repository *res_repo;
+	ERL_NIF_TERM term_repo;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	res_repo = obj->repo;
+	term_repo = enif_make_resource(env, res_repo);
+
+	return enif_make_tuple2(env, atoms.ok, term_repo);
+}
+
+ERL_NIF_TERM
 geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_repository *repo;

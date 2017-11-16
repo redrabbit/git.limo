@@ -120,7 +120,7 @@ defmodule GitRekt.Git do
   @doc """
   Initializes a new repository at the given `path`.
   """
-  @spec repository_init(Path.t, boolean) :: repo
+  @spec repository_init(Path.t, boolean) :: {:ok, repo} | {:error, term}
   def repository_init(_path, _bare \\ false) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -128,7 +128,7 @@ defmodule GitRekt.Git do
   @doc """
   Looks for a repository and returns its path.
   """
-  @spec repository_discover(Path.t) :: {:ok, Path.t} | :error
+  @spec repository_discover(Path.t) :: {:ok, Path.t} | {:error, term}
   def repository_discover(_path) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -136,7 +136,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns all references for the given `repo`.
   """
-  @spec reference_list(repo) :: [binary]
+  @spec reference_list(repo) :: {:ok, [binary]} | {:error, term}
   def reference_list(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -160,7 +160,7 @@ defmodule GitRekt.Git do
   @doc """
   Similar to `reference_list/1` but allows glob patterns.
   """
-  @spec reference_glob(repo, binary) :: [binary]
+  @spec reference_glob(repo, binary) :: {:ok, [binary]} | {:error, term}
   def reference_glob(_repo, _glob) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -192,10 +192,11 @@ defmodule GitRekt.Git do
   @doc """
   Returns a stream for the references that match the specific `glob` pattern.
   """
-  @spec reference_stream(repo, binary | :undefined) :: Stream.t
+  @spec reference_stream(repo, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
   def reference_stream(repo, glob \\ :undefined) do
     case reference_iterator(repo, glob) do
-      {:ok, iter} -> Stream.resource(fn -> iter end, &reference_stream_next/1, fn _iter -> :ok end)
+      {:ok, iter} -> {:ok, Stream.resource(fn -> iter end, &reference_stream_next/1, fn _iter -> :ok end)}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -272,6 +273,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the repository that owns the given `obj`.
+  """
+  @spec object_repository(obj) :: {:ok, repo} | {:error, term}
+  def object_repository(_obj) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Looks for an object with the given `oid`.
   """
   @spec object_lookup(repo, oid) :: {:ok, obj_type, obj} | {:error, term}
@@ -328,14 +337,6 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Returns the repository that contains the given `tree`.
-  """
-  @spec tree_repository(tree) :: {:ok, repo} | {:error, term}
-  def tree_repository(_tree) do
-    raise Code.LoadError, file: @nif_path_lib
-  end
-
-  @doc """
   Retrieves a tree entry owned by the given `tree`, given its id.
   """
   @spec tree_byid(tree, oid) :: {:ok, integer, atom, binary, binary} | {:error, term}
@@ -354,7 +355,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns the number of entries listed in the given `tree`.
   """
-  @spec tree_count(tree) :: non_neg_integer
+  @spec tree_count(tree) :: {:ok, non_neg_integer} | {:error, term}
   def tree_count(_tree) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -370,23 +371,17 @@ defmodule GitRekt.Git do
   @doc """
   Returns all entries in the given `tree`.
   """
-  @spec tree_list(tree) :: [tree_entry]
+  @spec tree_list(tree) :: {:ok, [tree_entry]} | {:error, term}
   def tree_list(tree) do
-    try do
-      for i <- 0..tree_count(tree)-1 do
-        {:ok, mode, type, oid, path} = tree_nth(tree, i)
-        {mode, type, oid, path}
-      end
-    rescue
-      MatchError ->
-        []
-    end
+    with {:ok, size} <- tree_count(tree),
+         {:ok, list} <- tree_to_list(tree, size), do:
+      {:ok, list}
   end
 
   @doc """
   Returns the size in bytes of the given `blob`.
   """
-  @spec blob_size(blob) :: integer | :error
+  @spec blob_size(blob) :: {:ok, integer} | {:error, term}
   def blob_size(_blob) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -466,9 +461,12 @@ defmodule GitRekt.Git do
   @doc """
   Returns a stream for the given revision `walk`.
   """
-  @spec revwalk_stream(revwalk) :: Stream.t
+  @spec revwalk_stream(revwalk) :: {:ok, Stream.t} | {:error, term}
   def revwalk_stream(walk) do
-    Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)
+    case revwalk_simplify_first_parent(walk) do
+      :ok -> {:ok, Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -661,6 +659,11 @@ defmodule GitRekt.Git do
   #
   # Helpers
   #
+
+  defp tree_to_list(tree, size) do
+    for i <- 0..size-1, {:ok, mode, type, oid, path} = tree_nth(tree, i), do:
+      {mode, type, oid, path}
+  end
 
   defp reference_stream_next(iter) do
     case reference_next(iter) do
