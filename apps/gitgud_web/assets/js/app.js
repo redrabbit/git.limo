@@ -1,20 +1,29 @@
 import axios from 'axios'
 
-import Router from 'vue-router'
-import Browser from './vue/repo/browser.vue'
+import VueRouter from 'vue-router'
 
-Vue.use(Router)
+import Browser from './components/browser.vue'
+import UserProfile from './components/user_profile.vue'
 
-const router = new Router({
+const router = new VueRouter({
   routes: [
-    {path: '/tree/:spec/:tree*', name: 'browser', component: Browser, props: true}
+    { path: '/:user',
+      name: 'user',
+      component: UserProfile,
+      props: true,
+      children: [
+        { path: ':repo/tree/:spec/:path*',
+          name: 'browser',
+          component: Browser,
+          props: true
+        }
+      ]
+    }
   ],
   mode: 'history',
   saveScrollPosition: true
 })
 
-new Vue({
+const app = new Vue({
   router,
-  el: '#app',
-  components: { Browser }
-});
+}).$mount('#app')
