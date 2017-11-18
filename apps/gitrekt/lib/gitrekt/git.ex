@@ -373,9 +373,10 @@ defmodule GitRekt.Git do
   """
   @spec tree_list(tree) :: {:ok, [tree_entry]} | {:error, term}
   def tree_list(tree) do
-    with {:ok, size} <- tree_count(tree),
-         {:ok, list} <- tree_to_list(tree, size), do:
-      {:ok, list}
+    case tree_count(tree) do
+      {:ok, size} -> {:ok, tree_to_list(tree, size)}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -389,8 +390,16 @@ defmodule GitRekt.Git do
   @doc """
   Returns the raw content of the given `blob`.
   """
-  @spec blob_content(blob) :: {:ok, binary} | :error
+  @spec blob_content(blob) :: {:ok, binary} | {:error, term}
   def blob_content(_blob) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns all tags for the given `repo`.
+  """
+  @spec tag_list(repo) :: {:ok, [binary]} | {:error, term}
+  def tag_list(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -399,6 +408,30 @@ defmodule GitRekt.Git do
   """
   @spec tag_peel(tag) :: {:ok, obj_type, oid, obj} | {:error, term}
   def tag_peel(_tag) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the name of the given `tag`.
+  """
+  @spec tag_name(tag) :: {:ok, binary} | {:error, term}
+  def tag_name(_tag) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the message of the given `tag`.
+  """
+  @spec tag_message(tag) :: {:ok, binary} | {:error, term}
+  def tag_message(_tag) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the author of the given `tag`.
+  """
+  @spec tag_author(tag) :: {:ok, binary, binary, non_neg_integer, non_neg_integer} | {:error, term}
+  def tag_author(_tag) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
