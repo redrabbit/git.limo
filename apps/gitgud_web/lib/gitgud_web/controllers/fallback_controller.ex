@@ -31,4 +31,10 @@ defmodule GitGud.Web.FallbackController do
     |> put_status(:bad_request)
     |> render(ErrorView, :"400", details: reason)
   end
+
+  def call(conn, _val) do
+    conn
+    |> put_status(:internal_server_error)
+    |> render(ErrorView, :"500")
+  end
 end
