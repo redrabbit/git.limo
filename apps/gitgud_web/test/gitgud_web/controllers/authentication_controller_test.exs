@@ -11,14 +11,14 @@ defmodule GitGud.Web.AuthenticationControllerTest do
   end
 
   test "creates token with user credentials", %{conn: conn} do
-      conn = post conn, auth_token_path(conn, :create), username: "redrabbit", password: "test1234"
+      conn = post conn, user_token_path(conn, :create), username: "redrabbit", password: "test1234"
       resp = json_response(conn, :created)
       assert byte_size(resp["token"]) == 100
       assert resp["expiration_time"] == AuthenticationPlug.token_expiration_time()
   end
 
   test "fails to create token with invalid user credentials", %{conn: conn} do
-      conn = post conn, auth_token_path(conn, :create), username: "redrabbit", password: "testpasswd"
+      conn = post conn, user_token_path(conn, :create), username: "redrabbit", password: "testpasswd"
       assert json_response(conn, :unauthorized)
   end
 

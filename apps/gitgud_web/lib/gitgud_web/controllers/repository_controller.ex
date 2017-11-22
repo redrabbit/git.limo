@@ -117,7 +117,7 @@ defmodule GitGud.Web.RepositoryController do
         conn
         |> put_status(:created)
         |> put_resp_header("location", repository_path(conn, :show, repo.owner.username, repo.path))
-        |> render("show.json", repository: repo)
+        |> render("repository.json", repository: repo)
       {:error, reason} ->
         {:error, reason}
     end
@@ -131,7 +131,7 @@ defmodule GitGud.Web.RepositoryController do
     repo_params = Map.delete(repo_params, "owner_id")
     with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
          {:ok, repo} <- Repo.update(repo, repo_params), do:
-      render(conn, "show.json", repository: repo)
+      render(conn, "repository.json", repository: repo)
   end
 
   @doc """
