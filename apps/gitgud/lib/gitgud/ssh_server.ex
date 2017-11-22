@@ -50,7 +50,7 @@ defmodule GitGud.SSHServer do
   Returns a child-spec to use as part of a supervision tree.
   """
   @spec child_spec([integer]) :: Supervisor.Spec.spec
-  def child_spec([port]) do
+  def child_spec([port] = _args) do
     %{id: __MODULE__,
       start: {:ssh, :daemon, [port, daemon_opts()]},
       restart: :permanent,
@@ -63,7 +63,7 @@ defmodule GitGud.SSHServer do
   #
 
   @impl true
-  defdelegate host_key(algo, opts), to: :ssh_file
+  def host_key(algo, opts), do: :ssh_file.host_key(algo, opts)
 
   @impl true
   def is_auth_key(key, username, _opts) do
