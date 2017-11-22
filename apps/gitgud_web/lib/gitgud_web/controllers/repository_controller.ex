@@ -53,7 +53,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns a single branch for a repository.
   """
   @spec branch(Plug.t, map) :: Plug.t
-  def branch(conn, %{"user" => username, "repo" => path, "dwim" => shorthand} = _params) do
+  def branch(conn, %{"user" => username, "repo" => path, "branch" => shorthand} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, name, oid, commit} <- fetch_branch(repo, shorthand), do:
       render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, handle: handle)
@@ -73,10 +73,10 @@ defmodule GitGud.Web.RepositoryController do
   Returns a single tag for a repository.
   """
   @spec tag(Plug.t, map) :: Plug.t
-  def tag(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
+  def tag(conn, %{"user" => username, "repo" => path, "tag" => shorthand} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, oid, tag} <- fetch_tag(repo, spec), do:
-      render(conn, GitView, "tag.json", tag: {oid, tag}, handle: handle)
+         {:ok, handle, tag} <- fetch_tag(repo, shorthand), do:
+      render(conn, GitView, "tag.json", tag: tag, handle: handle)
   end
 
   @doc """
@@ -176,9 +176,9 @@ defmodule GitGud.Web.RepositoryController do
 
   defp fetch_branch(repo, shorthand) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand),
+         {:ok, "refs/heads/" <> ^shorthand = refname, :oid, oid} <- Git.reference_dwim(handle, shorthand),
          {:ok, :commit, commit} <- Git.object_lookup(handle, oid), do:
-      {:ok, handle, name, oid, commit}
+      {:ok, handle, refname, oid, commit}
   end
 
   defp fetch_tags(repo) do
@@ -187,10 +187,10 @@ defmodule GitGud.Web.RepositoryController do
       {:ok, handle, Enum.map(stream, &resolve_tag(handle, &1))}
   end
 
-  defp fetch_tag(repo, spec) do
+  defp fetch_tag(repo, shorthand) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, tag, :tag, oid} <- Git.revparse_single(handle, spec), do:
-      {:ok, handle, oid, tag}
+         {:ok, "refs/tags/" <> ^shorthand = refname, type, target} <- Git.reference_dwim(handle, shorthand), do:
+      {:ok, handle, resolve_tag(handle, {refname, shorthand, type, target})}
   end
 
   defp fetch_commit(repo, spec) do
@@ -230,8 +230,10 @@ defmodule GitGud.Web.RepositoryController do
     {oid, commit}
   end
 
-  defp resolve_tag(handle, {_refname, _shorthand, :oid, oid}) do
-    {:ok, :tag, tag} = Git.object_lookup(handle, oid)
-    {oid, tag}
+  defp resolve_tag(handle, {_refname, shorthand, :oid, oid}) do
+    case Git.object_lookup(handle, oid) do
+      {:ok, :tag, tag} -> {oid, tag}
+      {:ok, :commit, commit} -> {oid, commit, shorthand}
+    end
   end
 end

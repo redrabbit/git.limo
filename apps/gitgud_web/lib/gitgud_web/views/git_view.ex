@@ -19,13 +19,21 @@ defmodule GitGud.Web.GitView do
   def render("tag.json", %{tag: {oid, tag}}) do
     with {:ok, name} <- Git.tag_name(tag),
          {:ok, message} <- Git.tag_message(tag),
-         {:ok, name, email, time, offset} <- Git.tag_author(tag),
+         {:ok, author, email, time, offset} <- Git.tag_author(tag),
          {:ok, :commit, ^oid, commit} = Git.tag_peel(tag), do:
-      %{sha: Git.oid_fmt(oid),
-		tag: name,
+      %{type: :annotated,
+        sha: Git.oid_fmt(oid),
+		name: name,
 		message: message,
-		author: render_one({name, email, time, offset}, __MODULE__, "signature.json", as: :signature),
+		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
 		commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit)}
+  end
+
+  def render("tag.json", %{tag: {oid, commit, shorthand}}) do
+    %{type: :lightweight,
+      sha: Git.oid_fmt(oid),
+      name: shorthand,
+      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit)}
   end
 
   def render("revwalk.json", %{commits: commits}) do
@@ -39,9 +47,11 @@ defmodule GitGud.Web.GitView do
 
   def render("commit.json", %{commit: {oid, commit}}) do
     with {:ok, message} <- Git.commit_message(commit),
-         {:ok, name, email, time, _offset} <- Git.commit_author(commit),
+         {:ok, author, email, time, offset} <- Git.commit_author(commit),
          {:ok, date_time} <- DateTime.from_unix(time), do:
-      %{sha: Git.oid_fmt(oid), message: message, author: %{name: name, email: email, date: DateTime.to_iso8601(date_time)}}
+      %{sha: Git.oid_fmt(oid),
+        message: message,
+		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature)}
   end
 
   def render("tree.json", %{blob: {mode, oid, blob, path}}) do
