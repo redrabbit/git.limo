@@ -47,8 +47,7 @@ defmodule GitGud.Web.GitView do
 
   def render("commit.json", %{commit: {oid, commit}}) do
     with {:ok, message} <- Git.commit_message(commit),
-         {:ok, author, email, time, offset} <- Git.commit_author(commit),
-         {:ok, date_time} <- DateTime.from_unix(time), do:
+         {:ok, author, email, time, offset} <- Git.commit_author(commit), do:
       %{sha: Git.oid_fmt(oid),
         message: message,
 		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature)}
