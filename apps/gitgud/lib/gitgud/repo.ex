@@ -69,7 +69,7 @@ defmodule GitGud.Repo do
   """
   @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t}
   def create(params, opts \\ []) do
-    bare? = Keyword.get(opts, :bare?, true)
+    bare? = Keyword.get(opts, :bare, true)
     changeset = changeset(%__MODULE__{}, Map.new(params))
     case insert_and_init(changeset, bare?) do
       {:ok, %{insert: repo, init_repo: ref}} -> {:ok, repo, ref}
