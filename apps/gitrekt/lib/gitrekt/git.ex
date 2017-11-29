@@ -297,6 +297,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Inflates the given `data` with *zlib*.
+  """
+  @spec object_zlib_inflate(binary) :: {:ok, binary, non_neg_integer} | {:error, term}
+  def object_zlib_inflate(_data) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns the tree id for the given `commit`.
   """
   @spec commit_tree_id(commit) :: oid

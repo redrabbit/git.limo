@@ -2,6 +2,7 @@
 #include "repository.h"
 #include "object.h"
 #include "oid.h"
+#include <zlib.h>
 #include <string.h>
 #include <git2.h>
 
@@ -112,4 +113,40 @@ geef_object_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
+}
+
+ERL_NIF_TERM
+geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	ErlNifBinary bin;
+    z_stream z;
+    z.zalloc = Z_NULL;
+    z.zfree = Z_NULL;
+    z.opaque = Z_NULL;
+
+	if (!enif_inspect_binary(env, argv[0], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin)) {
+        enif_release_binary(&bin);
+        return geef_oom(env);
+    }
+
+    char output[bin.size*2];
+
+    z.avail_in = bin.size;
+    z.next_in = bin.data;
+    z.avail_out = bin.size*2;
+    z.next_out = output;
+
+    inflateInit(&z);
+    inflate(&z, Z_NO_FLUSH);
+    inflateEnd(&z);
+
+    if (enif_alloc_binary(z.total_out, &bin) < 0)
+        return -1;
+
+    memcpy(bin.data, output, z.total_out);
+
+	return enif_make_tuple3(env, atoms.ok, enif_make_binary(env, &bin), enif_make_ulong(env, z.total_in));
 }
