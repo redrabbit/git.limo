@@ -30,6 +30,7 @@ defmodule GitGud.Web.GitBackendController do
   import String, only: [split: 3]
 
   alias GitRekt.Git
+  alias GitRekt.WireProtocol
 
   alias GitGud.User
   alias GitGud.Repo
@@ -105,29 +106,41 @@ defmodule GitGud.Web.GitBackendController do
 
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
-      case System.cmd(service, ["--advertise-refs", Repo.workdir(repo)]) do
-        {resp, 0} ->
-          conn
-          |> put_resp_content_type("application/x-#{service}-advertisement")
-          |> send_resp(:ok, prefix_resp("# service=#{service}\n") <> resp)
-      end
+      {:ok, handle} = Git.repository_open(Repo.workdir(repo))
+      refs = WireProtocol.reference_discovery(handle)
+      refs = [WireProtocol.pkt_line("# service=#{service}"), WireProtocol.pkt_line] ++ refs
+      conn
+      |> put_resp_content_type("application/x-#{service}-advertisement")
+      |> send_resp(:ok, Enum.join(refs))
     end
   end
 
   defp git_head_ref(conn, repo) do
     if has_permission?(conn, repo, :read) do
-      head = head_reference(repo)
-      send_resp(conn, :ok, "ref: #{head}")
+      with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD"), do:
+        send_resp(conn, :ok, "ref: #{target}")
     end
   end
 
   defp git_pack(conn, repo, service) do
     if has_permission?(conn, repo, service) do
-      {:ok, body, conn} = read_body(conn)
-      conn
-      |> put_resp_content_type("application/x-#{service}-result")
-      |> send_resp(:ok, execute_port(service, Repo.workdir(repo), body))
+      with {:ok, body, conn} <- read_body(conn),
+           {:ok, handle} <- Git.repository_open(Repo.workdir(repo)), do:
+        conn
+        |> put_resp_content_type("application/x-#{service}-result")
+        |> send_resp(:ok, process_command(handle, body, service))
     end
+  end
+
+  defp process_command(handle, body, "git-upload-pack" = service) do
+  # WireProtocol.upload_pack(handle, body)
+    execute_port(service, Git.repository_get_path(handle), body)
+  end
+
+  defp process_command(handle, body, "git-receive-pack" = service) do
+    WireProtocol.receive_pack(handle, body)
+  # execute_port(service, Git.repository_get_path(handle), body)
   end
 
   defp execute_port(service, repo_path, request) do
@@ -142,28 +155,5 @@ defmodule GitGud.Web.GitBackendController do
       {^port, {:exit_status, 0}} ->
         buffer
     end
-  end
-
-  defp head_reference(repo) do
-    with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD") do
-      target
-    else
-      {:error, _reason} ->
-        nil
-    end
-  end
-
-  defp flush(), do: "0000"
-
-  defp prefix_resp(resp) do
-    resp
-    |> byte_size()
-    |> Kernel.+(4)
-    |> Integer.to_string(16)
-    |> String.downcase()
-    |> String.pad_leading(4, "0")
-    |> Kernel.<>(resp)
-    |> Kernel.<>(flush())
   end
 end
