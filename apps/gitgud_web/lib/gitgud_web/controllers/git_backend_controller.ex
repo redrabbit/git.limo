@@ -99,10 +99,13 @@ defmodule GitGud.Web.GitBackendController do
     |> send_resp(:unauthorized, "Unauthorized")
   end
 
-  defp has_permission?(conn, repo, "git-upload-pack"), do: has_permission?(conn, repo, :read)
+  defp has_permission?(conn, repo, "git-upload-pack"),  do: has_permission?(conn, repo, :read)
   defp has_permission?(conn, repo, "git-receive-pack"), do: has_permission?(conn, repo, :write)
-  defp has_permission?(conn, repo, :read), do: Repo.can_read?(conn.assigns[:user], repo)
+  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(conn.assigns[:user], repo)
   defp has_permission?(conn, repo, :write), do: Repo.can_write?(conn.assigns[:user], repo)
+
+  defp git_command("git-upload-pack", handle, body),  do: WireProtocol.upload_pack(handle, body)
+  defp git_command("git-receive-pack", handle, body), do: WireProtocol.receive_pack(handle, body)
 
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
@@ -129,31 +132,7 @@ defmodule GitGud.Web.GitBackendController do
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)), do:
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, process_command(handle, body, service))
-    end
-  end
-
-  defp process_command(handle, body, "git-upload-pack" = service) do
-  # WireProtocol.upload_pack(handle, body)
-    execute_port(service, Git.repository_get_path(handle), body)
-  end
-
-  defp process_command(handle, body, "git-receive-pack" = service) do
-    WireProtocol.receive_pack(handle, body)
-  # execute_port(service, Git.repository_get_path(handle), body)
-  end
-
-  defp execute_port(service, repo_path, request) do
-    port = Port.open({:spawn, "#{service} --stateless-rpc #{repo_path}"}, [:binary, :exit_status])
-    if Port.command(port, request), do: capture_port_output(port)
-  end
-
-  defp capture_port_output(port, buffer \\ "") do
-    receive do
-      {^port, {:data, data}} ->
-        capture_port_output(port, buffer <> data)
-      {^port, {:exit_status, 0}} ->
-        buffer
+        |> send_resp(:ok, git_command(service,handle, body))
     end
   end
 end

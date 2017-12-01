@@ -25,8 +25,9 @@ defmodule GitRekt.WireProtocol do
   Sends objects packed back to *git-fetch-pack*.
   """
   @spec upload_pack(Git.repo, binary) :: binary
-  def upload_pack(_repo, _pack) do
-    ""
+  def upload_pack(repo, pkt) do
+    {[oid|_], _lines} = parse_upload_pkt(pkt)
+    encode(["NAK", Pack.create(repo, oid)])
   end
 
   @doc """
@@ -65,6 +66,7 @@ defmodule GitRekt.WireProtocol do
   @spec pkt_line(binary|:flush) :: binary
   def pkt_line(data \\ :flush)
   def pkt_line(:flush), do: "0000"
+  def pkt_line(<<"PACK", _rest::binary>> = pack), do: pack
   def pkt_line(data) do
     data
     |> byte_size()
@@ -122,6 +124,18 @@ defmodule GitRekt.WireProtocol do
   defp pkt_transform("ACK"), do: :ack
   defp pkt_transform("NAK"), do: :neg_ack
   defp pkt_transform(pkt_line), do: pkt_line
+
+  defp parse_upload_pkt(pkt) do
+    [wants|lines] = Enum.reject(Enum.chunk_by(decode(pkt), &(&1 == :flush)), &(&1 == [:flush]))
+    {parse_upload_refs(wants), lines}
+  end
+
+  defp parse_upload_refs(wants) do
+    wants
+    |> Enum.filter(fn {:want, _oid} -> true; _ -> false end)
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.uniq()
+  end
 
   defp parse_receive_pkt(pkt) do
     [refs|pack] = Enum.reject(Enum.chunk_by(decode(pkt), &(&1 == :flush)), &(&1 == [:flush]))
