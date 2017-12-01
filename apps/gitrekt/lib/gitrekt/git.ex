@@ -144,8 +144,8 @@ defmodule GitRekt.Git do
   @doc """
   Creates a new reference name which points to an object or to an other reference.
   """
-  @spec reference_create(repo, ref_type, binary, binary | oid, boolean) :: :ok | {:error, term}
-  def reference_create(_repo, _type, _name, _target, _force) do
+  @spec reference_create(repo, binary, ref_type, binary | oid, boolean) :: :ok | {:error, term}
+  def reference_create(_repo, _name, _type, _target, _force) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
