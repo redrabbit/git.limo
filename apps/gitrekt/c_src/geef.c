@@ -215,6 +215,7 @@ static ErlNifFunc geef_funcs[] =
     {"revwalk_simplify_first_parent", 1, geef_revwalk_simplify_first_parent},
 	{"revwalk_reset", 1,   geef_revwalk_reset},
 	{"revwalk_repository", 1, geef_revwalk_repository},
+	{"revwalk_pack", 1, geef_revwalk_pack},
 	{"index_new",   0, geef_index_new},
 	{"index_write", 1, geef_index_write},
 	{"index_write_tree", 1, geef_index_write_tree},

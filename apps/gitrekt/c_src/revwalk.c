@@ -149,3 +149,40 @@ geef_revwalk_reset(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	return atoms.ok;
 }
+
+ERL_NIF_TERM
+geef_revwalk_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	git_buf buf = { NULL };
+	geef_revwalk *walk;
+    git_packbuilder* pb;
+    ErlNifBinary pack;
+	int error;
+
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+		return enif_make_badarg(env);
+
+    if (git_packbuilder_new(&pb, walk->repo->repo) < 0)
+        return geef_error(env);
+
+    if (git_packbuilder_insert_walk(pb, walk->walk) < 0) {
+        git_packbuilder_free(pb);
+        return geef_error(env);
+    }
+
+    error = git_packbuilder_write_buf(&buf, pb);
+    git_packbuilder_free(pb);
+
+    if (error < 0)
+        return geef_error(env);
+
+	if (!enif_alloc_binary(buf.size, &pack)) {
+		git_buf_free(&buf);
+        return geef_oom(env);
+    }
+
+	memcpy(pack.data, buf.ptr, pack.size);
+    git_buf_free(&buf);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &pack));
+}

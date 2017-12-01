@@ -519,6 +519,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns a *PACK* file for the given `walk`.
+  """
+  @spec revwalk_repository(revwalk) :: {:ok, binary} | {:error, term}
+  def revwalk_pack(_walk) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Create an new in-memory index object.
   """
   @spec index_new() :: {:ok, index} | {:error, term}
