@@ -33,15 +33,14 @@ defmodule GitRekt.WireProtocol do
   Receives what is pushed into the repository.
   """
   @spec receive_pack(Git.repo, binary) :: binary
-  def receive_pack(repo, pack) do
-    lines = Enum.to_list(decode(pack))
-    [ref|lines] = lines
-    {old_oid, new_oid, refname, caps} = parse_receive_ref_line(ref)
-    IO.puts "receive pack for #{refname} from #{Git.oid_fmt(old_oid)} -> #{Git.oid_fmt(new_oid)} #{inspect caps}"
-    [:flush|lines] = lines
+  def receive_pack(repo, pkt) do
+    {refs, pack, caps} = parse_receive_pkt(pkt)
     {:ok, odb} = Git.repository_get_odb(repo)
-    Enum.each(lines, fn {obj_type, obj_data} -> Git.odb_write(odb, obj_data, obj_type) end)
-    encode(["unpack ok", "ok refs/heads/master", :flush])
+    Enum.each(pack, fn {obj_type, obj_data} -> {:ok, _} = Git.odb_write(odb, obj_data, obj_type) end)
+    Enum.each(refs, fn {_old_oid, new_oid, refname} -> :ok = Git.reference_create(repo, refname, :oid, new_oid, true) end)
+    if "report-status" in caps,
+      do: encode(["unpack ok", Enum.into(refs, "", &"ok #{elem(&1, 2)}"), :flush]),
+    else: ""
   end
 
   @doc """
@@ -124,11 +123,16 @@ defmodule GitRekt.WireProtocol do
   defp pkt_transform("NAK"), do: :neg_ack
   defp pkt_transform(pkt_line), do: pkt_line
 
-  defp parse_receive_ref_line(line) do
-    [ref, caps] = String.split(line, "\0", parts: 2)
-    caps = String.split(caps, " ", trim: true)
+  defp parse_receive_pkt(pkt) do
+    [refs|pack] = Enum.reject(Enum.chunk_by(decode(pkt), &(&1 == :flush)), &(&1 == [:flush]))
+    [first_ref|refs] = refs
+    [first_ref, caps] = String.split(first_ref, "\0", parts: 2)
+    {Enum.map([first_ref|refs], &parse_receive_ref/1), pack, String.split(caps, " ", trim: true)}
+  end
+
+  defp parse_receive_ref(ref) do
     [old, new, name] = String.split(ref)
-    {old, new, name, caps}
+    {Git.oid_parse(old), Git.oid_parse(new), name}
   end
 
   defp format_ref_line({oid, refname}), do: "#{Git.oid_fmt(oid)} #{refname}"
