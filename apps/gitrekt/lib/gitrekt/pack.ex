@@ -9,7 +9,17 @@ defmodule GitRekt.Pack do
   @type obj_type :: :commit | :tree | :blob | :tag
 
   @doc """
-  Returns a list of ODB objects and their type for the given pack file `data`.
+  Returns a *PACK* file for the given `oid`.
+  """
+  @spec create(Git.repo, Git.oid) :: binary
+  def create(repo, oid) do
+    with {:ok, walk} <- Git.revwalk_new(repo),
+          :ok <- Git.revwalk_push(walk, oid),
+         {:ok, pack} = Git.revwalk_pack(walk), do: pack
+  end
+
+  @doc """
+  Returns a list of ODB objects and their type for the given *PACK* file `data`.
   """
   @spec extract(2, non_neg_integer, binary) :: {[obj], binary}
   def extract(2 = _version, count, data) do
