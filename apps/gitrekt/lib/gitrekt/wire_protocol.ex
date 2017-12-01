@@ -1,6 +1,6 @@
 defmodule GitRekt.WireProtocol do
   @moduledoc """
-  Git pack transport protocol and server side commands implementation.
+  Conveniences for Git transport protocol and server side commands.
   """
 
   alias GitRekt.Git
@@ -40,15 +40,15 @@ defmodule GitRekt.WireProtocol do
     Enum.each(refs, fn {_old_oid, new_oid, refname} -> :ok = Git.reference_create(repo, refname, :oid, new_oid, true) end)
     if "report-status" in caps,
       do: encode(["unpack ok", Enum.into(refs, "", &"ok #{elem(&1, 2)}"), :flush]),
-    else: ""
+    else: []
   end
 
   @doc """
   Returns an *PKT-LINE* encoded representation of the given `lines`.
   """
-  @spec encode(Enumerable.t) :: binary
+  @spec encode(Enumerable.t) :: [binary]
   def encode(lines) do
-    Enum.into(lines, "", &pkt_line/1)
+    Enum.map(lines, &pkt_line/1)
   end
 
   @doc """
