@@ -5,23 +5,21 @@ defmodule GitRekt.Pack do
 
   alias GitRekt.Git
 
-  @type obj :: {obj_type, binary}
-  @type obj_type :: :commit | :tree | :blob | :tag
-
   @doc """
-  Returns a *PACK* file for the given `oid`.
+  Returns a *PACK* file for the given `oids` list.
   """
-  @spec create(Git.repo, Git.oid) :: binary
-  def create(repo, oid) do
-    with {:ok, walk} <- Git.revwalk_new(repo),
-          :ok <- Git.revwalk_push(walk, oid),
-         {:ok, pack} = Git.revwalk_pack(walk), do: pack
+  @spec create(Git.repo, [Git.oid]) :: binary
+  def create(repo, oids) when is_list(oids) do
+    with {:ok, pack} <- Git.pack_new(repo),
+         {:ok, walk} <- Git.revwalk_new(repo),
+          :ok <- pack_insert(pack, walk, oids),
+         {:ok, data} <- Git.pack_data(pack), do: data
   end
 
   @doc """
   Returns a list of ODB objects and their type for the given *PACK* file `data`.
   """
-  @spec extract(2, non_neg_integer, binary) :: {[obj], binary}
+  @spec extract(2, non_neg_integer, binary) :: {[{Git.obj_type, binary}], binary}
   def extract(2 = _version, count, data) do
     unpack_obj_next(0, count, data, [])
   end
@@ -29,6 +27,13 @@ defmodule GitRekt.Pack do
   #
   # Helpers
   #
+
+  defp pack_insert(_pack, _walk, []), do: :ok
+  defp pack_insert(pack, walk, [oid|oids]) do
+    with :ok <- Git.revwalk_push(walk, oid),
+         :ok <- Git.pack_insert_walk(pack, walk),
+         :ok <- Git.revwalk_reset(walk), do: pack_insert(pack, walk, oids)
+  end
 
   defp unpack_obj_next(i, max, rest, acc) when i < max do
     {obj_type, obj, rest} = unpack_obj(rest)

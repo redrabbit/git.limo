@@ -14,6 +14,7 @@
 #include "revparse.h"
 #include "reflog.h"
 #include "config.h"
+#include "pack.h"
 #include "geef.h"
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +27,7 @@ ErlNifResourceType *geef_object_type;
 ErlNifResourceType *geef_revwalk_type;
 ErlNifResourceType *geef_index_type;
 ErlNifResourceType *geef_config_type;
+ErlNifResourceType *geef_pack_type;
 
 geef_atoms atoms;
 
@@ -62,6 +64,9 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 
 	geef_config_type = enif_open_resource_type(env, NULL,
 		  "config_type", geef_config_free, ERL_NIF_RT_CREATE, NULL);
+
+	geef_pack_type = enif_open_resource_type(env, NULL,
+		  "pack_type", geef_pack_free, ERL_NIF_RT_CREATE, NULL);
 
 
 	if (geef_repository_type == NULL)
@@ -233,6 +238,9 @@ static ErlNifFunc geef_funcs[] =
 	{"config_set_string", 3, geef_config_set_string},
 	{"config_get_string", 2, geef_config_get_string},
 	{"config_open",     1, geef_config_open},
+	{"pack_new",    1, geef_pack_new},
+	{"pack_insert_walk", 2, geef_pack_insert_walk},
+	{"pack_data",   1, geef_pack_data},
 };
 
 ERL_NIF_INIT(Elixir.GitRekt.Git, geef_funcs, load, NULL, upgrade, unload)

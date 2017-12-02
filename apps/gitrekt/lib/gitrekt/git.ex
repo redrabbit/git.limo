@@ -56,6 +56,8 @@ defmodule GitRekt.Git do
   @type revwalk       :: reference
   @type revwalk_sort  :: :topsort | :timesort | :reversesort
 
+  @type pack          :: reference
+
   @on_load :load_nif
 
   @nif_path Path.join(:code.priv_dir(:gitrekt), "geef_nif")
@@ -702,6 +704,30 @@ defmodule GitRekt.Git do
   """
   @spec config_open(binary) :: {:ok, config} | {:error, term}
   def config_open(_path) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Creates a new *PACK* object for the given `repo`.
+  """
+  @spec pack_new(repo) :: {:ok, pack} | {:error, term}
+  def pack_new(_repo) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Inserts objects as given by the `walk`.
+  """
+  @spec pack_insert_walk(pack, revwalk) :: :ok | {:error, term}
+  def pack_insert_walk(_pack, _walk) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a *PACK* file for the given `pack`.
+  """
+  @spec pack_data(pack) :: {:ok, binary} | {:error, term}
+  def pack_data(_pack) do
     raise Code.LoadError, file: @nif_path_lib
   end
 

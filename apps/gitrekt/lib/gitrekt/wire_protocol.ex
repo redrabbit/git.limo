@@ -27,7 +27,7 @@ defmodule GitRekt.WireProtocol do
   @spec upload_pack(Git.repo, binary) :: binary
   def upload_pack(repo, pkt) do
     {[oid|_], _lines} = parse_upload_pkt(pkt)
-    encode(["NAK", Pack.create(repo, oid)])
+    encode(["NAK", Pack.create(repo, [oid])])
   end
 
   @doc """
