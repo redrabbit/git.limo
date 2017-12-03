@@ -3,6 +3,8 @@ defmodule GitRekt.Pack do
   Conveniences for reading and writting Git pack files.
   """
 
+  use Bitwise
+
   alias GitRekt.Git
 
   @doc """
@@ -50,34 +52,25 @@ defmodule GitRekt.Pack do
     obj_type = format_obj_type(id_type)
     cond do
       obj_type == :delta_reference ->
-        <<obj_name::binary-20, rest::binary>> = rest
-        {obj_data, rest} = unpack_obj_data(rest)
-        {obj_type, {obj_name, obj_data}, rest}
-      obj_type == :delta_offset ->
-        raise ArgumentError, "Blob delta offset length not calculated"
+        <<base_oid::binary-20, rest::binary>> = rest
+        IO.puts "base oid: #{Git.oid_fmt(base_oid)}"
+        {delta, rest} = unpack_obj_data(rest)
+        {obj_type, unpack_obj_delta(base_oid, delta), rest}
       true ->
         {obj_data, rest} = unpack_obj_data(rest)
         {obj_type, obj_data, rest}
     end
   end
 
-  defp unpack_obj_head(<<0::1, type::3, size::4, rest::binary>>) do
+  defp unpack_obj_head(<<0::1, type::3, num::4, rest::binary>>), do: {type, num, rest}
+  defp unpack_obj_head(<<1::1, type::3, num::4, rest::binary>>) do
+    {size, rest} = unpack_obj_size(rest, num, 0)
     {type, size, rest}
   end
 
-  defp unpack_obj_head(<<1::1, type::3, obj_num::bitstring-4, rest::binary>>) do
-    {size, rest} = unpack_obj_size(rest, obj_num)
-    {type, size, rest}
-  end
-
-  defp unpack_obj_size(<<0::1, obj_num::bitstring-7, rest::binary>>, acc_num) do
-    with acc <- <<acc_num::bitstring, obj_num::bitstring>>,
-         len <- bit_size(acc),
-       <<num::integer-size(len)>> <- acc, do: {num, rest}
-  end
-
-  defp unpack_obj_size(<<1::1, obj_num::bitstring-7, rest::binary>>, acc_num) do
-    unpack_obj_size(rest, <<acc_num::bitstring, obj_num::bitstring>>)
+  defp unpack_obj_size(<<0::1, num::7, rest::binary>>, acc, i), do: {acc + (num <<< 4+7*i), rest}
+  defp unpack_obj_size(<<1::1, num::7, rest::binary>>, acc, i) do
+    unpack_obj_size(rest, acc + (num <<< (4+7*i)), i+1)
   end
 
   defp unpack_obj_data(data) do
@@ -85,11 +78,46 @@ defmodule GitRekt.Pack do
     {obj, binary_part(data, deflate_size, byte_size(data)-deflate_size)}
   end
 
+  defp unpack_obj_delta(base_oid, delta) do
+    {base_obj_size, rest} = unpack_obj_delta_size(delta, 0, 0)
+    {result_obj_size, rest} = unpack_obj_delta_size(rest, 0, 0)
+    {base_oid, base_obj_size, result_obj_size, unpack_obj_delta_hunk(rest, [])}
+  end
+
+  defp unpack_obj_delta_size(<<0::1, num::7, rest::binary>>, acc, i), do: {acc ||| (num <<< 7*i), rest}
+  defp unpack_obj_delta_size(<<1::1, num::7, rest::binary>>, acc, i) do
+    unpack_obj_delta_size(rest, acc ||| (num <<< 7*i), i+1)
+  end
+
+
+  defp unpack_obj_delta_hunk("", cmds), do: Enum.reverse(cmds)
+  defp unpack_obj_delta_hunk(<<0::1, size::7, data::binary-size(size), rest::binary>>, cmds) do
+    unpack_obj_delta_hunk(rest, [{:insert, data}|cmds])
+  end
+
+  defp unpack_obj_delta_hunk(<<1::1, l::bitstring-3, o::bitstring-4, rest::binary>>, cmds) do
+    # Thanks to @vaibhavsagar on #haskell
+    len_bits = delta_copy_length_size(l)
+    ofs_bits = delta_copy_offset_size(o)
+    <<offset::little-size(ofs_bits), size::little-size(len_bits), rest::binary>> = rest
+    unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
+  end
+
+  defp delta_copy_length_size(<<_::1, _::1, 0::1>>), do: 0
+  defp delta_copy_length_size(<<_::1, 0::1, 1::1>>), do: 8
+  defp delta_copy_length_size(<<0::1, 1::1, 1::1>>), do: 16
+  defp delta_copy_length_size(<<1::1, 1::1, 1::1>>), do: 24
+
+  defp delta_copy_offset_size(<<_::1, _::1, _::1, 0::1>>), do: 0
+  defp delta_copy_offset_size(<<_::1, _::1, 0::1, 1::1>>), do: 8
+  defp delta_copy_offset_size(<<_::1, 0::1, 1::1, 1::1>>), do: 16
+  defp delta_copy_offset_size(<<0::1, 1::1, 1::1, 1::1>>), do: 24
+  defp delta_copy_offset_size(<<1::1, 1::1, 1::1, 1::1>>), do: 32
+
   defp format_obj_type(1), do: :commit
   defp format_obj_type(2), do: :tree
   defp format_obj_type(3), do: :blob
   defp format_obj_type(4), do: :tag
   defp format_obj_type(6), do: :delta_offset
   defp format_obj_type(7), do: :delta_reference
-
 end
