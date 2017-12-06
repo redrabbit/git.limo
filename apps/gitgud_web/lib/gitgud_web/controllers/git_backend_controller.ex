@@ -104,6 +104,8 @@ defmodule GitGud.Web.GitBackendController do
   defp has_permission?(conn, repo, :read),  do: Repo.can_read?(conn.assigns[:user], repo)
   defp has_permission?(conn, repo, :write), do: Repo.can_write?(conn.assigns[:user], repo)
 
+  defp compressed?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
+
   defp git_command("git-upload-pack", handle, body),  do: WireProtocol.upload_pack(handle, body)
   defp git_command("git-receive-pack", handle, body), do: WireProtocol.receive_pack(handle, body)
 
@@ -129,10 +131,12 @@ defmodule GitGud.Web.GitBackendController do
   defp git_pack(conn, repo, service) do
     if has_permission?(conn, repo, service) do
       with {:ok, body, conn} <- read_body(conn),
-           {:ok, handle} <- Git.repository_open(Repo.workdir(repo)), do:
+           {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
+        body = if compressed?(conn), do: :zlib.gunzip(body), else: body
         conn
         |> put_resp_content_type("application/x-#{service}-result")
         |> send_resp(:ok, git_command(service,handle, body))
+      end
     end
   end
 end
