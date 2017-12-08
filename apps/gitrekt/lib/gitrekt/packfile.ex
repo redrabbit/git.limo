@@ -1,4 +1,4 @@
-defmodule GitRekt.Pack do
+defmodule GitRekt.Packfile do
   @moduledoc """
   Conveniences for reading and writting Git pack files.
   """

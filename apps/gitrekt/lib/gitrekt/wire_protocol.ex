@@ -4,7 +4,7 @@ defmodule GitRekt.WireProtocol do
   """
 
   alias GitRekt.Git
-  alias GitRekt.Pack
+  alias GitRekt.Packfile
 
   @server_capabilities ~w(report-status delete-refs)
 
@@ -27,7 +27,7 @@ defmodule GitRekt.WireProtocol do
   def upload_pack(repo, pkt) do
     case parse_upload_pkt(pkt) do
       {:done, wants, _shallows, _haves, _caps} ->
-        encode(["NAK", Pack.create(repo, wants)])
+        encode(["NAK", Packfile.create(repo, wants)])
     end
   end
 
@@ -128,7 +128,7 @@ defmodule GitRekt.WireProtocol do
 
   defp pkt_next(""), do: {:halt, nil}
   defp pkt_next("0000" <> rest), do: {[:flush], rest}
-  defp pkt_next(<<"PACK", version::32, count::32, data::binary>>), do: Pack.extract(version, count, data)
+  defp pkt_next(<<"PACK", version::32, count::32, data::binary>>), do: Packfile.extract(version, count, data)
   defp pkt_next(<<hex::bytes-size(4), payload::binary>>) do
     {payload_size, ""} = Integer.parse(hex, 16)
     data_size = payload_size - 4
