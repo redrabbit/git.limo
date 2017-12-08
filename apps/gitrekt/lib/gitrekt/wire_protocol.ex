@@ -38,13 +38,8 @@ defmodule GitRekt.WireProtocol do
   def receive_pack(repo, pkt) do
     {refs, pack, caps} = parse_receive_pkt(pkt)
     {:ok, odb} = Git.repository_get_odb(repo)
-    Enum.each(pack, fn
-      {:delta_reference, delta} ->
-        IO.inspect delta
-      {obj_type, obj_data} ->
-        {:ok, _} = Git.odb_write(odb, obj_data, obj_type)
-    end)
-    Enum.each(refs, fn {_old_oid, new_oid, refname} -> :ok = Git.reference_create(repo, refname, :oid, new_oid, true) end)
+    Enum.each(pack, &apply_pack_obj(odb, &1))
+    Enum.each(refs, &rename_ref(repo, &1))
     if "report-status" in caps,
       do: encode(["unpack ok", Enum.into(refs, "", &"ok #{elem(&1, 2)}"), :flush]),
     else: []
@@ -120,6 +115,29 @@ defmodule GitRekt.WireProtocol do
       {:ok, :commit, _commit} ->
         {oid, refname}
     end
+  end
+
+  defp rename_ref(repo, {_old_oid, new_oid, refname}) do
+    Git.reference_create(repo, refname, :oid, new_oid, true)
+  end
+
+  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
+    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
+    new_data = apply_delta_chain(obj_data, "", cmds)
+    {:ok, _oid} = apply_pack_obj(odb, {obj_type, new_data})
+  end
+
+  defp apply_pack_obj(odb, {obj_type, obj_data}) do
+    {:ok, _oid} = Git.odb_write(odb, obj_data, obj_type)
+  end
+
+  defp apply_delta_chain(_source, target, []), do: target
+  defp apply_delta_chain(source, target, [{:insert, chunk}|cmds]) do
+    apply_delta_chain(source, target <> chunk, cmds)
+  end
+
+  defp apply_delta_chain(source, target, [{:copy, {offset, size}}|cmds]) do
+    apply_delta_chain(source, target <> binary_part(source, offset, size), cmds)
   end
 
   defp pkt_stream(data) do

@@ -53,7 +53,6 @@ defmodule GitRekt.Packfile do
     cond do
       obj_type == :delta_reference ->
         <<base_oid::binary-20, rest::binary>> = rest
-        IO.puts "base oid: #{Git.oid_fmt(base_oid)}"
         {delta, rest} = unpack_obj_data(rest)
         {obj_type, unpack_obj_delta(base_oid, delta), rest}
       true ->
