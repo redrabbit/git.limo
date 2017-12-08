@@ -251,6 +251,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Return the uncompressed, raw data of an ODB object.
+  """
+  @spec odb_read(odb, oid) :: {:ok, obj_type, binary}
+  def odb_read(_odb, _oid) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Writes the given `data` into the `odb`.
   """
   @spec odb_write(odb, binary, odb_type) :: {:ok, oid} | {:error, term}

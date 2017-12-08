@@ -14,7 +14,9 @@ ERL_NIF_TERM geef_repository_workdir(ErlNifEnv *env, int argc, const ERL_NIF_TER
 ERL_NIF_TERM geef_repository_is_bare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+
 ERL_NIF_TERM geef_odb_exists(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 

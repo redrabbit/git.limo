@@ -177,6 +177,7 @@ static ErlNifFunc geef_funcs[] =
 	{"repository_get_odb", 1, geef_repository_odb},
 	{"repository_get_config", 1, geef_repository_config},
 	{"odb_object_exists?", 2, geef_odb_exists},
+    {"odb_read", 2, geef_odb_read},
 	{"odb_write", 3, geef_odb_write},
 	{"reference_list", 1, geef_reference_list},
 	{"reference_to_id", 2, geef_reference_to_id},

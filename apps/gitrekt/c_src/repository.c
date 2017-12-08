@@ -222,6 +222,47 @@ geef_odb_exists(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	ErlNifBinary bin;
+	git_oid id;
+    git_otype type;
+    git_odb_object *obj;
+    size_t size;
+    char* data;
+	geef_odb *odb;
+
+	if (!enif_get_resource(env, argv[0], geef_odb_type, (void **) &odb))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (bin.size < GIT_OID_RAWSZ)
+		return enif_make_badarg(env);
+
+	git_oid_fromraw(&id, bin.data);
+
+    if (git_odb_read(&obj, odb->odb, &id) < 0)
+        return geef_error(env);
+
+    type = git_odb_object_type(obj);
+
+    size = git_odb_object_size(obj);
+    if (enif_alloc_binary(size, &bin) < 0) {
+        git_odb_object_free(obj);
+        return geef_oom(env);
+    }
+
+    data = git_odb_object_data(obj);
+    memcpy(bin.data, data, size);
+
+    git_odb_object_free(obj);
+
+	return enif_make_tuple3(env, atoms.ok, geef_object_type2atom(type), enif_make_binary(env, &bin));
+}
+
+ERL_NIF_TERM
 geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	git_otype type;
