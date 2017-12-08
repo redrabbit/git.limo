@@ -19,16 +19,19 @@ defmodule GitRekt.Packfile do
   end
 
   @doc """
-  Returns a list of ODB objects and their type for the given *PACK* file `data`.
+  Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
-  @spec extract(2, non_neg_integer, binary) :: {[{Git.obj_type, binary}], binary}
-  def extract(2 = _version, count, data) do
-    unpack_obj_next(0, count, data, [])
-  end
+  @spec parse(binary) :: {[{Git.obj_type, binary}], binary}
+  def parse("PACK" <> pack), do: parse(pack)
+  def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 
   #
   # Helpers
   #
+
+  defp unpack(2 = _version, count, data) do
+    unpack_obj_next(0, count, data, [])
+  end
 
   defp pack_insert(_pack, _walk, []), do: :ok
   defp pack_insert(pack, walk, [oid|oids]) do

@@ -146,7 +146,7 @@ defmodule GitRekt.WireProtocol do
 
   defp pkt_next(""), do: {:halt, nil}
   defp pkt_next("0000" <> rest), do: {[:flush], rest}
-  defp pkt_next(<<"PACK", version::32, count::32, data::binary>>), do: Packfile.extract(version, count, data)
+  defp pkt_next("PACK" <> rest), do: Packfile.parse(rest)
   defp pkt_next(<<hex::bytes-size(4), payload::binary>>) do
     {payload_size, ""} = Integer.parse(hex, 16)
     data_size = payload_size - 4
