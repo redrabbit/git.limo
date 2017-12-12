@@ -33,17 +33,19 @@ defmodule GitGud.SSHServer do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
+  alias GitRekt.Git
+  alias GitRekt.WireProtocol
+
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
 
-  @root_path Application.fetch_env!(:gitgud, :git_dir)
-
-  defstruct [:conn, :chan, :user, :proc]
+  defstruct [:conn, :chan, :user, :repo, :exec]
 
   @type t :: %__MODULE__{
     conn: :ssh_connection.ssh_connection_ref,
     chan: :ssh_connection.ssh_channel_id,
-    proc: port,
+    user: User.t,
+    repo: Repo.t
   }
 
   @doc """
@@ -81,46 +83,34 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
     [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, struct(state, conn: conn, chan: chan, user: UserQuery.get(to_string(username)))}
+    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.get(to_string(username))}}
   end
 
   @impl true
-  def handle_msg({proc, {:data, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
-    :ssh_connection.send(conn, chan, data)
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, "0000"}}, %__MODULE__{conn: conn, chan: chan} = state) do
+    :ssh_connection.close(conn, chan)
     {:ok, state}
   end
 
   @impl true
-  def handle_msg({proc, {:exit_status, status}}, %__MODULE__{conn: conn, chan: chan, proc: proc}) when is_port(proc) do
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, repo: repo, exec: exec} = state) do
+    :ssh_connection.send(conn, chan, execute(exec, repo, data))
     :ssh_connection.send_eof(conn, chan)
-    :ssh_connection.exit_status(conn, chan, status)
     :ssh_connection.close(conn, chan)
-    {:stop, conn, chan}
-  end
-
-  @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
-    :erlang.port_command(proc, data)
     {:ok, state}
   end
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
-    [exec|args] = Enum.map(String.split(to_string(cmd)), &to_charlist/1)
-    case execute_cmd(exec, args, user) do
-      {:ok, proc} ->
-        {:ok, struct(state, proc: proc)}
-      {:error, :unauthorized} ->
-        :ssh_connection.send_eof(conn, chan)
-        :ssh_connection.exit_status(conn, chan, 401)
-        {:stop, chan, state}
+    [exec|args] = String.split(to_string(cmd))
+    [repo|args] = parse_args(args)
+    if has_permission?(user, repo, exec) && Enum.empty?(args) do
+      {:ok, repo} = Git.repository_open(Repo.workdir(repo))
+      :ssh_connection.send(conn, chan, WireProtocol.reference_discovery(repo))
+      {:ok, %{state|repo: repo, exec: exec}}
+    else
+      {:stop, chan, state}
     end
-  end
-
-  @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, proc: proc} = state) when is_port(proc) do
-    :erlang.port_command(proc, data)
-    {:ok, state}
   end
 
   @impl true
@@ -151,43 +141,20 @@ defmodule GitGud.SSHServer do
      system_dir: to_charlist(system_dir)]
   end
 
-  defp port_opts() do
-    [:stream, :binary, :exit_status]
-  end
-
-  defp resolve_repo(user, path) do
-    relpath = Path.relative_to(to_string(path), Path.join(@root_path, user.username))
-    RepoQuery.user_repository(user, relpath)
+  defp parse_args(args) do
+    if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
+      {path, args} = List.pop_at(args, idx)
+      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'")))|args]
+    end
   end
 
   defp check_credentials(username, password) do
     !!User.check_credentials(to_string(username), to_string(password))
   end
 
-  defp has_permission?(user, path, exec) when exec == 'git-receive-pack' do
-    Repo.can_write?(user, resolve_repo(user, path))
-  end
+  defp has_permission?(user, repo, "git-upload-pack"),  do: Repo.can_read?(user, repo)
+  defp has_permission?(user, repo, "git-receive-pack"), do: Repo.can_write?(user, repo)
 
-  defp has_permission?(user, path, exec) when exec in ['git-upload-pack', 'git-upload-archive'] do
-    Repo.can_read?(user, resolve_repo(user, path))
-  end
-
-  defp has_permission?(_username, _path, _exec), do: false
-
-  defp execute_cmd(exec, args, user) do
-    [path|args] = extract_path(args)
-    if has_permission?(user, path, exec),
-      do: {:ok, Port.open({:spawn_executable, :os.find_executable(exec)}, [args: [path|args]] ++ port_opts())},
-    else: {:error, :unauthorized}
-  end
-
-  defp extract_path(args) do
-    if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
-      {path, args} = List.pop_at(args, idx)
-      abspath = Path.join(@root_path, String.trim(to_string(path), "'"))
-      [to_charlist(abspath)|args]
-    else
-      [nil|args]
-    end
-  end
+  defp execute("git-upload-pack", repo, data),  do: WireProtocol.upload_pack(repo, data)
+  defp execute("git-receive-pack", repo, data), do: WireProtocol.receive_pack(repo, data)
 end
