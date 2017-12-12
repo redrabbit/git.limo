@@ -45,6 +45,13 @@ defmodule GitGud.RepoQuery do
     QuerySet.one(repo_query(username, path))
   end
 
+  @doc """
+  Returns a repository for the given `path`.
+  """
+  def by_path(path) do
+    apply(__MODULE__, :user_repository, Path.split(path))
+  end
+
   #
   # Helpers
   #
