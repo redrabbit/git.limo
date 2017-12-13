@@ -106,17 +106,14 @@ defmodule GitGud.Web.GitBackendController do
 
   defp compressed?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
 
-  defp git_command("git-upload-pack", handle, body),  do: WireProtocol.upload_pack(handle, body)
-  defp git_command("git-receive-pack", handle, body), do: WireProtocol.receive_pack(handle, body)
-
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
       refs = WireProtocol.reference_discovery(handle, service)
-      refs = [WireProtocol.pkt_line("# service=#{service}"), WireProtocol.pkt_line] ++ refs
+      refs = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
       conn
       |> put_resp_content_type("application/x-#{service}-advertisement")
-      |> send_resp(:ok, Enum.join(refs))
+      |> send_resp(:ok, refs)
     end
   end
 
@@ -132,11 +129,18 @@ defmodule GitGud.Web.GitBackendController do
     if has_permission?(conn, repo, service) do
       with {:ok, body, conn} <- read_body(conn),
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
-        body = if compressed?(conn), do: :zlib.gunzip(body), else: body
+        data = if compressed?(conn), do: :zlib.gunzip(body), else: body
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_command(service,handle, body))
+        |> send_resp(:ok, git_exec(handle, service, data))
       end
     end
+  end
+
+  defp git_exec(handle, exec, data) do
+    handle
+    |> WireProtocol.service(exec)
+    |> WireProtocol.next(data)
+    |> elem(1)
   end
 end

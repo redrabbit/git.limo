@@ -7,6 +7,9 @@ defmodule GitRekt.Packfile do
 
   alias GitRekt.Git
 
+  @type obj :: {Git.obj_type, binary}
+  @type obj_list :: [obj]
+
   @doc """
   Returns a *PACK* file for the given `oids` list.
   """
@@ -21,7 +24,7 @@ defmodule GitRekt.Packfile do
   @doc """
   Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
-  @spec parse(binary) :: {[{Git.obj_type, binary}], binary}
+  @spec parse(binary) :: {obj_list, binary}
   def parse("PACK" <> pack), do: parse(pack)
   def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 

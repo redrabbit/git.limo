@@ -39,13 +39,13 @@ defmodule GitGud.SSHServer do
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
 
-  defstruct [:conn, :chan, :user, :repo, :exec]
+  defstruct [:conn, :chan, :user, :exec]
 
   @type t :: %__MODULE__{
     conn: :ssh_connection.ssh_connection_ref,
     chan: :ssh_connection.ssh_channel_id,
     user: User.t,
-    repo: Repo.t
+    exec: Module.t
   }
 
   @doc """
@@ -87,27 +87,25 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, "0000"}}, %__MODULE__{conn: conn, chan: chan} = state) do
-    :ssh_connection.close(conn, chan)
-    {:ok, state}
-  end
-
-  @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, repo: repo, exec: exec} = state) do
-    :ssh_connection.send(conn, chan, execute(exec, repo, data))
-    :ssh_connection.send_eof(conn, chan)
-    :ssh_connection.close(conn, chan)
-    {:ok, state}
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, exec: exec} = state) do
+    {exec, io} = WireProtocol.next(exec, data)
+    if io, do: :ssh_connection.send(conn, chan, io)
+    if WireProtocol.done?(exec), do: :ssh_connection.close(conn, chan)
+    {:ok, %{state|exec: exec}}
   end
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
-    [repo|_args] = parse_args(args)
+    [repo|args] = parse_args(args)
     if has_permission?(user, repo, exec) do
       {:ok, repo} = Git.repository_open(Repo.workdir(repo))
-      :ssh_connection.send(conn, chan, WireProtocol.reference_discovery(repo, exec))
-      {:ok, %{state|repo: repo, exec: exec}}
+      {exec, io} =
+        repo
+        |> WireProtocol.service(exec)
+        |> WireProtocol.flush()
+      if io, do: :ssh_connection.send(conn, chan, io)
+      {:ok, %{state|exec: exec}}
     else
       {:stop, chan, state}
     end
@@ -154,7 +152,4 @@ defmodule GitGud.SSHServer do
 
   defp has_permission?(user, repo, "git-upload-pack"),  do: Repo.can_read?(user, repo)
   defp has_permission?(user, repo, "git-receive-pack"), do: Repo.can_write?(user, repo)
-
-  defp execute("git-upload-pack", repo, data),  do: WireProtocol.upload_pack(repo, data)
-  defp execute("git-receive-pack", repo, data), do: WireProtocol.receive_pack(repo, data)
 end

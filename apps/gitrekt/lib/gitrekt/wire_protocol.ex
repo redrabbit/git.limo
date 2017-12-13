@@ -18,39 +18,48 @@ defmodule GitRekt.WireProtocol do
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
     |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
-    |> Enum.map(&pkt_line/1)
-    |> Enum.concat([pkt_line()])
+    |> Enum.concat([:flush])
   end
 
   @doc """
-  Sends objects packed back to *git-fetch-pack*.
+  Returns a new service object for the given `repo` and `executable`.
   """
-  @spec upload_pack(Git.repo, binary) :: binary
-  def upload_pack(repo, pkt) do
-    case parse_upload_pkt(pkt) do
-      {:done, wants, _shallows, _haves, _caps} ->
-        encode(["NAK", Packfile.create(repo, wants)])
+  @spec service(Git.repo, binary) :: struct
+  def service(repo, executable) do
+    struct(exec_mod(executable), repo: repo)
+  end
+
+  @doc """
+  Transist the `service` struct to the next state by parsing the given `data`.
+  """
+  @spec next(struct, binary) :: {struct, iolist}
+  def next(service, data) do
+    service
+    |> read_all(Enum.to_list(decode(data)))
+    |> flush()
+  end
+
+  @doc """
+  Returns `true` if the service can read more data; elsewhise returns `false`.
+  """
+  @spec done?(struct) :: boolean
+  def done?(service), do: service.state == :done
+
+  @doc """
+  Flushes the server response for the given `service` struct.
+  """
+  @spec flush(Module.t) :: {Module.t, iolist}
+  def flush(service) do
+    case apply(service.__struct__, :run, [service]) do
+      {handle, []} -> {handle, nil}
+      {handle, io} -> {handle, encode(io)}
     end
-  end
-
-  @doc """
-  Receives what is pushed into the repository.
-  """
-  @spec receive_pack(Git.repo, binary) :: binary
-  def receive_pack(repo, pkt) do
-    {refs, pack, caps} = parse_receive_pkt(pkt)
-    {:ok, odb} = Git.repository_get_odb(repo)
-    Enum.each(pack, &apply_pack_obj(odb, &1))
-    Enum.each(refs, &rename_ref(repo, &1))
-    if "report-status" in caps,
-      do: encode(["unpack ok", Enum.into(refs, "", &"ok #{elem(&1, 2)}"), :flush]),
-    else: []
   end
 
   @doc """
   Returns an *PKT-LINE* encoded representation of the given `lines`.
   """
-  @spec encode(Enumerable.t) :: [binary]
+  @spec encode(Enumerable.t) :: iolist
   def encode(lines) do
     Enum.map(lines, &pkt_line/1)
   end
@@ -69,6 +78,7 @@ defmodule GitRekt.WireProtocol do
   @spec pkt_line(binary|:flush) :: binary
   def pkt_line(data \\ :flush)
   def pkt_line(:flush), do: "0000"
+  def pkt_line(:nak), do: pkt_line("NAK")
   def pkt_line(<<"PACK", _rest::binary>> = pack), do: pack
   def pkt_line(data) when is_binary(data) do
     data
@@ -87,6 +97,8 @@ defmodule GitRekt.WireProtocol do
 
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
+
+  defp format_ref_line({oid, refname}), do: "#{Git.oid_fmt(oid)} #{refname}"
 
   defp reference_head(repo) do
     case Git.reference_resolve(repo, "HEAD") do
@@ -115,32 +127,18 @@ defmodule GitRekt.WireProtocol do
          {:ok, tag_oid} <- Git.object_id(commit) do
       [{tag_oid, refname}, {oid, refname <> "^{}"}]
     else
-      {:ok, :commit, _commit} ->
-        {oid, refname}
+      {:ok, :commit, _commit} -> {oid, refname}
     end
   end
 
-  defp rename_ref(repo, {_old_oid, new_oid, refname}) do
-    Git.reference_create(repo, refname, :oid, new_oid, true)
-  end
+  defp exec_mod("git-upload-pack"),  do: Module.concat(__MODULE__, UploadPack)
+  defp exec_mod("git-receive-pack"), do: Module.concat(__MODULE__, ReceivePack)
 
-  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
-    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
-    new_data = apply_delta_chain(obj_data, "", cmds)
-    {:ok, _oid} = apply_pack_obj(odb, {obj_type, new_data})
-  end
-
-  defp apply_pack_obj(odb, {obj_type, obj_data}) do
-    {:ok, _oid} = Git.odb_write(odb, obj_data, obj_type)
-  end
-
-  defp apply_delta_chain(_source, target, []), do: target
-  defp apply_delta_chain(source, target, [{:insert, chunk}|cmds]) do
-    apply_delta_chain(source, target <> chunk, cmds)
-  end
-
-  defp apply_delta_chain(source, target, [{:copy, {offset, size}}|cmds]) do
-    apply_delta_chain(source, target <> binary_part(source, offset, size), cmds)
+  defp read_all(service, lines) do
+    case apply(service.__struct__, :next, [service, lines]) do
+      {handle, []} -> handle
+      {handle, lines} -> read_all(handle, lines)
+    end
   end
 
   defp pkt_stream(data) do
@@ -167,49 +165,6 @@ defmodule GitRekt.WireProtocol do
   defp pkt_decode("done"), do: :done
   defp pkt_decode("want " <> hash), do: {:want, hash}
   defp pkt_decode("have " <> hash), do: {:have, hash}
+  defp pkt_decode("shallow " <> hash), do: {:shallow, hash}
   defp pkt_decode(pkt_line), do: pkt_line
-
-  defp parse_upload_pkt(pkt) do
-    lines = decode(pkt)
-    {wants, lines} = Enum.split_while(lines, &upload_line_type?(&1, :want))
-    {wants, capabilities} = parse_upload_caps(wants)
-    {shallows, lines} = Enum.split_while(lines, &upload_line_type?(&1, :shallow))
-    [:flush|lines] = lines
-    {haves, lines} = Enum.split_while(lines, &upload_line_type?(&1, :have))
-    [last_line] = lines
-    {last_line, format_cmd_lines(wants), format_cmd_lines(shallows), format_cmd_lines(haves), capabilities}
-  end
-
-  defp parse_upload_caps([{obj_type, first_ref}|wants]) do
-    case String.split(first_ref, "\0", parts: 2) do
-      [first_ref]       -> {[{obj_type, first_ref}|wants], []}
-      [first_ref, caps] -> {[{obj_type, first_ref}|wants], String.split(caps, " ", trim: true)}
-    end
-  end
-
-  defp parse_receive_pkt(pkt) do
-    lines = decode(pkt)
-    {refs, lines} = Enum.split_while(lines, &is_binary/1)
-    {refs, capabilities} = parse_receive_caps(refs)
-    [:flush|pack] = lines
-    {Enum.map(refs, &parse_receive_ref/1), pack, capabilities}
-  end
-
-  defp parse_receive_caps([first_ref|refs]) do
-    case String.split(first_ref, "\0", parts: 2) do
-      [first_ref]       -> {[first_ref|refs], []}
-      [first_ref, caps] -> {[first_ref|refs], String.split(caps, " ", trim: true)}
-    end
-  end
-
-  defp parse_receive_ref(ref) do
-    [old, new, name] = String.split(ref)
-    {Git.oid_parse(old), Git.oid_parse(new), name}
-  end
-
-  defp upload_line_type?({type, _oid}, type), do: true
-  defp upload_line_type?(_line, _type), do: false
-
-  defp format_ref_line({oid, refname}), do: "#{Git.oid_fmt(oid)} #{refname}"
-  defp format_cmd_lines(lines), do: Enum.uniq(Enum.map(lines, &Git.oid_parse(elem(&1, 1))))
 end
