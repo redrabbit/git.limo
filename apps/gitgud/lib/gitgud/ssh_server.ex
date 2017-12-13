@@ -103,10 +103,10 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
-    [repo|args] = parse_args(args)
-    if has_permission?(user, repo, exec) && Enum.empty?(args) do
+    [repo|_args] = parse_args(args)
+    if has_permission?(user, repo, exec) do
       {:ok, repo} = Git.repository_open(Repo.workdir(repo))
-      :ssh_connection.send(conn, chan, WireProtocol.reference_discovery(repo))
+      :ssh_connection.send(conn, chan, WireProtocol.reference_discovery(repo, exec))
       {:ok, %{state|repo: repo, exec: exec}}
     else
       {:stop, chan, state}

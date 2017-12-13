@@ -6,16 +6,18 @@ defmodule GitRekt.WireProtocol do
   alias GitRekt.Git
   alias GitRekt.Packfile
 
-  @server_capabilities ~w(report-status delete-refs)
+  @upload_caps ~w()
+  @receive_caps ~w(report-status delete-refs)
 
   @doc """
   Returns a *PKT-LINE* stream describing each ref and it current value.
   """
-  @spec reference_discovery(Git.repo) :: [binary]
-  def reference_discovery(repo) do
+  @spec reference_discovery(Git.repo, binary) :: [binary]
+  def reference_discovery(repo, service) do
     [reference_head(repo), reference_list(repo), reference_tags(repo)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
+    |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
     |> Enum.map(&pkt_line/1)
     |> Enum.concat([pkt_line()])
   end
@@ -83,11 +85,12 @@ defmodule GitRekt.WireProtocol do
   # Helpers
   #
 
-  defp server_capabilities, do: Enum.join(@server_capabilities, " ")
+  defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
+  defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
 
   defp reference_head(repo) do
     case Git.reference_resolve(repo, "HEAD") do
-      {:ok, _refname, _shorthand, oid} -> {oid, "HEAD\0#{server_capabilities()}"}
+      {:ok, _refname, _shorthand, oid} -> {oid, "HEAD"}
       {:error, _reason} -> []
     end
   end

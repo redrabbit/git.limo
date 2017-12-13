@@ -112,7 +112,7 @@ defmodule GitGud.Web.GitBackendController do
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      refs = WireProtocol.reference_discovery(handle)
+      refs = WireProtocol.reference_discovery(handle, service)
       refs = [WireProtocol.pkt_line("# service=#{service}"), WireProtocol.pkt_line] ++ refs
       conn
       |> put_resp_content_type("application/x-#{service}-advertisement")
