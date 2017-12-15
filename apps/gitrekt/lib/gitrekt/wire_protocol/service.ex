@@ -39,7 +39,7 @@ defmodule GitRekt.WireProtocol.Service do
   @spec flush(Module.t) :: {Module.t, iolist}
   def flush(service) do
     case apply(service.__struct__, :run, [service]) do
-      {handle, []} -> {handle, nil}
+      {handle, []} -> {handle, []}
       {handle, io} -> {handle, encode(io)}
     end
   end

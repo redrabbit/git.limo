@@ -6,7 +6,7 @@ defmodule GitRekt.WireProtocol do
   alias GitRekt.Git
   alias GitRekt.Packfile
 
-  @upload_caps ~w()
+  @upload_caps ~w(multi_ack multi_ack_detailed)
   @receive_caps ~w(report-status delete-refs)
 
   @doc """
@@ -43,6 +43,8 @@ defmodule GitRekt.WireProtocol do
   @spec pkt_line(binary|:flush) :: binary
   def pkt_line(data \\ :flush)
   def pkt_line(:flush), do: "0000"
+  def pkt_line({:ack, oid}), do: pkt_line("ACK #{Git.oid_fmt(oid)}")
+  def pkt_line({:ack, oid, status}), do: pkt_line("ACK #{Git.oid_fmt(oid)} #{status}")
   def pkt_line(:nak), do: pkt_line("NAK")
   def pkt_line(<<"PACK", _rest::binary>> = pack), do: pack
   def pkt_line(data) when is_binary(data) do

@@ -13,11 +13,11 @@ defmodule GitRekt.Packfile do
   @doc """
   Returns a *PACK* file for the given `oids` list.
   """
-  @spec create(Git.repo, [Git.oid]) :: binary
+  @spec create(Git.repo, [Git.oid|{Git.oid, boolean}]) :: binary
   def create(repo, oids) when is_list(oids) do
     with {:ok, pack} <- Git.pack_new(repo),
          {:ok, walk} <- Git.revwalk_new(repo),
-          :ok <- pack_insert(pack, walk, oids),
+          :ok <- pack_insert(pack, walk, oid_mask(oids)),
          {:ok, data} <- Git.pack_data(pack), do: data
   end
 
@@ -32,15 +32,30 @@ defmodule GitRekt.Packfile do
   # Helpers
   #
 
-  defp unpack(2 = _version, count, data) do
-    unpack_obj_next(0, count, data, [])
+  defp pack_insert(pack, walk, oids) do
+    case walk_insert(walk, oids) do
+      :ok -> Git.pack_insert_walk(pack, walk)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp pack_insert(_pack, _walk, []), do: :ok
-  defp pack_insert(pack, walk, [oid|oids]) do
-    with :ok <- Git.revwalk_push(walk, oid),
-         :ok <- Git.pack_insert_walk(pack, walk),
-         :ok <- Git.revwalk_reset(walk), do: pack_insert(pack, walk, oids)
+  defp walk_insert(_walk, []), do: :ok
+  defp walk_insert(walk, [{oid, hide}|oids]) do
+    case Git.revwalk_push(walk, oid, hide) do
+      :ok -> walk_insert(walk, oids)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp oid_mask(oids) do
+    Enum.map(oids, fn
+      {oid, hidden} when is_binary(oid) -> {oid, hidden}
+      oid when is_binary(oid) -> {oid, false}
+    end)
+  end
+
+  defp unpack(2 = _version, count, data) do
+    unpack_obj_next(0, count, data, [])
   end
 
   defp unpack_obj_next(i, max, rest, acc) when i < max do

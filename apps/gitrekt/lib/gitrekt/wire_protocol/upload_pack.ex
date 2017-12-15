@@ -39,14 +39,21 @@ defmodule GitRekt.WireProtocol.UploadPack do
   end
 
   @impl true
-  def next(%__MODULE__{state: :upload_wants} = handle, lines) do
-    {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
-    {struct(handle, state: :upload_haves, haves: parse_cmds(haves)), lines}
+  def next(%__MODULE__{state: :upload_wants} = handle, [:done]) do
+    {struct(handle, state: :done), []}
   end
 
   @impl true
-  def next(%__MODULE__{state: :upload_haves} = handle, [:done]) do
-    {handle, []}
+  def next(%__MODULE__{state: :upload_wants} = handle, lines) do
+    {:ok, odb} = Git.repository_get_odb(handle.repo)
+    {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
+    acks = Enum.filter(parse_cmds(haves), &Git.odb_object_exists?(odb, &1))
+    case lines do
+      [:flush|lines] ->
+        {struct(handle, haves: [acks|handle.haves]), lines}
+      [:done|lines] ->
+        {struct(handle, state: :upload_haves, haves: [acks|handle.haves]), lines}
+    end
   end
 
   @impl true
@@ -61,18 +68,59 @@ defmodule GitRekt.WireProtocol.UploadPack do
   end
 
   @impl true
-  def run(%__MODULE__{state: :upload_wants} = handle) do
+  def run(%__MODULE__{state: :upload_wants, haves: []} = handle) do
     {handle, []}
+  end
+
+  @impl true
+  def run(%__MODULE__{state: :upload_wants} = handle) do
+    acks = ack_haves(handle.haves, handle.caps)
+    cond do
+      "multi_ack_detailed" in handle.caps ->
+        {handle, acks ++ [:nak]}
+      "multi_ack" in handle.caps ->
+        {handle, acks ++ [:nak]}
+      Enum.empty?(handle.haves) ->
+        {handle, [:nak]}
+      Enum.empty?(acks) ->
+        {handle, []}
+      true ->
+        {handle, [List.first(acks)]}
+    end
   end
 
   @impl true
   def run(%__MODULE__{state: :upload_haves} = handle) do
-    {struct(handle, state: :done), [:nak, create(handle.repo, handle.wants)]}
+    {next, lines} = run(struct(handle, state: :done))
+    cond do
+      "multi_ack_detailed" in handle.caps ->
+        {next, ack_haves(handle.haves, handle.caps) ++ lines}
+      "multi_ack" in handle.caps ->
+        {next, ack_haves(handle.haves, handle.caps) ++ lines}
+      true ->
+        {next, lines}
+    end
   end
 
   @impl true
-  def run(%__MODULE__{state: :done} = handle) do
+  def run(%__MODULE__{state: :done, wants: [], haves: []} = handle) do
     {handle, []}
+  end
+
+  def run(%__MODULE__{state: :done, haves: []} = handle) do
+    {handle, [:nak, create(handle.repo, handle.wants)]}
+  end
+
+  def run(%__MODULE__{state: :done} = handle) do
+    [have|_] = List.flatten(Enum.reverse(handle.haves)) # TODO
+    cond do
+      "multi_ack_detailed" in handle.caps ->
+        {handle, [{:ack, have}, create(handle.repo, handle.wants ++ [{have, true}])]}
+      "multi_ack" in handle.caps ->
+        {handle, [{:ack, have}, create(handle.repo, handle.wants ++ [{have, true}])]}
+      true ->
+        {handle, [create(handle.repo, handle.wants ++ [{have, true}])]}
+    end
   end
 
   #
@@ -86,9 +134,23 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   defp parse_caps([]), do: {[], []}
   defp parse_caps([{obj_type, first_ref}|wants]) do
-    case String.split(first_ref, "\0", parts: 2) do
+    case String.split(first_ref, " ", parts: 2) do
       [first_ref]       -> {[], [{obj_type, first_ref}|wants]}
       [first_ref, caps] -> {String.split(caps, " ", trim: true), [{obj_type, first_ref}|wants]}
+    end
+  end
+
+  defp ack_haves([], _caps), do: []
+  defp ack_haves([haves|_], caps) do
+    cond do
+      "multi_ack_detailed" in caps ->
+        Enum.map(haves, &{:ack, &1, :common})
+      "multi_ack" in caps ->
+        Enum.map(haves, &{:ack, &1, :continue})
+      [have|_] = haves ->
+        [{:ack, have}]
+      true ->
+        []
     end
   end
 end

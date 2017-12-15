@@ -11,6 +11,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defstruct [:repo, state: :disco, caps: [], cmds: [], pack: []]
 
+  @null_oid String.duplicate("0", 40)
+
   @type cmd :: {
     :create | :update | :delete,
     Git.oid,
@@ -73,15 +75,18 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   def run(%__MODULE__{state: :pack} = handle) do
     :ok = apply_pack(handle.repo, handle.pack)
     :ok = apply_cmds(handle.repo, handle.cmds)
-    handle = struct(handle, state: :done)
-    if "report-status" in handle.caps,
-      do: {handle, report_status(handle.cmds)},
-    else: {handle, []}
+    run(struct(handle, state: :done))
   end
 
   @impl true
-  def run(%__MODULE__{state: :done} = handle) do
+  def run(%__MODULE__{state: :done, cmds: []} = handle) do
     {handle, []}
+  end
+
+  def run(%__MODULE__{state: :done} = handle) do
+    if "report-status" in handle.caps,
+      do: {handle, report_status(handle.cmds)},
+    else: {handle, []}
   end
 
   #
@@ -89,7 +94,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   #
 
   defp report_status(cmds) do
-    List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, 3)}"), :flush])
+    List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
   end
 
   defp obj_match?({type, _oid}, type), do: true
@@ -97,7 +102,11 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defp parse_cmds(cmds) do
     Enum.map(cmds, fn cmd ->
-      case String.split(cmd) do
+      case String.split(cmd, " ", parts: 3) do
+        [@null_oid, new, name] ->
+          {:create, Git.oid_parse(new), name}
+        [old, @null_oid, name] ->
+          {:delete, Git.oid_parse(old), name}
         [old, new, name] ->
           {:update, Git.oid_parse(old), Git.oid_parse(new), name}
       end
@@ -114,7 +123,9 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defp apply_cmds(repo, cmds) do
     Enum.each(cmds, fn
+      {:create, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, false)
       {:update, _old_oid, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, true)
+    # {:delete, old_oid, refname} -> Git.reference_delete(repo, refname, :oid, old_oid)
     end)
   end
 

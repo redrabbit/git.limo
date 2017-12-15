@@ -89,8 +89,13 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, exec: exec} = state) do
     {exec, io} = Service.next(exec, data)
-    if io, do: :ssh_connection.send(conn, chan, io)
-    if Service.done?(exec), do: :ssh_connection.close(conn, chan)
+    :ssh_connection.send(conn, chan, io)
+    if Service.done?(exec) do
+      :ssh_connection.send_eof(conn, chan)
+      :ssh_connection.exit_status(conn, chan, 0)
+      :ssh_connection.close(conn, chan)
+    end
+
     {:ok, %{state|exec: exec}}
   end
 
