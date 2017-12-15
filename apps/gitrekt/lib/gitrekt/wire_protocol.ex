@@ -10,50 +10,15 @@ defmodule GitRekt.WireProtocol do
   @receive_caps ~w(report-status delete-refs)
 
   @doc """
-  Returns a *PKT-LINE* stream describing each ref and it current value.
+  Returns a stream describing each ref and it current value.
   """
-  @spec reference_discovery(Git.repo, binary) :: [binary]
+  @spec reference_discovery(Git.repo, binary) :: iolist
   def reference_discovery(repo, service) do
     [reference_head(repo), reference_list(repo), reference_tags(repo)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
     |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
     |> Enum.concat([:flush])
-  end
-
-  @doc """
-  Returns a new service object for the given `repo` and `executable`.
-  """
-  @spec service(Git.repo, binary) :: struct
-  def service(repo, executable) do
-    struct(exec_mod(executable), repo: repo)
-  end
-
-  @doc """
-  Transist the `service` struct to the next state by parsing the given `data`.
-  """
-  @spec next(struct, binary) :: {struct, iolist}
-  def next(service, data) do
-    service
-    |> read_all(Enum.to_list(decode(data)))
-    |> flush()
-  end
-
-  @doc """
-  Returns `true` if the service can read more data; elsewhise returns `false`.
-  """
-  @spec done?(struct) :: boolean
-  def done?(service), do: service.state == :done
-
-  @doc """
-  Flushes the server response for the given `service` struct.
-  """
-  @spec flush(Module.t) :: {Module.t, iolist}
-  def flush(service) do
-    case apply(service.__struct__, :run, [service]) do
-      {handle, []} -> {handle, nil}
-      {handle, io} -> {handle, encode(io)}
-    end
   end
 
   @doc """
@@ -128,16 +93,6 @@ defmodule GitRekt.WireProtocol do
       [{tag_oid, refname}, {oid, refname <> "^{}"}]
     else
       {:ok, :commit, _commit} -> {oid, refname}
-    end
-  end
-
-  defp exec_mod("git-upload-pack"),  do: Module.concat(__MODULE__, UploadPack)
-  defp exec_mod("git-receive-pack"), do: Module.concat(__MODULE__, ReceivePack)
-
-  defp read_all(service, lines) do
-    case apply(service.__struct__, :next, [service, lines]) do
-      {handle, []} -> handle
-      {handle, lines} -> read_all(handle, lines)
     end
   end
 

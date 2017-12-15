@@ -34,7 +34,7 @@ defmodule GitGud.SSHServer do
   alias GitGud.RepoQuery
 
   alias GitRekt.Git
-  alias GitRekt.WireProtocol
+  alias GitRekt.WireProtocol.Service
 
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
@@ -88,9 +88,9 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, exec: exec} = state) do
-    {exec, io} = WireProtocol.next(exec, data)
+    {exec, io} = Service.next(exec, data)
     if io, do: :ssh_connection.send(conn, chan, io)
-    if WireProtocol.done?(exec), do: :ssh_connection.close(conn, chan)
+    if Service.done?(exec), do: :ssh_connection.close(conn, chan)
     {:ok, %{state|exec: exec}}
   end
 
@@ -102,8 +102,8 @@ defmodule GitGud.SSHServer do
       {:ok, repo} = Git.repository_open(Repo.workdir(repo))
       {exec, io} =
         repo
-        |> WireProtocol.service(exec)
-        |> WireProtocol.flush()
+        |> Service.new(exec)
+        |> Service.flush()
       if io, do: :ssh_connection.send(conn, chan, io)
       {:ok, %{state|exec: exec}}
     else

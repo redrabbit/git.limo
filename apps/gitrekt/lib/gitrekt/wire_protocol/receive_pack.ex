@@ -1,33 +1,40 @@
 defmodule GitRekt.WireProtocol.ReceivePack do
   @moduledoc """
+  Module implementing the `git-receive-pack` command.
   """
+
+  @behaviour GitRekt.WireProtocol.Service
+
+  alias GitRekt.Git
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  alias GitRekt.Git
-  alias GitRekt.Packfile
-
   defstruct [:repo, state: :disco, caps: [], cmds: [], pack: []]
 
-  @type state :: :disco | :update_req | :pack | :done
-  @type command :: :create | :update | :delete
-
-  @type update_command :: {command, Git.oid, Git.oid, binary}
-  @type update_list :: [update_command]
-
-  @type t :: %__MODULE__{
-    state: state,
-    repo: Git.repo,
-    caps: [binary],
-    cmds: update_list,
-    pack: Packfile.obj_list
+  @type cmd :: {
+    :create | :update | :delete,
+    Git.oid,
+    Git.oid,
   }
 
-  @spec next(t, [term]) :: {t, [term]}
+  @type t :: %__MODULE__{
+    repo: Git.repo,
+    state: :disco | :upload_wants | :upload_haves | :done,
+    caps: [binary],
+    cmds: [],
+    pack: Packfile.obj_list,
+  }
+
+  #
+  # Callbacks
+  #
+
+  @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush] = _lines) do
     {struct(handle, state: :done), []}
   end
 
+  @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
     {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
     {cmds, lines} = Enum.split_while(lines, &is_binary/1)
@@ -36,26 +43,33 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     {struct(handle, state: :update_req, caps: caps, cmds: parse_cmds(cmds)), lines}
   end
 
+  @impl true
   def next(%__MODULE__{state: :update_req} = handle, lines) do
     {struct(handle, state: :pack, pack: lines), []}
   end
 
+  @impl true
   def next(%__MODULE__{state: :pack} = handle, []) do
     {handle, []}
   end
 
+  @impl true
   def next(%__MODULE__{state: :pack}, _lines), do: raise "Nothing should be run after :pack"
+
+  @impl true
   def next(%__MODULE__{state: :done}, _lines), do: raise "Cannot call next/2 when state == :done"
 
-  @spec run(t) :: {t, [binary]}
+  @impl true
   def run(%__MODULE__{state: :disco} = handle) do
     {handle, reference_discovery(handle.repo, "git-receive-pack")}
   end
 
+  @impl true
   def run(%__MODULE__{state: :update_req} = handle) do
     {handle, []}
   end
 
+  @impl true
   def run(%__MODULE__{state: :pack} = handle) do
     :ok = apply_pack(handle.repo, handle.pack)
     :ok = apply_cmds(handle.repo, handle.cmds)
@@ -65,6 +79,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     else: {handle, []}
   end
 
+  @impl true
   def run(%__MODULE__{state: :done} = handle) do
     {handle, []}
   end

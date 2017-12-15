@@ -1,29 +1,35 @@
 defmodule GitRekt.WireProtocol.UploadPack do
   @moduledoc """
+  Module implementing the `git-upload-pack` command.
   """
 
-  import GitRekt.WireProtocol, only: [reference_discovery: 2]
+  @behaviour GitRekt.WireProtocol.Service
 
   alias GitRekt.Git
-  alias GitRekt.Packfile
+
+  import GitRekt.Packfile, only: [create: 2]
+  import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
   defstruct [:repo, state: :disco, caps: [], wants: [], haves: []]
 
-  @type state :: :disco | :upload_wants | :upload_haves | :done
-
   @type t :: %__MODULE__{
-    state: state,
     repo: Git.repo,
+    state: :disco | :upload_wants | :upload_haves | :done,
     caps: [binary],
     wants: [Git.oid],
-    haves: [Git.oid]
+    haves: [Git.oid],
   }
 
-  @spec next(t, [term]) :: {t, [term]}
-  def next(%__MODULE__{state: :disco} = handle, [:flush] = _lines) do
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def next(%__MODULE__{state: :disco} = handle, [:flush]) do
     {struct(handle, state: :done), []}
   end
 
+  @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
     {wants, lines} = Enum.split_while(lines, &obj_match?(&1, :want))
     {caps, wants} = parse_caps(wants)
@@ -32,31 +38,39 @@ defmodule GitRekt.WireProtocol.UploadPack do
     {struct(handle, state: :upload_wants, caps: caps, wants: parse_cmds(wants)), lines}
   end
 
+  @impl true
   def next(%__MODULE__{state: :upload_wants} = handle, lines) do
     {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
     {struct(handle, state: :upload_haves, haves: parse_cmds(haves)), lines}
   end
 
+  @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, [:done]) do
     {handle, []}
   end
 
+  @impl true
   def next(%__MODULE__{state: :upload_haves}, _lines), do: raise "Nothing should be run after :upload_haves"
+
+  @impl true
   def next(%__MODULE__{state: :done}, _lines), do: raise "Cannot call next/2 when state == :done"
 
-  @spec run(t) :: {t, [binary]}
+  @impl true
   def run(%__MODULE__{state: :disco} = handle) do
     {handle, reference_discovery(handle.repo, "git-upload-pack")}
   end
 
+  @impl true
   def run(%__MODULE__{state: :upload_wants} = handle) do
     {handle, []}
   end
 
+  @impl true
   def run(%__MODULE__{state: :upload_haves} = handle) do
-    {struct(handle, state: :done), [:nak, Packfile.create(handle.repo, handle.wants)]}
+    {struct(handle, state: :done), [:nak, create(handle.repo, handle.wants)]}
   end
 
+  @impl true
   def run(%__MODULE__{state: :done} = handle) do
     {handle, []}
   end

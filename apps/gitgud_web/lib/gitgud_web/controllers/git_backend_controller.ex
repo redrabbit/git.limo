@@ -31,6 +31,7 @@ defmodule GitGud.Web.GitBackendController do
 
   alias GitRekt.Git
   alias GitRekt.WireProtocol
+  alias GitRekt.WireProtocol.Service
 
   alias GitGud.User
   alias GitGud.Repo
@@ -139,8 +140,8 @@ defmodule GitGud.Web.GitBackendController do
 
   defp git_exec(handle, exec, data) do
     handle
-    |> WireProtocol.service(exec)
-    |> WireProtocol.next(data)
+    |> Service.new(exec)
+    |> Service.next(data)
     |> elem(1)
   end
 end
