@@ -129,6 +129,11 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
+  def handle_msg({:EXIT, _port, reason}, state) do
+    {:stop, reason, state}
+  end
+
+  @impl true
   def terminate(_reason, _state), do: :ok
 
   #
