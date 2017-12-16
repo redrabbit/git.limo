@@ -17,7 +17,8 @@ defmodule GitRekt.Packfile do
   def create(repo, oids) when is_list(oids) do
     with {:ok, pack} <- Git.pack_new(repo),
          {:ok, walk} <- Git.revwalk_new(repo),
-          :ok <- pack_insert(pack, walk, oid_mask(oids)),
+          :ok <- walk_insert(walk, oid_mask(oids)),
+          :ok <- Git.pack_insert_walk(pack, walk),
          {:ok, data} <- Git.pack_data(pack), do: data
   end
 
@@ -32,12 +33,6 @@ defmodule GitRekt.Packfile do
   # Helpers
   #
 
-  defp pack_insert(pack, walk, oids) do
-    case walk_insert(walk, oids) do
-      :ok -> Git.pack_insert_walk(pack, walk)
-      {:error, reason} -> {:error, reason}
-    end
-  end
 
   defp walk_insert(_walk, []), do: :ok
   defp walk_insert(walk, [{oid, hide}|oids]) do
