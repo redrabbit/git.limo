@@ -40,6 +40,33 @@ geef_pack_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_pack_insert_commit(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_pack *pack;
+	ErlNifBinary bin;
+    git_oid id;
+
+	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **) &pack))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (bin.size < GIT_OID_RAWSZ)
+		return enif_make_badarg(env);
+
+	git_oid_fromraw(&id, bin.data);
+
+
+    if (git_packbuilder_insert_commit(pack->pack, &id) < 0) {
+        return geef_error(env);
+    }
+
+	return atoms.ok;
+}
+
+
+ERL_NIF_TERM
 geef_pack_insert_walk(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_pack *pack;

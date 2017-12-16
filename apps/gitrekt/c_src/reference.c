@@ -451,6 +451,37 @@ geef_reference_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_reference_delete(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_repository *repo;
+	git_reference *ref = NULL;
+	ErlNifBinary bin;
+	int error;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin))
+        return geef_oom(env);
+
+	error = git_reference_lookup(&ref, repo->repo, (char *)bin.data);
+	enif_release_binary(&bin);
+	if (error < 0)
+		return geef_error(env);
+
+    error = git_reference_delete(ref);
+    git_reference_free(ref);
+    if (error < 0)
+        return geef_error(env);
+
+	return atoms.ok;
+}
+
+
+ERL_NIF_TERM
 geef_reference_has_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_repository *repo;

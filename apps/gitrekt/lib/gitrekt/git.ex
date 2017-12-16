@@ -147,7 +147,15 @@ defmodule GitRekt.Git do
   Creates a new reference name which points to an object or to an other reference.
   """
   @spec reference_create(repo, binary, ref_type, binary | oid, boolean) :: :ok | {:error, term}
-  def reference_create(_repo, _name, _type, _target, _force) do
+  def reference_create(_repo, _name, _type, _target, _force \\ false) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Delete an existing reference.
+  """
+  @spec reference_delete(repo, binary) :: :ok | {:error, term}
+  def reference_delete(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -722,6 +730,15 @@ defmodule GitRekt.Git do
   def pack_new(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
+
+  @doc """
+  Inserts `commit` as well as the completed referenced tree.
+  """
+  @spec pack_insert_commit(pack, oid) :: :ok | {:error, term}
+  def pack_insert_commit(_pack, _oid) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
 
   @doc """
   Inserts objects as given by the `walk`.

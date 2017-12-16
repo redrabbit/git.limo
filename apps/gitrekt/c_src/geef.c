@@ -187,6 +187,7 @@ static ErlNifFunc geef_funcs[] =
 	{"reference_next",     1, geef_reference_next},
 	{"reference_resolve", 2, geef_reference_resolve},
 	{"reference_create", 5, geef_reference_create},
+	{"reference_delete", 2, geef_reference_delete},
 	{"reference_dwim", 2,   geef_reference_dwim},
 	{"reference_log?", 2, geef_reference_has_log},
 	{"reflog_read",       2, geef_reflog_read},
@@ -240,6 +241,7 @@ static ErlNifFunc geef_funcs[] =
 	{"config_get_string", 2, geef_config_get_string},
 	{"config_open",     1, geef_config_open},
 	{"pack_new",    1, geef_pack_new},
+	{"pack_insert_commit", 2, geef_pack_insert_commit},
 	{"pack_insert_walk", 2, geef_pack_insert_walk},
 	{"pack_data",   1, geef_pack_data},
 };
