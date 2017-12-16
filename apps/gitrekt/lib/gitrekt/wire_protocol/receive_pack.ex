@@ -68,21 +68,22 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def run(%__MODULE__{state: :update_req} = handle) do
-    {handle, []}
+    :ok = apply_cmds(handle.repo, handle.cmds)
+    run(struct(handle, state: :done))
   end
 
   @impl true
   def run(%__MODULE__{state: :pack} = handle) do
     :ok = apply_pack(handle.repo, handle.pack)
     :ok = apply_cmds(handle.repo, handle.cmds)
-    if "report-status" in handle.caps,
-      do: {handle, report_status(handle.cmds)},
-    else: {handle, []}
+    run(struct(handle, state: :done))
   end
 
   @impl true
   def run(%__MODULE__{state: :done} = handle) do
-    {handle, []}
+    if "report-status" in handle.caps,
+      do: {handle, report_status(handle.cmds)},
+    else: {handle, []}
   end
 
   #
@@ -121,7 +122,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     Enum.each(cmds, fn
       {:create, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, false)
       {:update, _old_oid, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, true)
-    # {:delete, old_oid, refname} -> Git.reference_delete(repo, refname, :oid, old_oid)
+      {:delete, _old_oid, refname} -> Git.reference_delete(repo, refname)
     end)
   end
 
