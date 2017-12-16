@@ -95,6 +95,8 @@ defmodule GitRekt.WireProtocol.Service do
         capture_port_output(port, buffer <> data)
       {^port, {:exit_status, 0}} ->
         buffer
+    after
+      1_000 -> ""
     end
   end
 end
