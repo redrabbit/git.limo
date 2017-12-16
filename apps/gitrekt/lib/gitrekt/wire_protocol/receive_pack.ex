@@ -75,18 +75,14 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   def run(%__MODULE__{state: :pack} = handle) do
     :ok = apply_pack(handle.repo, handle.pack)
     :ok = apply_cmds(handle.repo, handle.cmds)
-    run(struct(handle, state: :done))
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :done, cmds: []} = handle) do
-    {handle, []}
-  end
-
-  def run(%__MODULE__{state: :done} = handle) do
     if "report-status" in handle.caps,
       do: {handle, report_status(handle.cmds)},
     else: {handle, []}
+  end
+
+  @impl true
+  def run(%__MODULE__{state: :done} = handle) do
+    {handle, []}
   end
 
   #

@@ -77,15 +77,13 @@ defmodule GitRekt.WireProtocol.UploadPack do
     acks = ack_haves(handle.haves, handle.caps)
     cond do
       "multi_ack_detailed" in handle.caps ->
-        {handle, acks ++ [:nak]}
+        {handle, acks ++ [{:ack, List.last(List.last(handle.haves)), :ready}, :nak]}
       "multi_ack" in handle.caps ->
         {handle, acks ++ [:nak]}
       Enum.empty?(handle.haves) ->
         {handle, [:nak]}
-      Enum.empty?(acks) ->
-        {handle, []}
       true ->
-        {handle, [List.first(acks)]}
+        {handle, Enum.take(acks, 5)}
     end
   end
 
@@ -112,14 +110,15 @@ defmodule GitRekt.WireProtocol.UploadPack do
   end
 
   def run(%__MODULE__{state: :done} = handle) do
-    [have|_] = List.flatten(Enum.reverse(handle.haves)) # TODO
+    haves = List.flatten(Enum.reverse(handle.haves))
+    pack = create(handle.repo, handle.wants ++ Enum.map(haves, &{&1, true}))
     cond do
       "multi_ack_detailed" in handle.caps ->
-        {handle, [{:ack, have}, create(handle.repo, handle.wants ++ [{have, true}])]}
+        {handle, [{:ack, List.last(haves)}, pack]}
       "multi_ack" in handle.caps ->
-        {handle, [{:ack, have}, create(handle.repo, handle.wants ++ [{have, true}])]}
+        {handle, [{:ack, List.last(haves)}, pack]}
       true ->
-        {handle, [create(handle.repo, handle.wants ++ [{have, true}])]}
+        {handle, [pack]}
     end
   end
 
@@ -147,10 +146,8 @@ defmodule GitRekt.WireProtocol.UploadPack do
         Enum.map(haves, &{:ack, &1, :common})
       "multi_ack" in caps ->
         Enum.map(haves, &{:ack, &1, :continue})
-      [have|_] = haves ->
-        [{:ack, have}]
       true ->
-        []
+        Enum.map(haves, &{:ack, &1})
     end
   end
 end
