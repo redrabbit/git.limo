@@ -25,24 +25,8 @@ defmodule GitRekt.WireProtocol.Service do
   """
   @spec next(struct, binary) :: {struct, iolist}
   def next(service, data) do
-    IO.puts "incoming data via #{inspect service}:"
-    debug = if byte_size(data) > 1024, do: binary_part(data, 0, 1024), else: data
-    IO.binwrite debug
-    IO.puts ""
-
-    resp = exec_orig(service.__struct__, Git.repository_get_path(service.repo), data)
-    IO.puts "orig response (#{byte_size(resp)}):"
-    debug = if byte_size(resp) > 1024, do: binary_part(resp, 0, 1024), else: resp
-    IO.binwrite debug
-    IO.puts ""
-
     lines = Enum.to_list(decode(data))
-    {service, resp} = flush(read_all(service, lines))
-    IO.puts "impl response (#{IO.iodata_length(resp)}):"
-    debug = if IO.iodata_length(resp) > 1024, do: binary_part(IO.iodata_to_binary(resp), 0, 1024), else: resp
-    IO.binwrite debug
-    IO.puts ""
-    {service, resp}
+    flush(read_all(service, lines))
   end
 
   @doc """
@@ -69,34 +53,10 @@ defmodule GitRekt.WireProtocol.Service do
   defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
   defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
 
-  defp exec_orig(GitRekt.WireProtocol.UploadPack, repo_path, request) do
-    exec_port("git-upload-pack", repo_path, request)
-  end
-
-  defp exec_orig(GitRekt.WireProtocol.ReceivePack, repo_path, request) do
-    exec_port("git-receive-pack", repo_path, request)
-  end
-
-  defp exec_port(service, repo_path, request) do
-    port = Port.open({:spawn, "#{service} --stateless-rpc #{repo_path}"}, [:binary, :exit_status])
-    if Port.command(port, request), do: capture_port_output(port)
-  end
-
   defp read_all(service, lines) do
     case apply(service.__struct__, :next, [service, lines]) do
       {handle, []} -> handle
       {handle, lines} -> read_all(handle, lines)
-    end
-  end
-
-  defp capture_port_output(port, buffer \\ "") do
-    receive do
-      {^port, {:data, data}} ->
-        capture_port_output(port, buffer <> data)
-      {^port, {:exit_status, 0}} ->
-        buffer
-    after
-      1_000 -> ""
     end
   end
 end
