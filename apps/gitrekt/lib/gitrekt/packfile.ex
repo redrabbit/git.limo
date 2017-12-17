@@ -116,7 +116,7 @@ defmodule GitRekt.Packfile do
     unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
   end
 
-  defp delta_copy_length_size(<<_::1, _::1, 0::1>>), do: 0
+  defp delta_copy_length_size(<<_::1, _::1, 0::1>>), do: 0x10000
   defp delta_copy_length_size(<<_::1, 0::1, 1::1>>), do: 8
   defp delta_copy_length_size(<<0::1, 1::1, 1::1>>), do: 16
   defp delta_copy_length_size(<<1::1, 1::1, 1::1>>), do: 24
