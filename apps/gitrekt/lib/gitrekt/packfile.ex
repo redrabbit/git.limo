@@ -15,11 +15,9 @@ defmodule GitRekt.Packfile do
   """
   @spec create(Git.repo, [Git.oid|{Git.oid, boolean}]) :: binary
   def create(repo, oids) when is_list(oids) do
-    with {:ok, pack} <- Git.pack_new(repo),
-         {:ok, walk} <- Git.revwalk_new(repo),
+    with {:ok, walk} <- Git.revwalk_new(repo),
           :ok <- walk_insert(walk, oid_mask(oids)),
-          :ok <- Git.pack_insert_walk(pack, walk),
-         {:ok, data} <- Git.pack_data(pack), do: data
+         {:ok, pack} <- Git.revwalk_pack(walk), do: pack
   end
 
   @doc """
