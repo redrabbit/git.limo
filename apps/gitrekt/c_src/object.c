@@ -168,7 +168,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         memcpy(bin.data, chunk, bin.size);
         chunks = enif_make_list_cell(env, enif_make_binary(env, &bin), chunks);
 
-    } while (error != Z_STREAM_END);
+    } while (z.avail_out == 0 && Z_STREAM_END);
 
     if(enif_make_reverse_list(env, chunks, &data) < 0) {
         return geef_oom(env);

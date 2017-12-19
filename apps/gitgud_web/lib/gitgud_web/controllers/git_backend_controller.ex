@@ -107,6 +107,14 @@ defmodule GitGud.Web.GitBackendController do
 
   defp compressed?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
 
+  defp read_body_full(conn, buffer \\ "") do
+    case read_body(conn) do
+      {:ok, body, conn} -> {:ok, buffer <> body, conn}
+      {:more, part, conn} -> read_body_full(conn, buffer <> part)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp git_info_refs(conn, repo, service) do
     if has_permission?(conn, repo, service) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
@@ -128,7 +136,7 @@ defmodule GitGud.Web.GitBackendController do
 
   defp git_pack(conn, repo, service) do
     if has_permission?(conn, repo, service) do
-      with {:ok, body, conn} <- read_body(conn),
+      with {:ok, body, conn} <- read_body_full(conn),
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         data = if compressed?(conn), do: :zlib.gunzip(body), else: body
         conn
