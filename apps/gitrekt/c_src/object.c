@@ -132,11 +132,11 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return geef_oom(env);
     }
 
-    char output[bin.size*2];
+    char output[2097152];
 
     z.avail_in = bin.size;
     z.next_in = bin.data;
-    z.avail_out = bin.size*2;
+    z.avail_out = 2097152;
     z.next_out = output;
 
     inflateInit(&z);
