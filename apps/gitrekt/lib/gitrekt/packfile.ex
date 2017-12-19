@@ -62,15 +62,17 @@ defmodule GitRekt.Packfile do
   end
 
   defp unpack_obj(data) do
-    {id_type, _inflate_size, rest} = unpack_obj_head(data)
+    {id_type, inflate_size, rest} = unpack_obj_head(data)
     obj_type = format_obj_type(id_type)
     cond do
       obj_type == :delta_reference ->
         <<base_oid::binary-20, rest::binary>> = rest
         {delta, rest} = unpack_obj_data(rest)
+        if byte_size(delta) != inflate_size, do: raise "inflate delta does not match given size: #{inflate_size} != #{byte_size(delta)}"
         {obj_type, unpack_obj_delta(base_oid, delta), rest}
       true ->
         {obj_data, rest} = unpack_obj_data(rest)
+        if byte_size(obj_data) != inflate_size, do: raise "inflate object does not match given size: #{inflate_size} != #{byte_size(obj_data)}"
         {obj_type, obj_data, rest}
     end
   end
@@ -88,7 +90,7 @@ defmodule GitRekt.Packfile do
 
   defp unpack_obj_data(data) do
     {:ok, obj, deflate_size} = Git.object_zlib_inflate(data)
-    {obj, binary_part(data, deflate_size, byte_size(data)-deflate_size)}
+    {IO.iodata_to_binary(obj), binary_part(data, deflate_size, byte_size(data)-deflate_size)}
   end
 
   defp unpack_obj_delta(base_oid, delta) do

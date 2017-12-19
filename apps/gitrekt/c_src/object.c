@@ -119,6 +119,10 @@ ERL_NIF_TERM
 geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	ErlNifBinary bin;
+	ERL_NIF_TERM chunks, data;
+    int chunk_size = 16384;
+    char chunk[chunk_size];
+    int error;
     z_stream z;
     z.zalloc = Z_NULL;
     z.zfree = Z_NULL;
@@ -132,21 +136,43 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return geef_oom(env);
     }
 
-    char output[2097152];
-
     z.avail_in = bin.size;
     z.next_in = bin.data;
-    z.avail_out = 2097152;
-    z.next_out = output;
 
-    inflateInit(&z);
-    inflate(&z, Z_NO_FLUSH);
-    inflateEnd(&z);
+    if (inflateInit(&z) != Z_OK)
+        return geef_oom(env);
 
-    if (enif_alloc_binary(z.total_out, &bin) < 0)
-        return -1;
+    chunks = enif_make_list(env, 0);
 
-    memcpy(bin.data, output, z.total_out);
+    do {
+        z.avail_out = chunk_size;
+        z.next_out = chunk;
 
-	return enif_make_tuple3(env, atoms.ok, enif_make_binary(env, &bin), enif_make_ulong(env, z.total_in));
+        error = inflate(&z, Z_NO_FLUSH);
+
+        switch (error) {
+            case Z_NEED_DICT:
+                enif_raise_exception(env, enif_make_atom(env, "zlib_need_dict"));
+            case Z_DATA_ERROR:
+                enif_raise_exception(env, enif_make_atom(env, "zlib_data_error"));
+            case Z_MEM_ERROR:
+                inflateEnd(&z);
+                return geef_oom(env);
+        }
+
+        if (!enif_realloc_binary(&bin, chunk_size-z.avail_out)) {
+            inflateEnd(&z);
+            return geef_oom(env);
+        }
+
+        memcpy(bin.data, chunk, bin.size);
+        chunks = enif_make_list_cell(env, enif_make_binary(env, &bin), chunks);
+
+    } while (error != Z_STREAM_END);
+
+    if(enif_make_reverse_list(env, chunks, &data) < 0) {
+        return geef_oom(env);
+    }
+
+	return enif_make_tuple3(env, atoms.ok, data, enif_make_ulong(env, z.total_in));
 }
