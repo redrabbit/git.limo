@@ -69,7 +69,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @impl true
   def run(%__MODULE__{state: :update_req} = handle) do
     :ok = apply_cmds(handle.repo, handle.cmds)
-    run(struct(handle, state: :done))
+    {handle, []}
   end
 
   @impl true
