@@ -69,7 +69,7 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def is_auth_key(key, username, _opts) do
-    user = UserQuery.get(to_string(username), preload: :authentication_keys)
+    user = UserQuery.by_username(to_string(username), preload: :authentication_keys)
     Enum.any?(user.authentication_keys, fn auth ->
       if [{^key, _attrs}] = :public_key.ssh_decode(auth.key, :public_key), do: true
     end)
@@ -83,7 +83,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
     [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.get(to_string(username))}}
+    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.by_username(to_string(username))}}
   end
 
   @impl true

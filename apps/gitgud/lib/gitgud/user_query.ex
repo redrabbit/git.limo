@@ -7,23 +7,35 @@ defmodule GitGud.UserQuery do
   alias GitGud.User
 
   @doc """
-  Returns a user for the given `username_or_id`.
+  Returns a user for the given `username`.
   """
-  @spec get(binary|pos_integer, keyword) :: User.t | nil
-  def get(username_or_id, opts \\ [])
-  def get(username_or_id, []) do
-    cond do
-      is_integer(username_or_id) ->
-        QuerySet.get(User, username_or_id)
-      is_binary(username_or_id) ->
-        QuerySet.get_by(User, username: username_or_id)
-      true ->
-        nil
-    end
+  @spec by_id(pos_integer, keyword) :: User.t | nil
+  def by_id(id, opts \\ [])
+  def by_id(id, []), do: QuerySet.get(User, id)
+  def by_id(id, opts) do
+    {preload, opts} = Keyword.pop(opts, :preload)
+    QuerySet.preload(by_id(id, opts), preload)
   end
 
-  def get(username_or_id, opts) do
+  @doc """
+  Returns a user for the given `username`.
+  """
+  @spec by_username(binary, keyword) :: User.t | nil
+  def by_username(username, opts \\ [])
+  def by_username(username, []), do: QuerySet.get_by(User, username: username)
+  def by_username(username, opts) do
     {preload, opts} = Keyword.pop(opts, :preload)
-    QuerySet.preload(get(username_or_id, opts), preload)
+    QuerySet.preload(by_username(username, opts), preload)
+  end
+
+  @doc """
+  Returns a user for the given `email`.
+  """
+  @spec by_email(binary, keyword) :: User.t | nil
+  def by_email(email, opts \\ [])
+  def by_email(email, []), do: QuerySet.get_by(User, email: email)
+  def by_email(email, opts) do
+    {preload, opts} = Keyword.pop(opts, :preload)
+    QuerySet.preload(by_email(email, opts), preload)
   end
 end

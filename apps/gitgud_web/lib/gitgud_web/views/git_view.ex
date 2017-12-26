@@ -28,7 +28,7 @@ defmodule GitGud.Web.GitView do
         sha: Git.oid_fmt(oid),
 		name: name,
 		message: message,
-		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
+		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature, repository: repository),
         commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit, repository: repository),
         url: repository_url(GitGud.Web.Endpoint, :tag, repository.owner, repository.path, name)}
   end
@@ -55,19 +55,19 @@ defmodule GitGud.Web.GitView do
          {:ok, author, email, time, offset} <- Git.commit_author(commit), do:
       %{sha: Git.oid_fmt(oid),
         message: message,
-        author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
+        author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature, repository: repository),
         url: repository_url(GitGud.Web.Endpoint, :commit, repository.owner, repository.path, Git.oid_fmt(oid))}
   end
 
-  def render("tree.json", %{blob: {mode, oid, blob, path}}) do
-    with {:ok, blob_size} <- Git.blob_size(blob),
-         {:ok, blob_data} <- Git.blob_content(blob), do:
-      Map.put(render_one({mode, :blob, oid, path}, __MODULE__, "tree_entry.json", as: :entry), :blob, %{size: blob_size, data: blob_data})
+  def render("tree.json", %{tree: {mode, oid, tree, path}, repository: repository}) do
+    with {:ok, list} <- Git.tree_list(tree), do:
+      Map.put(render_one({mode, :tree, oid, path}, __MODULE__, "tree_entry.json", as: :entry, repository: repository), :tree, render_many(list, __MODULE__, "tree_entry.json", as: :entry))
   end
 
-  def render("tree.json", %{tree: {mode, oid, tree, path}}) do
-    with {:ok, list} <- Git.tree_list(tree), do:
-      Map.put(render_one({mode, :tree, oid, path}, __MODULE__, "tree_entry.json", as: :entry), :tree, render_many(list, __MODULE__, "tree_entry.json", as: :entry))
+  def render("tree.json", %{blob: {mode, oid, blob, path}, repository: repository}) do
+    with {:ok, blob_size} <- Git.blob_size(blob),
+         {:ok, blob_data} <- Git.blob_content(blob), do:
+      Map.put(render_one({mode, :blob, oid, path}, __MODULE__, "tree_entry.json", as: :entry, repository: repository), :blob, %{size: blob_size, data: blob_data})
   end
 
   def render("tree_entry.json", %{entry: {mode, type, oid, path}}) do

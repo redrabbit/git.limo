@@ -168,7 +168,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   defp fetch_repo({username, path}, auth_user, auth_mode) do
-    with user when not is_nil(user) <- UserQuery.get(username),
+    with user when not is_nil(user) <- UserQuery.by_username(username),
          repo when not is_nil(repo) <- RepoQuery.user_repository(user, path),
          true <- has_access?(auth_user, repo, auth_mode) do
       {:ok, repo}

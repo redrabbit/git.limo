@@ -65,7 +65,7 @@ defmodule GitGud.Web.AuthenticationPlug do
     salt = secret_key_base()
     token = bearer_token(conn)
     case Phoenix.Token.verify(GitGud.Web.Endpoint, salt, token, opts) do
-      {:ok, user_id} -> assign(conn, :user, UserQuery.get(user_id))
+      {:ok, user_id} -> assign(conn, :user, UserQuery.by_id(user_id))
       {:error, :missing} -> conn
       {:error, :invalid} -> conn
     end
