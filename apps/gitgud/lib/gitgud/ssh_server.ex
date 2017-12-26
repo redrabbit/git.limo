@@ -87,6 +87,11 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
+  def handle_msg({:EXIT, _port, reason}, state) do
+    {:stop, reason, state}
+  end
+
+  @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, exec: exec} = state) do
     {exec, io} = Service.next(exec, data)
     :ssh_connection.send(conn, chan, io)
@@ -102,7 +107,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
-    [repo|args] = parse_args(args)
+    [repo|_args] = parse_args(args)
     if has_permission?(user, repo, exec) do
       {:ok, repo} = Git.repository_open(Repo.workdir(repo))
       {exec, io} =
@@ -126,11 +131,6 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, _msg}, %__MODULE__{conn: conn} = state) do
     {:ok, state}
-  end
-
-  @impl true
-  def handle_msg({:EXIT, _port, reason}, state) do
-    {:stop, reason, state}
   end
 
   @impl true
