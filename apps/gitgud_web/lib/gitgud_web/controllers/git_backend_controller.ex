@@ -105,11 +105,17 @@ defmodule GitGud.Web.GitBackendController do
   defp has_permission?(conn, repo, :read),  do: Repo.can_read?(conn.assigns[:user], repo)
   defp has_permission?(conn, repo, :write), do: Repo.can_write?(conn.assigns[:user], repo)
 
-  defp compressed?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
+  defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
+
+  defp inflate_body(conn, body) do
+    if deflated?(conn),
+      do: :zlib.gunzip(body),
+    else: body
+  end
 
   defp read_body_full(conn, buffer \\ "") do
     case read_body(conn) do
-      {:ok, body, conn} -> {:ok, buffer <> body, conn}
+      {:ok, body, conn} -> {:ok, inflate_body(conn, buffer <> body), conn}
       {:more, part, conn} -> read_body_full(conn, buffer <> part)
       {:error, reason} -> {:error, reason}
     end
@@ -138,10 +144,9 @@ defmodule GitGud.Web.GitBackendController do
     if has_permission?(conn, repo, service) do
       with {:ok, body, conn} <- read_body_full(conn),
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
-        data = if compressed?(conn), do: :zlib.gunzip(body), else: body
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(handle, service, data))
+        |> send_resp(:ok, git_exec(handle, service, body))
       end
     end
   end
