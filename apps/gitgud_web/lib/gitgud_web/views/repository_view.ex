@@ -10,6 +10,7 @@ defmodule GitGud.Web.RepositoryView do
     %{owner: repository.owner.username,
       name: repository.name,
       path: repository.path,
-      description: repository.description}
+      description: repository.description,
+      url: repository_url(GitGud.Web.Endpoint, :show, repository.owner, repository.path)}
   end
 end

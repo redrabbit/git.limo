@@ -4,19 +4,22 @@ defmodule GitGud.Web.GitView do
 
   alias GitRekt.Git
 
-  def render("branch_list.json", %{references: refs}) do
-    render_many(refs, __MODULE__, "branch.json", as: :reference)
+  def render("branch_list.json", %{references: refs, repository: repository}) do
+    render_many(refs, __MODULE__, "branch.json", as: :reference, repository: repository)
   end
 
-  def render("branch.json", %{reference: {oid, _refname, shorthand, commit}}) do
-    %{sha: Git.oid_fmt(oid), name: shorthand, commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit)}
+  def render("branch.json", %{reference: {oid, _refname, shorthand, commit}, repository: repository}) do
+    %{sha: Git.oid_fmt(oid),
+      name: shorthand,
+      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+      url: repository_url(GitGud.Web.Endpoint, :branch, repository.owner, repository.path, shorthand)}
   end
 
-  def render("tag_list.json", %{references: refs}) do
-    render_many(refs, __MODULE__, "tag.json", as: :tag)
+  def render("tag_list.json", %{references: refs, repository: repository}) do
+    render_many(refs, __MODULE__, "tag.json", as: :tag, repository: repository)
   end
 
-  def render("tag.json", %{tag: {oid, tag}}) do
+  def render("tag.json", %{tag: {oid, tag}, repository: repository}) do
     with {:ok, name} <- Git.tag_name(tag),
          {:ok, message} <- Git.tag_message(tag),
          {:ok, author, email, time, offset} <- Git.tag_author(tag),
@@ -26,14 +29,16 @@ defmodule GitGud.Web.GitView do
 		name: name,
 		message: message,
 		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
-		commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit)}
+        commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+        url: repository_url(GitGud.Web.Endpoint, :tag, repository.owner, repository.path, name)}
   end
 
-  def render("tag.json", %{tag: {oid, commit, shorthand}}) do
+  def render("tag.json", %{tag: {oid, commit, shorthand}, repository: repository}) do
     %{type: :lightweight,
       sha: Git.oid_fmt(oid),
       name: shorthand,
-      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit)}
+      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+      url: repository_url(GitGud.Web.Endpoint, :tag, repository.owner, repository.path, shorthand)}
   end
 
   def render("revwalk.json", %{commits: commits}) do

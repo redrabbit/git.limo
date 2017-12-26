@@ -46,7 +46,7 @@ defmodule GitGud.Web.RepositoryController do
   def branch_list(conn, %{"user" => username, "repo" => path} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, refs} <- fetch_branches(repo), do:
-      render(conn, GitView, "branch_list.json", references: refs, handle: handle)
+      render(conn, GitView, "branch_list.json", references: refs, repository: repo, handle: handle)
   end
 
   @doc """
@@ -56,7 +56,7 @@ defmodule GitGud.Web.RepositoryController do
   def branch(conn, %{"user" => username, "repo" => path, "branch" => shorthand} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, name, oid, commit} <- fetch_branch(repo, shorthand), do:
-      render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, handle: handle)
+      render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, repository: repo, handle: handle)
   end
 
   @doc """
@@ -66,7 +66,7 @@ defmodule GitGud.Web.RepositoryController do
   def tag_list(conn, %{"user" => username, "repo" => path} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, refs} <- fetch_tags(repo), do:
-      render(conn, GitView, "tag_list.json", references: refs, handle: handle)
+      render(conn, GitView, "tag_list.json", references: refs, repository: repo, handle: handle)
   end
 
   @doc """
@@ -86,7 +86,7 @@ defmodule GitGud.Web.RepositoryController do
   def revwalk(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, commits} <- fetch_revwalk(repo, spec), do:
-      render(conn, GitView, "revwalk.json", commits: commits, handle: handle)
+      render(conn, GitView, "revwalk.json", commits: commits, repository: repo, handle: handle)
   end
 
   @doc """
@@ -95,14 +95,14 @@ defmodule GitGud.Web.RepositoryController do
   def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, oid, tree} <- fetch_tree(repo, spec), do:
-      render(conn, GitView, "tree.json", tree: {0, oid, tree, "/"}, handle: handle) # TODO
+      render(conn, GitView, "tree.json", tree: {0, oid, tree, "/"}, repository: repo, handle: handle) # TODO
   end
 
   def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
     tree_path = Path.join(paths)
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, mode, type, oid, obj, _path} <- fetch_tree(repo, spec, tree_path), do:
-      render(conn, GitView, "tree.json", [{type, {mode, oid, obj, tree_path}}, handle: handle])
+      render(conn, GitView, "tree.json", [{type, {mode, oid, obj, tree_path}}, repository: repo, handle: handle])
   end
 
   @doc """
