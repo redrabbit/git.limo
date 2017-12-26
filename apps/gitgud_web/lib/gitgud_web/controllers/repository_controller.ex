@@ -40,72 +40,6 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns all available branches for a repository.
-  """
-  @spec branch_list(Plug.t, map) :: Plug.t
-  def branch_list(conn, %{"user" => username, "repo" => path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, refs} <- fetch_branches(repo), do:
-      render(conn, GitView, "branch_list.json", references: refs, repository: repo, handle: handle)
-  end
-
-  @doc """
-  Returns a single branch for a repository.
-  """
-  @spec branch(Plug.t, map) :: Plug.t
-  def branch(conn, %{"user" => username, "repo" => path, "branch" => shorthand} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, name, oid, commit} <- fetch_branch(repo, shorthand), do:
-      render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, repository: repo, handle: handle)
-  end
-
-  @doc """
-  Returns all tags for the given repository.
-  """
-  @spec tag_list(Plug.t, map) :: Plug.t
-  def tag_list(conn, %{"user" => username, "repo" => path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, refs} <- fetch_tags(repo), do:
-      render(conn, GitView, "tag_list.json", references: refs, repository: repo, handle: handle)
-  end
-
-  @doc """
-  Returns a single tag for a repository.
-  """
-  @spec tag(Plug.t, map) :: Plug.t
-  def tag(conn, %{"user" => username, "repo" => path, "tag" => shorthand} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, tag} <- fetch_tag(repo, shorthand), do:
-      render(conn, GitView, "tag.json", tag: tag, handle: handle)
-  end
-
-  @doc """
-  Returns all commits for a repository revision.
-  """
-  @spec revwalk(Plug.t, map) :: Plug.t
-  def revwalk(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, commits} <- fetch_revwalk(repo, spec), do:
-      render(conn, GitView, "revwalk.json", commits: commits, repository: repo, handle: handle)
-  end
-
-  @doc """
-  Browses a repository's tree by path.
-  """
-  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, oid, tree} <- fetch_tree(repo, spec), do:
-      render(conn, GitView, "tree.json", tree: {0, oid, tree, "/"}, repository: repo, handle: handle) # TODO
-  end
-
-  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
-    tree_path = Path.join(paths)
-    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, mode, type, oid, obj, _path} <- fetch_tree(repo, spec, tree_path), do:
-      render(conn, GitView, "tree.json", [{type, {mode, oid, obj, tree_path}}, repository: repo, handle: handle])
-  end
-
-  @doc """
   Creates a new repository.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
@@ -142,6 +76,82 @@ defmodule GitGud.Web.RepositoryController do
     with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
          {:ok, _del} <- Repo.delete(repo), do:
       send_resp(conn, :no_content, "")
+  end
+
+  @doc """
+  Returns all available branches for a repository.
+  """
+  @spec branch_list(Plug.t, map) :: Plug.t
+  def branch_list(conn, %{"user" => username, "repo" => path} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, refs} <- fetch_branches(repo), do:
+      render(conn, GitView, "branch_list.json", references: refs, repository: repo, handle: handle)
+  end
+
+  @doc """
+  Returns a single branch for a repository.
+  """
+  @spec branch(Plug.t, map) :: Plug.t
+  def branch(conn, %{"user" => username, "repo" => path, "branch" => shorthand} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, name, oid, commit} <- fetch_branch(repo, shorthand), do:
+      render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, repository: repo, handle: handle)
+  end
+
+  @doc """
+  Returns all tags for a repository.
+  """
+  @spec tag_list(Plug.t, map) :: Plug.t
+  def tag_list(conn, %{"user" => username, "repo" => path} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, refs} <- fetch_tags(repo), do:
+      render(conn, GitView, "tag_list.json", references: refs, repository: repo, handle: handle)
+  end
+
+  @doc """
+  Returns a single tag for a repository.
+  """
+  @spec tag(Plug.t, map) :: Plug.t
+  def tag(conn, %{"user" => username, "repo" => path, "tag" => shorthand} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, tag} <- fetch_tag(repo, shorthand), do:
+      render(conn, GitView, "tag.json", tag: tag, handle: handle)
+  end
+
+  @doc """
+  Returns a single commit for a repository.
+  """
+  @spec commit(Plug.t, map) :: Plug.t
+  def commit(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, oid, commit} <- fetch_commit(repo, spec), do:
+      render(conn, GitView, "commit.json", commit: {oid, commit}, repository: repo, handle: handle)
+  end
+
+  @doc """
+  Returns all commits for a repository revision.
+  """
+  @spec revwalk(Plug.t, map) :: Plug.t
+  def revwalk(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, commits} <- fetch_revwalk(repo, spec), do:
+      render(conn, GitView, "revwalk.json", commits: commits, repository: repo, handle: handle)
+  end
+
+  @doc """
+  Browses a repository's tree by path.
+  """
+  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, oid, tree} <- fetch_tree(repo, spec), do:
+      render(conn, GitView, "tree.json", tree: {0, oid, tree, "/"}, repository: repo, handle: handle) # TODO
+  end
+
+  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
+    tree_path = Path.join(paths)
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, handle, mode, type, oid, obj, _path} <- fetch_tree(repo, spec, tree_path), do:
+      render(conn, GitView, "tree.json", [{type, {mode, oid, obj, tree_path}}, repository: repo, handle: handle])
   end
 
   #

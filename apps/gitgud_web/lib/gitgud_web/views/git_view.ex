@@ -11,7 +11,7 @@ defmodule GitGud.Web.GitView do
   def render("branch.json", %{reference: {oid, _refname, shorthand, commit}, repository: repository}) do
     %{sha: Git.oid_fmt(oid),
       name: shorthand,
-      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit, repository: repository),
       url: repository_url(GitGud.Web.Endpoint, :branch, repository.owner, repository.path, shorthand)}
   end
 
@@ -29,7 +29,7 @@ defmodule GitGud.Web.GitView do
 		name: name,
 		message: message,
 		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
-        commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+        commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit, repository: repository),
         url: repository_url(GitGud.Web.Endpoint, :tag, repository.owner, repository.path, name)}
   end
 
@@ -37,12 +37,12 @@ defmodule GitGud.Web.GitView do
     %{type: :lightweight,
       sha: Git.oid_fmt(oid),
       name: shorthand,
-      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit),
+      commit: render_one({oid, commit}, __MODULE__, "commit.json", as: :commit, repository: repository),
       url: repository_url(GitGud.Web.Endpoint, :tag, repository.owner, repository.path, shorthand)}
   end
 
-  def render("revwalk.json", %{commits: commits}) do
-    render_many(commits, __MODULE__, "commit.json", as: :commit)
+  def render("revwalk.json", %{commits: commits, repository: repository}) do
+    render_many(commits, __MODULE__, "commit.json", as: :commit, repository: repository)
   end
 
   def render("signature.json", %{signature: {name, email, time, _offset}}) do
@@ -50,12 +50,13 @@ defmodule GitGud.Web.GitView do
       %{name: name, email: email, date: DateTime.to_iso8601(date_time)}
   end
 
-  def render("commit.json", %{commit: {oid, commit}}) do
+  def render("commit.json", %{commit: {oid, commit}, repository: repository}) do
     with {:ok, message} <- Git.commit_message(commit),
          {:ok, author, email, time, offset} <- Git.commit_author(commit), do:
       %{sha: Git.oid_fmt(oid),
         message: message,
-		author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature)}
+        author: render_one({author, email, time, offset}, __MODULE__, "signature.json", as: :signature),
+        url: repository_url(GitGud.Web.Endpoint, :commit, repository.owner, repository.path, Git.oid_fmt(oid))}
   end
 
   def render("tree.json", %{blob: {mode, oid, blob, path}}) do

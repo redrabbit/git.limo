@@ -26,7 +26,8 @@ defmodule GitGud.Web.Router do
           get "/branches/:branch",  RepositoryController, :branch
           get "/tags",              RepositoryController, :tag_list
           get "/tags/:tag",         RepositoryController, :tag
-          get "/commits/:spec",     RepositoryController, :revwalk
+          get "/revwalk/:spec",     RepositoryController, :revwalk
+          get "/commits/:spec",     RepositoryController, :commit
           get "/tree/:spec/*path",  RepositoryController, :browse_tree
         end
       end
