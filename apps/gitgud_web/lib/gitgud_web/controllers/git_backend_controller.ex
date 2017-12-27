@@ -102,8 +102,8 @@ defmodule GitGud.Web.GitBackendController do
 
   defp has_permission?(conn, repo, "git-upload-pack"),  do: has_permission?(conn, repo, :read)
   defp has_permission?(conn, repo, "git-receive-pack"), do: has_permission?(conn, repo, :write)
-  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(conn.assigns[:user], repo)
-  defp has_permission?(conn, repo, :write), do: Repo.can_write?(conn.assigns[:user], repo)
+  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(repo, conn.assigns[:user])
+  defp has_permission?(conn, repo, :write), do: Repo.can_write?(repo, conn.assigns[:user])
 
   defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
 
@@ -146,15 +146,14 @@ defmodule GitGud.Web.GitBackendController do
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(handle, service, body))
+        |> send_resp(:ok, git_exec(service, {repo, handle}, conn[:user], body))
       end
     end
   end
 
-  defp git_exec(handle, exec, data) do
-    handle
-    |> Service.new(exec)
-    |> Service.next(data)
-    |> elem(1)
+  defp git_exec(exec, {repo, handle}, user, data) do
+    {service, result} = Service.next(Service.new(handle, exec), data)
+    :ok = Repo.notify_command(repo, user, service)
+    result
   end
 end

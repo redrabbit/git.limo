@@ -158,8 +158,8 @@ defmodule GitGud.Web.RepositoryController do
   # Helpers
   #
 
-  defp has_access?(user, repo, :read), do: Repo.can_read?(user, repo)
-  defp has_access?(user, repo, :write), do: Repo.can_write?(user, repo)
+  defp has_access?(user, repo, :read), do: Repo.can_read?(repo, user)
+  defp has_access?(user, repo, :write), do: Repo.can_write?(repo, user)
 
   defp fetch_repo({username, path}, %User{username: username}, _auth_mode) do
     if repository = RepoQuery.user_repository(username, path),

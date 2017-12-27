@@ -38,16 +38,16 @@ defmodule GitGud.Repo do
   @doc """
   Returns `true` if `user` has read access to `repo`; elsewhise returns `false`.
   """
-  @spec can_read?(User.t, t) :: boolean
-  def can_read?(%User{} = _user, %__MODULE__{} = _repo), do: true
-  def can_read?(_user, _repo), do: true
+  @spec can_read?(t, User.t) :: boolean
+  def can_read?(%__MODULE__{} = _repo, %User{} = _user), do: true
+  def can_read?(_repo, nil), do: true
 
   @doc """
   Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
   """
-  @spec can_write?(User.t, t) :: boolean
-  def can_write?(%User{id: user_id} = _user, %__MODULE__{owner_id: user_id} = _repo), do: true
-  def can_write?(_user, _repo), do: false
+  @spec can_write?(t, User.t) :: boolean
+  def can_write?(%__MODULE__{owner_id: user_id} = _repo, %User{id: user_id} = _user), do: true
+  def can_write?(_repo, _user), do: false
 
   @doc """
   Returns a repository changeset for the given `params`.
@@ -141,6 +141,24 @@ defmodule GitGud.Repo do
     repo = QuerySet.preload(repo, :owner)
     Path.join([@root_path, repo.owner.username, repo.path])
   end
+
+  @doc """
+  Broadcasts notification(s) for the given `service` command.
+  """
+  @spec notify_command(t, User.t, struct) :: :ok
+  def notify_command(%__MODULE__{} = repo, %User{} = user, %GitRekt.WireProtocol.ReceivePack{} = service) do
+    IO.puts "push notification from #{user.username} to #{repo.name}"
+    Enum.each(service.cmds, fn
+      {:create, oid, refname} ->
+        IO.puts "create #{refname} to #{Git.oid_fmt(oid)}"
+      {:update, old_oid, new_oid, refname} ->
+        IO.puts "update #{refname} from #{Git.oid_fmt(old_oid)} to #{Git.oid_fmt(new_oid)}"
+      {:delete, old_oid, refname} ->
+        IO.puts "delete #{refname} (was #{Git.oid_fmt(old_oid)})"
+    end)
+  end
+
+  def notify_command(%__MODULE__{} = _repo, _service), do: :ok
 
   #
   # Helpers

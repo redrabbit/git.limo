@@ -39,13 +39,13 @@ defmodule GitGud.SSHServer do
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
 
-  defstruct [:conn, :chan, :user, :exec]
+  defstruct [:conn, :chan, :user, :repo, :service]
 
   @type t :: %__MODULE__{
     conn: :ssh_connection.ssh_connection_ref,
     chan: :ssh_connection.ssh_channel_id,
     user: User.t,
-    exec: Module.t
+    service: Module.t
   }
 
   @doc """
@@ -92,16 +92,16 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, exec: exec} = state) do
-    {exec, io} = Service.next(exec, data)
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, user: user, repo: repo, service: service} = state) do
+    {service, io} = Service.next(service, data)
     :ssh_connection.send(conn, chan, io)
-    if Service.done?(exec) do
+    if Service.done?(service) do
+      :ok = Repo.notify_command(repo, user, service)
       :ssh_connection.send_eof(conn, chan)
       :ssh_connection.exit_status(conn, chan, 0)
       :ssh_connection.close(conn, chan)
     end
-
-    {:ok, %{state|exec: exec}}
+    {:ok, %{state|service: service}}
   end
 
   @impl true
@@ -109,13 +109,10 @@ defmodule GitGud.SSHServer do
     [exec|args] = String.split(to_string(cmd))
     [repo|_args] = parse_args(args)
     if has_permission?(user, repo, exec) do
-      {:ok, repo} = Git.repository_open(Repo.workdir(repo))
-      {exec, io} =
-        repo
-        |> Service.new(exec)
-        |> Service.flush()
+      {:ok, handle} = Git.repository_open(Repo.workdir(repo))
+      {service, io} = Service.flush(Service.new(handle, exec))
       if io, do: :ssh_connection.send(conn, chan, io)
-      {:ok, %{state|exec: exec}}
+      {:ok, %{state|repo: repo, service: service}}
     else
       {:stop, chan, state}
     end
@@ -160,6 +157,6 @@ defmodule GitGud.SSHServer do
     !!User.check_credentials(to_string(username), to_string(password))
   end
 
-  defp has_permission?(user, repo, "git-upload-pack"),  do: Repo.can_read?(user, repo)
-  defp has_permission?(user, repo, "git-receive-pack"), do: Repo.can_write?(user, repo)
+  defp has_permission?(user, repo, "git-upload-pack"),  do: Repo.can_read?(repo, user)
+  defp has_permission?(user, repo, "git-receive-pack"), do: Repo.can_write?(repo, user)
 end
