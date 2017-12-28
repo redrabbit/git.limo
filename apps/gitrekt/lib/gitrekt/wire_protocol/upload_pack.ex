@@ -10,7 +10,7 @@ defmodule GitRekt.WireProtocol.UploadPack do
   import GitRekt.Packfile, only: [create: 2]
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  defstruct [:repo, state: :disco, caps: [], wants: [], haves: []]
+  defstruct [:repo, state: :disco, caps: [], wants: [], haves: [], opts: []]
 
   @type t :: %__MODULE__{
     repo: Git.repo,
@@ -18,6 +18,7 @@ defmodule GitRekt.WireProtocol.UploadPack do
     caps: [binary],
     wants: [Git.oid],
     haves: [Git.oid],
+    opts: keyword,
   }
 
   #
