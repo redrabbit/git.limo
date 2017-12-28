@@ -47,7 +47,9 @@ defmodule GitGud.Web.GitView do
 
   def render("signature.json", %{signature: {name, email, time, _offset}}) do
     with {:ok, date_time} <- DateTime.from_unix(time), do:
-      %{name: name, email: email, date: DateTime.to_iso8601(date_time)}
+      %{name: name,
+        email: email,
+        date: DateTime.to_iso8601(date_time)}
   end
 
   def render("commit.json", %{commit: {oid, commit}, repository: repository}) do
@@ -59,19 +61,24 @@ defmodule GitGud.Web.GitView do
         url: repository_url(GitGud.Web.Endpoint, :commit, repository.owner, repository.path, Git.oid_fmt(oid))}
   end
 
-  def render("tree.json", %{tree: {mode, oid, tree, path}, repository: repository}) do
-    with {:ok, list} <- Git.tree_list(tree), do:
-      Map.put(render_one({mode, :tree, oid, path}, __MODULE__, "tree_entry.json", as: :entry, repository: repository), :tree, render_many(list, __MODULE__, "tree_entry.json", as: :entry))
+  def render("tree.json", %{spec: spec, path: path, tree: tree, repository: repository}) do
+    render_many(tree, __MODULE__, "tree_entry.json", as: :entry, repository: repository, spec: spec, path: path)
   end
 
-  def render("tree.json", %{blob: {mode, oid, blob, path}, repository: repository}) do
-    with {:ok, blob_size} <- Git.blob_size(blob),
-         {:ok, blob_data} <- Git.blob_content(blob), do:
-      Map.put(render_one({mode, :blob, oid, path}, __MODULE__, "tree_entry.json", as: :entry, repository: repository), :blob, %{size: blob_size, data: blob_data})
+  def render("tree_entry.json", %{entry: {mode, type, oid, name}, repository: repository, spec: spec, path: path}) do
+    path = Path.join(path, name)
+    %{sha: Git.oid_fmt(oid),
+      type: type,
+      mode: mode,
+      path: path,
+      url: repository_url(GitGud.Web.Endpoint, controller_action_for_tree(type), repository.owner, repository.path, spec, Path.split(path))}
   end
 
-  def render("tree_entry.json", %{entry: {mode, type, oid, path}}) do
-    %{sha: Git.oid_fmt(oid), type: type, mode: mode, path: path}
-  end
+  #
+  # Helpers
+  #
+
+  defp controller_action_for_tree(:tree), do: :browse_tree
+  defp controller_action_for_tree(:blob), do: :download_blob
 end
 

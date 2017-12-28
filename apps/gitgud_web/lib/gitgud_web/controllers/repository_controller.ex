@@ -141,17 +141,34 @@ defmodule GitGud.Web.RepositoryController do
   @doc """
   Browses a repository's tree by path.
   """
+  @spec browse_tree(Plug.t, map) :: Plug.t
   def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, oid, tree} <- fetch_tree(repo, spec), do:
-      render(conn, GitView, "tree.json", tree: {0, oid, tree, "/"}, repository: repo, handle: handle) # TODO
+         {:ok, tree} <- fetch_tree(repo, spec), do:
+      render(conn, GitView, "tree.json", spec: spec, path: "/", tree: tree, repository: repo)
   end
 
+  @spec browse_tree(Plug.t, map) :: Plug.t
   def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
     tree_path = Path.join(paths)
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
-         {:ok, handle, mode, type, oid, obj, _path} <- fetch_tree(repo, spec, tree_path), do:
-      render(conn, GitView, "tree.json", [{type, {mode, oid, obj, tree_path}}, repository: repo, handle: handle])
+         {:ok, tree} <- fetch_tree(repo, spec, tree_path), do:
+      render(conn, GitView, "tree.json", spec: spec, path: tree_path, tree: tree, repository: repo)
+  end
+
+  @spec download_blob(Plug.t, map) :: Plug.t
+  def download_blob(_conn, %{"path" => []} = _params) do
+    {:error, :invalid_path}
+  end
+
+  @spec download_blob(Plug.t, map) :: Plug.t
+  def download_blob(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
+    blob_path = Path.join(paths)
+    with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
+         {:ok, blob} <- fetch_blob(repo, spec, blob_path), do:
+      conn
+      |> put_resp_header("content-type", MIME.from_path(blob_path))
+      |> send_resp(200, blob)
   end
 
   #
@@ -218,16 +235,28 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   defp fetch_tree(repo, spec) do
-    with {:ok, handle, _oid, commit} <- fetch_commit(repo, spec),
-         {:ok, oid, tree} <- Git.commit_tree(commit), do:
-      {:ok, handle, oid, tree}
+    with {:ok, _handle, _oid, commit} <- fetch_commit(repo, spec),
+         {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, list} <- Git.tree_list(tree), do:
+      {:ok, list}
   end
 
   defp fetch_tree(repo, spec, tree_path) do
-    with {:ok, handle, _oid, tree} <- fetch_tree(repo, spec),
-         {:ok, mode, type, oid, path} <- Git.tree_bypath(tree, tree_path),
-         {:ok, ^type, obj} <- Git.object_lookup(handle, oid), do:
-      {:ok, handle, mode, type, oid, obj, path}
+    with {:ok, handle, _oid, commit} <- fetch_commit(repo, spec),
+         {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, _mode, :tree, oid, _path} <- Git.tree_bypath(tree, tree_path),
+         {:ok, :tree, tree} <- Git.object_lookup(handle, oid),
+         {:ok, list} <- Git.tree_list(tree), do:
+      {:ok, list}
+  end
+
+  defp fetch_blob(repo, spec, blob_path) do
+    with {:ok, handle, _oid, commit} <- fetch_commit(repo, spec),
+         {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, _mode, :blob, oid, _path} <- Git.tree_bypath(tree, blob_path),
+         {:ok, :blob, blob} <- Git.object_lookup(handle, oid),
+         {:ok, data} <- Git.blob_content(blob), do:
+      {:ok, data}
   end
 
   defp resolve_commit(handle, {refname, shorthand, :oid, oid}) do
