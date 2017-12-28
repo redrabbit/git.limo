@@ -146,13 +146,14 @@ defmodule GitGud.Web.GitBackendController do
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(service, {repo, handle}, conn[:user], body))
+        |> send_resp(:ok, git_exec(service, {repo, handle}, conn.assigns[:user], body))
       end
     end
   end
 
   defp git_exec(exec, {repo, handle}, user, data) do
-    {service, result} = Service.next(Service.new(handle, exec), data)
+    opts = [stateless: true]
+    {service, result} = Service.next(Service.new(handle, exec, opts), data)
     :ok = Repo.notify_command(repo, user, service)
     result
   end

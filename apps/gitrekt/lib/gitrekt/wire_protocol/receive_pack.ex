@@ -38,12 +38,13 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   @impl true
-  def next(%__MODULE__{state: :disco} = handle, lines) do
+  def next(%__MODULE__{state: :disco, opts: opts} = handle, lines) do
     {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
     {cmds, lines} = Enum.split_while(lines, &is_binary/1)
     {caps, cmds} = parse_caps(cmds)
     [:flush|lines] = lines
-    {struct(handle, state: :update_req, caps: caps, cmds: parse_cmds(cmds)), lines}
+    next_state = if Keyword.get(opts, :stateless), do: :done, else: :update_req
+    {struct(handle, state: next_state, caps: caps, cmds: parse_cmds(cmds)), lines}
   end
 
   @impl true
