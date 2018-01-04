@@ -43,17 +43,21 @@ defmodule GitGud.Web.RepositoryController do
   Creates a new repository.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"repository" => repo_params} = _params) do
-    repo_params = Map.put(repo_params, "owner_id", conn.assigns.user.id)
-    case Repo.create(repo_params) do
-      {:ok, repo, _pid} ->
-        repo = struct(repo, owner: conn.assigns.user)
-        conn
-        |> put_status(:created)
-        |> put_resp_header("location", repository_path(conn, :show, repo.owner.username, repo.path))
-        |> render("repository.json", repository: repo)
-      {:error, reason} ->
-        {:error, reason}
+  def create(conn, %{"user" => username, "repo" => repo_params} = _params) do
+    if username != conn.assigns.user.username do
+      {:error, :unauthorized}
+    else
+      repo_params = Map.put(repo_params, "owner_id", conn.assigns.user.id)
+      case Repo.create(repo_params) do
+        {:ok, repo, _pid} ->
+          repo = struct(repo, owner: conn.assigns.user)
+          conn
+          |> put_status(:created)
+          |> put_resp_header("location", repository_path(conn, :show, repo.owner.username, repo.path))
+          |> render("repository.json", repository: repo)
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
   end
 
@@ -73,9 +77,13 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"user" => username, "repo" => path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
-         {:ok, _del} <- Repo.delete(repo), do:
-      send_resp(conn, :no_content, "")
+    if username != conn.assigns.user.username do
+      {:error, :unauthorized}
+    else
+      with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
+           {:ok, _del} <- Repo.delete(repo), do:
+        send_resp(conn, :no_content, "")
+    end
   end
 
   @doc """
