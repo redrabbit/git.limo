@@ -1,43 +1,37 @@
 <template>
-  <div>
-    <pre v-if="isBlob">
-      {{ tree.blob }}
-    </pre>
-    <ul v-else-if="isTree">
-      <li v-for="entry in tree.tree">
+  <ul>
+    <li v-for="entry in tree">
+      <div v-if="entry.type == 'tree'">
         <router-link :to="entry.path" append>{{ entry.path }}</router-link>
-      </li>
-    </ul>
-  </div>
+      </div>
+      <div v-else-if="entry.type == 'blob'">
+        <router-link to="">{{ entry.path }}</router-link>
+      </div>
+    </li>
+  </ul>
 </template>
 
 <script>
-import axios from 'axios';
+import API from '../api';
+
+let api = new API();
 
 export default {
   props: {
-    user: {type: String, required: true},
-    repo: {type: String, required: true},
-    spec: {type: String, required: true},
-    path: {type: String, default: ''}
+    username: {type: String, required: true},
+    repoPath: {type: String, required: true},
+    repoSpec: {type: String, required: true},
+    treePath: {type: String, default: ''}
   },
   watch: {
-    $route: 'requestTree'
-  },
-  computed: {
-    isBlob() {
-      return this.tree.type === 'blob'
-    },
-    isTree() {
-      return this.tree.type === 'tree'
-    },
+    $route: 'fetchTree'
   },
   methods: {
-    requestTree() {
-      axios.get(`/api/users/${this.user}/repos/${this.repo}/tree/${this.spec}/${this.path}`, {
-        headers: {'Accept': 'application/json'}
-      }).then(response => {
-        this.tree = response.data.tree
+    fetchTree() {
+      api.browseTree(this.username, this.repoPath, this.repoSpec, this.treePath)
+      .then(tree => {
+        this.tree = tree
+        console.log(tree)
       }).catch(e => {
         this.errors.push(e)
       })
@@ -50,7 +44,7 @@ export default {
     }
   },
   created() {
-    this.requestTree()
+    this.fetchTree()
   },
 }
 </script>
