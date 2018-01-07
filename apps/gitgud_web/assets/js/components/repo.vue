@@ -4,7 +4,13 @@
     <router-link :to="{ name: 'user', params: { username: repo.owner || username }}">{{ repo.owner }}</router-link> /
     <router-link :to="{ name: 'repo', params: { repoPath: repo.path || repoPath }}">{{ repo.path }}</router-link>
     <pre v-if="repo.description">{{ repo.description }}</pre>
-    <router-view></router-view>
+		<vk-tabs :index="tabIndex" @change="tabIndex = arguments[0]">
+			<vk-tabs-item name="Code">
+				<browser></browser>
+			</vk-tabs-item>
+			<vk-tabs-item name="Issues" disabled></vk-tabs-item>
+			<vk-tabs-item name="Pull-requests" disabled></vk-tabs-item>
+		</vk-tabs>
   </div>
 </template>
 
@@ -33,6 +39,7 @@ export default {
   },
   data() {
     return {
+		  tabIndex: 0,
       repo: {},
       errors: [],
     }

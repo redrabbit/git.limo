@@ -66,7 +66,7 @@ defmodule GitGud.Web.GitView do
   end
 
   def render("tree_entry.json", %{entry: {mode, type, oid, name}, repository: repository, spec: spec, path: path}) do
-    path = Path.join(path, name)
+    path = name
     %{sha: Git.oid_fmt(oid),
       type: type,
       mode: mode,

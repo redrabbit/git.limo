@@ -1,10 +1,13 @@
 import axios from 'axios'
 
 import VueRouter from 'vue-router'
+import Vuikit from 'vuikit'
 
 import User from './components/user.vue'
 import Repo from './components/repo.vue'
 import Browser from './components/browser.vue'
+
+Vue.use(Vuikit)
 
 const router = new VueRouter({
   routes: [

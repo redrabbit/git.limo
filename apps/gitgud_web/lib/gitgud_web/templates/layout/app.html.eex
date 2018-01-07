@@ -4,11 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Git gud or Git rekt</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.27.4/css/uikit.gradient.min.css" />
     <link rel="stylesheet" href="/css/app.css">
   </head>
 
   <body>
     <%= render @view_module, @view_template, assigns %>
+    <!--
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.27.4/js/uikit.min.js"></script>
+    -->
     <script src="/js/app.js"></script>
   </body>
 </html>
