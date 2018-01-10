@@ -77,7 +77,7 @@ defmodule GitGud.RepoTest do
   test "ensures user has read and write permissions to own repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
-    assert Repo.can_read?(user, repo)
-    assert Repo.can_write?(user, repo)
+    assert Repo.can_read?(repo, user)
+    assert Repo.can_write?(repo, user)
   end
 end

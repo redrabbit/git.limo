@@ -20,7 +20,7 @@ defmodule GitGud.Web.RepoControllerTest do
   describe "create repository" do
     test "renders repository when data is valid", %{conn: conn, user: user} do
       params = Map.put(@valid_attrs, :owner_id, user.id)
-      conn = post conn, repository_path(conn, :create, user), repository: params
+      conn = post conn, repository_path(conn, :create, user), repo: params
       assert %{"path" => path} = json_response(conn, 201)
 
       conn = get conn, repository_path(conn, :show, user, path)
@@ -28,12 +28,13 @@ defmodule GitGud.Web.RepoControllerTest do
         "owner" => user.username,
         "path" => @valid_attrs.path,
         "name" => @valid_attrs.name,
-        "description" => @valid_attrs.description}
+        "description" => @valid_attrs.description,
+        "url" => "http://localhost:4001/api/users/redrabbit/repos/project-awesome"}
     end
 
     test "renders errors when data is invalid", %{conn: conn, user: user} do
       params = Map.put(@valid_attrs, :owner_id, user.id)
-      conn = post conn, repository_path(conn, :create, user), repository: %{params|path: "foo$bar"}
+      conn = post conn, repository_path(conn, :create, user), repo: %{params|path: "foo$bar"}
       assert "has invalid format" in json_response(conn, 422)["errors"]["path"]
     end
   end
@@ -47,7 +48,8 @@ defmodule GitGud.Web.RepoControllerTest do
         "owner" => user.username,
         "path" => @valid_attrs.path,
         "name" => @valid_attrs.name,
-        "description" => @valid_attrs.description}]
+        "description" => @valid_attrs.description,
+        "url" => "http://localhost:4001/api/users/redrabbit/repos/project-awesome"}]
     end
   end
 
@@ -56,7 +58,7 @@ defmodule GitGud.Web.RepoControllerTest do
 
     test "renders repository when data is valid", %{conn: conn, user: user, repo: %Repo{path: path} = repo} do
       name = "My Super Awesome Project"
-      conn = put conn, repository_path(conn, :update, user, repo), repository: %{"name" => name}
+      conn = put conn, repository_path(conn, :update, user, repo), repo: %{"name" => name}
       assert %{"path" => ^path} = json_response(conn, 200)
 
       conn = get conn, repository_path(conn, :show, user, repo)
@@ -64,12 +66,13 @@ defmodule GitGud.Web.RepoControllerTest do
         "owner" => user.username,
         "path" => @valid_attrs.path,
         "name" => name,
-        "description" => @valid_attrs.description}
+        "description" => @valid_attrs.description,
+        "url" => "http://localhost:4001/api/users/redrabbit/repos/project-awesome"}
     end
 
     test "renders errors when data is invalid", %{conn: conn, user: user, repo: repo} do
       params = %{"path" => "foo$bar"}
-      conn = put conn, repository_path(conn, :update, user, repo), repository: params
+      conn = put conn, repository_path(conn, :update, user, repo), repo: params
       assert "has invalid format" in json_response(conn, 422)["errors"]["path"]
     end
   end
@@ -148,11 +151,8 @@ defmodule GitGud.Web.RepoControllerTest do
 
     test "lists files in tree", %{conn: conn, user: user, repo: repo} do
       conn = get conn, repository_path(conn, :browse_tree, user, repo, "master", [])
-      assert {"path", "/"} in json_response(conn, 200)
-      assert {"type", "tree"} in json_response(conn, 200)
-      assert %{"tree" => tree} = json_response(conn, 200)
-      assert Enum.all?(tree, &(&1["type"] == "blob"))
-      assert ["LICENCE", "README", "setup.sh"] == Enum.map(tree, &(&1["path"]))
+      assert Enum.all?(json_response(conn, 200), &(&1["type"] == "blob"))
+      assert ["LICENCE", "README", "setup.sh"] == Enum.map(json_response(conn, 200), &(&1["path"]))
     end
 
     test "renders error when spec is invalid", %{conn: conn, user: user, repo: repo} do

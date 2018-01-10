@@ -23,7 +23,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns all repository for a given user.
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
-  def index(conn, %{"user" => username} = _params) do
+  def index(conn, %{"username" => username} = _params) do
     repos = RepoQuery.user_repositories(username)
     render(conn, "repository_list.json", repositories: repos)
   end
@@ -32,7 +32,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns a single repository.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user" => username, "repo" => path} = _params) do
+  def show(conn, %{"username" => username, "repo_path" => path} = _params) do
     case fetch_repo({username, path}, conn.assigns[:user], :read) do
       {:ok, repo} -> render(conn, "repository.json", repository: repo)
       {:error, reason} -> {:error, reason}
@@ -43,7 +43,7 @@ defmodule GitGud.Web.RepositoryController do
   Creates a new repository.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"user" => username, "repo" => repo_params} = _params) do
+  def create(conn, %{"username" => username, "repo" => repo_params} = _params) do
     if username != conn.assigns.user.username do
       {:error, :unauthorized}
     else
@@ -65,7 +65,7 @@ defmodule GitGud.Web.RepositoryController do
   Updates an existing repository.
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
-  def update(conn, %{"user" => username, "repo" => path, "repository" => repo_params}) do
+  def update(conn, %{"username" => username, "repo_path" => path, "repo" => repo_params}) do
     repo_params = Map.delete(repo_params, "owner_id")
     with {:ok, repo} <- fetch_repo({username, path}, conn.assigns[:user], :write),
          {:ok, repo} <- Repo.update(repo, repo_params), do:
@@ -76,7 +76,7 @@ defmodule GitGud.Web.RepositoryController do
   Deletes an existing repository.
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
-  def delete(conn, %{"user" => username, "repo" => path} = _params) do
+  def delete(conn, %{"username" => username, "repo_path" => path} = _params) do
     if username != conn.assigns.user.username do
       {:error, :unauthorized}
     else
@@ -90,7 +90,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns all available branches for a repository.
   """
   @spec branch_list(Plug.t, map) :: Plug.t
-  def branch_list(conn, %{"user" => username, "repo" => path} = _params) do
+  def branch_list(conn, %{"username" => username, "repo_path" => path} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, refs} <- fetch_branches(repo), do:
       render(conn, GitView, "branch_list.json", references: refs, repository: repo, handle: handle)
@@ -100,7 +100,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns a single branch for a repository.
   """
   @spec branch(Plug.t, map) :: Plug.t
-  def branch(conn, %{"user" => username, "repo" => path, "branch" => shorthand} = _params) do
+  def branch(conn, %{"username" => username, "repo_path" => path, "branch_name" => shorthand} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, name, oid, commit} <- fetch_branch(repo, shorthand), do:
       render(conn, GitView, "branch.json", reference: {oid, name, shorthand, commit}, repository: repo, handle: handle)
@@ -110,7 +110,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns all tags for a repository.
   """
   @spec tag_list(Plug.t, map) :: Plug.t
-  def tag_list(conn, %{"user" => username, "repo" => path} = _params) do
+  def tag_list(conn, %{"username" => username, "repo_path" => path} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, refs} <- fetch_tags(repo), do:
       render(conn, GitView, "tag_list.json", references: refs, repository: repo, handle: handle)
@@ -120,17 +120,17 @@ defmodule GitGud.Web.RepositoryController do
   Returns a single tag for a repository.
   """
   @spec tag(Plug.t, map) :: Plug.t
-  def tag(conn, %{"user" => username, "repo" => path, "tag" => shorthand} = _params) do
+  def tag(conn, %{"username" => username, "repo_path" => path, "tag_name" => shorthand} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, tag} <- fetch_tag(repo, shorthand), do:
-      render(conn, GitView, "tag.json", tag: tag, handle: handle)
+      render(conn, GitView, "tag.json", tag: tag, repository: repo, handle: handle)
   end
 
   @doc """
   Returns a single commit for a repository.
   """
   @spec commit(Plug.t, map) :: Plug.t
-  def commit(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
+  def commit(conn, %{"username" => username, "repo_path" => path, "spec" => spec} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, oid, commit} <- fetch_commit(repo, spec), do:
       render(conn, GitView, "commit.json", commit: {oid, commit}, repository: repo, handle: handle)
@@ -140,7 +140,7 @@ defmodule GitGud.Web.RepositoryController do
   Returns all commits for a repository revision.
   """
   @spec revwalk(Plug.t, map) :: Plug.t
-  def revwalk(conn, %{"user" => username, "repo" => path, "spec" => spec} = _params) do
+  def revwalk(conn, %{"username" => username, "repo_path" => path, "spec" => spec} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, handle, commits} <- fetch_revwalk(repo, spec), do:
       render(conn, GitView, "revwalk.json", commits: commits, repository: repo, handle: handle)
@@ -150,14 +150,14 @@ defmodule GitGud.Web.RepositoryController do
   Browses a repository's tree by path.
   """
   @spec browse_tree(Plug.t, map) :: Plug.t
-  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => []} = _params) do
+  def browse_tree(conn, %{"username" => username, "repo_path" => path, "spec" => spec, "tree_path" => []} = _params) do
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, tree} <- fetch_tree(repo, spec), do:
       render(conn, GitView, "tree.json", spec: spec, path: "/", tree: tree, repository: repo)
   end
 
   @spec browse_tree(Plug.t, map) :: Plug.t
-  def browse_tree(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
+  def browse_tree(conn, %{"username" => username, "repo_path" => path, "spec" => spec, "tree_path" => paths} = _params) do
     tree_path = Path.join(paths)
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, tree} <- fetch_tree(repo, spec, tree_path), do:
@@ -165,12 +165,12 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @spec download_blob(Plug.t, map) :: Plug.t
-  def download_blob(_conn, %{"path" => []} = _params) do
+  def download_blob(_conn, %{"blob_path" => []} = _params) do
     {:error, :invalid_path}
   end
 
   @spec download_blob(Plug.t, map) :: Plug.t
-  def download_blob(conn, %{"user" => username, "repo" => path, "spec" => spec, "path" => paths} = _params) do
+  def download_blob(conn, %{"username" => username, "repo_path" => path, "spec" => spec, "blob_path" => paths} = _params) do
     blob_path = Path.join(paths)
     with {:ok, repo} <- fetch_repo({username, path} , conn.assigns[:user], :read),
          {:ok, blob} <- fetch_blob(repo, spec, blob_path), do:
