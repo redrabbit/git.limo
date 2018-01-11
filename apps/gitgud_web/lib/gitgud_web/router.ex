@@ -15,6 +15,9 @@ defmodule GitGud.Web.Router do
     plug AuthenticationPlug
   end
 
+
+  forward "/graphiql", Absinthe.Plug.GraphiQL, schema: GitGud.GraphQL.Schema
+
   # api + token authentication
   scope "/api", GitGud.Web do
     pipe_through :api

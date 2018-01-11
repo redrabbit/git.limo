@@ -32,6 +32,8 @@ defmodule GitGud.Mixfile do
      {:ecto, "~> 2.2"},
      {:comeonin, "~> 4.0"},
      {:argon2_elixir, "~> 1.2"},
+     {:absinthe, "~> 1.4"},
+     {:dataloader, "~> 1.0"},
      {:gitrekt, in_umbrella: true}]
   end
 

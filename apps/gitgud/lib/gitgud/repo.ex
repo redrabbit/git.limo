@@ -28,7 +28,6 @@ defmodule GitGud.Repo do
     id: pos_integer,
     owner_id: pos_integer,
     owner: User.t,
-    path: binary,
     name: binary,
     description: binary,
     inserted_at: NaiveDateTime.t,
@@ -55,7 +54,7 @@ defmodule GitGud.Repo do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repository, params \\ %{}) do
     repository
-    |> cast(params, [:owner_id, :path, :name, :description])
+    |> cast(params, [:owner_id, :name, :description])
     |> validate_required([:owner_id, :path, :name])
     |> validate_format(:path, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:path, min: 3)
