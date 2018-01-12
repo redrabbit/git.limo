@@ -25,12 +25,12 @@ defmodule GitGud.UserTest do
 
   test "gets user by id" do
     assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuery.get(user.id)
+    assert ^user = UserQuery.by_id(user.id)
   end
 
   test "gets user by username" do
     assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuery.get(user.username)
+    assert ^user = UserQuery.by_username(user.username)
   end
 
   test "authenticates user with email and username" do
