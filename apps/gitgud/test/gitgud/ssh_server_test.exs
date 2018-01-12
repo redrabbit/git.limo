@@ -32,16 +32,16 @@ defmodule GitGud.SSHServerTest do
   end
 
   test "clones repository over ssh", %{user: user, git_dir: git_dir} do
-    assert {:ok, repo, _pid} = Repo.create(path: "project-awesome", name: "My Awesome Project", owner_id: user.id)
-    assert {msg, 0} = System.cmd("git", ["clone", "ssh://#{user.username}@localhost:8989/#{user.username}/#{repo.path}"], cd: git_dir, stderr_to_stdout: true)
-    assert String.starts_with?(msg, "Cloning into '#{repo.path}'...\n")
-    assert File.dir?(Path.join(git_dir, repo.path))
+    assert {:ok, repo, _pid} = Repo.create(name: "project-awesome", owner_id: user.id)
+    assert {msg, 0} = System.cmd("git", ["clone", "ssh://#{user.username}@localhost:8989/#{user.username}/#{repo.name}"], cd: git_dir, stderr_to_stdout: true)
+    assert String.starts_with?(msg, "Cloning into '#{repo.name}'...\n")
+    assert File.dir?(Path.join(git_dir, repo.name))
   end
 
   test "push commit to repository over ssh", %{user: user, git_dir: git_dir} do
-    assert {:ok, repo, _pid} = Repo.create(path: "project-awesome", name: "My Awesome Project", owner_id: user.id)
-    assert {_msg, 0} = System.cmd("git", ["clone", "ssh://#{user.username}@localhost:8989/#{user.username}/#{repo.path}"], cd: git_dir, stderr_to_stdout: true)
-    repo_path = Path.join(git_dir, repo.path)
+    assert {:ok, repo, _pid} = Repo.create(name: "project-awesome", owner_id: user.id)
+    assert {_msg, 0} = System.cmd("git", ["clone", "ssh://#{user.username}@localhost:8989/#{user.username}/#{repo.name}"], cd: git_dir, stderr_to_stdout: true)
+    repo_path = Path.join(git_dir, repo.name)
     assert File.dir?(repo_path)
     File.touch!(Path.join(repo_path, "README"))
     assert {_msg, 0} = System.cmd("git", ["add", "README"], cd: repo_path, stderr_to_stdout: true)

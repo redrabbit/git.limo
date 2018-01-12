@@ -18,7 +18,6 @@ defmodule GitGud.Repo do
 
   schema "repositories" do
     belongs_to  :owner,       User
-    field       :path,        :string
     field       :name,        :string
     field       :description, :string
     timestamps()
@@ -55,12 +54,11 @@ defmodule GitGud.Repo do
   def changeset(%__MODULE__{} = repository, params \\ %{}) do
     repository
     |> cast(params, [:owner_id, :name, :description])
-    |> validate_required([:owner_id, :path, :name])
-    |> validate_format(:path, ~r/^[a-zA-Z0-9_-]+$/)
-    |> validate_length(:path, min: 3)
+    |> validate_required([:owner_id, :name])
+    |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
     |> assoc_constraint(:owner)
-    |> unique_constraint(:path, name: :repositories_path_owner_id_index)
+    |> unique_constraint(:name, name: :repositories_owner_id_name_index)
   end
 
   @doc """
@@ -90,12 +88,13 @@ defmodule GitGud.Repo do
   @doc """
   Updates the given `repo` with the given `params`.
   """
-  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
   def update(%__MODULE__{} = repo, params) do
     changeset = changeset(repo, Map.new(params))
     case update_and_fix_path(changeset) do
       {:ok, %{update: repo}} -> {:ok, repo}
       {:error, :update, changeset, _changes} -> {:error, changeset}
+      {:error, :rename_repo, reason, _changes} -> {:error, reason}
     end
   end
 
@@ -106,7 +105,10 @@ defmodule GitGud.Repo do
   def update!(%__MODULE__{} = repo, params) do
     case update(repo, params) do
       {:ok, repo} -> repo
-      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+      {:error, %Ecto.Changeset{} = changeset} ->
+        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+      {:error, reason} ->
+        raise File.Error, reason: reason, action: "rename directory", path: IO.chardata_to_string(workdir(repo))
     end
   end
 
@@ -138,7 +140,7 @@ defmodule GitGud.Repo do
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
     repo = QuerySet.preload(repo, :owner)
-    Path.join([@root_path, repo.owner.username, repo.path])
+    Path.join([@root_path, repo.owner.username, repo.name])
   end
 
   @doc """
@@ -171,11 +173,19 @@ defmodule GitGud.Repo do
   end
 
   defp init_repo(repo, bare?) do
-    repo = QuerySet.preload(repo, :owner)
-    @root_path
-    |> Path.join(repo.owner.username)
-    |> Path.join(repo.path)
-    |> Git.repository_init(bare?)
+    Git.repository_init(workdir(repo), bare?)
+  end
+
+  defp rename_repo(%__MODULE__{} = old_repo, %__MODULE__{} = new_repo) do
+    rename_repo(workdir(old_repo), workdir(new_repo))
+  end
+
+  defp rename_repo(path, path), do: {:ok, :noop}
+  defp rename_repo(old_path, new_path) do
+    case File.rename(old_path, new_path) do
+      :ok -> {:ok, new_path}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp update_and_fix_path(changeset) do
@@ -185,23 +195,6 @@ defmodule GitGud.Repo do
     |> QuerySet.transaction()
   end
 
-  defp rename_repo(%__MODULE__{} = old_repo, %__MODULE__{} = new_repo) do
-    old_repo = QuerySet.preload(old_repo, :owner)
-    old_path = Path.join(old_repo.owner.username, old_repo.path)
-    new_repo = QuerySet.preload(new_repo, :owner)
-    new_path = Path.join(new_repo.owner.username, new_repo.path)
-    if old_path != new_path,
-      do: rename_repo(old_path, new_path),
-    else: {:ok, :noop}
-  end
-
-  defp rename_repo(old_path, new_path) do
-    case File.rename(Path.join(@root_path, old_path), Path.join(@root_path, new_path)) do
-      :ok -> {:ok, new_path}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
   defp delete_and_cleanup(repo) do
     Multi.new()
     |> Multi.delete(:delete, repo)
@@ -209,8 +202,5 @@ defmodule GitGud.Repo do
     |> QuerySet.transaction()
   end
 
-  defp remove_repo(repo) do
-    repo = QuerySet.preload(repo, :owner)
-    File.rm_rf(Path.join([@root_path, repo.owner.username, repo.path]))
-  end
+  defp remove_repo(repo), do: File.rm_rf(workdir(repo))
 end

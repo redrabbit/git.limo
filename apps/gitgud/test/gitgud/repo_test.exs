@@ -7,7 +7,7 @@ defmodule GitGud.RepoTest do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  @valid_attrs %{path: "project-awesome", name: "My Awesome Project", description: "Awesome things are going on here!"}
+  @valid_attrs %{name: "project-awesome", description: "Awesome things are going on here!"}
 
   setup do
     user = User.register!(name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234")
@@ -28,24 +28,24 @@ defmodule GitGud.RepoTest do
 
   test "fails to create a repository with invalid params", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
-    assert {:error, changeset} = Repo.create(%{params|path: "foo$bar"})
-    assert "has invalid format" in errors_on(changeset).path
-    assert {:error, changeset} = Repo.create(%{params|path: "xy"})
-    assert "should be at least 3 character(s)" in errors_on(changeset).path
+    assert {:error, changeset} = Repo.create(%{params|name: "foo$bar"})
+    assert "has invalid format" in errors_on(changeset).name
+    assert {:error, changeset} = Repo.create(%{params|name: "xy"})
+    assert "should be at least 3 character(s)" in errors_on(changeset).name
   end
 
   test "fails to create two repositories with same path", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, _repo, _pid} = Repo.create(params)
     assert {:error, changeset} = Repo.create(params)
-    assert "has already been taken" in errors_on(changeset).path
+    assert "has already been taken" in errors_on(changeset).name
   end
 
   test "gets all repositories owned by a user", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     repos =
       1..5
-      |> Enum.map(fn i -> update_in(params.path, &"#{&1}-#{i}") end)
+      |> Enum.map(fn i -> update_in(params.name, &"#{&1}-#{i}") end)
       |> Enum.map(&Repo.create!/1)
       |> Enum.map(&elem(&1, 0))
       |> QuerySet.preload(:owner)
@@ -56,13 +56,13 @@ defmodule GitGud.RepoTest do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
     repo = QuerySet.preload(repo, :owner)
-    assert ^repo = RepoQuery.user_repository(user, repo.path)
+    assert ^repo = RepoQuery.user_repository(user, repo.name)
   end
 
   test "updates a repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, old_repo, _pid} = Repo.create(params)
-    assert {:ok, new_repo} = Repo.update(old_repo, path: "project-super-awesome", name: "My Super Awesome Project")
+    assert {:ok, new_repo} = Repo.update(old_repo, name: "project-super-awesome")
     refute File.dir?(Repo.workdir(old_repo))
     assert File.dir?(Repo.workdir(new_repo))
   end

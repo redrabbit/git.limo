@@ -28,21 +28,21 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns a single user repository for the given `user` and `path`.
+  Returns a single user repository for the given `user` and `name`.
 
   If `user` is a `binary`, this function assumes that it represent a username
   and uses it as such as part of the query.
   """
-  @spec user_repository(User.t|binary, Path.t) :: Repo.t | nil
-  def user_repository(%User{} = user, path) do
+  @spec user_repository(User.t|binary, binary) :: Repo.t | nil
+  def user_repository(%User{} = user, name) do
     user
-    |> repo_query(path)
+    |> repo_query(name)
     |> QuerySet.one()
     |> put_owner(user)
   end
 
-  def user_repository(username, path) when is_binary(username) do
-    QuerySet.one(repo_query(username, path))
+  def user_repository(username, name) when is_binary(username) do
+    QuerySet.one(repo_query(username, name))
   end
 
   @doc """
@@ -64,8 +64,8 @@ defmodule GitGud.RepoQuery do
     from(r in Repo, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
   end
 
-  defp repo_query(user, path) do
-    where(repo_query(user), path: ^path)
+  defp repo_query(user, name) do
+    where(repo_query(user), name: ^name)
   end
 
   defp put_owner(%Repo{} = repo, %User{} = user), do: struct(repo, owner: user)
