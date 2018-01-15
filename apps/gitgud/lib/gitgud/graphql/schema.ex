@@ -6,6 +6,7 @@ defmodule GitGud.GraphQL.Schema do
 
   alias GitGud.GraphQL.Resolvers
 
+  import_types Absinthe.Type.Custom
   import_types GitGud.GraphQL.Types
 
   query do

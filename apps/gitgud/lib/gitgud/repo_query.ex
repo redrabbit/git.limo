@@ -48,7 +48,10 @@ defmodule GitGud.RepoQuery do
   @doc """
   Returns a repository for the given `path`.
   """
+  @spec by_path(Path.t) :: Repo.t | nil
   def by_path(path) do
+    root = Application.fetch_env!(:gitgud, :git_dir)
+    path = if Path.type(path) == :absolute, do: Path.relative_to(path, root), else: path
     apply(__MODULE__, :user_repository, Path.split(path))
   end
 

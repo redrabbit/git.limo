@@ -14,8 +14,6 @@ defmodule GitGud.Repo do
   alias GitGud.User
   alias GitGud.QuerySet
 
-  @root_path Application.fetch_env!(:gitgud, :git_dir)
-
   schema "repositories" do
     belongs_to  :owner,       User
     field       :name,        :string
@@ -139,8 +137,9 @@ defmodule GitGud.Repo do
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
+    root = Application.fetch_env!(:gitgud, :git_dir)
     repo = QuerySet.preload(repo, :owner)
-    Path.join([@root_path, repo.owner.username, repo.name])
+    Path.join([root, repo.owner.username, repo.name])
   end
 
   @doc """
