@@ -5,8 +5,8 @@
 A GitHub clone written in Elixir with almost no-dependencies.
 
 * [x] HTTP and SSH support.
-* [x] Single-page application with REST API backend.
 * [x] User authentication and permissions.
+* [x] Fully integrated GraphQL backend.
 * [x] Customizable Webhooks.
 * [x] Native implementation of Git commands.
 * [ ] Customizable Git storage backend.
