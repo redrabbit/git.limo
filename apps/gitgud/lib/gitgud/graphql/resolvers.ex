@@ -1,7 +1,10 @@
 defmodule GitGud.GraphQL.Resolvers do
 
   alias GitRekt.Git
+
+  alias GitGud.User
   alias GitGud.UserQuery
+
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
@@ -15,27 +18,27 @@ defmodule GitGud.GraphQL.Resolvers do
     else: {:error, "this given username '#{username}' is not valid"}
   end
 
-  def resolve_user_repo(user, %{name: name}, _info) do
+  def resolve_user_repo(%User{} = user, %{name: name}, _info) do
     if repo = RepoQuery.user_repository(user, name),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
 
-  def resolve_repo_head(repo, %{}, _info) do
+  def resolve_repo_head(%Repo{} = repo, %{}, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, dwim, oid} <- Git.reference_resolve(handle, "HEAD"), do:
       {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
-  def resolve_repo_ref(_repo, %{name: "HEAD"}, _info), do: {:error, "reference 'HEAD' not found"}
-  def resolve_repo_ref(repo, %{name: name}, _info) do
+  def resolve_repo_ref(%Repo{}, %{name: "HEAD"}, _info), do: {:error, "reference 'HEAD' not found"}
+  def resolve_repo_ref(%Repo{} = repo, %{name: name}, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, dwim, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
-  def resolve_repo_ref(_repo, %{dwim: "HEAD"}, _info), do: {:error, "no reference found for shorthand 'HEAD'"}
-  def resolve_repo_ref(repo, %{dwim: dwim}, _info) do
+  def resolve_repo_ref(%Repo{}, %{dwim: "HEAD"}, _info), do: {:error, "no reference found for shorthand 'HEAD'"}
+  def resolve_repo_ref(%Repo{} = repo, %{dwim: dwim}, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, dwim), do:
       {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
@@ -43,6 +46,12 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def resolve_git_repo(%{__repo__: repo}, %{}, _info) do
     {:ok, repo}
+  end
+
+  def resolve_git_object(%Repo{} = repo, %{revision: revision}, _info) do
+    with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+         {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
+      {:ok, %{oid: oid, __repo__: repo, __git__: handle, __type__: obj_type, __ptr__: obj}}
   end
 
   def resolve_git_object(%{__repo__: repo, __git__: handle, __oid__: oid}, %{}, _info) do

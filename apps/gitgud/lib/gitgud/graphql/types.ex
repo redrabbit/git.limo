@@ -27,6 +27,10 @@ defmodule GitGud.GraphQL.Types do
     field :description, :string
     field :owner, non_null(:user), resolve: dataloader(Resolvers)
     field :head, :git_reference, resolve: &Resolvers.resolve_repo_head/3
+    field :object, :git_object do
+      arg :revision, non_null(:string)
+      resolve &Resolvers.resolve_git_object/3
+    end
     field :reference, :git_reference do
       arg :name, :string
       arg :dwim, :string
