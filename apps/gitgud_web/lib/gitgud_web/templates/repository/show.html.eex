@@ -1,0 +1,2 @@
+<h2><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> / <%= @repo.name %></h2>
+<p><%= @repo.description %></p>

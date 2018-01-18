@@ -146,9 +146,9 @@ defmodule GitGud.Repo do
   Broadcasts notification(s) for the given `service` command.
   """
   @spec notify_command(t, User.t, struct) :: :ok
-  def notify_command(%__MODULE__{} = repo, %User{} = user, %GitRekt.WireProtocol.ReceivePack{state: :done} = service) do
+  def notify_command(%__MODULE__{} = repo, %User{} = user, %GitRekt.WireProtocol.ReceivePack{state: :done, cmds: cmds} = _service) do
     IO.puts "push notification from #{user.username} to #{repo.name}"
-    Enum.each(service.cmds, fn
+    Enum.each(cmds, fn
       {:create, oid, refname} ->
         IO.puts "create #{refname} to #{Git.oid_fmt(oid)}"
       {:update, old_oid, new_oid, refname} ->

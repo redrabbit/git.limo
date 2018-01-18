@@ -5,27 +5,19 @@ defmodule GitGud.Web.ErrorView do
 
   use GitGud.Web, :view
 
-  def render("400.json", %{details: details}) do
-    %{errors: %{details: details}}
+  def render("401.html", _assigns) do
+    "Unauthorized"
   end
 
-  def render("400.json", _assigns) do
-    %{errors: %{details: "Bad request"}}
+  def render("404.html", _assigns) do
+    "Page not found"
   end
 
-  def render("401.json", _assigns) do
-    %{errors: %{details: "Unauthorized"}}
-  end
-
-  def render("404.json", _assigns) do
-    %{errors: %{details: "Page not found"}}
-  end
-
-  def render("500.json", _assigns) do
-    %{errors: %{details: "Internal server error"}}
+  def render("500.html", _assigns) do
+    "Internal server error"
   end
 
   def template_not_found(_template, assigns) do
-    render "500.json", assigns
+    render("500.html", assigns)
   end
 end

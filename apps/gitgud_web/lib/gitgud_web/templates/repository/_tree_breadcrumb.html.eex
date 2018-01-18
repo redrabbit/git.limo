@@ -1,0 +1,13 @@
+<ul class="breadcrumb">
+  <li><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>"><%= @repo.name %></a></li>
+  <%= for {path, index} <- Enum.with_index(Enum.drop(@path, -1), 1) do %>
+    <li><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, Enum.take(@path, index)) %>"><%= path %></a></li>
+  <% end %>
+  <%= unless Enum.empty?(@path) do %>
+    <li><%= List.last(@path) %></li>
+  <% end %>
+  <%= if assigns[:tree] do %>
+    <li></li>
+  <% end %>
+</ul>
+

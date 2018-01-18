@@ -1,0 +1,14 @@
+<table class="table">
+  <tbody>
+    <%= unless Enum.empty?(@path) do %>
+      <tr>
+        <td><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, Enum.drop(@path, -1)) %>">..</a></td>
+      </tr>
+    <% end %>
+    <%= for entry <- @tree do %>
+      <tr>
+        <td><a href="<%= repository_path(@conn, entry.type, @repo.owner, @repo, @spec.shorthand, @path ++ [entry.name]) %>"><%= entry.name %></a></td>
+      </tr>
+    <% end %>
+  <tbody>
+</table>

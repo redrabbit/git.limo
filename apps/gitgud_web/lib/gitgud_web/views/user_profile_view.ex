@@ -1,4 +1,5 @@
-defmodule GitGud.Web.PageView do
+defmodule GitGud.Web.UserProfileView do
   @moduledoc false
   use GitGud.Web, :view
 end
+

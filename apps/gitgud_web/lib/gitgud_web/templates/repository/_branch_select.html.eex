@@ -1,0 +1,7 @@
+<select>
+  <%= for branch <- @branches do %>
+    <option value="<%= branch.oid %>"<%= if branch == @spec do %>selected="selected"<% end %>><%= branch.shorthand %></option>
+  <% end %>
+</select>
+
+

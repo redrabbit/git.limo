@@ -28,9 +28,13 @@ defmodule GitGud.Web do
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
+      # Use all HTML functionality (forms, tags, etc)
+      use Phoenix.HTML
+
       import GitGud.Web.Router.Helpers
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
+      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1]
     end
   end
 

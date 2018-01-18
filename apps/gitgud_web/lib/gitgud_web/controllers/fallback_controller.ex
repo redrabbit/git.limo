@@ -6,13 +6,9 @@ defmodule GitGud.Web.FallbackController do
   """
   use GitGud.Web, :controller
 
-  alias GitGud.Web.{ChangesetView, ErrorView}
+  require Logger
 
-  def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
-    conn
-    |> put_status(:unprocessable_entity)
-    |> render(ChangesetView, "error.json", changeset: changeset)
-  end
+  alias GitGud.Web.ErrorView
 
   def call(conn, {:error, :unauthorized}) do
     conn
@@ -26,13 +22,8 @@ defmodule GitGud.Web.FallbackController do
     |> render(ErrorView, :"404")
   end
 
-  def call(conn, {:error, reason}) when is_binary(reason) do
-    conn
-    |> put_status(:bad_request)
-    |> render(ErrorView, :"400", details: reason)
-  end
-
-  def call(conn, _val) do
+  def call(conn, val) do
+    Logger.warn("Uncaught #{inspect val}")
     conn
     |> put_status(:internal_server_error)
     |> render(ErrorView, :"500")

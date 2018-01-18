@@ -1,0 +1,3 @@
+<%= render "_branch_select.html", assigns %>
+<%= render "_tree_breadcrumb.html", assigns %>
+<%= render "_blob_content.html", assigns %>

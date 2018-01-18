@@ -1,6 +1,6 @@
 defmodule GitGud.Web.Endpoint do
   @moduledoc """
-  HTTP and WebSocket endpoint.
+  HTTP and WebSocket endpoints.
   """
 
   use Phoenix.Endpoint, otp_app: :gitgud_web
