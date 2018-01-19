@@ -1,4 +1,8 @@
 defmodule GitGud.GraphQL.Types do
+  @moduledoc """
+  GraphQL types for `GitGud.GraphQL.Schema`.
+  """
+
   use Absinthe.Schema.Notation
 
   alias GitRekt.Git
