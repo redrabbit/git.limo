@@ -1,20 +1,18 @@
-# Git Gud *or git rekt*
-
-![Cover image](https://imgur.com/PNT7Wk6.jpg)
+# Git Gud
 
 A GitHub clone written in Elixir with almost no-dependencies.
 
-* [x] HTTP and SSH support.
+* [x] Git HTTP and SSH support.
 * [x] User authentication and permissions.
-* [x] Fully integrated GraphQL backend.
-* [x] Customizable Webhooks.
-* [x] Native implementation of Git commands.
+* [x] Fully integrated GraphQL API.
+* [ ] Customizable Webhooks.
+* [x] Native (NIF) implementation of Git commands.
 * [ ] Customizable Git storage backend.
 * [ ] Issue tracker, code review, continuous integration, ...
 
 ## Install dependencies
 
-First, ensure you have ~~Git and~~ the [libgit2](https://libgit2.github.com) libraries installed on your system:
+First, ensure you have ~~Git and~~ [libgit2](https://libgit2.github.com) installed on your system:
 
 #### OSX
 ```bash
