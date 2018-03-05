@@ -1,38 +1,31 @@
-import axios from 'axios'
+import "phoenix_html"
 
-import VueRouter from 'vue-router'
-import Vuikit from 'vuikit'
+import React from "react"
+import ReactDOM from "react-dom"
 
-import User from './components/user.vue'
-import Repo from './components/repo.vue'
-import Browser from './components/browser.vue'
+class BranchSelect extends React.Component {
+  render() {
+    return (
+      <select onChange={this.change} defaultValue={this.props.spec.oid}>
+        {this.props.branches.map((branch, i) =>
+          <option key={i} value={branch.oid}>{branch.shorthand}</option>
+        )}
+      </select>
+    )
+  }
 
-Vue.use(Vuikit)
+  change(event) {
+    console.log(event.target.options[event.target.selectedIndex].text)
+  }
+}
 
-const router = new VueRouter({
-  routes: [
-    { path: '/:username',
-      name: 'user',
-      component: User,
-      props: true,
-    },
-    { path: '/:username/:repoPath',
-      name: 'repo',
-      component: Repo,
-      props: true,
-      children: [
-        { path: 'tree/:repoSpec/:treePath*',
-          name: 'browser',
-          component: Browser,
-          props: true
-        }
-      ],
-    }
-  ],
-  mode: 'history',
-  saveScrollPosition: true
+document.addEventListener("DOMContentLoaded", e => {
+  const elements = document.querySelectorAll("[data-react-class]")
+  Array.prototype.forEach.call(elements, e => {
+    const targetId = document.getElementById(e.dataset.reactTargetId)
+    const targetDiv = targetId ? targetId : e
+    const reactProps = e.dataset.reactProps ? e.dataset.reactProps : "{}"
+    const reactElement = React.createElement(eval(e.dataset.reactClass), JSON.parse(reactProps))
+    ReactDOM.render(reactElement, targetDiv)
+  })
 })
-
-const app = new Vue({
-  router,
-}).$mount('#app')

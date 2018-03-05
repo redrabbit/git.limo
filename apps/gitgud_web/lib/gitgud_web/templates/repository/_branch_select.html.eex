@@ -1,0 +1,2 @@
+<%= react_component "BranchSelect", branches: @branches, spec: @spec  %>
+

@@ -12,25 +12,29 @@ defmodule GitGud.Web do
   def controller do
     quote do
       use Phoenix.Controller, namespace: GitGud.Web
+
       import Plug.Conn
-      import GitGud.Web.Router.Helpers
-      import GitGud.Web.Gettext
+
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, ensure_authenticated: 2]
+      import GitGud.Web.Gettext
+      import GitGud.Web.Router.Helpers
     end
   end
 
   @doc false
   def view do
     quote do
-      use Phoenix.View, root: "lib/gitgud_web/templates",
-                        namespace: GitGud.Web
+      use Phoenix.View, root: "lib/gitgud_web/templates", namespace: GitGud.Web
 
-      # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
-      import GitGud.Web.Router.Helpers
+      use Phoenix.HTML
+
+      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1]
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
+      import GitGud.Web.ReactComponents
+      import GitGud.Web.Router.Helpers
     end
   end
 
@@ -38,6 +42,7 @@ defmodule GitGud.Web do
   def router do
     quote do
       use Phoenix.Router
+
       import Plug.Conn
       import Phoenix.Controller
 
@@ -49,6 +54,7 @@ defmodule GitGud.Web do
   def channel do
     quote do
       use Phoenix.Channel
+
       import GitGud.Web.Gettext
     end
   end

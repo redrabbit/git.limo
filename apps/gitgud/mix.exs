@@ -30,8 +30,10 @@ defmodule GitGud.Mixfile do
   defp deps do
     [{:postgrex, ">= 0.0.0"},
      {:ecto, "~> 2.2"},
-     {:comeonin, "~> 4.0"},
+     {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
+     {:absinthe, "~> 1.4"},
+     {:dataloader, "~> 1.0"},
      {:gitrekt, in_umbrella: true}]
   end
 

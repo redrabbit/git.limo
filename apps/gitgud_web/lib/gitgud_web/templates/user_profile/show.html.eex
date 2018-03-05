@@ -1,0 +1,9 @@
+<h2><%= @user.name %></h2>
+
+<h4>Repositories</h4>
+
+<ul>
+  <%= for repo <- @user.repositories do %>
+    <li><a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a></li>
+  <% end %>
+</ul>

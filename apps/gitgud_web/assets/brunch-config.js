@@ -1,4 +1,5 @@
 exports.config = {
+  // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
       joinTo: "js/app.js"
@@ -22,7 +23,7 @@ exports.config = {
 
   plugins: {
     babel: {
-      ignore: [/vendor/]
+      presets: ["latest", "react"]
     }
   },
 
@@ -33,16 +34,6 @@ exports.config = {
   },
 
   npm: {
-    enabled: true,
-    whitelist: [
-      "axios",
-      "phoenix",
-      "phoenix_html",
-      "vue",
-      "vue-router",
-    ],
-    globals: {
-      Vue: "vue/dist/vue.common.js"
-    },
+    enabled: true
   }
 };

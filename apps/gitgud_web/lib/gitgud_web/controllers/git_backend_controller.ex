@@ -43,8 +43,8 @@ defmodule GitGud.Web.GitBackendController do
   Returns all branche and tag references for a repository.
   """
   @spec info_refs(Plug.Conn.t, map) :: Plug.Conn.t
-  def info_refs(conn, %{"user" => username, "repo" => path, "service" => service} = _params) do
-    if repo = RepoQuery.user_repository(username, path),
+  def info_refs(conn, %{"username" => username, "repo_path" => repo_path, "service" => service} = _params) do
+    if repo = RepoQuery.user_repository(username, repo_path),
       do: git_info_refs(conn, repo, service) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
@@ -53,8 +53,8 @@ defmodule GitGud.Web.GitBackendController do
   Returns `HEAD` for a repository.
   """
   @spec head(Plug.Conn.t, map) :: Plug.Conn.t
-  def head(conn, %{"user" => username, "repo" => path} = _params) do
-    if repo = RepoQuery.user_repository(username, path),
+  def head(conn, %{"username" => username, "repo_path" => repo_path} = _params) do
+    if repo = RepoQuery.user_repository(username, repo_path),
       do: git_head_ref(conn, repo) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
@@ -63,8 +63,8 @@ defmodule GitGud.Web.GitBackendController do
   Returns results for a `receive-pack` remote call.
   """
   @spec receive_pack(Plug.Conn.t, map) :: Plug.Conn.t
-  def receive_pack(conn, %{"user" => username, "repo" => path} = _params) do
-    if repo = RepoQuery.user_repository(username, path),
+  def receive_pack(conn, %{"username" => username, "repo_path" => repo_path} = _params) do
+    if repo = RepoQuery.user_repository(username, repo_path),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
@@ -73,8 +73,8 @@ defmodule GitGud.Web.GitBackendController do
   Returns results for a `upload-pack` remote call.
   """
   @spec upload_pack(Plug.Conn.t, map) :: Plug.Conn.t
-  def upload_pack(conn, %{"user" => username, "repo" => path} = _params) do
-    if repo = RepoQuery.user_repository(username, path),
+  def upload_pack(conn, %{"username" => username, "repo_path" => repo_path} = _params) do
+    if repo = RepoQuery.user_repository(username, repo_path),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end

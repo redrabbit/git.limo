@@ -1,27 +1,47 @@
 defmodule GitGud.Web.AuthenticationController do
   @moduledoc """
-  Module responsible for bearer token authentication.
+  Module responsible for user authentication.
   """
 
   use GitGud.Web, :controller
-
-  import GitGud.Web.AuthenticationPlug, only: [generate_token: 1]
 
   alias GitGud.User
 
   action_fallback GitGud.Web.FallbackController
 
   @doc """
-  Creates a new bearer token for the given user credentials.
+  Renders the login page.
+  """
+  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  def new(conn, _params) do
+    render(conn, "login.html")
+  end
+
+  @doc """
+  Authenticates user with credentials.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"username" => username, "password" => password} = _params) do
-    if user = User.check_credentials(username, password) do
+  def create(conn, %{"credentials" => cred_params} = _params) do
+    if user = User.check_credentials(cred_params["email_or_username"], cred_params["password"]) do
       conn
-      |> put_status(:created)
-      |> render("token.json", token: generate_token(user.id))
+      |> put_session(:user_id, user.id)
+      |> put_flash(:info, "Logged in.")
+      |> redirect(to: user_profile_path(conn, :show, user))
     else
-      {:error, :unauthorized}
+      conn
+      |> put_flash(:error, "Wrong login credentials")
+      |> render("login.html")
     end
   end
+
+  @doc """
+  Deletes user session.
+  """
+  def delete(conn, _) do
+    conn
+    |> delete_session(:user_id)
+    |> put_flash(:info, "Logged out")
+    |> redirect(to: "/login")
+  end
+
 end
