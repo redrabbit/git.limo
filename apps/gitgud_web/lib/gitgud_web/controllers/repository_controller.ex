@@ -29,6 +29,9 @@ defmodule GitGud.Web.RepositoryController do
       render(conn, "tree.html", repo: repo, branches: branches, spec: head, path: [], tree: tree)
   end
 
+  @doc """
+  Returns a repository tree for a specific revision and path.
+  """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
     with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read),
@@ -39,6 +42,9 @@ defmodule GitGud.Web.RepositoryController do
       render(conn, "tree.html", repo: repo, branches: branches, spec: spec, path: tree_path, tree: tree)
   end
 
+  @doc """
+  Returns a repository blob for a specific revision and path.
+  """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
     with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read),
