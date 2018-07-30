@@ -9,7 +9,14 @@ defmodule GitRekt.WireProtocol.Service do
 
   import GitRekt.WireProtocol, only: [encode: 1, decode: 1]
 
+  @doc """
+  Callback used to run and the actual step of a service.
+  """
   @callback run(struct) :: {struct, [term]}
+
+  @doc """
+  Callback used to transist a service to the next step.
+  """
   @callback next(struct, [term]) :: {struct, [term]}
 
   @doc """

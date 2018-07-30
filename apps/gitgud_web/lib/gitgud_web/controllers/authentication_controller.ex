@@ -37,11 +37,11 @@ defmodule GitGud.Web.AuthenticationController do
   @doc """
   Deletes user session.
   """
-  def delete(conn, _) do
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, _params) do
     conn
     |> delete_session(:user_id)
     |> put_flash(:info, "Logged out")
     |> redirect(to: "/login")
   end
-
 end

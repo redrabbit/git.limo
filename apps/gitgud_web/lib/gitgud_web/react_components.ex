@@ -6,7 +6,8 @@ defmodule GitGud.Web.ReactComponents do
   import Phoenix.HTML.Tag
 
   @doc """
-  Generate a div containing the named React component with no props or options.
+  Generates a div containing the named React component with no props or options.
+
   Returns safe html: `{:safe, [60, "div", ...]}`.
   You can utilize this in your Phoenix views:
   ```
@@ -18,7 +19,8 @@ defmodule GitGud.Web.ReactComponents do
   def react_component(name), do: react_component(name, %{})
 
   @doc """
-  Generate a div containing the named React component and pass it props.
+  Generates a div containing the named React component and pass it props.
+
   Returns safe html: `{:safe, [60, "div", ...]}`.
   Props can be passed in as a Map or a List.
   You can utilize this in your Phoenix views:
@@ -37,7 +39,8 @@ defmodule GitGud.Web.ReactComponents do
   end
 
   @doc """
-  Generate a div containing the named React component and pass it props and options.
+  Generates a div containing the named React component and pass it props and options.
+
   Returns safe html: `{:safe, [60, "div", ...]}`.
   For now, props MUST be passed in as a Map. The only option currently accepted is `target_id`.
   If you pass in a `target_id`, the resulting `<div>` tag will tell the javascirpt helper
