@@ -4,9 +4,14 @@ import React from "react"
 import ReactDOM from "react-dom"
 
 class BranchSelect extends React.Component {
+  constructor(props) {
+    super(props)
+    this.change = this.change.bind(this)
+  }
+
   render() {
     return (
-      <select onChange={this.change} defaultValue={this.props.spec.oid}>
+      <select onChange={this.change} defaultValue={this.props.oid}>
         {this.props.branches.map((branch, i) =>
           <option key={i} value={branch.oid}>{branch.shorthand}</option>
         )}
@@ -15,7 +20,9 @@ class BranchSelect extends React.Component {
   }
 
   change(event) {
-    console.log(event.target.options[event.target.selectedIndex].text)
+    let oid = event.target.options[event.target.selectedIndex].value
+    let branch = this.props.branches.find(branch => branch.oid == oid)
+    window.location = branch.path
   }
 }
 
