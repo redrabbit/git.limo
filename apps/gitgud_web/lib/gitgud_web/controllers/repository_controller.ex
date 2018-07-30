@@ -21,12 +21,8 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, head} <- fetch_reference(handle, "HEAD"),
-         {:ok, tree} <- fetch_tree(handle, head.oid, []),
-         {:ok, branches} <- fetch_branches(handle), do:
-      render(conn, "tree.html", repo: repo, branches: branches, spec: head, path: [], tree: tree)
+    with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read), do:
+      render(conn, "show.html", repo: repo)
   end
 
   @doc """
