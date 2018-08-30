@@ -1,4 +1,4 @@
-defmodule GitGud.QuerySet.Migrations.AddRepositoriesTable do
+defmodule GitGud.DB.Migrations.AddRepositoriesTable do
   use Ecto.Migration
 
   def change do

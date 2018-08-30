@@ -3,7 +3,7 @@ defmodule GitGud.RepoQuery do
   Conveniences for `GitGud.Repo` related queries.
   """
 
-  alias GitGud.QuerySet
+  alias GitGud.DB
   alias GitGud.Repo
   alias GitGud.User
 
@@ -19,12 +19,12 @@ defmodule GitGud.RepoQuery do
   def user_repositories(%User{} = user) do
     user
     |> repo_query()
-    |> QuerySet.all()
+    |> DB.all()
     |> Enum.map(&put_owner(&1, user))
   end
 
   def user_repositories(username) when is_binary(username) do
-    QuerySet.all(repo_query(username))
+    DB.all(repo_query(username))
   end
 
   @doc """
@@ -37,12 +37,12 @@ defmodule GitGud.RepoQuery do
   def user_repository(%User{} = user, name) do
     user
     |> repo_query(name)
-    |> QuerySet.one()
+    |> DB.one()
     |> put_owner(user)
   end
 
   def user_repository(username, name) when is_binary(username) do
-    QuerySet.one(repo_query(username, name))
+    DB.one(repo_query(username, name))
   end
 
   @doc """

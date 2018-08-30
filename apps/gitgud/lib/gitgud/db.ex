@@ -1,4 +1,4 @@
-defmodule GitGud.QuerySet do
+defmodule GitGud.DB do
   @moduledoc """
   Single source of data, mediates between domain and data mapping layer.
   """

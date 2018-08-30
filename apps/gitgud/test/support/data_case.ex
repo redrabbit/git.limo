@@ -16,7 +16,7 @@ defmodule GitGud.DataCase do
 
   using do
     quote do
-      alias GitGud.QuerySet
+      alias GitGud.DB
 
       import Ecto
       import Ecto.Changeset
@@ -26,10 +26,10 @@ defmodule GitGud.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.QuerySet)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(GitGud.QuerySet, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, {:shared, self()})
     end
 
     :ok

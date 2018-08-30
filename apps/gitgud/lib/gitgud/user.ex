@@ -11,7 +11,7 @@ defmodule GitGud.User do
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
-  alias GitGud.QuerySet
+  alias GitGud.DB
 
   alias GitGud.Repo
   alias GitGud.SSHAuthenticationKey
@@ -48,7 +48,7 @@ defmodule GitGud.User do
     params
     |> Map.new()
     |> registration_changeset()
-    |> QuerySet.insert()
+    |> DB.insert()
   end
 
   @doc """
@@ -87,7 +87,7 @@ defmodule GitGud.User do
     repo
     |> build_assoc(:authentication_keys)
     |> struct(key: key)
-    |> QuerySet.insert()
+    |> DB.insert()
   end
 
   @doc """
@@ -95,7 +95,7 @@ defmodule GitGud.User do
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
-    user = QuerySet.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
+    user = DB.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
     case check_pass(user, password) do
       {:ok, user} -> user
       {:error, _reason} -> nil

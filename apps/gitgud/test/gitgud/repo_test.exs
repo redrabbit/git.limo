@@ -48,14 +48,14 @@ defmodule GitGud.RepoTest do
       |> Enum.map(fn i -> update_in(params.name, &"#{&1}-#{i}") end)
       |> Enum.map(&Repo.create!/1)
       |> Enum.map(&elem(&1, 0))
-      |> QuerySet.preload(:owner)
+      |> DB.preload(:owner)
     assert repos == RepoQuery.user_repositories(user)
   end
 
   test "gets a single user repository", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
     assert {:ok, repo, _pid} = Repo.create(params)
-    repo = QuerySet.preload(repo, :owner)
+    repo = DB.preload(repo, :owner)
     assert ^repo = RepoQuery.user_repository(user, repo.name)
   end
 

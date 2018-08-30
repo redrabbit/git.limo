@@ -12,7 +12,7 @@ defmodule GitGud.Repo do
   alias GitRekt.Git
 
   alias GitGud.User
-  alias GitGud.QuerySet
+  alias GitGud.DB
 
   schema "repositories" do
     belongs_to  :owner,       User
@@ -138,7 +138,7 @@ defmodule GitGud.Repo do
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
     root = Application.fetch_env!(:gitgud, :git_dir)
-    repo = QuerySet.preload(repo, :owner)
+    repo = DB.preload(repo, :owner)
     Path.join([root, repo.owner.username, repo.name])
   end
 
@@ -168,7 +168,7 @@ defmodule GitGud.Repo do
     Multi.new()
     |> Multi.insert(:insert, changeset)
     |> Multi.run(:init_repo, fn %{insert: repo} -> init_repo(repo, bare?) end)
-    |> QuerySet.transaction()
+    |> DB.transaction()
   end
 
   defp init_repo(repo, bare?) do
@@ -191,14 +191,14 @@ defmodule GitGud.Repo do
     Multi.new()
     |> Multi.update(:update, changeset)
     |> Multi.run(:rename_repo, fn %{update: repo} -> rename_repo(changeset.data, repo) end)
-    |> QuerySet.transaction()
+    |> DB.transaction()
   end
 
   defp delete_and_cleanup(repo) do
     Multi.new()
     |> Multi.delete(:delete, repo)
     |> Multi.run(:remove_repo, fn %{delete: repo} -> remove_repo(repo) end)
-    |> QuerySet.transaction()
+    |> DB.transaction()
   end
 
   defp remove_repo(repo), do: File.rm_rf(workdir(repo))

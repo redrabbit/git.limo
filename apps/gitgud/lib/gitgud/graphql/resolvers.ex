@@ -16,7 +16,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec ecto_loader() :: Dataloader.Ecto.t
   def ecto_loader do
-    Dataloader.Ecto.new(GitGud.QuerySet, query: &query/2)
+    Dataloader.Ecto.new(GitGud.DB, query: &query/2)
   end
 
   @doc """

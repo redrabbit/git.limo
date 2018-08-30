@@ -1,4 +1,4 @@
-defmodule GitGud.QuerySet.Migrations.AddSshAuthenticationKeysTable do
+defmodule GitGud.DB.Migrations.AddSshAuthenticationKeysTable do
   use Ecto.Migration
 
   def change do
