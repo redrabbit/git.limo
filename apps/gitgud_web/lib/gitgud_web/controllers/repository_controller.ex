@@ -21,7 +21,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read), do:
+    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read), do:
       render(conn, "show.html", repo: repo)
   end
 
@@ -30,7 +30,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, tree} <- fetch_tree(handle, repo_spec, tree_path),
@@ -43,7 +43,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name} , conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, blob} <- fetch_blob(handle, repo_spec, blob_path),
