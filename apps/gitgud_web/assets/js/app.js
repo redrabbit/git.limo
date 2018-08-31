@@ -26,13 +26,20 @@ class BranchSelect extends React.Component {
   }
 }
 
+function toCamelCase(key, val) {
+  if(val && typeof val === 'object') {
+    Object.keys(val).reduce((ccObj, field) => ({...ccObj, [camelCase(field)]: obj[field]}), {})
+  }
+  return val;
+}
+
 document.addEventListener("DOMContentLoaded", e => {
   const elements = document.querySelectorAll("[data-react-class]")
   Array.prototype.forEach.call(elements, e => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
     const targetDiv = targetId ? targetId : e
     const reactProps = e.dataset.reactProps ? e.dataset.reactProps : "{}"
-    const reactElement = React.createElement(eval(e.dataset.reactClass), JSON.parse(reactProps))
+    const reactElement = React.createElement(eval(e.dataset.reactClass), JSON.parse(reactProps, toCamelCase))
     ReactDOM.render(reactElement, targetDiv)
   })
 })

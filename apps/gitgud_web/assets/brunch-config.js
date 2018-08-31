@@ -23,7 +23,7 @@ exports.config = {
 
   plugins: {
     babel: {
-      presets: ["latest", "react"]
+      presets: ["latest", "stage-0", "react"]
     }
   },
 
