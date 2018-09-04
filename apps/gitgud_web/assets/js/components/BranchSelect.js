@@ -20,6 +20,7 @@ class BranchSelect extends React.Component {
               ... on Repo {
                 refs {
                   shorthand
+                  url
                   object {
                     oid
                   }
@@ -38,7 +39,7 @@ class BranchSelect extends React.Component {
             return (
               <DropdownButton id="branch-select" title={this.props.shorthand}>
                 {props.node.refs.map(ref =>
-                  <MenuItem key={ref.object.oid} eventKey={ref.shorthand} onSelect={this.handleSelect} active={this.props.oid == ref.object.oid}>
+                  <MenuItem key={ref.object.oid} eventKey={ref.url} onSelect={this.handleSelect} active={this.props.oid == ref.object.oid}>
                     {ref.shorthand}
                   </MenuItem>
                 )}
@@ -51,8 +52,8 @@ class BranchSelect extends React.Component {
     )
   }
 
-  handleSelect(e) {
-    console.log(e)
+  handleSelect(url) {
+    window.location.href = url
   }
 }
 
