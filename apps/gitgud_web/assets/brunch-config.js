@@ -13,7 +13,10 @@ exports.config = {
   },
 
   conventions: {
-    assets: /^(static)/
+    assets: /^(static)/,
+    ignored: [
+      /^__generated__/
+    ]
   },
 
   paths: {
@@ -23,7 +26,8 @@ exports.config = {
 
   plugins: {
     babel: {
-      presets: ["latest", "stage-0", "react"]
+      presets: ["latest", "stage-0", "react"],
+      plugins: ["relay"]
     }
   },
 

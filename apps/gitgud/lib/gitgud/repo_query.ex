@@ -46,6 +46,14 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
+  Returns a repository for the given `id`.
+  """
+  @spec by_id(pos_integer) :: Repo.t | nil
+  def by_id(id) do
+    DB.get(Repo, id)
+  end
+
+  @doc """
   Returns a repository for the given `path`.
   """
   @spec by_path(Path.t) :: Repo.t | nil

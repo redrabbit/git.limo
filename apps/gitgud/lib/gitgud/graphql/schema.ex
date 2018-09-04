@@ -3,6 +3,7 @@ defmodule GitGud.GraphQL.Schema do
   GraphQL schema definition.
   """
   use Absinthe.Schema
+  use Absinthe.Relay.Schema, :modern
 
   alias GitGud.GraphQL.Resolvers
 
@@ -10,10 +11,24 @@ defmodule GitGud.GraphQL.Schema do
   import_types GitGud.GraphQL.Types
 
   query do
+    node field do
+      resolve &Resolvers.resolve_node/2
+    end
+
     field :user, :user do
       arg :username, non_null(:string)
       resolve &Resolvers.resolve_user/3
     end
+
+    field :repo, :repo do
+      arg :owner, non_null(:string)
+      arg :name, non_null(:string)
+      resolve &Resolvers.resolve_repo/3
+    end
+  end
+
+  node interface do
+    resolve_type &Resolvers.resolve_node_type/2
   end
 
   #

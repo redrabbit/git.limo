@@ -7,7 +7,7 @@ defmodule GitGud.UserQuery do
   alias GitGud.User
 
   @doc """
-  Returns a user for the given `username`.
+  Returns a user for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
   def by_id(id, opts \\ [])

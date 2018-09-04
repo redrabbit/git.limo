@@ -1,1 +1,1 @@
-export BranchSelect from "./branch-select"
+export BranchSelect from "./BranchSelect"

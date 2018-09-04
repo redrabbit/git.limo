@@ -20,6 +20,34 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves a node object type.
+  """
+  @spec resolve_node(map, Absinthe.Resolution.t) :: atom | nil
+  def resolve_node_type(%User{}, _info), do: :user
+  def resolve_node_type(%Repo{}, _info), do: :repo
+  def resolve_node_type(_struct, _info), do: nil
+
+  @doc """
+  Resolves a node object.
+  """
+  @spec resolve_node(map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  def resolve_node(%{id: id, type: :user}, info) do
+    if user = UserQuery.by_id(id),
+      do: {:ok, user},
+    else: resolve_node(%{id: id}, info)
+  end
+
+  def resolve_node(%{id: id, type: :repo}, info) do
+    if repo = RepoQuery.by_id(id),
+      do: {:ok, repo},
+    else: resolve_node(%{id: id}, info)
+  end
+
+  def resolve_node(%{id: id}, _info) do
+    {:error, "this given node id '#{id}' is not valid"}
+  end
+
+  @doc """
   Resolves an user object by username.
   """
   @spec resolve_user(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
@@ -32,11 +60,21 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a repository object by name for a given `user`.
   """
-  @spec resolve_user_repo(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_user_repo(map, map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def resolve_user_repo(%User{} = user, %{name: name} = _args, _info) do
     if repo = RepoQuery.user_repository(user, name),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
+  end
+
+  @doc """
+  Resolves a repo object by owner and name.
+  """
+  @spec resolve_repo(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  def resolve_repo(%{} = _root, %{owner: username, name: name} = _args, _info) do
+    if repo = RepoQuery.user_repository(username, name),
+      do: {:ok, repo},
+    else: {:error, "this given repository '#{username}/#{name}' is not valid"}
   end
 
   @doc """
@@ -50,18 +88,28 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves a Git reference object by name for a given `repo`.
+  Resolves a Git reference object by name or shorthand for a given `repo`.
+  """
+  @spec resolve_repo_ref(map, map, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
+  def resolve_repo_refs(%Repo{} = repo, %{} = args, _info) do
+    with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, Map.get(args, :glob, :undefined)), do:
+      {:ok, transform_refs(repo, handle, stream)}
+  end
+
+  @doc """
+  Resolves a Git reference object by name or shorthand for a given `repo`.
   """
   @spec resolve_repo_ref(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def resolve_repo_ref(%Repo{} = _repo, %{name: "HEAD"} = _args, _info), do: {:error, "reference 'HEAD' not found"}
+  def resolve_repo_ref(%Repo{} = repo, %{name: "HEAD"} = _args, info), do: resolve_repo_head(repo, %{}, info)
   def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, dwim, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
-  def resolve_repo_ref(%Repo{} = _repo, %{dwim: "HEAD"} = _args, _info), do: {:error, "no reference found for shorthand 'HEAD'"}
-  def resolve_repo_ref(%Repo{} = repo, %{dwim: dwim} = _args, _info) do
+  def resolve_repo_ref(%Repo{} = _repo, %{shorthand: "HEAD"} = _args, _info), do: {:error, "no reference found for shorthand 'HEAD'"}
+  def resolve_repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, dwim), do:
       {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
@@ -70,7 +118,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a repository object for a given Git object.
   """
-  @spec resolve_git_repo(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_git_repo(map, map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def resolve_git_repo(%{__repo__: repo} = _git_object, %{} = _args, _info) do
     {:ok, repo}
   end
@@ -79,9 +127,9 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a Git object by revision spec for a given `repo`.
   """
   @spec resolve_git_object(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def resolve_git_object(%Repo{} = repo, %{revision: revision} = _args, _info) do
+  def resolve_git_object(%Repo{} = repo, %{rev: rev} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-         {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
+         {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, rev), do:
       {:ok, %{oid: oid, __repo__: repo, __git__: handle, __type__: obj_type, __ptr__: obj}}
   end
 
@@ -102,7 +150,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the message for a given Git commit object.
   """
-  @spec resolve_git_commit_message(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_git_commit_message(map, map, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def resolve_git_commit_message(%{__type__: :commit, __ptr__: commit} = _git_commit, %{} = _args, _info) do
     Git.commit_message(commit)
   end
@@ -120,7 +168,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the number of tree entries for a given Git tree object.
   """
-  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def resolve_git_tree_count(%{__type__: :tree, __ptr__: tree} = _git_tree, %{} = _args, _info) do
     Git.tree_count(tree)
   end
@@ -128,7 +176,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the tree entries for a given Git tree object.
   """
-  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
   def resolve_git_tree_entries(%{__type__: :tree, __ptr__: tree, __repo__: repo, __git__: handle} = _git_tree, %{} = _args, _info) do
     with {:ok, entries} <- Git.tree_list(tree), do:
       {:ok, Enum.map(entries, fn {mode, type, oid, name} -> %{mode: mode, type: type, name: name, __repo__: repo, __git__: handle, __oid__: oid} end)}
@@ -137,7 +185,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the content length for a given Git blob object.
   """
-  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def resolve_git_blob_size(%{__type__: :blob, __ptr__: blob} = _git_blob, %{} = _args, _info) do
     Git.blob_size(blob)
   end
@@ -155,4 +203,10 @@ defmodule GitGud.GraphQL.Resolvers do
   #
 
   defp query(queryable, _params), do: queryable
+
+  defp transform_refs(repo, handle, stream) do
+    Enum.map(stream, fn {name, shorthand, :oid, oid} ->
+      %{name: name, shorthand: shorthand, __repo__: repo, __oid__: oid, __git__: handle}
+    end)
+  end
 end
