@@ -1,12 +1,13 @@
 import React from "react"
-import {QueryRenderer, createFragmentContainer, graphql} from "react-relay"
+import {QueryRenderer, graphql} from "react-relay"
+import {DropdownButton, MenuItem} from 'react-bootstrap';
 
 import environment from "../relay"
 
 class BranchSelect extends React.Component {
   constructor(props) {
     super(props)
-    this.handleChange = this.handleChange.bind(this)
+    this.handleSelect = this.handleSelect.bind(this)
   }
 
   render() {
@@ -35,9 +36,13 @@ class BranchSelect extends React.Component {
             return <div>{error.message}</div>
           } else if(props) {
             return (
-              <select onChange={this.handleChange} defaultValue={this.props.oid}>
-                {props.node.refs.map(ref => <option key={ref.object.oid} value={ref.object.oid}>{ref.shorthand}</option>)}
-              </select>
+              <DropdownButton id="branch-select" title={this.props.shorthand}>
+                {props.node.refs.map(ref =>
+                  <MenuItem key={ref.object.oid} eventKey={ref.shorthand} onSelect={this.handleSelect} active={this.props.oid == ref.object.oid}>
+                    {ref.shorthand}
+                  </MenuItem>
+                )}
+              </DropdownButton>
             )
           }
           return <div></div>
@@ -46,8 +51,8 @@ class BranchSelect extends React.Component {
     )
   }
 
-  handleChange(e) {
-    console.log(e.target.options[e.target.selectedIndex].text)
+  handleSelect(e) {
+    console.log(e)
   }
 }
 
