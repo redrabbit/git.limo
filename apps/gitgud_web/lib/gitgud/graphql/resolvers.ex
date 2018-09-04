@@ -5,11 +5,13 @@ defmodule GitGud.GraphQL.Resolvers do
 
   alias GitRekt.Git
 
+  alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
-
   alias GitGud.Repo
   alias GitGud.RepoQuery
+
+  import GitGud.Web.Router.Helpers
 
   @doc """
   Returns a new loader for resolving `Ecto` objects.
@@ -22,9 +24,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a node object type.
   """
-  @spec resolve_node(map, Absinthe.Resolution.t) :: atom | nil
-  def resolve_node_type(%User{}, _info), do: :user
-  def resolve_node_type(%Repo{}, _info), do: :repo
+  @spec resolve_node_type(struct, Absinthe.Resolution.t) :: atom | nil
+  def resolve_node_type(%User{} = _struct, _info), do: :user
+  def resolve_node_type(%Repo{} = _struct, _info), do: :repo
   def resolve_node_type(_struct, _info), do: nil
 
   @doc """
@@ -45,6 +47,24 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def resolve_node(%{id: id}, _info) do
     {:error, "this given node id '#{id}' is not valid"}
+  end
+
+  @doc """
+  Resolves the URL of the given `resource`.
+  """
+  @spec resolve_url(map, map, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
+  def resolve_url(%User{username: username} = _resource, %{} = _args, _info) do
+    {:ok, user_profile_url(GitGud.Web.Endpoint, :show, username)}
+  end
+
+  def resolve_url(%Repo{} = repo, %{} = _args, _info) do
+    repo = DB.preload(repo, :owner)
+    {:ok, repository_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
+  end
+
+  def resolve_url(%{__type__: :ref, __repo__: repo} = spec, %{} = _args, _info) do
+    repo = DB.preload(repo, :owner)
+    {:ok, repository_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, spec.shorthand, [])}
   end
 
   @doc """
@@ -84,7 +104,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def resolve_repo_head(%Repo{} = repo, %{} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, dwim, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
   @doc """
@@ -101,18 +121,18 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a Git reference object by name or shorthand for a given `repo`.
   """
   @spec resolve_repo_ref(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def resolve_repo_ref(%Repo{} = repo, %{name: "HEAD"} = _args, info), do: resolve_repo_head(repo, %{}, info)
+  def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, info) when name == "HEAD", do: resolve_repo_head(repo, %{}, info)
   def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, dwim, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
-  def resolve_repo_ref(%Repo{} = _repo, %{shorthand: "HEAD"} = _args, _info), do: {:error, "no reference found for shorthand 'HEAD'"}
+  def resolve_repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, info) when dwim == "HEAD", do: resolve_repo_head(repo, %{}, info)
   def resolve_repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, dwim), do:
-      {:ok, %{name: name, shorthand: dwim, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
   end
 
   @doc """
@@ -206,7 +226,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   defp transform_refs(repo, handle, stream) do
     Enum.map(stream, fn {name, shorthand, :oid, oid} ->
-      %{name: name, shorthand: shorthand, __repo__: repo, __oid__: oid, __git__: handle}
+      %{name: name, shorthand: shorthand, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}
     end)
   end
 end

@@ -25,6 +25,7 @@ defmodule GitGud.GraphQL.Types do
       arg :name, non_null(:string)
       resolve &Resolvers.resolve_user_repo/3
     end
+    field :url, non_null(:string), resolve: &Resolvers.resolve_url/3
   end
 
   node object :repo do
@@ -47,6 +48,7 @@ defmodule GitGud.GraphQL.Types do
       arg :name, :string
       resolve &Resolvers.resolve_repo_ref/3
     end
+    field :url, non_null(:string), resolve: &Resolvers.resolve_url/3
   end
 
   object :git_reference do
@@ -54,6 +56,7 @@ defmodule GitGud.GraphQL.Types do
     field :shorthand, non_null(:string)
     field :object, non_null(:git_object), resolve: &Resolvers.resolve_git_object/3
     field :repo, non_null(:repo), resolve: &Resolvers.resolve_git_repo/3
+    field :url, non_null(:string), resolve: &Resolvers.resolve_url/3
   end
 
   interface :git_object do
