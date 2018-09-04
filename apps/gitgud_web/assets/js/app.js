@@ -1,37 +1,11 @@
 import "phoenix_html"
 
+import {camelCase} from "lodash"
+
 import React from "react"
 import ReactDOM from "react-dom"
 
-class BranchSelect extends React.Component {
-  constructor(props) {
-    super(props)
-    this.change = this.change.bind(this)
-  }
-
-  render() {
-    return (
-      <select onChange={this.change} defaultValue={this.props.oid}>
-        {this.props.branches.map((branch, i) =>
-          <option key={i} value={branch.oid}>{branch.shorthand}</option>
-        )}
-      </select>
-    )
-  }
-
-  change(event) {
-    let oid = event.target.options[event.target.selectedIndex].value
-    let branch = this.props.branches.find(branch => branch.oid == oid)
-    window.location = branch.path
-  }
-}
-
-function toCamelCase(key, val) {
-  if(val && typeof val === 'object') {
-    Object.keys(val).reduce((ccObj, field) => ({...ccObj, [camelCase(field)]: obj[field]}), {})
-  }
-  return val;
-}
+import * as factory from "./components"
 
 document.addEventListener("DOMContentLoaded", e => {
   const elements = document.querySelectorAll("[data-react-class]")
@@ -39,7 +13,10 @@ document.addEventListener("DOMContentLoaded", e => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
     const targetDiv = targetId ? targetId : e
     const reactProps = e.dataset.reactProps ? e.dataset.reactProps : "{}"
-    const reactElement = React.createElement(eval(e.dataset.reactClass), JSON.parse(reactProps, toCamelCase))
+    const reactElement = React.createElement(factory[e.dataset.reactClass], JSON.parse(reactProps, (key, val) => {
+      if(val && typeof val === 'object') Object.keys(val).reduce((ccObj, field) => ({...ccObj, [camelCase(field)]: val[field]}), {})
+      return val;
+    }))
     ReactDOM.render(reactElement, targetDiv)
   })
 })
