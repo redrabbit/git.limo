@@ -1,2 +1,1 @@
-<%= react_component "BranchSelect", oid: @spec.oid, branches: Enum.map(@branches, &branch_with_path(&1, @repo)) %>
-
+<%= react_component "BranchSelect", Map.take(@spec, [:oid, :shorthand]) %>

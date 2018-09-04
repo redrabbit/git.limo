@@ -33,9 +33,8 @@ defmodule GitGud.Web.RepositoryController do
     with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, tree} <- fetch_tree(handle, repo_spec, tree_path),
-         {:ok, branches} <- fetch_branches(handle), do:
-      render(conn, "tree.html", repo: repo, branches: branches, spec: spec, path: tree_path, tree: tree)
+         {:ok, tree} <- fetch_tree(handle, repo_spec, tree_path), do:
+      render(conn, "tree.html", repo: repo, spec: spec, path: tree_path, tree: tree)
   end
 
   @doc """
@@ -46,9 +45,8 @@ defmodule GitGud.Web.RepositoryController do
     with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, blob} <- fetch_blob(handle, repo_spec, blob_path),
-         {:ok, branches} <- fetch_branches(handle), do:
-      render(conn, "blob.html", repo: repo, branches: branches, spec: spec, path: blob_path, blob: blob)
+         {:ok, blob} <- fetch_blob(handle, repo_spec, blob_path), do:
+      render(conn, "blob.html", repo: repo, spec: spec, path: blob_path, blob: blob)
   end
 
   #
@@ -87,11 +85,6 @@ defmodule GitGud.Web.RepositoryController do
     name = "refs/heads/#{spec}"
     with {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, transform_reference({name, shorthand, :oid, oid})}
-  end
-
-  defp fetch_branches(handle) do
-    with {:ok, branches} <- Git.reference_stream(handle, "refs/heads/*"), do:
-      {:ok, Enum.map(branches, &transform_reference/1)}
   end
 
   defp fetch_commit(handle, spec) do
