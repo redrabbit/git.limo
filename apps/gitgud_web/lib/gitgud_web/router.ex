@@ -29,6 +29,7 @@ defmodule GitGud.Web.Router do
 
       scope "/:repo_name" do
         get "/", RepositoryController, :show
+        get "/tree", RepositoryController, :tree
         get "/tree/:spec/*path", RepositoryController, :tree
         get "/blob/:spec/*path", RepositoryController, :blob
       end

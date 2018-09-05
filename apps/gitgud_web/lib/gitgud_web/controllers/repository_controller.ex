@@ -37,6 +37,13 @@ defmodule GitGud.Web.RepositoryController do
       render(conn, "tree.html", repo: repo, spec: spec, path: tree_path, tree: tree)
   end
 
+  def tree(conn, %{"username" => username, "repo_name" => repo_name} = params) do
+    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+         {:ok, handle} <- fetch_handle(repo),
+         {:ok, spec} <- fetch_reference(handle, "HEAD"), do:
+      redirect(conn, to: repository_path(conn, :tree, username, repo_name, spec.shorthand, []))
+  end
+
   @doc """
   Returns a repository blob for a specific revision and path.
   """
