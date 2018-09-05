@@ -1,0 +1,12 @@
+<%= render_layout "app.html", assigns do %>
+  <h2><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> / <%= @repo.name %></h2>
+
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#">Code</a></li>
+    <li class="disabled"><a href="#">Issues</a></li>
+    <li class="disabled"><a href="#">Wiki</a></li>
+    <li class="disabled"><a href="#">Settings</a></li>
+  </ul>
+
+  <%= render @view_module, @view_template, assigns %>
+<% end %>

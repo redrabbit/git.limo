@@ -1,9 +1,12 @@
-<h2><%= @user.name %></h2>
+<h4>Pinned repositories</h4>
 
-<h4>Repositories</h4>
-
-<ul>
-  <%= for repo <- @user.repositories do %>
-    <li><a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a></li>
-  <% end %>
-</ul>
+<%= for repo <- @user.repositories do %>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+    </div>
+    <div class="panel-body">
+      <%= repo.description %>
+    </div>
+  </div>
+<% end %>

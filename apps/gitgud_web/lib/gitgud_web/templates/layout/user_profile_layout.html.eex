@@ -1,0 +1,13 @@
+<%= render_layout "app.html", assigns do %>
+  <h2><%= @user.name %></h2>
+
+  <ul class="nav nav-tabs">
+    <li class="disabled"><a href="#">Overview</a></li>
+    <li class="active"><a href="#">Repositories</a></li>
+    <li class="disabled"><a href="#">Organizations</a></li>
+    <li class="disabled"><a href="#">Settings</a></li>
+  </ul>
+
+  <%= render @view_module, @view_template, assigns %>
+<% end %>
+

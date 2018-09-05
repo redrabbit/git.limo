@@ -7,7 +7,7 @@ defmodule GitGud.Web.UserProfileController do
 
   alias GitGud.UserQuery
 
-  plug :ensure_authenticated when action in [:edit, :update]
+  plug :put_layout, :user_profile_layout
 
   action_fallback GitGud.Web.FallbackController
 
