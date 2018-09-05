@@ -1,5 +1,7 @@
 <%= render_layout "app.html", assigns do %>
-  <h2><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> / <%= @repo.name %></h2>
+  <h2>
+    <a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> /
+    <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></h2></a>
 
   <ul class="nav nav-tabs">
     <li class="active"><a href="#">Code</a></li>

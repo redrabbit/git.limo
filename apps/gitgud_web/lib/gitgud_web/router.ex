@@ -24,8 +24,6 @@ defmodule GitGud.Web.Router do
     post "/login", AuthenticationController, :create
     get "/logout", AuthenticationController, :delete
 
-    get "/:username", UserProfileController, :show
-
     get "/new", RepositoryController, :new
     post "/repositories", RepositoryController, :create
 
@@ -35,6 +33,8 @@ defmodule GitGud.Web.Router do
       get "/tree/:spec/*path", RepositoryController, :tree
       get "/blob/:spec/*path", RepositoryController, :blob
     end
+
+    get "/:username", UserProfileController, :show
   end
 
   scope "/:username/:repo_path", GitGud.Web do

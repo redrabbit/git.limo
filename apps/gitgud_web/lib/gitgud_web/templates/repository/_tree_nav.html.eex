@@ -1,0 +1,14 @@
+<%= react_component "BranchSelect", Map.take(@spec, [:oid, :shorthand]) %>
+
+<%= unless Enum.empty?(@tree_path) do %>
+  <ul class="breadcrumb">
+    <li><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>"><%= @repo.name %></a></li>
+    <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
+      <li><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
+    <% end %>
+    <li><%= List.last(@tree_path) %></li>
+    <%= if assigns[:tree] do %>
+      <li></li>
+    <% end %>
+  </ul>
+<% end %>

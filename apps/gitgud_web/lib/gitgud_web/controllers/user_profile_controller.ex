@@ -17,8 +17,14 @@ defmodule GitGud.Web.UserProfileController do
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username} = _params) do
     if user = UserQuery.by_username(username, preload: :repositories),
-      do: render(conn, "show.html", user: user),
+      do: render(conn, "show.html", profile: user_profile(user)),
     else: {:error, :not_found}
   end
+
+  #
+  # Helpers
+  #
+
+  defp user_profile(user), do: %{user: user}
 end
 

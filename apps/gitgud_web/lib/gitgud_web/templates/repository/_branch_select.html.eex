@@ -1,1 +1,0 @@
-<%= react_component "BranchSelect", Map.take(@spec, [:oid, :shorthand]) %>

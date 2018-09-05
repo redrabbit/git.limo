@@ -1,12 +1,14 @@
-<h4>Pinned repositories</h4>
-
-<%= for repo <- @user.repositories do %>
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+<%= if Enum.empty?(@profile.user.repositories) do %>
+  Nothing to see here.
+<% else %>
+  <%= for repo <- @profile.user.repositories do %>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <a href="<%= repository_path @conn, :show, @profile.user, repo %>"><%= repo.name %></a>
+      </div>
+      <div class="panel-body">
+        <%= repo.description %>
+      </div>
     </div>
-    <div class="panel-body">
-      <%= repo.description %>
-    </div>
-  </div>
+  <% end %>
 <% end %>

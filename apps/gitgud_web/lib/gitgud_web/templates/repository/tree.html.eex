@@ -2,10 +2,5 @@
   <p><%= @repo.description %></p>
 <% end %>
 
-<%= render "_branch_select.html", assigns %>
-
-<%= unless Enum.empty?(@tree_path) do %>
-  <%= render "_tree_breadcrumb.html", assigns %>
-<% end %>
-
+<%= render "_tree_nav.html", assigns %>
 <%= render "_tree_table.html", assigns %>
