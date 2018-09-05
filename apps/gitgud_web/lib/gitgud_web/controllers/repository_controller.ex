@@ -12,12 +12,39 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  plug :ensure_authenticated when action in [:create, :update, :delete]
+  plug :ensure_authenticated when action in [:new, :create]
 
   action_fallback GitGud.Web.FallbackController
 
   @doc """
-  Returns a single repository.
+  Renders a repository creation form.
+  """
+  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  def new(conn, %{} = _params) do
+    changeset = Repo.changeset(%Repo{})
+    render(conn, "new.html", changeset: changeset)
+  end
+
+  @doc """
+  Creates a new repository.
+  """
+  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  def create(conn, %{"repo" => repo_params} = _params) do
+    user = conn.assigns[:user]
+    case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
+      {:ok, repo, _handle} ->
+        conn
+        |> put_flash(:info, "Repository created.")
+        |> redirect(to: repository_path(conn, :show, user, repo))
+      {:error, changeset} ->
+        conn
+        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+        |> render("new.html", changeset: %{changeset|action: :insert})
+    end
+  end
+
+  @doc """
+  Renders a repository.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
@@ -26,7 +53,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns a repository tree for a specific revision and path.
+  Renders a repository tree for a specific revision and path.
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
@@ -37,7 +64,7 @@ defmodule GitGud.Web.RepositoryController do
       render(conn, "tree.html", repo: repo, spec: spec, path: tree_path, tree: tree)
   end
 
-  def tree(conn, %{"username" => username, "repo_name" => repo_name} = params) do
+  def tree(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, "HEAD"), do:
@@ -45,7 +72,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   @doc """
-  Returns a repository blob for a specific revision and path.
+  Renders a repository blob for a specific revision and path.
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
