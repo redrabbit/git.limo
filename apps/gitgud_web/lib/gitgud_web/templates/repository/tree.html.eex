@@ -1,3 +1,13 @@
+<h2><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> / <%= @repo.name %></h2>
+
+<%= if Enum.empty?(@tree_path) do %>
+  <p><%= @repo.description %></p>
+<% end %>
+
 <%= render "_branch_select.html", assigns %>
-<%= render "_tree_breadcrumb.html", assigns %>
+
+<%= unless Enum.empty?(@tree_path) do %>
+  <%= render "_tree_breadcrumb.html", assigns %>
+<% end %>
+
 <%= render "_tree_table.html", assigns %>

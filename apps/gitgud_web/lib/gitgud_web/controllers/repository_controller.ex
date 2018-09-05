@@ -48,8 +48,13 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read), do:
-      render(conn, "show.html", repo: repo)
+    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+         {:ok, handle} <- fetch_handle(repo), do:
+      if Git.repository_empty?(handle),
+        do: render(conn, "init.html", repo: repo),
+      else: with {:ok, spec} <- fetch_reference(handle, "HEAD"),
+                 {:ok, tree} <- fetch_tree(handle, spec), do:
+              render(conn, "tree.html", repo: repo, spec: spec, tree_path: [], tree: tree)
   end
 
   @doc """
@@ -61,7 +66,7 @@ defmodule GitGud.Web.RepositoryController do
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, tree} <- fetch_tree(handle, repo_spec, tree_path), do:
-      render(conn, "tree.html", repo: repo, spec: spec, path: tree_path, tree: tree)
+      render(conn, "tree.html", repo: repo, spec: spec, tree_path: tree_path, tree: tree)
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
@@ -80,7 +85,7 @@ defmodule GitGud.Web.RepositoryController do
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, blob} <- fetch_blob(handle, repo_spec, blob_path), do:
-      render(conn, "blob.html", repo: repo, spec: spec, path: blob_path, blob: blob)
+      render(conn, "blob.html", repo: repo, spec: spec, tree_path: blob_path, blob: blob)
   end
 
   #
@@ -121,11 +126,17 @@ defmodule GitGud.Web.RepositoryController do
       {:ok, transform_reference({name, shorthand, :oid, oid})}
   end
 
+  defp fetch_commit(handle, spec) when is_map(spec) do
+    with {:ok, commit, :commit, oid} <- Git.revparse_single(handle, spec.oid), do:
+      {:ok, oid, commit}
+  end
+
   defp fetch_commit(handle, spec) do
     with {:ok, commit, :commit, oid} <- Git.revparse_single(handle, spec), do:
       {:ok, oid, commit}
   end
 
+  defp fetch_tree(handle, spec, path \\ [])
   defp fetch_tree(handle, spec, []) do
     with {:ok, _oid, commit} <- fetch_commit(handle, spec),
          {:ok, _oid, tree} <- Git.commit_tree(commit),
