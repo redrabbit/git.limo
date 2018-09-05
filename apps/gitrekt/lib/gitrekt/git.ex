@@ -88,6 +88,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns `true` if `repo` is empty; elsewhise returns `false`.
+  """
+  @spec repository_empty?(repo) :: boolean
+  def repository_empty?(_repo) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns the absolute path for the given `repo`.
   """
   @spec repository_get_path(repo) :: Path.t

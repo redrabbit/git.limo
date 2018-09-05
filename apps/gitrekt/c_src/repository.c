@@ -162,6 +162,24 @@ geef_repository_is_bare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_repository_is_empty(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_repository *repo;
+	int empty;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	empty = git_repository_is_empty(repo->repo);
+
+	if (empty)
+		return atoms.true;
+
+	return atoms.false;
+
+}
+
+ERL_NIF_TERM
 geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_repository *repo;
