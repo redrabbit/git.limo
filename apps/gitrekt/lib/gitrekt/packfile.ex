@@ -5,6 +5,8 @@ defmodule GitRekt.Packfile do
 
   use Bitwise
 
+  require Logger
+
   alias GitRekt.Git
 
   @type obj :: {Git.obj_type, binary}
@@ -64,6 +66,7 @@ defmodule GitRekt.Packfile do
   defp unpack_obj(data) do
     {id_type, inflate_size, rest} = unpack_obj_head(data)
     obj_type = format_obj_type(id_type)
+    Logger.debug "unpack #{obj_type} (#{inflate_size} bytes)"
     cond do
       obj_type == :delta_reference ->
         <<base_oid::binary-20, rest::binary>> = rest
@@ -104,8 +107,6 @@ defmodule GitRekt.Packfile do
     unpack_obj_delta_size(rest, acc ||| (num <<< 7*i), i+1)
   end
 
-
-  defp unpack_obj_delta_hunk("", cmds), do: Enum.reverse(cmds)
   defp unpack_obj_delta_hunk(<<0::1, size::7, data::binary-size(size), rest::binary>>, cmds) do
     unpack_obj_delta_hunk(rest, [{:insert, data}|cmds])
   end
@@ -114,8 +115,20 @@ defmodule GitRekt.Packfile do
     # Thanks to @vaibhavsagar on #haskell
     len_bits = delta_copy_length_size(l)
     ofs_bits = delta_copy_offset_size(o)
-    <<offset::little-size(ofs_bits), size::little-size(len_bits), rest::binary>> = rest
-    unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
+    try do
+      <<offset::little-size(ofs_bits), size::little-size(len_bits), rest::binary>> = rest
+      unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
+    rescue
+      MatchError ->
+        Logger.error "skip invalid delta copy command"
+        unpack_obj_delta_hunk(rest, cmds)
+    end
+  end
+
+  defp unpack_obj_delta_hunk("", cmds), do: Enum.reverse(cmds)
+  defp unpack_obj_delta_hunk(<<char::8, rest::binary>>, cmds) do
+    Logger.warn "skip invalid delta char #{inspect char}"
+    unpack_obj_delta_hunk(rest, cmds)
   end
 
   defp delta_copy_length_size(<<_::1, _::1, 0::1>>), do: 0x10000
