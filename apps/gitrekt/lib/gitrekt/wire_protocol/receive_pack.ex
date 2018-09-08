@@ -21,7 +21,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @type t :: %__MODULE__{
     repo: Git.repo,
-    state: :disco | :upload_wants | :upload_haves | :done,
+    state: :disco | :update_req | :pack | :done,
     caps: [binary],
     cmds: [],
     pack: Packfile.obj_list,
@@ -33,59 +33,41 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   #
 
   @impl true
-  def next(%__MODULE__{state: :disco} = handle, [:flush] = _lines) do
-    {struct(handle, state: :done), []}
+  def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
+    {%{handle|state: :done}, lines, reference_discovery(handle.repo, "git-receive-pack")}
   end
 
   @impl true
-  def next(%__MODULE__{state: :disco, opts: opts} = handle, lines) do
-    {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
-    {cmds, lines} = Enum.split_while(lines, &is_binary/1)
-    {caps, cmds} = parse_caps(cmds)
-    [:flush|lines] = lines
-    next_state = if Keyword.get(opts, :stateless), do: :done, else: :update_req
-    {struct(handle, state: next_state, caps: caps, cmds: parse_cmds(cmds)), lines}
+  def next(%__MODULE__{state: :disco} = handle, lines) do
+    {%{handle|state: :update_req}, lines, reference_discovery(handle.repo, "git-receive-pack")}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :update_req} = handle, [:flush|lines]) do
+    {%{handle|state: :done}, lines, []}
   end
 
   @impl true
   def next(%__MODULE__{state: :update_req} = handle, lines) do
-    {struct(handle, state: :pack, pack: lines), []}
+    {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
+    {cmds, lines} = Enum.split_while(lines, &is_binary/1)
+    {caps, cmds} = parse_caps(cmds)
+    [:flush|lines] = lines
+    {%{handle|state: :pack, caps: caps, cmds: parse_cmds(cmds)}, lines, []}
   end
 
   @impl true
-  def next(%__MODULE__{state: :pack} = handle, []) do
-    {handle, []}
+  def next(%__MODULE__{state: :pack} = handle, lines) do
+    {%{handle|state: :done, pack: lines}, [], []}
   end
 
   @impl true
-  def next(%__MODULE__{state: :pack}, _lines), do: raise "Nothing should be run after :pack"
-
-  @impl true
-  def next(%__MODULE__{state: :done}, _lines), do: raise "Cannot call next/2 when state == :done"
-
-  @impl true
-  def run(%__MODULE__{state: :disco} = handle) do
-    {handle, reference_discovery(handle.repo, "git-receive-pack")}
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :update_req} = handle) do
-    :ok = apply_cmds(handle.repo, handle.cmds)
-    {handle, []}
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :pack} = handle) do
+  def next(%__MODULE__{state: :done} = handle, []) do
     :ok = apply_pack(handle.repo, handle.pack)
     :ok = apply_cmds(handle.repo, handle.cmds)
-    run(struct(handle, state: :done))
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :done} = handle) do
     if "report-status" in handle.caps,
-      do: {handle, report_status(handle.cmds)},
-    else: {handle, []}
+      do: {handle, [], report_status(handle.cmds)},
+    else: {handle, [], []}
   end
 
   #

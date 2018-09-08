@@ -10,15 +10,14 @@ defmodule GitRekt.WireProtocol.UploadPack do
   import GitRekt.Packfile, only: [create: 2]
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  defstruct [:repo, state: :disco, caps: [], wants: [], haves: [], opts: []]
+  defstruct [:repo, state: :disco, caps: [], wants: [], haves: []]
 
   @type t :: %__MODULE__{
     repo: Git.repo,
-    state: :disco | :upload_wants | :upload_haves | :done,
+    state: :disco | :upload_req | :upload_haves | :pack | :done,
     caps: [binary],
     wants: [Git.oid],
     haves: [Git.oid],
-    opts: keyword,
   }
 
   #
@@ -26,101 +25,72 @@ defmodule GitRekt.WireProtocol.UploadPack do
   #
 
   @impl true
-  def next(%__MODULE__{state: :disco} = handle, [:flush]) do
-    {struct(handle, state: :done), []}
+  def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
+    {%{handle|state: :done}, lines, reference_discovery(handle.repo, "git-upload-pack")}
   end
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
+    {%{handle|state: :upload_req}, lines, reference_discovery(handle.repo, "git-upload-pack")}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :upload_req} = handle, [:flush|lines]) do
+    {%{handle|state: :done}, lines, []}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :upload_req} = handle, lines) do
     {wants, lines} = Enum.split_while(lines, &obj_match?(&1, :want))
     {caps, wants} = parse_caps(wants)
     {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
     [:flush|lines] = lines
-    {struct(handle, state: :upload_wants, caps: caps, wants: parse_cmds(wants)), lines}
+    {%{handle|state: :upload_haves, caps: caps, wants: parse_cmds(wants)}, lines, []}
   end
 
   @impl true
-  def next(%__MODULE__{state: :upload_wants} = handle, [:done]) do
-    {struct(handle, state: :done), []}
+  def next(%__MODULE__{state: :upload_haves} = handle, []) do
+    {%{handle|state: :done}, [], []}
   end
 
   @impl true
-  def next(%__MODULE__{state: :upload_wants} = handle, lines) do
+  def next(%__MODULE__{state: :upload_haves} = handle, [:flush|lines]) do
+    {handle, lines, ack_haves(handle.haves, handle.caps) ++ [:nak]}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :upload_haves} = handle, [:done|lines]) do
+    next(%{handle|state: :pack}, lines)
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :upload_haves} = handle, lines) do
     {:ok, odb} = Git.repository_get_odb(handle.repo)
     {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
-    acks = Enum.filter(parse_cmds(haves), &Git.odb_object_exists?(odb, &1))
-    case lines do
-      [:flush|lines] ->
-        {struct(handle, haves: [acks|handle.haves]), lines}
-      [:done|lines] ->
-        {struct(handle, state: :upload_haves, haves: [acks|handle.haves]), lines}
+    {%{handle|haves: Enum.filter(parse_cmds(haves), &Git.odb_object_exists?(odb, &1))}, lines, []}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :pack} = handle, []) do
+    if Enum.empty?(handle.haves) do
+      {%{handle|state: :done}, [], [:nak, create(handle.repo, handle.wants)]}
+    else
+      haves = List.flatten(Enum.reverse(handle.haves))
+      pack = create(handle.repo, handle.wants ++ Enum.map(haves, &{&1, true}))
+      cond do
+        "multi_ack" in handle.caps ->
+          {%{handle|state: :done}, [], [{:ack, List.first(haves)}, pack]}
+        "multi_ack_detailed" in handle.caps ->
+          {%{handle|state: :done}, [], [{:ack, List.first(haves)}, pack]}
+        true ->
+          {%{handle|state: :done}, [], [:nak, pack]}
+      end
     end
   end
 
   @impl true
-  def next(%__MODULE__{state: :upload_haves}, _lines), do: raise "Nothing should be run after :upload_haves"
-
-  @impl true
-  def next(%__MODULE__{state: :done}, _lines), do: raise "Cannot call next/2 when state == :done"
-
-  @impl true
-  def run(%__MODULE__{state: :disco} = handle) do
-    {handle, reference_discovery(handle.repo, "git-upload-pack")}
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :upload_wants, haves: []} = handle) do
-    {handle, []}
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :upload_wants} = handle) do
-    acks = ack_haves(handle.haves, handle.caps)
-    cond do
-      "multi_ack_detailed" in handle.caps ->
-        {handle, acks ++ [{:ack, List.last(List.last(handle.haves)), :ready}, :nak]}
-      "multi_ack" in handle.caps ->
-        {handle, acks ++ [:nak]}
-      Enum.empty?(handle.haves) ->
-        {handle, [:nak]}
-      true ->
-        {handle, Enum.take(acks, 5)}
-    end
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :upload_haves} = handle) do
-    {next, lines} = run(struct(handle, state: :done))
-    cond do
-      "multi_ack_detailed" in handle.caps ->
-        {next, ack_haves(handle.haves, handle.caps) ++ lines}
-      "multi_ack" in handle.caps ->
-        {next, ack_haves(handle.haves, handle.caps) ++ lines}
-      true ->
-        {next, lines}
-    end
-  end
-
-  @impl true
-  def run(%__MODULE__{state: :done, wants: [], haves: []} = handle) do
-    {handle, []}
-  end
-
-  def run(%__MODULE__{state: :done, haves: []} = handle) do
-    {handle, [:nak, create(handle.repo, handle.wants)]}
-  end
-
-  def run(%__MODULE__{state: :done} = handle) do
-    haves = List.flatten(Enum.reverse(handle.haves))
-    pack = create(handle.repo, handle.wants ++ Enum.map(haves, &{&1, true}))
-    cond do
-      "multi_ack_detailed" in handle.caps ->
-        {handle, [{:ack, List.last(haves)}, pack]}
-      "multi_ack" in handle.caps ->
-        {handle, [{:ack, List.last(haves)}, pack]}
-      true ->
-        {handle, [pack]}
-    end
+  def next(%__MODULE__{state: :done} = handle, []) do
+    {handle, [], []}
   end
 
   #
@@ -141,12 +111,12 @@ defmodule GitRekt.WireProtocol.UploadPack do
   end
 
   defp ack_haves([], _caps), do: []
-  defp ack_haves([haves|_], caps) do
+  defp ack_haves(haves, caps) do
     cond do
-      "multi_ack_detailed" in caps ->
-        Enum.map(haves, &{:ack, &1, :common})
       "multi_ack" in caps ->
         Enum.map(haves, &{:ack, &1, :continue})
+      "multi_ack_detailed" in caps ->
+        Enum.map(haves, &{:ack, &1, :common})
       true ->
         Enum.map(haves, &{:ack, &1})
     end

@@ -152,9 +152,8 @@ defmodule GitGud.Web.GitBackendController do
   end
 
   defp git_exec(exec, {repo, handle}, user, data) do
-    opts = [stateless: true]
-    {service, result} = Service.next(Service.new(handle, exec, opts), data)
+    {service, output} = Service.run(Service.new(handle, exec), data)
     :ok = Repo.notify_command(repo, user, service)
-    result
+    Enum.drop(output, 3)
   end
 end

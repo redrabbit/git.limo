@@ -93,9 +93,11 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, user: user, repo: repo, service: service} = state) do
-    {service, io} = Service.next(service, data)
-    :ssh_connection.send(conn, chan, io)
+    {service, output} = Service.next(service, data)
+    :ssh_connection.send(conn, chan, output)
     if Service.done?(service) do
+      {service, output} = Service.next(service)
+      :ssh_connection.send(conn, chan, output)
       :ok = Repo.notify_command(repo, user, service)
       :ssh_connection.send_eof(conn, chan)
       :ssh_connection.exit_status(conn, chan, 0)
@@ -110,8 +112,8 @@ defmodule GitGud.SSHServer do
     [repo|_args] = parse_args(args)
     if has_permission?(user, repo, exec) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      {service, io} = Service.flush(Service.new(handle, exec))
-      if io, do: :ssh_connection.send(conn, chan, io)
+      {service, output} = Service.next(Service.new(handle, exec))
+      :ssh_connection.send(conn, chan, output)
       {:ok, %{state|repo: repo, service: service}}
     else
       {:stop, chan, state}

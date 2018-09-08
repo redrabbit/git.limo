@@ -10,11 +10,6 @@ defmodule GitRekt.WireProtocol.Service do
   import GitRekt.WireProtocol, only: [encode: 1, decode: 1]
 
   @doc """
-  Callback used to run and the actual step of a service.
-  """
-  @callback run(struct) :: {struct, [term]}
-
-  @doc """
   Callback used to transist a service to the next step.
   """
   @callback next(struct, [term]) :: {struct, [term]}
@@ -22,48 +17,64 @@ defmodule GitRekt.WireProtocol.Service do
   @doc """
   Returns a new service object for the given `repo` and `executable`.
   """
-  @spec new(Git.repo, binary, keyword) :: struct
-  def new(repo, executable, opts \\ []) do
-    struct(exec_impl(executable), repo: repo, opts: opts)
+  @spec new(Git.repo, binary) :: struct
+  def new(repo, executable) do
+    struct(exec_impl(executable), repo: repo)
   end
 
   @doc """
-  Transist the `service` struct to the next state by parsing the given `data`.
+  Runs the given `service` to the next step.
   """
   @spec next(struct, binary) :: {struct, iolist}
-  def next(service, data) do
-    lines = Enum.to_list(decode(data))
-    flush(read_all(service, lines))
+  def next(service, data \\ :discovery)
+  def next(service, data) when is_binary(data) do
+    {service, lines} = exec_next(service, Enum.to_list(decode(data)))
+    {service, encode(lines)}
+  end
+
+  def next(service, :discovery) do
+    {service, lines} = exec_next(service, [])
+    {service, encode(lines)}
   end
 
   @doc """
-  Returns `true` if the service can read more data; elsewhise returns `false`.
+  Runs all the steps of the given `service` at once.
+  """
+  @spec run(struct, binary) :: {struct, iolist}
+  def run(service, data \\ :discovery)
+  def run(service, data) when is_binary(data) do
+    {service, lines} = exec_all(service, Enum.to_list(decode(data)))
+    {service, encode(lines)}
+  end
+
+  def run(service, :discovery) do
+    {service, lines} = exec_all(service, [])
+    {service, encode(lines)}
+  end
+
+  @doc """
+  Returns `true` if `service` is done; elsewhise returns `false`.
   """
   @spec done?(struct) :: boolean
   def done?(service), do: service.state == :done
-
-  @doc """
-  Flushes the server response for the given `service` struct.
-  """
-  @spec flush(Module.t) :: {Module.t, iolist}
-  def flush(service) do
-    case apply(service.__struct__, :run, [service]) do
-      {handle, []} -> {handle, []}
-      {handle, io} -> {handle, encode(io)}
-    end
-  end
 
   #
   # Helpers
   #
 
-  defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
-  defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
-
-  defp read_all(service, lines) do
+  defp exec_next(service, lines, acc \\ []) do
     case apply(service.__struct__, :next, [service, lines]) do
-      {handle, []} -> handle
-      {handle, lines} -> read_all(handle, lines)
+      {service, [], out} -> {service, acc ++ out}
+      {service, lines, out} -> exec_next(service, lines, acc ++ out)
     end
   end
+
+  defp exec_all(service, lines, acc \\ []) do
+    done? = done?(service)
+    {service, out} = exec_next(service, lines)
+    if done?, do: {service, acc ++ out}, else: exec_all(service, [], acc ++ out)
+  end
+
+  defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
+  defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
 end
