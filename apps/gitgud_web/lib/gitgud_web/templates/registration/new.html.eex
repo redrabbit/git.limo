@@ -1,0 +1,33 @@
+<h2>Signup</h2>
+
+<%= form_for @changeset, registration_path(@conn, :create), [as: :user], fn f -> %>
+  <div class="form-group">
+    <%= label f, :name %>
+    <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :username %>
+    <%= text_input f, :username, class: "form-control" %>
+    <%= error_tag f, :username %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :email %>
+    <%= email_input f, :email, class: "form-control" %>
+    <%= error_tag f, :email %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :password %>
+    <%= password_input f, :password, class: "form-control" %>
+    <%= error_tag f, :password %>
+  </div>
+
+  <div class="form-group">
+    <%= submit "Register", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+

@@ -24,6 +24,9 @@ defmodule GitGud.Web.Router do
     post "/login", AuthenticationController, :create
     get "/logout", AuthenticationController, :delete
 
+    get "/register", RegistrationController, :new
+    post "/users", RegistrationController, :create
+
     get "/new", RepositoryController, :new
     post "/repositories", RepositoryController, :create
 
