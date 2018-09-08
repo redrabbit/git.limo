@@ -37,10 +37,7 @@ defmodule GitGud.Web.Router do
     get "/:username", UserProfileController, :show
   end
 
-  scope "/:username/:repo_path", GitGud.Web do
-    get "/info/refs", GitBackendController, :info_refs
-    get "/HEAD", GitBackendController, :head
-    post "/git-upload-pack", GitBackendController, :upload_pack
-    post "/git-receive-pack", GitBackendController, :receive_pack
+  scope "/:username/:repo_path" do
+    forward "/", GitGud.SmartHTTPBackend
   end
 end
