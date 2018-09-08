@@ -1,4 +1,4 @@
-<%= react_component "BranchSelect", Map.take(@spec, [:oid, :shorthand]) %>
+<%= react_component "BranchSelect", repo: to_relay_id(@repo), spec: Map.take(@spec, [:oid, :shorthand]) %>
 
 <%= unless Enum.empty?(@tree_path) do %>
   <ul class="breadcrumb">

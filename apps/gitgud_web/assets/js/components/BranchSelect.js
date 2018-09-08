@@ -30,16 +30,16 @@ class BranchSelect extends React.Component {
           }
         `}
         variables={{
-          repoID: "UmVwbzox"
+          repoID: this.props.repo
         }}
         render={({error, props}) => {
           if(error) {
             return <div>{error.message}</div>
           } else if(props) {
             return (
-              <DropdownButton id="branch-select" title={this.props.shorthand}>
+              <DropdownButton id="branch-select" title={this.props.spec.shorthand}>
                 {props.node.refs.map(ref =>
-                  <MenuItem key={ref.object.oid} eventKey={ref.url} onSelect={this.handleSelect} active={this.props.oid == ref.object.oid}>
+                  <MenuItem key={ref.object.oid} eventKey={ref.url} onSelect={this.handleSelect} active={this.props.spec.oid == ref.object.oid}>
                     {ref.shorthand}
                   </MenuItem>
                 )}

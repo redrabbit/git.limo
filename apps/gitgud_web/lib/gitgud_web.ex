@@ -30,6 +30,8 @@ defmodule GitGud.Web do
 
       use Phoenix.HTML
 
+      import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
+
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1]
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
