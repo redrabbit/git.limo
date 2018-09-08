@@ -12,12 +12,14 @@ defmodule GitGud.Web.FallbackController do
 
   def call(conn, {:error, :unauthorized}) do
     conn
+    |> put_layout(:app)
     |> put_status(:unauthorized)
     |> render(ErrorView, :"401")
   end
 
   def call(conn, {:error, :not_found}) do
     conn
+    |> put_layout(:app)
     |> put_status(:not_found)
     |> render(ErrorView, :"404")
   end
@@ -25,6 +27,7 @@ defmodule GitGud.Web.FallbackController do
   def call(conn, val) do
     Logger.warn("Uncaught #{inspect val}")
     conn
+    |> put_layout(:app)
     |> put_status(:internal_server_error)
     |> render(ErrorView, :"500")
   end
