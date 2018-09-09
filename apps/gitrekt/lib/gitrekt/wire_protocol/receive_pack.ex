@@ -70,6 +70,12 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     else: {handle, [], []}
   end
 
+  @impl true
+  def skip(%__MODULE__{state: :disco} = handle), do: %{handle|state: :update_req}
+  def skip(%__MODULE__{state: :update_req} = handle), do: %{handle|state: :pack}
+  def skip(%__MODULE__{state: :pack} = handle), do: %{handle|state: :done}
+  def skip(%__MODULE__{state: :done} = handle), do: handle
+
   #
   # Helpers
   #

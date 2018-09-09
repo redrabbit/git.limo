@@ -141,8 +141,8 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_exec(exec, {repo, handle}, user, data) do
-    {service, output} = Service.run(Service.new(handle, exec), data)
+    {service, output} = Service.run(Service.new(handle, exec), data, skip: 1)
     :ok = Repo.notify_command(repo, user, service)
-    Enum.drop(output, 3)
+    output
   end
 end

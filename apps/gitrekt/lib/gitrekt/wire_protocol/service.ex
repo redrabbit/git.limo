@@ -15,6 +15,11 @@ defmodule GitRekt.WireProtocol.Service do
   @callback next(struct, [term]) :: {struct, [term]}
 
   @doc """
+  Callback used to transist a service to the next step without performing any action.
+  """
+  @callback skip(struct) :: struct
+
+  @doc """
   Returns a new service object for the given `repo` and `executable`.
   """
   @spec new(Git.repo, binary) :: struct
@@ -25,32 +30,31 @@ defmodule GitRekt.WireProtocol.Service do
   @doc """
   Runs the given `service` to the next step.
   """
-  @spec next(struct, binary) :: {struct, iolist}
+  @spec next(struct, binary | :discovery) :: {struct, iolist}
   def next(service, data \\ :discovery)
-  def next(service, data) when is_binary(data) do
-    {service, lines} = exec_next(service, Enum.to_list(decode(data)))
+  def next(service, :discovery) do
+    {service, lines} = exec_next(service, [])
     {service, encode(lines)}
   end
 
-  def next(service, :discovery) do
-    {service, lines} = exec_next(service, [])
+  def next(service, data) do
+    {service, lines} = exec_next(service, Enum.to_list(decode(data)))
     {service, encode(lines)}
   end
 
   @doc """
   Runs all the steps of the given `service` at once.
   """
-  @spec run(struct, binary) :: {struct, iolist}
-  def run(service, data \\ :discovery)
-  def run(service, data) when is_binary(data) do
-    {service, lines} = exec_all(service, Enum.to_list(decode(data)))
-    {service, encode(lines)}
-  end
+  @spec run(struct, binary | :discovery, keyword) :: {struct, iolist}
+  def run(service, data \\ :discovery, opts \\ [])
+  def run(service, :discovery, opts), do: exec_run(service, [], opts)
+  def run(service, data, opts), do: exec_run(service, Enum.to_list(decode(data)), opts)
 
-  def run(service, :discovery) do
-    {service, lines} = exec_all(service, [])
-    {service, encode(lines)}
-  end
+  @doc """
+  Sets the given `service` to the next logical step without performing any action.
+  """
+  @spec skip(struct) :: struct
+  def skip(service), do: apply(service.__struct__, :skip, [service])
 
   @doc """
   Returns `true` if `service` is done; elsewhise returns `false`.
@@ -61,6 +65,15 @@ defmodule GitRekt.WireProtocol.Service do
   #
   # Helpers
   #
+
+  defp exec_run(service, lines, opts) do
+    {service, _skip} =
+      if skip = Keyword.get(opts, :skip),
+        do: exec_skip(service, skip),
+      else: service
+    {service, lines} = exec_all(service, lines)
+    {service, encode(lines)}
+  end
 
   defp exec_next(service, lines, acc \\ []) do
     case apply(service.__struct__, :next, [service, lines]) do
@@ -73,6 +86,12 @@ defmodule GitRekt.WireProtocol.Service do
     done? = done?(service)
     {service, out} = exec_next(service, lines)
     if done?, do: {service, acc ++ out}, else: exec_all(service, [], acc ++ out)
+  end
+
+  defp exec_skip(service, count) when count > 0 do
+    Enum.reduce(1..count, {service, []}, fn _i, {service, states} ->
+      {skip(service), [service.state|states]}
+    end)
   end
 
   defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack

@@ -93,6 +93,13 @@ defmodule GitRekt.WireProtocol.UploadPack do
     {handle, [], []}
   end
 
+  @impl true
+  def skip(%__MODULE__{state: :disco} = handle), do: %{handle|state: :upload_req}
+  def skip(%__MODULE__{state: :upload_req} = handle), do: %{handle|state: :upload_haves}
+  def skip(%__MODULE__{state: :upload_haves} = handle), do: %{handle|state: :pack}
+  def skip(%__MODULE__{state: :pack} = handle), do: %{handle|state: :done}
+  def skip(%__MODULE__{state: :done} = handle), do: handle
+
   #
   # Helpers
   #
