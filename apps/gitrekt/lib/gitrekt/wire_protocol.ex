@@ -5,6 +5,7 @@ defmodule GitRekt.WireProtocol do
 
   alias GitRekt.Git
   alias GitRekt.Packfile
+  alias GitRekt.WireProtocol.{Service, ReceivePack, UploadPack}
 
   @upload_caps ~w(multi_ack multi_ack_detailed)
   @receive_caps ~w(report-status delete-refs)
@@ -19,6 +20,22 @@ defmodule GitRekt.WireProtocol do
     |> Enum.map(&format_ref_line/1)
     |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
     |> Enum.concat([:flush])
+  end
+
+  @doc """
+  Executes a *git-receive-pack* command on the given `repo`.
+  """
+  @spec receive_pack(Git.repo, binary | :discovery, keyword) :: {ReceivePack.t, iolist}
+  def receive_pack(repo, data \\:discovery, opts \\ []) do
+    Service.run(struct(ReceivePack, repo: repo), data, opts)
+  end
+
+  @doc """
+  Executes a *git-upload-pack* command on the given `repo`.
+  """
+  @spec upload_pack(Git.repo, binary | :discovery, keyword) :: {UploadPack.t, iolist}
+  def upload_pack(repo, data \\:discovery, opts \\ []) do
+    Service.run(struct(UploadPack, repo: repo), data, opts)
   end
 
   @doc """
