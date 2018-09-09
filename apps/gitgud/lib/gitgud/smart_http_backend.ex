@@ -77,7 +77,7 @@ defmodule GitGud.SmartHTTPBackend do
          {:ok, credentials} <- decode64(auth),
          [username, passwd] <- split(credentials, ":", parts: 2),
          %User{} = user <- User.check_credentials(username, passwd) do
-      assign(conn, :user, user)
+      assign(conn, :current_user, user)
     else
       _ -> conn
     end
