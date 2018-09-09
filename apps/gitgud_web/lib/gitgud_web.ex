@@ -15,7 +15,7 @@ defmodule GitGud.Web do
 
       import Plug.Conn
 
-      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, ensure_authenticated: 2]
+      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, current_user: 1, ensure_authenticated: 2]
       import GitGud.Web.Gettext
       import GitGud.Web.Router.Helpers
     end

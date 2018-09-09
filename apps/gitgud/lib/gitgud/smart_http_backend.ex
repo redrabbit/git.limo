@@ -41,25 +41,25 @@ defmodule GitGud.SmartHTTPBackend do
   plug :dispatch
 
   get "/info/refs" do
-    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_path"]),
+    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
 
   get "/HEAD" do
-    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_path"]),
+    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_name"]),
       do: git_head_ref(conn, repo) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
 
   post "/git-receive-pack" do
-    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_path"]),
+    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
 
   post "/git-upload-pack" do
-    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_path"]),
+    if repo = RepoQuery.user_repository(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Page not found")
   end
@@ -91,8 +91,8 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp has_permission?(conn, repo, "git-upload-pack"),  do: has_permission?(conn, repo, :read)
   defp has_permission?(conn, repo, "git-receive-pack"), do: has_permission?(conn, repo, :write)
-  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(repo, conn.assigns[:user])
-  defp has_permission?(conn, repo, :write), do: Repo.can_write?(repo, conn.assigns[:user])
+  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(repo, conn.assigns[:current_user])
+  defp has_permission?(conn, repo, :write), do: Repo.can_write?(repo, conn.assigns[:current_user])
 
   defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
 
@@ -135,7 +135,7 @@ defmodule GitGud.SmartHTTPBackend do
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(service, {repo, handle}, conn.assigns[:user], body))
+        |> send_resp(:ok, git_exec(service, {repo, handle}, conn.assigns[:current_user], body))
       end
     end
   end

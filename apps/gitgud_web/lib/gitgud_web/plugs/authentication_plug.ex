@@ -15,7 +15,13 @@ defmodule GitGud.Web.AuthenticationPlug do
   Returns `true` if the given `conn` is authenticated; otherwise returns `false`.
   """
   @spec authenticated?(Plug.Conn.t) :: boolean
-  def authenticated?(conn), do: !!conn.assigns[:user]
+  def authenticated?(conn), do: !!current_user(conn)
+
+  @doc """
+  Returns the current user if `conn` is authenticated.
+  """
+  @spec current_user(Plug.Conn.t) :: GitGud.User.t | nil
+  def current_user(conn), do: conn.assigns[:current_user]
 
   @doc """
   Plug ensuring that the request is authenticated.
@@ -45,7 +51,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   @impl true
   def call(conn, _opts) do
     if user_id = get_session(conn, :user_id),
-      do: assign(conn, :user, UserQuery.by_id(user_id)),
+      do: assign(conn, :current_user, UserQuery.by_id(user_id)),
     else: conn
   end
 end

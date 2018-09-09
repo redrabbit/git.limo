@@ -40,7 +40,7 @@ defmodule GitGud.Web.Router do
     get "/:username", UserProfileController, :show
   end
 
-  scope "/:username/:repo_path" do
+  scope "/:username/:repo_name" do
     forward "/", GitGud.SmartHTTPBackend
   end
 end

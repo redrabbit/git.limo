@@ -31,7 +31,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"repo" => repo_params} = _params) do
-    user = conn.assigns[:user]
+    user = current_user(conn)
     case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
       {:ok, repo, _handle} ->
         conn
@@ -49,7 +49,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
          {:ok, handle} <- fetch_handle(repo), do:
       if Git.repository_empty?(handle),
         do: render(conn, "init.html", repo: repo),
@@ -63,7 +63,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, tree} <- fetch_tree(handle, repo_spec, tree_path), do:
@@ -71,7 +71,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, "HEAD"), do:
       redirect(conn, to: repository_path(conn, :tree, username, repo_name, spec.shorthand, []))
@@ -82,7 +82,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, conn.assigns[:user], :read),
+    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, blob} <- fetch_blob(handle, repo_spec, blob_path), do:

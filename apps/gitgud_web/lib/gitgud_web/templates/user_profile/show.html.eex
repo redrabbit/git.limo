@@ -1,10 +1,10 @@
-<%= if Enum.empty?(@profile.user.repositories) do %>
+<%= if Enum.empty?(@user.repositories) do %>
   Nothing to see here.
 <% else %>
-  <%= for repo <- @profile.user.repositories do %>
+  <%= for repo <- @user.repositories do %>
     <div class="panel panel-default">
       <div class="panel-heading">
-        <a href="<%= repository_path @conn, :show, @profile.user, repo %>"><%= repo.name %></a>
+        <a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
       </div>
       <div class="panel-body">
         <%= repo.description %>
