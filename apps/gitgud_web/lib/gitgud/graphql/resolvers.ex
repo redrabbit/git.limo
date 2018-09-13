@@ -41,7 +41,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def resolve_node(%{id: id, type: :repo}, info) do
-    if repo = RepoQuery.by_id(to_integer(id)),
+    if repo = fetch_repo(to_integer(id), info),
       do: {:ok, repo},
     else: resolve_node(%{id: id}, info)
   end
@@ -80,8 +80,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a repository object by name for a given `user`.
   """
   @spec resolve_user_repo(map, map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
-  def resolve_user_repo(%User{} = user, %{name: name} = _args, _info) do
-    if repo = RepoQuery.user_repository(user, name),
+  def resolve_user_repo(%User{} = user, %{name: name} = _args, info) do
+    if repo = fetch_repo({user, name}, info),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
@@ -90,8 +90,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a repo object by owner and name.
   """
   @spec resolve_repo(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def resolve_repo(%{} = _root, %{owner: username, name: name} = _args, _info) do
-    if repo = RepoQuery.user_repository(username, name),
+  def resolve_repo(%{} = _root, %{owner: username, name: name} = _args, info) do
+    if repo = fetch_repo({username, name}, info),
       do: {:ok, repo},
     else: {:error, "this given repository '#{username}/#{name}' is not valid"}
   end
@@ -220,6 +220,18 @@ defmodule GitGud.GraphQL.Resolvers do
   #
   # helpers
   #
+
+  defp fetch_repo({username, name}, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
+    if repo = RepoQuery.user_repository(username, name) do
+      if Repo.can_read?(repo, ctx["current_user"]), do: repo
+    end
+  end
+
+  defp fetch_repo(id, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
+    if repo = RepoQuery.by_id(id) do
+      if Repo.can_read?(repo, ctx["current_user"]), do: repo
+    end
+  end
 
   defp query(queryable, _params), do: queryable
 
