@@ -3,7 +3,7 @@
   "license": "MIT",
   "scripts": {
     "deploy": "brunch build --production",
-    "relay": "relay-compiler --src ./js --schema ../schema.json",
+    "relay": "relay-compiler --src ./js --schema ../priv/graphql/schema.json",
     "watch": "brunch watch --stdin"
   },
   "dependencies": {

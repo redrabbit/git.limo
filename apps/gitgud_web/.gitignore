@@ -19,6 +19,9 @@ npm-debug.log
 # this depending on your deployment strategy.
 /priv/static/
 
+# GraphQL schema export for Relay components.
+/priv/graphql/schema.json
+
 # Files matching config/*.secret.exs pattern contain sensitive
 # data and you should not commit them into version control.
 #
