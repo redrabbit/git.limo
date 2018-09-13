@@ -6,18 +6,22 @@ defmodule GitGud.Web.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
-    plug AuthenticationPlug
+    plug :authenticate_session
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
+  pipeline :graphql do
+    plug :fetch_session
+    plug :authenticate
   end
 
-  forward "/graphiql", Absinthe.Plug.GraphiQL,
-    socket: GitGud.Web.UserSocket,
-    schema: GitGud.GraphQL.Schema
+  scope "/graphiql" do
+    pipe_through :graphql
+    forward "/", Absinthe.Plug.GraphiQL,
+      socket: GitGud.Web.UserSocket,
+      schema: GitGud.GraphQL.Schema
+  end
 
   scope "/", GitGud.Web do
     pipe_through :browser
@@ -49,5 +53,4 @@ defmodule GitGud.Web.Router do
   scope "/:username/:repo_name" do
     forward "/", GitGud.SmartHTTPBackend
   end
-
 end

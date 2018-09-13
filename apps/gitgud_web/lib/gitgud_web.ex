@@ -32,7 +32,7 @@ defmodule GitGud.Web do
 
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 
-      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1]
+      import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, authentication_token: 1, current_user: 1]
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
       import GitGud.Web.ReactComponents
@@ -48,7 +48,7 @@ defmodule GitGud.Web do
       import Plug.Conn
       import Phoenix.Controller
 
-      alias GitGud.Web.AuthenticationPlug
+      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, ensure_authenticated: 2, authenticate_session: 2]
     end
   end
 
