@@ -5,11 +5,12 @@ defmodule GitGud.GraphQL.Resolvers do
 
   alias GitRekt.Git
 
-  alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery
+
+  import String, only: [to_integer: 1]
 
   import GitGud.Web.Router.Helpers
 
@@ -34,19 +35,19 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec resolve_node(map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def resolve_node(%{id: id, type: :user}, info) do
-    if user = UserQuery.by_id(id),
+    if user = UserQuery.by_id(to_integer(id)),
       do: {:ok, user},
     else: resolve_node(%{id: id}, info)
   end
 
   def resolve_node(%{id: id, type: :repo}, info) do
-    if repo = RepoQuery.by_id(id),
+    if repo = RepoQuery.by_id(to_integer(id)),
       do: {:ok, repo},
     else: resolve_node(%{id: id}, info)
   end
 
-  def resolve_node(%{id: id}, _info) do
-    {:error, "this given node id '#{id}' is not valid"}
+  def resolve_node(%{}, _info) do
+    {:error, "this given node id is not valid"}
   end
 
   @doc """
@@ -58,12 +59,10 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def resolve_url(%Repo{} = repo, %{} = _args, _info) do
-    repo = DB.preload(repo, :owner)
     {:ok, repository_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
   def resolve_url(%{__type__: :ref, __repo__: repo} = spec, %{} = _args, _info) do
-    repo = DB.preload(repo, :owner)
     {:ok, repository_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, spec.shorthand, [])}
   end
 

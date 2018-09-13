@@ -50,7 +50,7 @@ defmodule GitGud.RepoQuery do
   """
   @spec by_id(pos_integer) :: Repo.t | nil
   def by_id(id) do
-    DB.get(Repo, id)
+    DB.one(repo_query(id))
   end
 
   @doc """
@@ -71,6 +71,10 @@ defmodule GitGud.RepoQuery do
     where(Repo, owner_id: ^user_id)
   end
 
+  defp repo_query(id) when is_integer(id) do
+    from(r in Repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
+  end
+
   defp repo_query(username) when is_binary(username) do
     from(r in Repo, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
   end
@@ -79,6 +83,6 @@ defmodule GitGud.RepoQuery do
     where(repo_query(user), name: ^name)
   end
 
+  defp put_owner(nil, %User{}), do: nil
   defp put_owner(%Repo{} = repo, %User{} = user), do: struct(repo, owner: user)
-  defp put_owner(repo, %User{}) when is_nil(repo), do: repo
 end
