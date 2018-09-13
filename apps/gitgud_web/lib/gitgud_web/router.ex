@@ -15,7 +15,9 @@ defmodule GitGud.Web.Router do
     plug :accepts, ["json"]
   end
 
-  forward "/graphiql", Absinthe.Plug.GraphiQL, schema: GitGud.GraphQL.Schema
+  forward "/graphiql", Absinthe.Plug.GraphiQL,
+    socket: GitGud.Web.UserSocket,
+    schema: GitGud.GraphQL.Schema
 
   scope "/", GitGud.Web do
     pipe_through :browser
@@ -47,4 +49,5 @@ defmodule GitGud.Web.Router do
   scope "/:username/:repo_name" do
     forward "/", GitGud.SmartHTTPBackend
   end
+
 end

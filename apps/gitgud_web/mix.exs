@@ -38,7 +38,7 @@ defmodule GitGud.Web.Mixfile do
      {:dataloader, "~> 1.0"},
      {:absinthe, "~> 1.4"},
      {:absinthe_relay, "~> 1.4"},
-     {:absinthe_plug, "~> 1.4"},
+     {:absinthe_phoenix, "~> 1.4"},
      {:gettext, "~> 0.15"},
      {:gitgud, in_umbrella: true}]
   end

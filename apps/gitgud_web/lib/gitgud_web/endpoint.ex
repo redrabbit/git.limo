@@ -4,6 +4,7 @@ defmodule GitGud.Web.Endpoint do
   """
 
   use Phoenix.Endpoint, otp_app: :gitgud_web
+  use Absinthe.Phoenix.Endpoint
 
   socket "/socket", GitGud.Web.UserSocket
 

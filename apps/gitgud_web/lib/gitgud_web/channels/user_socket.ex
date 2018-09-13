@@ -3,6 +3,7 @@ defmodule GitGud.Web.UserSocket do
   Module providing support for bidirectional communication between clients and server.
   """
   use Phoenix.Socket
+  use Absinthe.Phoenix.Socket, schema: GitGud.GraphQL.Schema
 
   transport :websocket, Phoenix.Transports.WebSocket
 
