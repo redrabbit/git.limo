@@ -15,9 +15,11 @@ defmodule GitGud.Repo do
   alias GitGud.DB
 
   schema "repositories" do
-    belongs_to  :owner,       User
-    field       :name,        :string
-    field       :description, :string
+    belongs_to    :owner,       User
+    field         :name,        :string
+    field         :public,      :boolean
+    field         :description, :string
+    many_to_many  :maintainers, User, join_through: "repositories_maintainers"
     timestamps()
   end
 
@@ -26,7 +28,9 @@ defmodule GitGud.Repo do
     owner_id: pos_integer,
     owner: User.t,
     name: binary,
+    public: boolean,
     description: binary,
+    maintainers: [User.t],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
   }
@@ -51,7 +55,7 @@ defmodule GitGud.Repo do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repository, params \\ %{}) do
     repository
-    |> cast(params, [:owner_id, :name, :description])
+    |> cast(params, [:owner_id, :name, :public, :description])
     |> validate_required([:owner_id, :name])
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
@@ -62,13 +66,13 @@ defmodule GitGud.Repo do
   @doc """
   Creates a new repository.
   """
-  @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t}
+  @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
-    bare? = Keyword.get(opts, :bare, true)
-    changeset = changeset(%__MODULE__{}, Map.new(params))
-    case insert_and_init(changeset, bare?) do
-      {:ok, %{insert: repo, init_repo: ref}} -> {:ok, repo, ref}
+    case multi_create(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
+      {:ok, %{repo: repo, init: ref}} -> {:ok, repo, ref}
       {:error, :insert, changeset, _changes} -> {:error, changeset}
+      {:error, :init, reason, _changes} -> {:error, reason}
+      {:error, :put_maintainer, changeset} -> {:error, changeset}
     end
   end
 
@@ -89,10 +93,10 @@ defmodule GitGud.Repo do
   @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
   def update(%__MODULE__{} = repo, params) do
     changeset = changeset(repo, Map.new(params))
-    case update_and_fix_path(changeset) do
+    case multi_update(changeset) do
       {:ok, %{update: repo}} -> {:ok, repo}
       {:error, :update, changeset, _changes} -> {:error, changeset}
-      {:error, :rename_repo, reason, _changes} -> {:error, reason}
+      {:error, :rename, reason, _changes} -> {:error, reason}
     end
   end
 
@@ -115,9 +119,10 @@ defmodule GitGud.Repo do
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = repo) do
-    case delete_and_cleanup(repo) do
+    case multi_delete(repo) do
       {:ok, %{delete: repo}} -> {:ok, repo}
       {:error, :delete, changeset, _changes} -> {:error, changeset}
+      {:error, :cleanup, reason, _changes} -> {:error, reason}
     end
   end
 
@@ -164,42 +169,46 @@ defmodule GitGud.Repo do
   # Helpers
   #
 
-  defp insert_and_init(changeset, bare?) do
+  defp multi_create(changeset, bare?) do
     Multi.new()
     |> Multi.insert(:insert, changeset)
-    |> Multi.run(:init_repo, fn %{insert: repo} -> init_repo(repo, bare?) end)
+    |> Multi.run(:init, &init(&1, bare?))
+    |> Multi.merge(&put_maintainer/1)
     |> DB.transaction()
   end
 
-  defp init_repo(repo, bare?) do
+  defp multi_update(changeset) do
+    Multi.new()
+    |> Multi.update(:update, changeset)
+    |> Multi.run(:rename, &rename(&1, changeset.data))
+    |> DB.transaction()
+  end
+
+  defp multi_delete(repo) do
+    Multi.new()
+    |> Multi.delete(:delete, repo)
+    |> Multi.run(:cleanup, &cleanup/1)
+    |> DB.transaction()
+  end
+
+  defp init(%{insert: repo}, bare?) do
     Git.repository_init(workdir(repo), bare?)
   end
 
-  defp rename_repo(%__MODULE__{} = old_repo, %__MODULE__{} = new_repo) do
-    rename_repo(workdir(old_repo), workdir(new_repo))
-  end
-
-  defp rename_repo(path, path), do: {:ok, :noop}
-  defp rename_repo(old_path, new_path) do
-    case File.rename(old_path, new_path) do
-      :ok -> {:ok, new_path}
+  def rename(%{update: repo}, old_repo) do
+    old_workdir = workdir(old_repo)
+    new_workdir = workdir(repo)
+    case File.rename(old_workdir, new_workdir) do
+      :ok -> {:ok, {old_workdir, new_workdir}}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp update_and_fix_path(changeset) do
-    Multi.new()
-    |> Multi.update(:update, changeset)
-    |> Multi.run(:rename_repo, fn %{update: repo} -> rename_repo(changeset.data, repo) end)
-    |> DB.transaction()
+  defp put_maintainer(%{insert: repo}) do
+    Multi.insert_all(Multi.new(), :put_maintainer, "repositories_maintainers", [[repo_id: repo.id, user_id: repo.owner_id]])
   end
 
-  defp delete_and_cleanup(repo) do
-    Multi.new()
-    |> Multi.delete(:delete, repo)
-    |> Multi.run(:remove_repo, fn %{delete: repo} -> remove_repo(repo) end)
-    |> DB.transaction()
+  defp cleanup(%{delete: repo}) do
+    File.rm_rf(workdir(repo))
   end
-
-  defp remove_repo(repo), do: File.rm_rf(workdir(repo))
 end
