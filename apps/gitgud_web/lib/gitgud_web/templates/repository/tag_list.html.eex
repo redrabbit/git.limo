@@ -1,0 +1,7 @@
+<h4>Tags</h4>
+
+<ul class="list-group">
+<%= for tag <- @tags do %>
+  <li class="list-group-item"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, tag.shorthand, []) %>"><%= tag.shorthand %></a></li>
+<% end %>
+</ul>

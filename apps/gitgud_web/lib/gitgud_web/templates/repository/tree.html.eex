@@ -1,6 +1,2 @@
-<%= if Enum.empty?(@tree_path) do %>
-  <p><%= @repo.description %></p>
-<% end %>
-
 <%= render "_tree_nav.html", assigns %>
 <%= render "_tree_table.html", assigns %>

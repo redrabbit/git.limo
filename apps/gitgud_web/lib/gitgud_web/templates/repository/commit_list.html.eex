@@ -1,0 +1,7 @@
+<h4>History</h4>
+
+<ul class="list-group">
+  <%= for commit <- @commits do %>
+    <li class="list-group-item"><a href="<%= repository_path(@conn, :commit, @repo, @repo.owner, commit.oid) %>"><%= commit.message %></a></li>
+  <% end %>
+</ul>

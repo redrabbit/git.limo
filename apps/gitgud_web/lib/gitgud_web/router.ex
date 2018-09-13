@@ -32,7 +32,11 @@ defmodule GitGud.Web.Router do
 
     scope "/:username/:repo_name" do
       get "/", RepositoryController, :show
-      get "/tree", RepositoryController, :tree
+      get "/branches", RepositoryController, :branches
+      get "/tags", RepositoryController, :tags
+      get "/commits/:spec", RepositoryController, :commits
+      get "/commits", RepositoryController, :commits
+      get "/commit/:oid", RepositoryController, :commit
       get "/tree/:spec/*path", RepositoryController, :tree
       get "/blob/:spec/*path", RepositoryController, :blob
     end

@@ -8,6 +8,10 @@
     <li class="disabled"><a href="#">Settings</a></li>
   </ul>
 
-  <%= render @view_module, @view_template, assigns %>
+  <br />
+
+  <div class="container">
+    <%= render @view_module, @view_template, assigns %>
+  </div>
 <% end %>
 

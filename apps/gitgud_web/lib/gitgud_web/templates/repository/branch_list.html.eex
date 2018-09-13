@@ -1,0 +1,7 @@
+<h4>Branches</h4>
+
+<ul class="list-group">
+<%= for branch <- @branches do %>
+  <li class="list-group-item"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, branch.shorthand, []) %>"><%= branch.shorthand %></a></li>
+<% end %>
+</ul>

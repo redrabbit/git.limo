@@ -4,11 +4,13 @@
     <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></h2></a>
 
   <ul class="nav nav-tabs">
-    <li class="active"><a href="#">Code</a></li>
+    <li class="active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
     <li class="disabled"><a href="#">Issues</a></li>
     <li class="disabled"><a href="#">Wiki</a></li>
     <li class="disabled"><a href="#">Settings</a></li>
   </ul>
+
+  <br />
 
   <%= render @view_module, @view_template, assigns %>
 <% end %>

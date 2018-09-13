@@ -1,14 +1,22 @@
+<h4>Repositories</h4>
+
 <%= if Enum.empty?(@user.repositories) do %>
   Nothing to see here.
 <% else %>
-  <%= for repo <- @user.repositories do %>
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+  <%= for chunk <- Enum.chunk_every(@user.repositories, 2) do %>
+    <div class="row">
+    <%= for repo <- chunk do %>
+      <div class="col-md-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <a href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+          </div>
+          <div class="panel-body">
+            <%= repo.description %>
+          </div>
+        </div>
       </div>
-      <div class="panel-body">
-        <%= repo.description %>
-      </div>
+    <% end %>
     </div>
   <% end %>
 <% end %>
