@@ -4,7 +4,11 @@
     <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></h2></a>
 
   <ul class="nav nav-tabs">
-    <li class="active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+    <%= if Map.has_key?(assigns, :spec) do %>
+      <li class="active"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>">Code</a></li>
+    <% else %>
+      <li class="active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+    <% end %>
     <li class="disabled"><a href="#">Issues</a></li>
     <li class="disabled"><a href="#">Wiki</a></li>
     <li class="disabled"><a href="#">Settings</a></li>
