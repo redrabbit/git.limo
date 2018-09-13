@@ -12,6 +12,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import String, only: [to_integer: 1]
 
+  import GitGud.Authorization, only: [enforce_policy!: 3]
   import GitGud.Web.Router.Helpers
 
   @doc """
@@ -221,16 +222,12 @@ defmodule GitGud.GraphQL.Resolvers do
   # helpers
   #
 
-  defp fetch_repo({username, name}, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
-    if repo = RepoQuery.user_repository(username, name) do
-      if Repo.can_read?(repo, ctx["current_user"]), do: repo
-    end
+  defp fetch_repo(id, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) when is_integer(id) do
+    enforce_policy!(ctx[:current_user], RepoQuery.by_id(id), :read)
   end
 
-  defp fetch_repo(id, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
-    if repo = RepoQuery.by_id(id) do
-      if Repo.can_read?(repo, ctx["current_user"]), do: repo
-    end
+  defp fetch_repo({username, name}, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
+    enforce_policy!(ctx[:current_user], RepoQuery.user_repository(username, name), :read)
   end
 
   defp query(queryable, _params), do: queryable

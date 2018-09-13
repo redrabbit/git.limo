@@ -24,7 +24,7 @@ defmodule GitGud.SSHServer do
 
   In order to read and/or write to a repository, a user needs to have the required permissions.
 
-  See `GitGud.Repo.can_read?/2` and `GitGud.Repo.can_write?/2` for more details.
+  See `GitGud.Authorization` for more details.
   """
 
   alias GitGud.User
@@ -35,6 +35,8 @@ defmodule GitGud.SSHServer do
 
   alias GitRekt.Git
   alias GitRekt.WireProtocol.Service
+
+  alias GitGud.Authorization
 
   @behaviour :ssh_daemon_channel
   @behaviour :ssh_server_key_api
@@ -110,7 +112,7 @@ defmodule GitGud.SSHServer do
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
     [repo|_args] = parse_args(args)
-    if has_permission?(user, repo, exec) do
+    if authorized?(user, repo, exec) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
       {service, output} = Service.next(Service.new(handle, exec))
       :ssh_connection.send(conn, chan, output)
@@ -139,6 +141,9 @@ defmodule GitGud.SSHServer do
   # Helpers
   #
 
+  defp authorized?(user, repo, "git-upload-pack"),  do: Authorization.authorized?(user, repo, :read)
+  defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :write)
+
   defp daemon_opts() do
     system_dir = Application.fetch_env!(:gitgud, :ssh_key_dir)
     [key_cb: {__MODULE__, []},
@@ -158,7 +163,4 @@ defmodule GitGud.SSHServer do
   defp check_credentials(username, password) do
     !!User.check_credentials(to_string(username), to_string(password))
   end
-
-  defp has_permission?(user, repo, "git-upload-pack"),  do: Repo.can_read?(repo, user)
-  defp has_permission?(user, repo, "git-receive-pack"), do: Repo.can_write?(repo, user)
 end

@@ -7,10 +7,10 @@ defmodule GitGud.Web.RepositoryController do
 
   alias GitRekt.Git
 
-  alias GitGud.User
-
   alias GitGud.Repo
   alias GitGud.RepoQuery
+
+  import GitGud.Authorization, only: [enforce_policy: 3]
 
   plug :ensure_authenticated when action in [:new, :create]
   plug :put_layout, :repository_layout when action not in [:new, :create]
@@ -49,7 +49,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo), do:
       if Git.repository_empty?(handle),
         do: render(conn, "initialize.html", repo: repo),
@@ -64,7 +64,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
   def branches(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, branches} <- fetch_branches(handle), do:
       render(conn, "branch_list.html", repo: repo, branches: branches)
@@ -75,7 +75,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
   def tags(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, tags} <- fetch_tags(handle), do:
       render(conn, "tag_list.html", repo: repo, tags: tags)
@@ -86,7 +86,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec commits(Plug.Conn.t, map) :: Plug.Conn.t
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, walk} <- fetch_revwalk(handle, spec),
@@ -95,7 +95,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   def commits(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle), do:
       redirect(conn, to: repository_path(conn, :commits, username, repo, spec.shorthand))
@@ -114,7 +114,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => []} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, tree} <- fetch_tree(handle, spec),
@@ -123,7 +123,7 @@ defmodule GitGud.Web.RepositoryController do
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, tree} <- fetch_tree(handle, spec, tree_path), do:
@@ -135,7 +135,7 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
-    with {:ok, repo} <- fetch_repo({username, repo_name}, current_user(conn), :read),
+    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
          {:ok, handle} <- fetch_handle(repo),
          {:ok, spec} <- fetch_reference(handle, repo_spec),
          {:ok, blob} <- fetch_blob(handle, spec, blob_path), do:
@@ -146,23 +146,10 @@ defmodule GitGud.Web.RepositoryController do
   # Helpers
   #
 
-  defp has_access?(user, repo, :read), do: Repo.can_read?(repo, user)
-  defp has_access?(user, repo, :write), do: Repo.can_write?(repo, user)
-
-  defp fetch_repo({username, repo_name}, %User{username: username}, _auth_mode) do
-    if repository = RepoQuery.user_repository(username, repo_name),
-      do: {:ok, repository},
+  defp fetch_repo(conn, {username, repo_name}, action) do
+    if repo = RepoQuery.user_repository(username, repo_name),
+      do: enforce_policy(current_user(conn), repo, action),
     else: {:error, :not_found}
-  end
-
-  defp fetch_repo({username, repo_name}, auth_user, auth_mode) do
-    with repo when not is_nil(repo) <- RepoQuery.user_repository(username, repo_name),
-         true <- has_access?(auth_user, repo, auth_mode) do
-      {:ok, repo}
-    else
-      nil   -> {:error, :not_found}
-      false -> {:error, :unauthorized}
-    end
   end
 
   defp fetch_handle(repo) do

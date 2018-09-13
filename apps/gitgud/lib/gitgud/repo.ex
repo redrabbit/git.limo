@@ -11,8 +11,8 @@ defmodule GitGud.Repo do
 
   alias GitRekt.Git
 
-  alias GitGud.User
   alias GitGud.DB
+  alias GitGud.User
 
   schema "repositories" do
     belongs_to    :owner,       User
@@ -34,20 +34,6 @@ defmodule GitGud.Repo do
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
   }
-
-  @doc """
-  Returns `true` if `user` has read access to `repo`; elsewhise returns `false`.
-  """
-  @spec can_read?(t, User.t) :: boolean
-  def can_read?(%__MODULE__{} = _repo, %User{} = _user), do: true
-  def can_read?(_repo, nil), do: true
-
-  @doc """
-  Returns `true` if `user` has write access to `repo`; elsewhise returns `false`.
-  """
-  @spec can_write?(t, User.t) :: boolean
-  def can_write?(%__MODULE__{owner_id: user_id} = _repo, %User{id: user_id} = _user), do: true
-  def can_write?(_repo, _user), do: false
 
   @doc """
   Returns a repository changeset for the given `params`.
@@ -92,8 +78,7 @@ defmodule GitGud.Repo do
   """
   @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
   def update(%__MODULE__{} = repo, params) do
-    changeset = changeset(repo, Map.new(params))
-    case multi_update(changeset) do
+    case multi_update(changeset(repo, Map.new(params))) do
       {:ok, %{update: repo}} -> {:ok, repo}
       {:error, :update, changeset, _changes} -> {:error, changeset}
       {:error, :rename, reason, _changes} -> {:error, reason}
@@ -164,6 +149,32 @@ defmodule GitGud.Repo do
   end
 
   def notify_command(%__MODULE__{} = _repo, _user, _service), do: :ok
+
+  #
+  # Protocols
+  #
+
+  defimpl GitGud.AuthorizationPolicies do
+    alias GitGud.Repo
+
+    # everybody can read public repos
+    def can?(%Repo{public: true}, _user, :read), do: true
+
+    # owner can do everything
+    def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
+
+    # maintainers can do everything as well
+    def can?(%Repo{} = repo, %User{id: user_id}, _action) do
+      repo = DB.preload(repo, :maintainers)
+      !!Enum.find(repo.maintainers, false, fn
+        %User{id: ^user_id} -> true
+        %User{} -> nil
+      end)
+    end
+
+    # anonymous users have read-only access to public repos
+    def can?(%Repo{}, nil, _actions), do: false
+  end
 
   #
   # Helpers

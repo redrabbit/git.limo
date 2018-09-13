@@ -21,7 +21,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   In order to read and/or write to a repository, a user needs to have the required permissions.
 
-  See `GitGud.Repo.can_read?/2` and `GitGud.Repo.can_write?/2` for more details.
+  See `GitGud.Authorization` for more details.
   """
   use Plug.Router
 
@@ -35,6 +35,8 @@ defmodule GitGud.SmartHTTPBackend do
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoQuery
+
+  alias GitGud.Authorization
 
   plug :basic_authentication
   plug :match
@@ -72,6 +74,10 @@ defmodule GitGud.SmartHTTPBackend do
   # Helpers
   #
 
+  defp authorized?(conn, repo, "git-upload-pack"),  do: authorized?(conn, repo, :read)
+  defp authorized?(conn, repo, "git-receive-pack"), do: authorized?(conn, repo, :write)
+  defp authorized?(conn, repo, action), do: Authorization.authorized?(conn.assigns[:current_user], repo, action)
+
   defp basic_authentication(conn, _opts) do
     with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
          {:ok, credentials} <- decode64(auth),
@@ -88,11 +94,6 @@ defmodule GitGud.SmartHTTPBackend do
     |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
     |> send_resp(:unauthorized, "Unauthorized")
   end
-
-  defp has_permission?(conn, repo, "git-upload-pack"),  do: has_permission?(conn, repo, :read)
-  defp has_permission?(conn, repo, "git-receive-pack"), do: has_permission?(conn, repo, :write)
-  defp has_permission?(conn, repo, :read),  do: Repo.can_read?(repo, conn.assigns[:current_user])
-  defp has_permission?(conn, repo, :write), do: Repo.can_write?(repo, conn.assigns[:current_user])
 
   defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
 
@@ -111,7 +112,7 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_info_refs(conn, repo, service) do
-    if has_permission?(conn, repo, service) do
+    if authorized?(conn, repo, service) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
       refs = WireProtocol.reference_discovery(handle, service)
       refs = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
@@ -122,7 +123,7 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_head_ref(conn, repo) do
-    if has_permission?(conn, repo, :read) do
+    if authorized?(conn, repo, :read) do
       with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
            {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD"), do:
         send_resp(conn, :ok, "ref: #{target}")
@@ -130,7 +131,7 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_pack(conn, repo, service) do
-    if has_permission?(conn, repo, service) do
+    if authorized?(conn, repo, service) do
       with {:ok, body, conn} <- read_body_full(conn),
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         conn
