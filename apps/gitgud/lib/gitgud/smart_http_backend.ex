@@ -1,12 +1,11 @@
 defmodule GitGud.SmartHTTPBackend do
   @moduledoc """
-  Module responsible for serving the contents of a Git repository over HTTP.
+  `Plug` providing support for Git server commands over HTTP.
 
   This plug handles following Git commands:
 
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
-  * `git-upload-archive` - corresponding server-side command to `git archive`.
 
   ## Authentication
 

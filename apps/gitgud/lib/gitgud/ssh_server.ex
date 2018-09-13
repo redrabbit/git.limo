@@ -6,7 +6,6 @@ defmodule GitGud.SSHServer do
 
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
-  * `git-upload-archive` - corresponding server-side command to `git archive`.
 
   ## Authentication
 

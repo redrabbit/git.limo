@@ -206,7 +206,7 @@ defmodule GitGud.Repo do
     Git.repository_init(workdir(repo), bare?)
   end
 
-  def rename(%{update: repo}, old_repo) do
+  defp rename(%{update: repo}, old_repo) do
     old_workdir = workdir(old_repo)
     new_workdir = workdir(repo)
     case File.rename(old_workdir, new_workdir) do

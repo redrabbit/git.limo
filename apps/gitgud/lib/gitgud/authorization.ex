@@ -6,9 +6,9 @@ defmodule GitGud.Authorization do
   alias GitGud.User
 
   @doc """
-  Returns `true` if `user` has the permission to perform `action` on `resource`.
+  Returns `true` if `user` has the permission to perform `action` on `resource`; otherwhise returns `false`.
   """
-  @spec authorized?(User.t | nil, any, atom) :: boolean
+  @spec authorized?(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: boolean
   def authorized?(user, resource, action) do
     GitGud.AuthorizationPolicies.can?(resource, user, action)
   end
@@ -16,14 +16,17 @@ defmodule GitGud.Authorization do
   @doc """
   Enforces the authorization policy.
   """
-  @spec enforce_policy(User.t | nil, any, atom) :: any | nil
+  @spec enforce_policy(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: {:ok, GitGud.AuthorizationPolicies.t} | {:error, :unauthorized}
   def enforce_policy(user, resource, action) do
     if authorized?(user, resource, action),
       do: {:ok, resource},
     else: {:error, :unauthorized}
   end
 
-  @spec enforce_policy!(User.t | nil, any, atom, any) :: any | nil
+  @doc """
+  Same as `enforce_policy/3` but returns the `resource` or `default` if the policy cannot be enforced.
+  """
+  @spec enforce_policy!(User.t | nil, GitGud.AuthorizationPolicies.t, atom, any) :: GitGud.AuthorizationPolicies.t | any
   def enforce_policy!(user, resource, action, default \\ nil) do
     case enforce_policy(user, resource, action) do
       {:ok, resource} -> resource

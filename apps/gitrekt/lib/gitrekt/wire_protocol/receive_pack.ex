@@ -9,7 +9,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  defstruct [:repo, state: :disco, caps: [], cmds: [], pack: [], opts: []]
+  defstruct [:repo, state: :disco, caps: [], cmds: [], pack: []]
 
   @null_oid String.duplicate("0", 40)
 
@@ -25,7 +25,6 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     caps: [binary],
     cmds: [],
     pack: Packfile.obj_list,
-    opts: keyword,
   }
 
   #

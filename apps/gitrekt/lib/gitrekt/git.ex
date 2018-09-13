@@ -1,6 +1,6 @@
 defmodule GitRekt.Git do
   @moduledoc """
-  Erlang NIF that exposes some of *libgit2*'s library functions.
+  Erlang NIF that exposes a subset of *libgit2*'s library functions.
   """
 
   require Logger
@@ -160,7 +160,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Delete an existing reference.
+  Deletes an existing reference.
   """
   @spec reference_delete(repo, binary) :: :ok | {:error, term}
   def reference_delete(_repo, _name) do
@@ -219,7 +219,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Resolve a symbolic reference to a direct reference.
+  Resolves a symbolic reference to a direct reference.
   """
   @spec reference_resolve(repo, binary) :: {:ok, binary, binary, oid} | {:error, term}
   def reference_resolve(_repo, _name) do
@@ -553,7 +553,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Create an new in-memory index object.
+  Creates an new in-memory index object.
   """
   @spec index_new() :: {:ok, index} | {:error, term}
   def index_new do
@@ -585,7 +585,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Read the given `tree` into the given `index` file with stats.
+  Reads the given `tree` into the given `index` file with stats.
   """
   @spec index_read_tree(index, tree) :: :ok | {:error, term}
   def index_read_tree(_index, _tree) do
@@ -652,7 +652,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Clear the contents (all the entries) of the given `index`.
+  Clears the contents (all the entries) of the given `index`.
   """
   @spec index_clear(index) :: :ok | {:error, term}
   def index_clear(_index) do

@@ -13,8 +13,8 @@ defmodule GitGud.UserQuery do
   def by_id(id, opts \\ [])
   def by_id(id, []), do: DB.get(User, id)
   def by_id(id, opts) do
-    {preload, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_id(id, opts), preload)
+    {preloads, opts} = Keyword.pop(opts, :preload)
+    DB.preload(by_id(id, opts), preloads)
   end
 
   @doc """
@@ -24,8 +24,8 @@ defmodule GitGud.UserQuery do
   def by_username(username, opts \\ [])
   def by_username(username, []), do: DB.get_by(User, username: username)
   def by_username(username, opts) do
-    {preload, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_username(username, opts), preload)
+    {preloads, opts} = Keyword.pop(opts, :preload)
+    DB.preload(by_username(username, opts), preloads)
   end
 
   @doc """
@@ -35,7 +35,7 @@ defmodule GitGud.UserQuery do
   def by_email(email, opts \\ [])
   def by_email(email, []), do: DB.get_by(User, email: email)
   def by_email(email, opts) do
-    {preload, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_email(email, opts), preload)
+    {preloads, opts} = Keyword.pop(opts, :preload)
+    DB.preload(by_email(email, opts), preloads)
   end
 end

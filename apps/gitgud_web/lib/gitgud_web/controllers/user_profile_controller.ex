@@ -12,7 +12,7 @@ defmodule GitGud.Web.UserProfileController do
   action_fallback GitGud.Web.FallbackController
 
   @doc """
-  Returns a single repository.
+  Renders a user profile.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username} = _params) do
