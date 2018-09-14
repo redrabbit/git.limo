@@ -127,7 +127,7 @@ defmodule GitGud.Repo do
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
-    root = Application.fetch_env!(:gitgud, :git_dir)
+    root = Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
     repo = DB.preload(repo, :owner)
     Path.join([root, repo.owner.username, repo.name])
   end

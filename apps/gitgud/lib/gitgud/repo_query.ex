@@ -65,7 +65,7 @@ defmodule GitGud.RepoQuery do
   """
   @spec by_path(Path.t, keyword) :: Repo.t | nil
   def by_path(path, opts \\ []) do
-    root = Application.fetch_env!(:gitgud, :git_dir)
+    root = Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
     path = if Path.type(path) == :absolute,
       do: Path.relative_to(path, root),
     else: path

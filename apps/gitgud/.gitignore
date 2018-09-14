@@ -12,7 +12,7 @@ erl_crash.dump
 /config/*.secret.exs
 
 # Storage for Git data repositories.
-/git-data
+/priv/git-data
 
 # SSH public/private keys for Git SSH support.
-/ssh-keys
+/priv/ssh-keys

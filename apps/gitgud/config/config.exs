@@ -2,8 +2,8 @@ use Mix.Config
 
 config :gitgud,
   ecto_repos: [GitGud.DB],
-  git_dir: "/Users/redrabbit/Devel/Elixir/gitgud/apps/gitgud/git-data",
-  ssh_key_dir: "/Users/redrabbit/Devel/Elixir/gitgud/apps/gitgud/ssh-keys"
+  git_root: "priv/git-data",
+  ssh_keys: "priv/ssh-keys"
 
 config :absinthe, schema: GitGud.GraphQL.Schema
 
