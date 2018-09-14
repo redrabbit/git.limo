@@ -1,8 +1,8 @@
 import React from "react"
 import {QueryRenderer, graphql} from "react-relay"
-import {DropdownButton, MenuItem} from 'react-bootstrap';
+import {DropdownButton, MenuItem} from "react-bootstrap"
 
-import environment from "../relay"
+import environment from "../relay-environment"
 
 class BranchSelect extends React.Component {
   constructor(props) {
