@@ -10,6 +10,10 @@ $fa-font-path: "../fonts";
 @import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome";
 @import "../node_modules/@fortawesome/fontawesome-free/scss/solid";
 
-.panel.branch-select {
-  background-color: $dropdown-content-background-color;
+.branch-select {
+  .dropdown-menu {
+    .panel {
+      background-color: $dropdown-content-background-color;
+    }
+  }
 }

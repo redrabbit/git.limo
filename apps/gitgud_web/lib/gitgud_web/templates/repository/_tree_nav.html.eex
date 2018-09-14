@@ -1,7 +1,7 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= react_component "BranchSelect", repo: to_relay_id(@repo), spec: Map.take(@spec, [:oid, :shorthand]) %>
+      <%= react_component "BranchSelect", repo: to_relay_id(@repo), oid: @spec.oid %>
     </div>
     <div class="level-item">
       <%= unless Enum.empty?(@tree_path) do %>
