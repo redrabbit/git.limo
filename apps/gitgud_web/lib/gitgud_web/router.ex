@@ -16,7 +16,7 @@ defmodule GitGud.Web.Router do
     plug :authenticate
   end
 
-  scope "/graphiql" do
+  scope "/graphql" do
     pipe_through :graphql
     forward "/", Absinthe.Plug.GraphiQL,
       socket: GitGud.Web.UserSocket,
