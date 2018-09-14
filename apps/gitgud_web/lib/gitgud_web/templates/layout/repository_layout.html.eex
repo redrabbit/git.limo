@@ -1,20 +1,23 @@
 <%= render_layout "app.html", assigns do %>
-  <h2>
-    <a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a> /
-    <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></h2></a>
+  <nav class="breadcrumb is-large" aria-label="breadcrumbs">
+    <ul>
+      <li><h1 class="title"><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
+      <li><h1 class="title"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
+    </ul>
+  </nav>
 
-  <ul class="nav nav-tabs">
+  <div class="tabs">
+    <ul>
     <%= if Map.has_key?(assigns, :spec) do %>
-      <li class="active"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>">Code</a></li>
+      <li class="is-active"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>">Code</a></li>
     <% else %>
-      <li class="active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+      <li class="is-active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
     <% end %>
-    <li class="disabled"><a href="#">Issues</a></li>
-    <li class="disabled"><a href="#">Wiki</a></li>
-    <li class="disabled"><a href="#">Settings</a></li>
-  </ul>
-
-  <br />
+      <li><a href="#">Issues</a></li>
+      <li><a href="#">Wiki</a></li>
+      <li><a href="#">Settings</a></li>
+    </ul>
+  </div>
 
   <%= render @view_module, @view_template, assigns %>
 <% end %>

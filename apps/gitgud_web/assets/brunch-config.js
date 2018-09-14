@@ -1,5 +1,4 @@
 exports.config = {
-  // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
       joinTo: "js/app.js"
@@ -13,14 +12,16 @@ exports.config = {
   },
 
   conventions: {
-    assets: /^(static)/,
+    assets: [
+      /^(static)/,
+    ],
     ignored: [
       /^__generated__/
     ]
   },
 
   paths: {
-    watched: ["static", "css", "js", "vendor"],
+    watched: ["static", "css", "js"],
     public: "../priv/static"
   },
 
@@ -28,6 +29,9 @@ exports.config = {
     babel: {
       presets: ["latest", "stage-0", "react"],
       plugins: ["relay"]
+    },
+    sass: {
+      mode: "native"
     }
   },
 

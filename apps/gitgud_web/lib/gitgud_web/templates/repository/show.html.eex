@@ -1,14 +1,23 @@
-<div class="jumbotron">
+<div class="content">
   <p><%= @repo.description %></p>
 </div>
 
-<ul class="nav nav-pills">
-  <li><a href="<%= repository_path(@conn, :commits, @repo.owner, @repo, @spec.shorthand, []) %>">Commits <span class="badge"><%= @stats.commits %></span></a></li>
-  <li><a href="<%= repository_path(@conn, :branches, @repo.owner, @repo) %>">Branches <span class="badge"><%= @stats.branches %></span></a></li>
-  <li><a href="<%= repository_path(@conn, :tags, @repo.owner, @repo) %>">Tags <span class="badge"><%= @stats.tags %></span></a></li>
-</ul>
-
-<br />
+<div class="tabs is-toggle is-fullwidth">
+  <ul>
+    <li>
+      <a href="<%= repository_path(@conn, :commits, @repo.owner, @repo, @spec.shorthand, []) %>">Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></a>
+    </li>
+    <li>
+      <a href="<%= repository_path(@conn, :branches, @repo.owner, @repo) %>">Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></a>
+    </li>
+    <li>
+      <a href="<%= repository_path(@conn, :tags, @repo.owner, @repo) %>">Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></a>
+    </li>
+    <li>
+      <a href="#">Maintainers&nbsp;&nbsp;<span class="tag">0</span></a>
+    </li>
+  </ul>
+</div>
 
 <%= render "_tree_nav.html", assigns %>
 <%= render "_tree_table.html", assigns %>

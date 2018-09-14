@@ -1,8 +1,8 @@
-<table class="table">
+<table class="table is-hoverable is-fullwidth">
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
-        <td><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, Enum.drop(@tree_path, -1)) %>">..</a></td>
+        <th><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, Enum.drop(@tree_path, -1)) %>">..</a></th>
       </tr>
     <% end %>
     <%= for entry <- @tree do %>

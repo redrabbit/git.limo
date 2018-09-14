@@ -1,32 +1,40 @@
-<h2>Signup</h2>
+<h1 class="title">Register</h1>
 
 <%= form_for @changeset, registration_path(@conn, :create), [as: :user], fn f -> %>
-  <div class="form-group">
-    <%= label f, :name %>
-    <%= text_input f, :name, class: "form-control" %>
+  <div class="field">
+    <%= label f, :name, class: "label" %>
+    <div class="control">
+      <%= text_input f, :name, class: "input" %>
+    </div>
     <%= error_tag f, :name %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :username %>
-    <%= text_input f, :username, class: "form-control" %>
+  <div class="field">
+    <%= label f, :username, class: "label" %>
+    <div class="control">
+      <%= text_input f, :username, class: "input" %>
+    </div>
     <%= error_tag f, :username %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :email %>
-    <%= email_input f, :email, class: "form-control" %>
+  <div class="field">
+    <%= label f, :email, class: "label" %>
+    <div class="control">
+      <%= email_input f, :email, class: "input" %>
+    </div>
     <%= error_tag f, :email %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :password %>
-    <%= password_input f, :password, class: "form-control" %>
+  <div class="field">
+    <%= label f, :password, class: "label" %>
+    <div class="control">
+      <%= password_input f, :password, class: "input" %>
+    </div>
     <%= error_tag f, :password %>
   </div>
 
-  <div class="form-group">
-    <%= submit "Register", class: "btn btn-primary" %>
+  <div class="field">
+    <%= submit "Register", class: "button is-link" %>
   </div>
 <% end %>
 

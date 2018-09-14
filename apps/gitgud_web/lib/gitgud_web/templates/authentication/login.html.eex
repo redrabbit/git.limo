@@ -1,17 +1,23 @@
-<h2>Login</h2>
+<h1 class="title">Login</h1>
 
 <%= form_for @conn, authentication_path(@conn, :create), [as: :credentials], fn f -> %>
-  <div class="form-group">
-    <label>Login</label>
-    <%= text_input f, :email_or_username, class: "form-control" %>
+  <div class="field">
+    <label class="label">Login</label>
+    <div class="control">
+      <%= text_input f, :email_or_username, class: "input" %>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label>Password</label>
-    <%= password_input f, :password, class: "form-control" %>
+  <div class="field">
+    <label class="label">Password</label>
+    <div class="control">
+      <%= password_input f, :password, class: "input" %>
+    </div>
   </div>
 
-  <div class="form-group">
-    <%= submit "Login", class: "btn btn-primary" %>
+  <div class="field">
+    <div class="control">
+      <%= submit "Login", class: "button is-link" %>
+    </div>
   </div>
 <% end %>

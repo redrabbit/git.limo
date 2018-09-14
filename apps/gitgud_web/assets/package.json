@@ -9,10 +9,10 @@
   "dependencies": {
     "@absinthe/socket": "^0.1.10",
     "@absinthe/socket-relay": "^0.1.11",
+    "@fortawesome/fontawesome-free": "^5.3.1",
+    "bulma": "^0.7.1",
     "phoenix": "file:../../../deps/phoenix",
-    "phoenix_html": "file:../../../deps/phoenix_html",
     "react": "^16.4.2",
-    "react-bootstrap": "^0.32.3",
     "react-dom": "^16.4.2",
     "react-relay": "^1.6.2"
   },
@@ -25,6 +25,7 @@
     "clean-css-brunch": "2.10.0",
     "graphql": "^14.0.0",
     "relay-compiler": "^1.6.2",
+    "sass-brunch": "^2.10.7",
     "uglify-js-brunch": "2.10.0"
   }
 }

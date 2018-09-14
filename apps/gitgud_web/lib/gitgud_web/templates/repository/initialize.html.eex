@@ -1,17 +1,19 @@
-<h2>Quick setup</h2>
+<h1 class="title">Quick setup</h1>
 
-<p>create a new repository on the command line</p>
-<pre>
-echo "# foobar" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin <%= repository_url(@conn, :show, @repo.owner, @repo) %>
-git push -u origin master
-</pre>
+<div class="content">
+  <p>create a new repository on the command line</p>
+  <pre>
+  echo "# foobar" >> README.md
+  git init
+  git add README.md
+  git commit -m "first commit"
+  git remote add origin <%= repository_url(@conn, :show, @repo.owner, @repo) %>
+  git push -u origin master
+  </pre>
 
-<p>or push an existing repository from the command line</p>
-<pre>
-git remote add origin <%= repository_url(@conn, :show, @repo.owner, @repo) %>
-git push -u origin master
-</pre>
+  <p>or push an existing repository from the command line</p>
+  <pre>
+  git remote add origin <%= repository_url(@conn, :show, @repo.owner, @repo) %>
+  git push -u origin master
+  </pre>
+</div>
