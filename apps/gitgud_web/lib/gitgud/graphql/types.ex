@@ -16,6 +16,11 @@ defmodule GitGud.GraphQL.Types do
     parse &Git.oid_parse/1
   end
 
+  enum :git_reference_type do
+    value :branch
+    value :tag
+  end
+
   node object :user do
     field :username, non_null(:string)
     field :name, :string
@@ -52,11 +57,13 @@ defmodule GitGud.GraphQL.Types do
   end
 
   object :git_reference do
+    field :oid, non_null(:git_oid)
     field :name, non_null(:string)
     field :shorthand, non_null(:string)
     field :object, non_null(:git_object), resolve: &Resolvers.resolve_git_object/3
     field :repo, non_null(:repo), resolve: &Resolvers.resolve_git_repo/3
     field :url, non_null(:string), resolve: &Resolvers.resolve_url/3
+    field :type, non_null(:git_reference_type), resolve: &Resolvers.resolve_git_reference_type/3
   end
 
   interface :git_object do

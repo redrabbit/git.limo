@@ -104,7 +104,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def resolve_repo_head(%Repo{} = repo, %{} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, dwim, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{oid: oid, name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __git__: handle}}
   end
 
   @doc """
@@ -125,14 +125,14 @@ defmodule GitGud.GraphQL.Resolvers do
   def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, dwim, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{oid: oid, name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __git__: handle}}
   end
 
   def resolve_repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, info) when dwim == "HEAD", do: resolve_repo_head(repo, %{}, info)
   def resolve_repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, dwim), do:
-      {:ok, %{name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}}
+      {:ok, %{oid: oid, name: name, shorthand: dwim, __type__: :ref, __repo__: repo, __git__: handle}}
   end
 
   @doc """
@@ -142,6 +142,10 @@ defmodule GitGud.GraphQL.Resolvers do
   def resolve_git_repo(%{__repo__: repo} = _git_object, %{} = _args, _info) do
     {:ok, repo}
   end
+
+  @spec resolve_git_reference_type(map, map, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
+  def resolve_git_reference_type(%{name: "refs/heads/" <> shorthand, shorthand: shorthand} = _git_reference, %{} = _args, _info), do: {:ok, :branch}
+  def resolve_git_reference_type(%{name: "refs/tags/"  <> shorthand, shorthand: shorthand} = _git_reference, %{} = _args, _info), do: {:ok, :tag}
 
   @doc """
   Resolves a Git object by revision spec for a given `repo`.
@@ -153,7 +157,7 @@ defmodule GitGud.GraphQL.Resolvers do
       {:ok, %{oid: oid, __repo__: repo, __git__: handle, __type__: obj_type, __ptr__: obj}}
   end
 
-  def resolve_git_object(%{__repo__: repo, __git__: handle, __oid__: oid} = _git_object, %{} = _args, _info) do
+  def resolve_git_object(%{oid: oid, __repo__: repo, __git__: handle} = _git_object, %{} = _args, _info) do
     with {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
       {:ok, %{oid: oid, __repo__: repo, __git__: handle, __type__: obj_type, __ptr__: obj}}
   end
@@ -199,7 +203,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec resolve_git_tree_count(map, map, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
   def resolve_git_tree_entries(%{__type__: :tree, __ptr__: tree, __repo__: repo, __git__: handle} = _git_tree, %{} = _args, _info) do
     with {:ok, entries} <- Git.tree_list(tree), do:
-      {:ok, Enum.map(entries, fn {mode, type, oid, name} -> %{mode: mode, type: type, name: name, __repo__: repo, __git__: handle, __oid__: oid} end)}
+      {:ok, Enum.map(entries, fn {mode, type, oid, name} -> %{oid: oid, mode: mode, type: type, name: name, __repo__: repo, __git__: handle} end)}
   end
 
   @doc """
@@ -234,7 +238,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   defp transform_refs(repo, handle, stream) do
     Enum.map(stream, fn {name, shorthand, :oid, oid} ->
-      %{name: name, shorthand: shorthand, __type__: :ref, __repo__: repo, __oid__: oid, __git__: handle}
+      %{oid: oid, name: name, shorthand: shorthand, __type__: :ref, __repo__: repo, __git__: handle}
     end)
   end
 end
