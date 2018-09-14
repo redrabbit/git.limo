@@ -8,7 +8,6 @@ defmodule GitGud.Web.AuthenticationPlug do
   import Plug.Conn
   import Phoenix.Controller, only: [render: 3]
 
-  alias GitGud.User
   alias GitGud.UserQuery
 
   alias GitGud.Web.ErrorView
@@ -82,17 +81,10 @@ defmodule GitGud.Web.AuthenticationPlug do
   @doc """
   Generates an authentication token.
   """
-  @spec authentication_token(Plug.Conn.t|User.t|pos_integer) :: binary | nil
-  def authentication_token(%User{id: user_id} = _context), do: authentication_token(user_id)
+  @spec authentication_token(Plug.Conn.t) :: binary | nil
   def authentication_token(%Plug.Conn{} = conn) do
     if authenticated?(conn),
-      do: Phoenix.Token.sign(GitGud.Web.Endpoint, "bearer", current_user(conn).id),
-    else: nil
-  end
-
-  def authentication_token(user_id) do
-    if is_integer(user_id),
-      do: Phoenix.Token.sign(GitGud.Web.Endpoint, "bearer", user_id),
+      do: Phoenix.Token.sign(conn, "bearer", current_user(conn).id),
     else: nil
   end
 
@@ -111,9 +103,10 @@ defmodule GitGud.Web.AuthenticationPlug do
   #
 
   defp authenticate_user(conn, user_id) do
-    user = UserQuery.by_id(user_id)
-    conn
-    |> assign(:current_user, user)
-    |> Absinthe.Plug.put_options(context: %{current_user: user})
+    if user = UserQuery.by_id(user_id),
+      do: conn
+          |> assign(:current_user, user)
+          |> Absinthe.Plug.put_options(context: %{current_user: user}),
+    else: conn
   end
 end
