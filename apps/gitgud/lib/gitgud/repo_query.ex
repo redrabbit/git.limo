@@ -7,15 +7,15 @@ defmodule GitGud.RepoQuery do
   alias GitGud.Repo
   alias GitGud.User
 
-  import Ecto.Query, only: [from: 2, where: 2, preload: 2]
+  import Ecto.Query
 
   @doc """
   Returns a repository for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: Repo.t | nil
   def by_id(id, opts \\ []) do
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    DB.one(repo_query(id, preloads), opts)
+    {params, opts} = extract_opts(opts)
+    DB.one(repo_query(id, params), opts)
   end
 
   @doc """
@@ -27,16 +27,13 @@ defmodule GitGud.RepoQuery do
   @spec user_repositories(User.t|binary, keyword) :: [Repo.t]
   def user_repositories(user, opts \\ [])
   def user_repositories(%User{} = user, opts) do
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    user
-    |> repo_query(preloads)
-    |> DB.all(opts)
-    |> Enum.map(&put_owner(&1, user))
+    {params, opts} = extract_opts(opts)
+    Enum.map(DB.all(repo_query(user, params), opts), &put_owner(&1, user))
   end
 
   def user_repositories(username, opts) when is_binary(username) do
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    DB.all(repo_query(username, preloads), opts)
+    {params, opts} = extract_opts(opts)
+    DB.all(repo_query(username, params), opts)
   end
 
   @doc """
@@ -48,16 +45,13 @@ defmodule GitGud.RepoQuery do
   @spec user_repository(User.t|binary, binary, keyword) :: Repo.t | nil
   def user_repository(user, name, opts \\ [])
   def user_repository(%User{} = user, name, opts) do
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    {user, name}
-    |> repo_query(preloads)
-    |> DB.one(opts)
-    |> put_owner(user)
+    {params, opts} = extract_opts(opts)
+    put_owner(DB.one(repo_query({user, name}, params), opts), user)
   end
 
   def user_repository(username, name, opts) when is_binary(username) do
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    DB.one(repo_query({username, name}, preloads), opts)
+    {params, opts} = extract_opts(opts)
+    DB.one(repo_query({username, name}, params), opts)
   end
 
   @doc """
@@ -92,10 +86,26 @@ defmodule GitGud.RepoQuery do
     where(repo_query(user), name: ^name)
   end
 
-  defp repo_query(match, preloads) do
-    preload(repo_query(match), ^preloads)
+  defp repo_query(match, {preloads, viewer}) do
+    exec_preload(repo_query(match), preloads, viewer)
+  end
+
+  defp exec_preload(query, preloads, nil) do
+    where(query, [r], r.public == true)
+  end
+
+  defp exec_preload(query, preloads, viewer) do
+    query
+    |> join(:left, [r], m in "repositories_maintainers", m.user_id == ^viewer.id)
+    |> where([r, m], r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id)
   end
 
   defp put_owner(nil, %User{}), do: nil
   defp put_owner(%Repo{} = repo, %User{} = user), do: struct(repo, owner: user)
+
+  defp extract_opts(opts) do
+    {preloads, opts} = Keyword.pop(opts, :preload, [])
+    {viewer, opts} = Keyword.pop(opts, :viewer)
+    {{List.wrap(preloads), viewer}, opts}
+  end
 end
