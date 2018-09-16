@@ -3,6 +3,7 @@ defmodule GitGud.UserQuery do
   Conveniences for `GitGud.User` related queries.
   """
 
+  alias GitGud.Authorization
   alias GitGud.DB
   alias GitGud.User
 
@@ -10,32 +11,52 @@ defmodule GitGud.UserQuery do
   Returns a user for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
-  def by_id(id, opts \\ [])
-  def by_id(id, []), do: DB.get(User, id)
-  def by_id(id, opts) do
-    {preloads, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_id(id, opts), preloads)
+  def by_id(id, opts \\ []) do
+    {{preloads, viewer}, opts} = extract_opts(opts)
+    User
+    |> DB.get(id, opts)
+    |> DB.preload(preloads)
+    |> filter_visible(viewer)
   end
 
   @doc """
   Returns a user for the given `username`.
   """
   @spec by_username(binary, keyword) :: User.t | nil
-  def by_username(username, opts \\ [])
-  def by_username(username, []), do: DB.get_by(User, username: username)
-  def by_username(username, opts) do
-    {preloads, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_username(username, opts), preloads)
+  def by_username(username, opts \\ []) do
+    {{preloads, viewer}, opts} = extract_opts(opts)
+    User
+    |> DB.get_by([username: username], opts)
+    |> DB.preload(preloads)
+    |> filter_visible(viewer)
   end
 
   @doc """
   Returns a user for the given `email`.
   """
   @spec by_email(binary, keyword) :: User.t | nil
-  def by_email(email, opts \\ [])
-  def by_email(email, []), do: DB.get_by(User, email: email)
-  def by_email(email, opts) do
-    {preloads, opts} = Keyword.pop(opts, :preload)
-    DB.preload(by_email(email, opts), preloads)
+  def by_email(email, opts \\ []) do
+    {{preloads, viewer}, opts} = extract_opts(opts)
+    User
+    |> DB.get_by([email: email], opts)
+    |> DB.preload(preloads)
+    |> filter_visible(viewer)
+  end
+
+  #
+  # Helpers
+  #
+
+  defp filter_visible(nil, _viewer), do: nil
+  defp filter_visible(%User{} = user, :granted), do: user
+  defp filter_visible(%User{repositories: []} = user, _viewer), do: user
+  defp filter_visible(%User{repositories: repos} = user, viewer) do
+    %{user|repositories: Authorization.filter(viewer, repos, :read)}
+  end
+
+  defp extract_opts(opts) do
+    {preloads, opts} = Keyword.pop(opts, :preload, [])
+    {viewer, opts} = Keyword.pop(opts, :viewer, :granted)
+    {{preloads, viewer}, opts}
   end
 end
