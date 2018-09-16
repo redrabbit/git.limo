@@ -226,15 +226,21 @@ defmodule GitGud.GraphQL.Resolvers do
   # helpers
   #
 
-  defp fetch_repo(id, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) when is_integer(id) do
-    enforce_policy!(ctx[:current_user], RepoQuery.by_id(id), :read)
+  defp fetch_repo(id, %Absinthe.Resolution{context: ctx} = info) when is_integer(id) do
+    enforce_policy!(ctx[:current_user], RepoQuery.by_id(id), resolution_action(info))
   end
 
-  defp fetch_repo({username, name}, %Absinthe.Resolution{context: ctx, parent_type: %Absinthe.Type.Object{identifier: :query}}) do
-    enforce_policy!(ctx[:current_user], RepoQuery.user_repository(username, name), :read)
+  defp fetch_repo({user, name}, %Absinthe.Resolution{context: ctx} = info) do
+    enforce_policy!(ctx[:current_user], RepoQuery.user_repository(user, name), resolution_action(info))
   end
 
   defp query(queryable, _params), do: queryable
+
+  defp resolution_action(%Absinthe.Resolution{path: path}) do
+    case List.last(path).type do
+      :query -> :read
+    end
+  end
 
   defp transform_refs(repo, handle, stream) do
     Enum.map(stream, fn {name, shorthand, :oid, oid} ->
