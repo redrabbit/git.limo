@@ -20,15 +20,12 @@ defmodule GitGud.RepoQuery do
 
   @doc """
   Returns a list of repositories for the given `user`.
-
-  If `user` is a `binary`, this function assumes that it represent a username
-  and uses it as such as part of the query.
   """
   @spec user_repositories(User.t|binary, keyword) :: [Repo.t]
   def user_repositories(user, opts \\ [])
   def user_repositories(%User{} = user, opts) do
     {params, opts} = extract_opts(opts)
-    Enum.map(DB.all(repo_query(user, params), opts), &put_owner(&1, user))
+    DB.all(repo_query(user, params), opts)
   end
 
   def user_repositories(username, opts) when is_binary(username) do
@@ -37,16 +34,13 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns a single user repository for the given `user` and `name`.
-
-  If `user` is a `binary`, this function assumes that it represent a username
-  and uses it as such as part of the query.
+  Returns a single repository for the given `user` and `name`.
   """
   @spec user_repository(User.t|binary, binary, keyword) :: Repo.t | nil
   def user_repository(user, name, opts \\ [])
   def user_repository(%User{} = user, name, opts) do
     {params, opts} = extract_opts(opts)
-    put_owner(DB.one(repo_query({user, name}, params), opts), user)
+    DB.one(repo_query({user, name}, params), opts)
   end
 
   def user_repository(username, name, opts) when is_binary(username) do
@@ -71,7 +65,7 @@ defmodule GitGud.RepoQuery do
   #
 
   defp repo_query(%User{id: user_id}) do
-    where(Repo, owner_id: ^user_id)
+    from(r in Repo, join: u in assoc(r, :owner), where: u.id == ^user_id, preload: [owner: u])
   end
 
   defp repo_query(id) when is_integer(id) do
@@ -91,17 +85,17 @@ defmodule GitGud.RepoQuery do
   end
 
   defp exec_preload(query, preloads, nil) do
-    where(query, [r], r.public == true)
+    query
+    |> where([r, u], r.public == true)
+    |> preload([r, u], ^preloads)
   end
 
   defp exec_preload(query, preloads, viewer) do
     query
-    |> join(:left, [r], m in "repositories_maintainers", m.user_id == ^viewer.id)
-    |> where([r, m], r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id)
+    |> join(:left, [r, u], m in "repositories_maintainers", r.id == m.repo_id)
+    |> where([r, u, m], r.public == true or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
+    |> preload([r, u], ^preloads)
   end
-
-  defp put_owner(nil, %User{}), do: nil
-  defp put_owner(%Repo{} = repo, %User{} = user), do: struct(repo, owner: user)
 
   defp extract_opts(opts) do
     {preloads, opts} = Keyword.pop(opts, :preload, [])
