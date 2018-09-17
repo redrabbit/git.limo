@@ -12,7 +12,6 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import String, only: [to_integer: 1]
 
-  import GitGud.Authorization, only: [enforce_policy!: 3]
   import GitGud.Web.Router.Helpers
 
   @doc """
@@ -26,7 +25,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a node object type.
   """
-  @spec resolve_node_type(struct, Absinthe.Resolution.t) :: atom | nil
+  @spec resolve_node_type(map, Absinthe.Resolution.t) :: atom | nil
   def resolve_node_type(%User{} = _struct, _info), do: :user
   def resolve_node_type(%Repo{} = _struct, _info), do: :repo
   def resolve_node_type(_struct, _info), do: nil
@@ -41,8 +40,8 @@ defmodule GitGud.GraphQL.Resolvers do
     else: resolve_node(%{id: id}, info)
   end
 
-  def resolve_node(%{id: id, type: :repo}, info) do
-    if repo = fetch_repo(to_integer(id), info),
+  def resolve_node(%{id: id, type: :repo}, %Absinthe.Resolution{context: ctx} = info) do
+    if repo = RepoQuery.by_id(to_integer(id), viewer: ctx[:current_user]),
       do: {:ok, repo},
     else: resolve_node(%{id: id}, info)
   end
@@ -80,27 +79,40 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a repository object by name for a given `user`.
   """
-  @spec resolve_user_repo(map, map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
-  def resolve_user_repo(%User{} = user, %{name: name} = _args, info) do
-    if repo = fetch_repo({user, name}, info),
+  @spec resolve_user_repo(User.t, map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
+  def resolve_user_repo(%User{} = user, %{name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if repo = RepoQuery.user_repository(user, name, viewer: ctx[:current_user]),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
+  end
+
+  @doc """
+  Resolves all repositories for a given `user`.
+  """
+  @spec resolve_user_repos(User.t, map, Absinthe.Resolution.t) :: {:ok, [Repo.t]} | {:error, term}
+  def resolve_user_repos(%User{} = user, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, RepoQuery.user_repositories(user, viewer: ctx[:current_user])}
   end
 
   @doc """
   Resolves a repo object by owner and name.
   """
   @spec resolve_repo(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def resolve_repo(%{} = _root, %{owner: username, name: name} = _args, info) do
-    if repo = fetch_repo({username, name}, info),
+  def resolve_repo(%{} = _root, %{owner: username, name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if repo = RepoQuery.user_repository(username, name, viewer: ctx[:current_user]),
       do: {:ok, repo},
     else: {:error, "this given repository '#{username}/#{name}' is not valid"}
+  end
+
+  @spec resolve_repo_owner(Repo.t, map, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def resolve_repo_owner(%Repo{} = repo, %{} = _args, _info) do
+    {:ok, repo.owner}
   end
 
   @doc """
   Resolves the default branch object for a given `repo`.
   """
-  @spec resolve_repo_head(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_repo_head(Repo.t, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def resolve_repo_head(%Repo{} = repo, %{} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, name, dwim, oid} <- Git.reference_resolve(handle, "HEAD"), do:
@@ -110,7 +122,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a Git reference object by name or shorthand for a given `repo`.
   """
-  @spec resolve_repo_ref(map, map, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
+  @spec resolve_repo_ref(Repo.t, map, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
   def resolve_repo_refs(%Repo{} = repo, %{} = args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, Map.get(args, :glob, :undefined)), do:
@@ -120,7 +132,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a Git reference object by name or shorthand for a given `repo`.
   """
-  @spec resolve_repo_ref(map, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec resolve_repo_ref(Repo.t, map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, info) when name == "HEAD", do: resolve_repo_head(repo, %{}, info)
   def resolve_repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
     with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
@@ -143,6 +155,9 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, repo}
   end
 
+  @doc """
+  Resolves the type for a Git reference object.
+  """
   @spec resolve_git_reference_type(map, map, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
   def resolve_git_reference_type(%{name: "refs/heads/" <> shorthand, shorthand: shorthand} = _git_reference, %{} = _args, _info), do: {:ok, :branch}
   def resolve_git_reference_type(%{name: "refs/tags/"  <> shorthand, shorthand: shorthand} = _git_reference, %{} = _args, _info), do: {:ok, :tag}
@@ -226,21 +241,7 @@ defmodule GitGud.GraphQL.Resolvers do
   # helpers
   #
 
-  defp fetch_repo(id, %Absinthe.Resolution{context: ctx} = info) when is_integer(id) do
-    enforce_policy!(ctx[:current_user], RepoQuery.by_id(id), resolution_action(info))
-  end
-
-  defp fetch_repo({user, name}, %Absinthe.Resolution{context: ctx} = info) do
-    enforce_policy!(ctx[:current_user], RepoQuery.user_repository(user, name), resolution_action(info))
-  end
-
   defp query(queryable, _params), do: queryable
-
-  defp resolution_action(%Absinthe.Resolution{path: path}) do
-    case List.last(path).type do
-      :query -> :read
-    end
-  end
 
   defp transform_refs(repo, handle, stream) do
     Enum.map(stream, fn {name, shorthand, :oid, oid} ->

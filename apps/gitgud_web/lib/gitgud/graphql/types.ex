@@ -25,7 +25,7 @@ defmodule GitGud.GraphQL.Types do
     field :username, non_null(:string)
     field :name, :string
     field :email, non_null(:string)
-    field :repos, non_null(list_of(:repo)), resolve: dataloader(Resolvers, :repositories)
+    field :repos, non_null(list_of(:repo)), resolve: &Resolvers.resolve_user_repos/3
     field :repo, :repo do
       arg :name, non_null(:string)
       resolve &Resolvers.resolve_user_repo/3
@@ -36,7 +36,7 @@ defmodule GitGud.GraphQL.Types do
   node object :repo do
     field :name, non_null(:string)
     field :description, :string
-    field :owner, non_null(:user), resolve: dataloader(Resolvers)
+    field :owner, non_null(:user), resolve: &Resolvers.resolve_repo_owner/3
     field :head, :git_reference, resolve: &Resolvers.resolve_repo_head/3
     field :object, :git_object do
       arg :rev, non_null(:string)
