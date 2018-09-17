@@ -58,7 +58,7 @@ defmodule GitGud.Repo do
       {:ok, %{repo: repo, init: ref}} -> {:ok, repo, ref}
       {:error, :insert, changeset, _changes} -> {:error, changeset}
       {:error, :init, reason, _changes} -> {:error, reason}
-      {:error, :put_maintainer, changeset} -> {:error, changeset}
+      {:error, :init_maintainer, changeset} -> {:error, changeset}
     end
   end
 
@@ -123,6 +123,17 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Puts the given `user` to the `repo`'s maintainers.
+  """
+  @spec put_maintainer(t, User.t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def put_maintainer(%__MODULE__{} = repo, %User{} = user) do
+    repo = DB.preload(repo, :maintainers)
+    unless Enum.find(repo.maintainers, &(&1.id == user.id)),
+      do: DB.update(put_assoc(change(repo), :maintainers, [user|repo.maintainers])),
+    else: repo
+  end
+
+  @doc """
   Returns the absolute path to the Git workdir for the given `repo`.
   """
   @spec workdir(t) :: Path.t
@@ -184,7 +195,7 @@ defmodule GitGud.Repo do
     Multi.new()
     |> Multi.insert(:insert, changeset)
     |> Multi.run(:init, &init(&1, bare?))
-    |> Multi.merge(&put_maintainer/1)
+    |> Multi.merge(&init_maintainer/1)
     |> DB.transaction()
   end
 
@@ -206,6 +217,10 @@ defmodule GitGud.Repo do
     Git.repository_init(workdir(repo), bare?)
   end
 
+  defp init_maintainer(%{insert: repo}) do
+    Multi.insert_all(Multi.new(), :init_maintainer, "repositories_maintainers", [[repo_id: repo.id, user_id: repo.owner_id]])
+  end
+
   defp rename(%{update: repo}, old_repo) do
     old_workdir = workdir(old_repo)
     new_workdir = workdir(repo)
@@ -213,10 +228,6 @@ defmodule GitGud.Repo do
       :ok -> {:ok, {old_workdir, new_workdir}}
       {:error, reason} -> {:error, reason}
     end
-  end
-
-  defp put_maintainer(%{insert: repo}) do
-    Multi.insert_all(Multi.new(), :put_maintainer, "repositories_maintainers", [[repo_id: repo.id, user_id: repo.owner_id]])
   end
 
   defp cleanup(%{delete: repo}) do
