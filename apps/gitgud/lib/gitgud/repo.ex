@@ -14,6 +14,9 @@ defmodule GitGud.Repo do
   alias GitGud.DB
   alias GitGud.User
 
+  alias GitGud.GitReference
+  alias GitGud.GitTag
+
   schema "repositories" do
     belongs_to    :owner,       User
     field         :name,        :string
@@ -144,6 +147,36 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns the Git reference pointed at by *HEAD*.
+  """
+  @spec git_head(t) :: {:ok, GitReference.t} | {:error, term}
+  def git_head(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+  end
+
+  @doc """
+  Returns all Git references that match the given `glob`.
+  """
+  @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
+  def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, glob), do:
+      {:ok, Stream.map(stream, &transform_reference(&1, handle))}
+  end
+
+  @doc """
+  Returns all Git tags.
+  """
+  @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
+  def git_tags(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
+      {:ok, Stream.map(stream, &transform_tag(&1, handle))}
+  end
+
+  @doc """
   Broadcasts notification(s) for the given `service` command.
   """
   @spec notify_command(t, User.t, struct) :: :ok
@@ -232,5 +265,13 @@ defmodule GitGud.Repo do
 
   defp cleanup(%{delete: repo}) do
     File.rm_rf(workdir(repo))
+  end
+
+  defp transform_reference({name, shorthand, :oid, oid}, handle) do
+    %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}
+  end
+
+  defp transform_tag({_name, shorthand, :oid, oid}, handle) do
+    %GitTag{oid: oid, name: shorthand, __git__: handle}
   end
 end
