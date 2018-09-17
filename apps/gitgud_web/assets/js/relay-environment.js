@@ -6,9 +6,24 @@ import socket from "./socket"
 
 const transport = AbsintheSocket.create(socket)
 
+function fetchQuery(operation, variables) {
+  return fetch("/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: operation.text,
+      variables,
+    }),
+  }).then(response => {
+    return response.json()
+  })
+}
+
 export default new Environment({
   network: Network.create(
-    createFetcher(transport),
+    fetchQuery,
     createSubscriber(transport)
   ),
   store: new Store(new RecordSource())
