@@ -83,8 +83,8 @@ defmodule GitGud.User do
   Puts the given SSH `key` to the `user`'s authentication keys.
   """
   @spec put_ssh_key(t, binary) :: {:ok, SSHAuthenticationKey.t} | {:error, Ecto.Changeset.t}
-  def put_ssh_key(%__MODULE__{} = repo, key) do
-    repo
+  def put_ssh_key(%__MODULE__{} = user, key) do
+    user
     |> build_assoc(:authentication_keys)
     |> struct(key: key)
     |> DB.insert()
