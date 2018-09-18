@@ -3,9 +3,14 @@ defmodule GitGud.RepoQuery do
   Conveniences for `GitGud.Repo` related queries.
   """
 
+  alias GitRekt.Git
+
   alias GitGud.DB
   alias GitGud.Repo
   alias GitGud.User
+
+  alias GitGud.GitReference
+  alias GitGud.GitTreeEntry
 
   import Ecto.Query
 
@@ -53,11 +58,26 @@ defmodule GitGud.RepoQuery do
   """
   @spec by_path(Path.t, keyword) :: Repo.t | nil
   def by_path(path, opts \\ []) do
-    root = Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
-    path = if Path.type(path) == :absolute,
-      do: Path.relative_to(path, root),
-    else: path
-    apply(__MODULE__, :user_repository, Path.split(path) ++ [opts])
+    path = Path.relative_to(path, Repo.root_path())
+    case Path.split(path) do
+      [username, name] ->
+        user_repository(username, name, opts)
+      _path ->
+        nil
+    end
+  end
+
+  @doc """
+  Returns a repository for the given Git `object`.
+  """
+  @spec by_git_object(Repo.git_object | GitReference.t | GitTreeEntry.t) :: Repo.t | nil
+  def by_git_object(%GitReference{__git__: handle} = _object), do: by_path(Git.repository_get_path(handle))
+  def by_git_object(%GitTreeEntry{__git__: handle} = _object), do: by_path(Git.repository_get_path(handle))
+  def by_git_object(%{__git__: object} = _object) do
+    case Git.object_repository(object) do
+      {:ok, handle} -> by_path(Git.repository_get_path(handle))
+      {:error, _reason} -> nil
+    end
   end
 
   #

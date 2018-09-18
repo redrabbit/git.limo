@@ -12,13 +12,7 @@ defmodule GitGud.GitTreeEntry do
 
   @type type :: :blob | :tree
 
-  @type t :: %__MODULE__{
-    __git__: Git.blob | Git.tree,
-    oid: Git.oid,
-    name: binary,
-    mode: integer,
-    type: type
-  }
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, mode: integer, type: type, __git__: Git.blob | Git.tree}
 
   @doc """
   Returns the object of the `tree_entry`.

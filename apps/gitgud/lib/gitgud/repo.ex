@@ -14,8 +14,11 @@ defmodule GitGud.Repo do
   alias GitGud.DB
   alias GitGud.User
 
+  alias GitGud.GitBlob
+  alias GitGud.GitCommit
   alias GitGud.GitReference
   alias GitGud.GitTag
+  alias GitGud.GitTree
 
   schema "repositories" do
     belongs_to    :owner,       User
@@ -25,6 +28,8 @@ defmodule GitGud.Repo do
     many_to_many  :maintainers, User, join_through: "repositories_maintainers"
     timestamps()
   end
+
+  @type git_object :: GitBlob.t | GitCommit.t | GitTag.t | GitTree.t
 
   @type t :: %__MODULE__{
     id: pos_integer,
@@ -141,9 +146,8 @@ defmodule GitGud.Repo do
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
-    root = Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
     repo = DB.preload(repo, :owner)
-    Path.join([root, repo.owner.username, repo.name])
+    Path.join([root_path(), repo.owner.username, repo.name])
   end
 
   @doc """
@@ -157,23 +161,69 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns all Git references that match the given `glob`.
+  Returns the Git reference matching the given `name_or_shorthand`.
   """
-  @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
+  @spec git_reference(t, binary) :: {:ok, GitReference.t} | {:error, term}
+  def git_reference(repo, name_or_shorthand \\ :head)
+  def git_reference(%__MODULE__{} = repo, :head), do: git_head(repo)
+  def git_reference(%__MODULE__{} = repo, "/refs/" <> _suffix = name) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+  end
+
+  def git_reference(%__MODULE__{} = repo, shorthand) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand), do:
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+  end
+
+  @doc """
+  Returns all Git references matching the given `glob`.
+  """
+  @spec git_references(t, binary | :undefined) :: {:ok, GitReference.t} | {:error, term}
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, glob), do:
-      {:ok, Stream.map(stream, &transform_reference(&1, handle))}
+      {:ok, Enum.map(stream, &transform_reference(&1, handle))}
   end
 
   @doc """
   Returns all Git tags.
   """
-  @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
+  @spec git_tags(t) :: {:ok, [GitTag.t]} | {:error, term}
   def git_tags(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, Stream.map(stream, &transform_tag(&1, handle))}
+      {:ok, Enum.map(stream, &transform_tag(&1, handle))}
+  end
+
+  @doc """
+  Returns the Git object matching the given `revision`.
+  """
+  @spec git_revision(t, binary) :: {:ok, GitCommit.t | GitTag.t | GitTree.t | GitBlob.t} | {:error, term}
+  def git_revision(%__MODULE__{} = repo, revision) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
+      {:ok, transform_object(obj, obj_type, oid)}
+  end
+
+  @doc """
+  Returns the Git object matching the given `oid`.
+  """
+  @spec git_object(t, Git.oid) :: {:ok, git_object} | {:error, term}
+  def git_object(%__MODULE__{} = repo, oid) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, obj, obj_type, oid} <- Git.object_lookup(handle, oid), do:
+      {:ok, transform_object(obj, obj_type, oid)}
+  end
+
+  @doc """
+  Returns the absolute path to the Git root directory.
+  """
+  @spec root_path() :: Path.t | nil
+  def root_path() do
+    Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
   end
 
   @doc """
@@ -266,6 +316,11 @@ defmodule GitGud.Repo do
   defp cleanup(%{delete: repo}) do
     File.rm_rf(workdir(repo))
   end
+
+  defp transform_object(commit, :commit, oid), do: %GitCommit{oid: oid, __git__: commit}
+  defp transform_object(tag, :tag, oid), do: %GitTag{oid: oid, __git__: tag}
+  defp transform_object(tree, :tree, oid), do: %GitTree{oid: oid, __git__: tree}
+  defp transform_object(blob, :blob, oid), do: %GitBlob{oid: oid, __git__: blob}
 
   defp transform_reference({name, shorthand, :oid, oid}, handle) do
     %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}

@@ -12,10 +12,7 @@ defmodule GitGud.GitCommit do
 
   defstruct [:oid, :__git__]
 
-  @type t :: %__MODULE__{
-    __git__: Git.commit,
-    oid: Git.oid
-  }
+  @type t :: %__MODULE__{oid: Git.oid, __git__: Git.commit}
 
   @doc """
   Returns the author of the given `commit`.

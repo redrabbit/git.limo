@@ -9,10 +9,7 @@ defmodule GitGud.GitTree do
 
   defstruct [:oid, :__git__]
 
-  @type t :: %__MODULE__{
-    __git__: Git.tree,
-    oid: Git.oid
-  }
+  @type t :: %__MODULE__{oid: Git.oid, __git__: Git.tree}
 
   @doc """
   Returns the number of tree entries at the given `tree`.

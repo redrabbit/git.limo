@@ -10,11 +10,7 @@ defmodule GitGud.GitTag do
 
   defstruct [:oid, :name, :__git__]
 
-  @type t :: %__MODULE__{
-    __git__: Git.tag,
-    oid: Git.oid,
-    name: binary
-  }
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, __git__: Git.tag}
 
   @doc """
   Returns the author of the given `tag`.

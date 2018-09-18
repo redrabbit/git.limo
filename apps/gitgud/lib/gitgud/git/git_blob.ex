@@ -7,10 +7,7 @@ defmodule GitGud.GitBlob do
 
   defstruct [:oid, :__git__]
 
-  @type t :: %__MODULE__{
-    __git__: Git.blob,
-    oid: Git.oid
-  }
+  @type t :: %__MODULE__{oid: Git.oid, __git__: Git.blob}
 
   @doc """
   Returns the content of the given `blob`.

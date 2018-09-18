@@ -9,14 +9,9 @@ defmodule GitGud.GitReference do
 
   defstruct [:oid, :name, :shorthand, :__git__]
 
-  @type t :: %__MODULE__{
-    __git__: Git.repo,
-    oid: Git.oid,
-    name: binary,
-    shorthand: binary
-  }
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, shorthand: binary, __git__: Git.repo}
 
-  @type reference_type :: :branch | :tag
+  @type type :: :branch | :tag
 
   @doc """
   Returns the underlying object of the given `reference`.
@@ -31,7 +26,7 @@ defmodule GitGud.GitReference do
   @doc """
   Returns the type of the given `reference`.
   """
-  @spec type(t) :: {:ok, reference_type} | {:error, term}
+  @spec type(t) :: {:ok, type} | {:error, term}
   def type(%__MODULE__{name: "refs/heads/" <> shorthand, shorthand: shorthand} = _reference), do: {:ok, :branch}
   def type(%__MODULE__{name: "refs/tags/" <> shorthand, shorthand: shorthand} = _reference), do: {:ok, :tag}
   def type(%__MODULE__{} = _reference), do: {:error, :invalid_reference}
