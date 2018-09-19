@@ -38,6 +38,8 @@ defmodule GitGud.Web.Router do
 
     scope "/:username/:repo_name" do
       get "/", RepositoryController, :show
+      get "/settings", RepositoryController, :edit
+      put "/settings", RepositoryController, :update
       get "/branches", RepositoryController, :branches
       get "/tags", RepositoryController, :tags
       get "/commits/:spec", RepositoryController, :commits

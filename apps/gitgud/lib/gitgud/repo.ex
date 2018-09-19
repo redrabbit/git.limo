@@ -276,8 +276,8 @@ defmodule GitGud.Repo do
     # owner can do everything
     def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
 
-    # maintainers can do everything as well
-    def can?(%Repo{} = repo, %User{id: user_id}, _action) do
+    # maintainers can read and write
+    def can?(%Repo{} = repo, %User{id: user_id}, action) when action in [:read, :write] do
       repo = DB.preload(repo, :maintainers)
       !!Enum.find(repo.maintainers, false, fn
         %User{id: ^user_id} -> true
@@ -285,8 +285,8 @@ defmodule GitGud.Repo do
       end)
     end
 
-    # anonymous users have read-only access to public repos
-    def can?(%Repo{}, nil, _actions), do: false
+    # everything-else is forbidden
+    def can?(%Repo{}, _user, _actions), do: false
   end
 
   #

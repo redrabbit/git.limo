@@ -15,7 +15,9 @@
     <% end %>
       <li><a href="#">Issues</a></li>
       <li><a href="#">Wiki</a></li>
-      <li><a href="#">Settings</a></li>
+      <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
+        <li><a href="<%= repository_path(@conn, :edit, @repo.owner, @repo) %>">Settings</a></li>
+      <% end %>
     </ul>
   </div>
 

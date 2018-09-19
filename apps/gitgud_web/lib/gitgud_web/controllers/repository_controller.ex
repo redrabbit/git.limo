@@ -13,7 +13,8 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
-  plug :ensure_authenticated when action in [:new, :create]
+
+  plug :ensure_authenticated when action in [:new, :create, :edit, :update]
   plug :put_layout, :repository_layout when action not in [:new, :create]
 
   action_fallback GitGud.Web.FallbackController
@@ -59,6 +60,46 @@ defmodule GitGud.Web.RepositoryController do
               render(conn, "show.html", repo: repo, reference: head, tree: tree, tree_path: [], stats: stats(head))
     else
       {:error, :not_found}
+    end
+  end
+
+  @doc """
+  Renders a repository.
+  """
+  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
+  def edit(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+      if authorized?(current_user(conn), repo, :edit) do
+        changeset = Repo.changeset(repo)
+        render(conn, "edit.html", repo: repo, changeset: changeset)
+      else
+        {:error, :unauthorized}
+      end
+    else
+      {:error, :not_found}
+    end
+  end
+
+  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
+  def update(conn, %{"username" => username, "repo_name" => repo_name, "repo" => repo_params} = _params) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repository(username, repo_name, viewer: user) do
+      if authorized?(user, repo, :edit) do
+        case Repo.update(repo, repo_params) do
+          {:ok, repo} ->
+            conn
+            |> put_flash(:info, "Repository updated.")
+            |> redirect(to: repository_path(conn, :show, repo.owner, repo))
+          {:error, changeset} ->
+            conn
+            |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+            |> render("edit.html", changeset: %{changeset|action: :insert})
+        end
+      else
+        {:error, :unauthorized}
+      end
+    else
+        {:error, :not_found}
     end
   end
 

@@ -15,6 +15,8 @@ defmodule GitGud.Web do
 
       import Plug.Conn
 
+      import GitGud.Authorization, only: [authorized?: 3]
+
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, current_user: 1, ensure_authenticated: 2]
       import GitGud.Web.Gettext
       import GitGud.Web.Router.Helpers
@@ -29,6 +31,8 @@ defmodule GitGud.Web do
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
       use Phoenix.HTML
+
+      import GitGud.Authorization, only: [authorized?: 3]
 
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 
@@ -48,7 +52,7 @@ defmodule GitGud.Web do
       import Plug.Conn
       import Phoenix.Controller
 
-      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, ensure_authenticated: 2, authenticate_session: 2]
+      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2, ensure_authenticated: 2]
     end
   end
 
