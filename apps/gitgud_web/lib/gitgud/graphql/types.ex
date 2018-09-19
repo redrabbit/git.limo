@@ -59,7 +59,7 @@ defmodule GitGud.GraphQL.Types do
     field :name, non_null(:string)
     field :shorthand, non_null(:string)
     field :object, non_null(:git_object), resolve: &Resolvers.git_object/3
-    field :repo, non_null(:repo), resolve: &Resolvers.git_object_repo/3
+    field :repo, non_null(:repo)
     field :url, non_null(:string), resolve: &Resolvers.url/3
     field :type, non_null(:git_reference_type), resolve: &Resolvers.git_reference_type/3
   end
@@ -76,7 +76,7 @@ defmodule GitGud.GraphQL.Types do
     field :author, non_null(:user), resolve: &Resolvers.git_commit_author/3
     field :message, non_null(:string), resolve: &Resolvers.git_commit_message/3
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_commit_tree/3
-    field :repo, non_null(:repo), resolve: &Resolvers.git_object_repo/3
+    field :repo, non_null(:repo)
   end
 
   object :git_tree do
@@ -84,7 +84,7 @@ defmodule GitGud.GraphQL.Types do
     field :oid, non_null(:git_oid)
     field :count, non_null(:integer), resolve: &Resolvers.git_tree_count/3
     field :entries, non_null(list_of(:git_tree_entry)), resolve: &Resolvers.git_tree_entries/3
-    field :repo, non_null(:repo), resolve: &Resolvers.git_object_repo/3
+    field :repo, non_null(:repo)
   end
 
   object :git_tree_entry do
@@ -92,13 +92,13 @@ defmodule GitGud.GraphQL.Types do
     field :type, non_null(:string)
     field :mode, non_null(:integer)
     field :object, non_null(:git_object), resolve: &Resolvers.git_object/3
-    field :repo, non_null(:repo), resolve: &Resolvers.git_object_repo/3
+    field :repo, non_null(:repo)
   end
 
   object :git_blob do
     interface :git_object
     field :oid, non_null(:git_oid)
     field :size, non_null(:integer), resolve: &Resolvers.git_blob_size/3
-    field :repo, non_null(:repo), resolve: &Resolvers.git_object_repo/3
+    field :repo, non_null(:repo)
   end
 end

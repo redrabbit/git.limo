@@ -3,14 +3,9 @@ defmodule GitGud.RepoQuery do
   Conveniences for `GitGud.Repo` related queries.
   """
 
-  alias GitRekt.Git
-
   alias GitGud.DB
   alias GitGud.Repo
   alias GitGud.User
-
-  alias GitGud.GitReference
-  alias GitGud.GitTreeEntry
 
   import Ecto.Query
 
@@ -64,19 +59,6 @@ defmodule GitGud.RepoQuery do
         user_repository(username, name, opts)
       _path ->
         nil
-    end
-  end
-
-  @doc """
-  Returns a repository for the given Git `object`.
-  """
-  @spec by_git_object(Repo.git_object | GitReference.t | GitTreeEntry.t) :: Repo.t | nil
-  def by_git_object(%GitReference{__git__: handle} = _object), do: by_path(Git.repository_get_path(handle))
-  def by_git_object(%GitTreeEntry{__git__: handle} = _object), do: by_path(Git.repository_get_path(handle))
-  def by_git_object(%{__git__: object} = _object) do
-    case Git.object_repository(object) do
-      {:ok, handle} -> by_path(Git.repository_get_path(handle))
-      {:error, _reason} -> nil
     end
   end
 

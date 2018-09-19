@@ -3,8 +3,6 @@ defmodule GitGud.GraphQL.Resolvers do
   Module providing resolution functions for GraphQL related queries.
   """
 
-  alias GitRekt.Git
-
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
@@ -100,10 +98,8 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, repository_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
-  def url(%GitReference{} = reference, %{} = _args, _info) do
-    if repo = RepoQuery.by_git_object(reference),
-      do: {:ok, repository_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, reference.shorthand, [])},
-    else: {:error, "this given Git reference '#{Git.oid_fmt(reference.oid)}' is not valid"}
+  def url(%GitReference{repo: repo, shorthand: shorthand} = _reference, %{} = _args, _info) do
+    {:ok, repository_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, shorthand, [])}
   end
 
   @doc """
@@ -190,16 +186,6 @@ defmodule GitGud.GraphQL.Resolvers do
   def git_object(%Repo{} = object, %{rev: rev} = _args, _info), do: Repo.git_revision(object, rev)
   def git_object(%GitReference{} = object, %{} = _args, _info), do: GitReference.commit(object)
   def git_object(%GitTreeEntry{} = object, %{} = _args, _info), do: GitTreeEntry.object(object)
-
-  @doc """
-  Resolves a repository object for a given Git `object`.
-  """
-  @spec git_object_repo(Repo.git_object, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
-  def git_object_repo(object, %{} = _args, _info) do
-    if repo = RepoQuery.by_git_object(object),
-      do: {:ok, repo},
-    else: {:error, "this given Git object '#{Git.oid_fmt(object.oid)}' is not valid"}
-  end
 
   @doc """
   Resolves the type for a given Git object.
