@@ -23,7 +23,7 @@ defmodule GitGud.Repo do
   schema "repositories" do
     belongs_to    :owner,       User
     field         :name,        :string
-    field         :public,      :boolean
+    field         :public,      :boolean, default: true
     field         :description, :string
     many_to_many  :maintainers, User, join_through: "repositories_maintainers", on_delete: :delete_all
     timestamps()
