@@ -188,7 +188,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_object(struct, %{rev: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def git_object(%Repo{} = object, %{rev: rev} = _args, _info), do: Repo.git_revision(object, rev)
-  def git_object(%GitReference{} = object, %{} = _args, _info), do: GitReference.object(object)
+  def git_object(%GitReference{} = object, %{} = _args, _info), do: GitReference.commit(object)
   def git_object(%GitTreeEntry{} = object, %{} = _args, _info), do: GitTreeEntry.object(object)
 
   @doc """

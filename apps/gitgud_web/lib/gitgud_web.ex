@@ -30,7 +30,6 @@ defmodule GitGud.Web do
 
       use Phoenix.HTML
 
-      import GitRekt.Git, only: [oid_fmt: 1]
       import GitGud.GraphQL.Resolvers, only: [to_relay_id: 1, to_relay_id: 2]
 
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, authentication_token: 1, current_user: 1]

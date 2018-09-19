@@ -2,6 +2,6 @@
 
 <ul>
   <%= for commit <- @commits do %>
-    <li><a href="<%= repository_path(@conn, :commit, @repo, @repo.owner, commit.oid) %>"><%= commit.message %></a></li>
+    <li><a href="<%= repository_path(@conn, :commit, @repo, @repo.owner, oid_fmt(commit.oid)) %>"><%= commit_message(commit) %></a></li>
   <% end %>
 </ul>

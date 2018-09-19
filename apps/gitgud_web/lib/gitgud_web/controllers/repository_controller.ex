@@ -8,7 +8,6 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitReference
   alias GitGud.GitTree
@@ -55,10 +54,9 @@ defmodule GitGud.Web.RepositoryController do
       if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
       else: with {:ok, head} <- Repo.git_head(repo),
-                 {:ok, commit} <- GitReference.object(head),
-                 {:ok, tree} <- GitCommit.tree(commit),
-                 {:ok, tree_entries} <- GitTree.entries(tree), do:
-              render(conn, "show.html", repo: repo, reference: head, tree: tree_entries, tree_path: [], stats: stats(head))
+                 {:ok, commit} <- GitReference.commit(head),
+                 {:ok, tree} <- GitCommit.tree(commit), do:
+              render(conn, "show.html", repo: repo, reference: head, tree: tree, tree_path: [], stats: stats(head))
     else
       {:error, :not_found}
     end
@@ -97,7 +95,7 @@ defmodule GitGud.Web.RepositoryController do
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commits} <- {:error, :not_impl}, do: # TODO
+           {:ok, commits} <- GitReference.commit_history(reference), do:
         render(conn, "commit_list.html", repo: repo, reference: reference, commits: commits)
     else
       {:error, :not_found}
@@ -128,10 +126,9 @@ defmodule GitGud.Web.RepositoryController do
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => []} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.object(reference),
-           {:ok, tree} <- GitCommit.tree(commit),
-           {:ok, tree_entries} <- GitTree.entries(tree), do:
-        render(conn, "show.html", repo: repo, reference: reference, tree: tree_entries, tree_path: [], stats: stats(reference))
+           {:ok, commit} <- GitReference.commit(reference),
+           {:ok, tree} <- GitCommit.tree(commit), do:
+        render(conn, "show.html", repo: repo, reference: reference, tree: tree, tree_path: [], stats: stats(reference))
     else
       {:error, :not_found}
     end
@@ -140,12 +137,11 @@ defmodule GitGud.Web.RepositoryController do
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.object(reference),
+           {:ok, commit} <- GitReference.commit(reference),
            {:ok, tree} <- GitCommit.tree(commit),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(tree_path)),
-           {:ok, tree} <- GitTreeEntry.object(tree_entry),
-           {:ok, tree_entries} <- GitTree.entries(tree), do:
-        render(conn, "tree.html", repo: repo, reference: reference, tree: tree_entries, tree_path: tree_path)
+           {:ok, tree} <- GitTreeEntry.object(tree_entry), do:
+        render(conn, "tree.html", repo: repo, reference: reference, tree: tree, tree_path: tree_path)
     else
       {:error, :not_found}
     end
@@ -158,12 +154,11 @@ defmodule GitGud.Web.RepositoryController do
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.object(reference),
+           {:ok, commit} <- GitReference.commit(reference),
            {:ok, tree} <- GitCommit.tree(commit),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(blob_path)),
-           {:ok, blob} <- GitTreeEntry.object(tree_entry),
-           {:ok, blob_content} <- GitBlob.content(blob), do:
-        render(conn, "blob.html", repo: repo, reference: reference, blob: blob_content, tree_path: blob_path)
+           {:ok, blob} <- GitTreeEntry.object(tree_entry), do:
+        render(conn, "blob.html", repo: repo, reference: reference, blob: blob, tree_path: blob_path)
     else
       {:error, :not_found}
     end

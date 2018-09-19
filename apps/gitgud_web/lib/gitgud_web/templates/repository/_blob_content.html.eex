@@ -1,1 +1,1 @@
-<pre><%= @blob %></pre>
+<pre><%= blob_content(@blob) %></pre>

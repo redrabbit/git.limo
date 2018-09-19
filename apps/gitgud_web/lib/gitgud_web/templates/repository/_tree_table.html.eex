@@ -5,7 +5,7 @@
         <th><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, Enum.drop(@tree_path, -1)) %>">..</a></th>
       </tr>
     <% end %>
-    <%= for entry <- @tree do %>
+    <%= for entry <- tree_entries(@tree) do %>
       <tr>
         <td><a href="<%= repository_path(@conn, entry.type, @repo.owner, @repo, @reference.shorthand, @tree_path ++ [entry.name]) %>"><%= entry.name %></a></td>
       </tr>
