@@ -25,7 +25,7 @@ defmodule GitGud.Repo do
     field         :name,        :string
     field         :public,      :boolean
     field         :description, :string
-    many_to_many  :maintainers, User, join_through: "repositories_maintainers"
+    many_to_many  :maintainers, User, join_through: "repositories_maintainers", on_delete: :delete_all
     timestamps()
   end
 
@@ -63,7 +63,7 @@ defmodule GitGud.Repo do
   @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
     case multi_create(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
-      {:ok, %{repo: repo, init: ref}} -> {:ok, repo, ref}
+      {:ok, %{insert: repo, init: ref}} -> {:ok, repo, ref}
       {:error, :insert, changeset, _changes} -> {:error, changeset}
       {:error, :init, reason, _changes} -> {:error, reason}
       {:error, :init_maintainer, changeset} -> {:error, changeset}

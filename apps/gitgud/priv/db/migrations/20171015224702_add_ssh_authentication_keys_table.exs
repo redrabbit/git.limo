@@ -3,7 +3,7 @@ defmodule GitGud.DB.Migrations.AddSshAuthenticationKeysTable do
 
   def change do
     create table("ssh_authentication_keys") do
-      add :user_id, references("users")
+      add :user_id, references("users"), on_delete: :delete_all
       add :key,    :text
       timestamps()
     end

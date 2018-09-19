@@ -21,7 +21,7 @@ defmodule GitGud.User do
     field     :name,                 :string
     field     :email,                :string
     has_many  :repositories,         Repo, foreign_key: :owner_id
-    has_many  :authentication_keys,  SSHAuthenticationKey
+    has_many  :authentication_keys,  SSHAuthenticationKey, on_delete: :delete_all
     field     :password,             :string, virtual: true
     field     :password_hash,        :string
     timestamps()
