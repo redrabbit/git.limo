@@ -12,6 +12,26 @@ defmodule GitGud.GitTree do
   @type t :: %__MODULE__{oid: Git.oid, __git__: Git.tree}
 
   @doc """
+  Returns the tree entry of the given `tree`, given its `oid`.
+  """
+  @spec by_id(t, Git.oid) :: {:ok, t} | {:error, term}
+  def by_id(%__MODULE__{__git__: tree}, oid) do
+    with {:ok, handle} <- Git.object_repository(tree),
+         {:ok, mode, type, oid, name} <- Git.tree_byid(tree, oid), do:
+      {:ok, transform_entry({mode, type, oid, name}, handle)}
+  end
+
+  @doc """
+  Returns the tree entry of the given `tree`, given its `path`.
+  """
+  @spec by_path(t, Path.t) :: {:ok, t} | {:error, term}
+  def by_path(%__MODULE__{__git__: tree}, path) do
+    with {:ok, handle} <- Git.object_repository(tree),
+         {:ok, mode, type, oid, name} <- Git.tree_bypath(tree, path), do:
+      {:ok, transform_entry({mode, type, oid, name}, handle)}
+  end
+
+  @doc """
   Returns the number of tree entries at the given `tree`.
   """
   @spec count(t) :: {:ok, non_neg_integer} | {:error, term}
@@ -43,8 +63,8 @@ defmodule GitGud.GitTree do
   # Helpers
   #
 
-  defp transform_entry({mode, type, oid, name}, repo) do
-    case Git.object_lookup(repo, oid) do
+  defp transform_entry({mode, type, oid, name}, handle) do
+    case Git.object_lookup(handle, oid) do
       {:ok, ^type, entry} ->
         %GitTreeEntry{oid: oid, name: name, mode: mode, type: type, __git__: entry}
       {:error, _reason} ->

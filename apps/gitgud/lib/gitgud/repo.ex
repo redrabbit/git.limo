@@ -151,6 +151,15 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns `true` if `repo` is empty; otherwhise returns `false`.
+  """
+  @spec empty?(t) :: boolean
+  def empty?(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)), do:
+      Git.repository_empty?(handle)
+  end
+
+  @doc """
   Returns the Git reference pointed at by *HEAD*.
   """
   @spec git_head(t) :: {:ok, GitReference.t} | {:error, term}
@@ -185,6 +194,16 @@ defmodule GitGud.Repo do
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, glob), do:
+      {:ok, Enum.map(stream, &transform_reference(&1, handle))}
+  end
+
+  @doc """
+  Returns all Git branches.
+  """
+  @spec git_branches(t) :: {:ok, [GitReference.t]} | {:error, term}
+  def git_branches(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
       {:ok, Enum.map(stream, &transform_reference(&1, handle))}
   end
 

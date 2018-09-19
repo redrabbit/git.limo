@@ -5,12 +5,14 @@ defmodule GitGud.Web.RepositoryController do
 
   use GitGud.Web, :controller
 
-  alias GitRekt.Git
-
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  import GitGud.Authorization, only: [enforce_policy: 3]
+  alias GitGud.GitBlob
+  alias GitGud.GitCommit
+  alias GitGud.GitReference
+  alias GitGud.GitTree
+  alias GitGud.GitTreeEntry
 
   plug :ensure_authenticated when action in [:new, :create]
   plug :put_layout, :repository_layout when action not in [:new, :create]
@@ -49,14 +51,17 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo), do:
-      if Git.repository_empty?(handle),
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
-      else: with {:ok, spec} <- fetch_reference(handle),
-                 {:ok, tree} <- fetch_tree(handle, spec),
-                 {:ok, stats} <- fetch_stats(handle, spec), do:
-              render(conn, "show.html", repo: repo, spec: spec, stats: stats, tree_path: [], tree: tree)
+      else: with {:ok, head} <- Repo.git_head(repo),
+                 {:ok, commit} <- GitReference.object(head),
+                 {:ok, tree} <- GitCommit.tree(commit),
+                 {:ok, tree_entries} <- GitTree.entries(tree), do:
+              render(conn, "show.html", repo: repo, reference: head, tree: tree_entries, tree_path: [], stats: stats(head))
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """
@@ -64,10 +69,12 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
   def branches(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, branches} <- fetch_branches(handle), do:
-      render(conn, "branch_list.html", repo: repo, branches: branches)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, branches} <- Repo.git_branches(repo), do:
+        render(conn, "branch_list.html", repo: repo, branches: branches)
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """
@@ -75,10 +82,12 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
   def tags(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, tags} <- fetch_tags(handle), do:
-      render(conn, "tag_list.html", repo: repo, tags: tags)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, tags} <- Repo.git_tags(repo), do:
+        render(conn, "tag_list.html", repo: repo, tags: tags)
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """
@@ -86,19 +95,22 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec commits(Plug.Conn.t, map) :: Plug.Conn.t
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, walk} <- fetch_revwalk(handle, spec),
-         {:ok, commits} <- fetch_commits(handle, walk), do:
-      render(conn, "commit_list.html", repo: repo, spec: spec, commits: commits)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
+           {:ok, commits} <- {:error, :not_impl}, do: # TODO
+        render(conn, "commit_list.html", repo: repo, reference: reference, commits: commits)
+    else
+      {:error, :not_found}
+    end
   end
 
   def commits(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, spec} <- fetch_reference(handle), do:
-      redirect(conn, to: repository_path(conn, :commits, username, repo, spec.shorthand))
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, head} <- Repo.git_head(repo), do:
+        redirect(conn, to: repository_path(conn, :commits, username, repo, head.shorthand))
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """
@@ -114,20 +126,29 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => []} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, tree} <- fetch_tree(handle, spec),
-         {:ok, stats} <- fetch_stats(handle, spec), do:
-      render(conn, "show.html", repo: repo, spec: spec, stats: stats, tree_path: [], tree: tree)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
+           {:ok, commit} <- GitReference.object(reference),
+           {:ok, tree} <- GitCommit.tree(commit),
+           {:ok, tree_entries} <- GitTree.entries(tree), do:
+        render(conn, "show.html", repo: repo, reference: reference, tree: tree_entries, tree_path: [], stats: stats(reference))
+    else
+      {:error, :not_found}
+    end
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, tree} <- fetch_tree(handle, spec, tree_path), do:
-      render(conn, "tree.html", repo: repo, spec: spec, tree_path: tree_path, tree: tree)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
+           {:ok, commit} <- GitReference.object(reference),
+           {:ok, tree} <- GitCommit.tree(commit),
+           {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(tree_path)),
+           {:ok, tree} <- GitTreeEntry.object(tree_entry),
+           {:ok, tree_entries} <- GitTree.entries(tree), do:
+        render(conn, "tree.html", repo: repo, reference: reference, tree: tree_entries, tree_path: tree_path)
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """
@@ -135,117 +156,24 @@ defmodule GitGud.Web.RepositoryController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
-    with {:ok, repo} <- fetch_repo(conn, {username, repo_name}, :read),
-         {:ok, handle} <- fetch_handle(repo),
-         {:ok, spec} <- fetch_reference(handle, repo_spec),
-         {:ok, blob} <- fetch_blob(handle, spec, blob_path), do:
-      render(conn, "blob.html", repo: repo, spec: spec, tree_path: blob_path, blob: blob)
+    if repo = RepoQuery.user_repository(username, repo_name) do
+      with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
+           {:ok, commit} <- GitReference.object(reference),
+           {:ok, tree} <- GitCommit.tree(commit),
+           {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(blob_path)),
+           {:ok, blob} <- GitTreeEntry.object(tree_entry),
+           {:ok, blob_content} <- GitBlob.content(blob), do:
+        render(conn, "blob.html", repo: repo, reference: reference, blob: blob_content, tree_path: blob_path)
+    else
+      {:error, :not_found}
+    end
   end
 
   #
   # Helpers
   #
 
-  defp fetch_repo(conn, {username, repo_name}, action) do
-    if repo = RepoQuery.user_repository(username, repo_name),
-      do: enforce_policy(current_user(conn), repo, action),
-    else: {:error, :not_found}
-  end
-
-  defp fetch_handle(repo) do
-    Git.repository_open(Repo.workdir(repo))
-  end
-
-  defp fetch_reference(handle) do
-    with {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, transform_reference({name, shorthand, :oid, oid})}
-  end
-
-  defp fetch_reference(handle, dwim) do
-    with {:ok, name, type, oid} <- Git.reference_dwim(handle, dwim), do:
-      {:ok, transform_reference({name, dwim, type, oid})}
-  end
-
-  defp fetch_branches(handle) do
-    with {:ok, branches} <- Git.reference_stream(handle, "refs/heads/*"), do:
-      {:ok, Enum.map(branches, &transform_reference/1)}
-  end
-
-  defp fetch_tags(handle) do
-    with {:ok, tags} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, Enum.map(tags, &transform_reference/1)}
-  end
-
-  defp fetch_commits(handle, revwalk_stream) do
-    {:ok, Enum.map(revwalk_stream, &fetch_commit!(handle, &1))}
-  end
-
-  defp fetch_commit(handle, oid) do
-    with {:ok, :commit, commit} <- Git.object_lookup(handle, oid),
-         {:ok, message} <- Git.commit_message(commit),
-         {:ok, name, email, time, tz} <- Git.commit_author(commit), do:
-      {:ok, transform_commit({oid, message, name, email, time, tz})}
-  end
-
-  defp fetch_commit!(handle, oid) do
-    case fetch_commit(handle, oid) do
-      {:ok, commit} -> commit
-    end
-  end
-
-  defp fetch_tree(handle, spec, path \\ [])
-  defp fetch_tree(handle, spec, []) do
-    with {:ok, :commit, commit} <- Git.object_lookup(handle, spec.__oid__),
-         {:ok, _oid, tree} <- Git.commit_tree(commit),
-         {:ok, entries} <- Git.tree_list(tree), do:
-      {:ok, Enum.map(entries, &transform_tree_entry/1)}
-  end
-
-  defp fetch_tree(handle, spec, path) do
-    with {:ok, :commit, commit} <- Git.object_lookup(handle, spec.__oid__),
-         {:ok, _oid, tree} <- Git.commit_tree(commit),
-         {:ok, _mode, :tree, oid, _name} <- Git.tree_bypath(tree, Path.join(path)),
-         {:ok, :tree, tree} <- Git.object_lookup(handle, oid),
-         {:ok, entries} <- Git.tree_list(tree), do:
-      {:ok, Enum.map(entries, &transform_tree_entry/1)}
-  end
-
-  defp fetch_blob(_handle, _spec, []) do
-    {:error, :not_found}
-  end
-
-  defp fetch_blob(handle, spec, path) do
-    with {:ok, :commit, commit} <- Git.object_lookup(handle, spec.__oid__),
-         {:ok, _oid, tree} <- Git.commit_tree(commit),
-         {:ok, _mode, :blob, oid, _name} <- Git.tree_bypath(tree, Path.join(path)),
-         {:ok, :blob, blob} <- Git.object_lookup(handle, oid),
-         {:ok, content} <- Git.blob_content(blob), do:
-      {:ok, content}
-  end
-
-  defp fetch_revwalk(handle, ref) do
-    with {:ok, walk} <- Git.revwalk_new(handle),
-          :ok <- Git.revwalk_push(walk, ref.__oid__),
-         {:ok, commits} <- Git.revwalk_stream(walk), do:
-      {:ok, commits}
-  end
-
-  defp fetch_stats(handle, ref) do
-    with {:ok, walk} <- fetch_revwalk(handle, ref),
-         {:ok, branches} <- Git.reference_stream(handle, "refs/heads/*"),
-         {:ok, tags} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, %{commits: Enum.count(walk), branches: Enum.count(branches), tags: Enum.count(tags)}}
-  end
-
-  defp transform_reference({name, shorthand, :oid, oid}) do
-    Map.new(name: name, shorthand: shorthand, oid: Git.oid_fmt(oid), __oid__: oid)
-  end
-
-  defp transform_commit({oid, message, name, email, _time, _tz}) do
-    Map.new(message: message, author: %{name: name, email: email}, oid: Git.oid_fmt(oid), __oid__: oid)
-  end
-
-  defp transform_tree_entry({mode, type, oid, name}) do
-    Map.new(name: name, mode: mode, type: type, oid: Git.oid_fmt(oid), __oid__: oid)
+  defp stats(_reference) do
+    %{commits: 0, branches: 0, tags: 0, maintainers: 0}
   end
 end

@@ -14,7 +14,7 @@ defmodule GitGud.GitReference do
   @type type :: :branch | :tag
 
   @doc """
-  Returns the underlying object of the given `reference`.
+  Returns the commit of the given `reference`.
   """
   @spec object(t) :: {:ok, GitCommit.t} | {:error, term}
   def object(%__MODULE__{oid: oid, __git__: handle} = _reference) do
