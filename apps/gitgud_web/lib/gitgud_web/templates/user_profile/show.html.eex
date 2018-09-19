@@ -1,4 +1,18 @@
-<h2 class="subtitle">Repositories</h2>
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle">Repositories</h2>
+    </div>
+  </div>
+  <%= if authenticated?(@conn) && @current_user.id == @user.id do %>
+    <div class="level-right">
+      <div class="level-item">
+        <a class="button is-success" href="<%= repository_path(@conn, :new) %>">New</a>
+      </div>
+    </div>
+  <% end %>
+</div>
+
 
 <%= if Enum.empty?(@user.repositories) do %>
   Nothing to see here.
