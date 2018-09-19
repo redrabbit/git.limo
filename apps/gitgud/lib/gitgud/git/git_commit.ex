@@ -5,14 +5,16 @@ defmodule GitGud.GitCommit do
 
   alias GitRekt.Git
 
-  alias GitGud.GitTree
-
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.Repo
 
-  defstruct [:oid, :__git__]
+  alias GitGud.GitTree
 
-  @type t :: %__MODULE__{oid: Git.oid, __git__: Git.commit}
+  @enforce_keys [:oid, :repo, :__git__]
+  defstruct [:oid, :repo, :__git__]
+
+  @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.commit}
 
   @doc """
   Returns the author of the given `commit`.
@@ -35,8 +37,8 @@ defmodule GitGud.GitCommit do
   Returns the tree of the given `commit`.
   """
   @spec tree(t) :: {:ok, GitTree.t} | {:error, term}
-  def tree(%__MODULE__{__git__: commit} = _commit) do
+  def tree(%__MODULE__{repo: repo, __git__: commit} = _commit) do
     with {:ok, oid, tree} <- Git.commit_tree(commit), do:
-      {:ok, %GitTree{oid: oid, __git__: tree}}
+      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
   end
 end

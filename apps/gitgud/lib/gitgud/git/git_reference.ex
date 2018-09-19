@@ -5,11 +5,14 @@ defmodule GitGud.GitReference do
 
   alias GitRekt.Git
 
+  alias GitGud.Repo
+
   alias GitGud.GitCommit
 
-  defstruct [:oid, :name, :shorthand, :__git__]
+  @enforce_keys [:oid, :repo, :__git__]
+  defstruct [:oid, :name, :shorthand, :repo, :__git__]
 
-  @type t :: %__MODULE__{oid: Git.oid, name: binary, shorthand: binary, __git__: Git.repo}
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, shorthand: binary, repo: Repo.t, __git__: Git.repo}
 
   @type type :: :branch | :tag
 
@@ -17,9 +20,9 @@ defmodule GitGud.GitReference do
   Returns the commit of the given `reference`.
   """
   @spec commit(t) :: {:ok, GitCommit.t} | {:error, term}
-  def commit(%__MODULE__{oid: oid, __git__: handle} = _reference) do
+  def commit(%__MODULE__{oid: oid, repo: repo, __git__: handle} = _reference) do
     case Git.object_lookup(handle, oid) do
-      {:ok, :commit, commit} -> {:ok, %GitCommit{oid: oid, __git__: commit}}
+      {:ok, :commit, commit} -> {:ok, %GitCommit{oid: oid, repo: repo, __git__: commit}}
     end
   end
 
@@ -27,11 +30,11 @@ defmodule GitGud.GitReference do
   Returns the commit history of the given `reference`.
   """
   @spec commit_history(t) :: {:ok, [GitCommit.t]} | {:error, term}
-  def commit_history(%__MODULE__{oid: oid, __git__: handle} = _reference) do
+  def commit_history(%__MODULE__{oid: oid, repo: repo, __git__: handle} = _reference) do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_push(walk, oid),
          {:ok, stream} <- Git.revwalk_stream(walk), do:
-      {:ok, Enum.map(stream, &resolve_commit(&1, handle))}
+      {:ok, Enum.map(stream, &resolve_commit(&1, {repo, handle}))}
   end
 
   @doc """
@@ -46,10 +49,10 @@ defmodule GitGud.GitReference do
   # Helpers
   #
 
-  defp resolve_commit(oid, handle) do
+  defp resolve_commit(oid, {repo, handle}) do
     case Git.object_lookup(handle, oid) do
       {:ok, :commit, commit} ->
-        %GitCommit{oid: oid, __git__: commit}
+        %GitCommit{oid: oid, repo: repo, __git__: commit}
       {:error, _reason} ->
         nil
     end

@@ -166,7 +166,7 @@ defmodule GitGud.Repo do
   def git_head(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
   end
 
   @doc """
@@ -178,13 +178,13 @@ defmodule GitGud.Repo do
   def git_reference(%__MODULE__{} = repo, "/refs/" <> _suffix = name) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
   end
 
   def git_reference(%__MODULE__{} = repo, shorthand) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}}
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
   end
 
   @doc """
@@ -194,7 +194,7 @@ defmodule GitGud.Repo do
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, glob), do:
-      {:ok, Enum.map(stream, &transform_reference(&1, handle))}
+      {:ok, Enum.map(stream, &transform_reference(&1, {repo, handle}))}
   end
 
   @doc """
@@ -204,7 +204,7 @@ defmodule GitGud.Repo do
   def git_branches(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
-      {:ok, Enum.map(stream, &transform_reference(&1, handle))}
+      {:ok, Enum.map(stream, &transform_reference(&1, {repo, handle}))}
   end
 
   @doc """
@@ -214,7 +214,7 @@ defmodule GitGud.Repo do
   def git_tags(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, Enum.map(stream, &transform_tag(&1, handle))}
+      {:ok, Enum.map(stream, &transform_tag(&1, {repo, handle}))}
   end
 
   @doc """
@@ -224,7 +224,7 @@ defmodule GitGud.Repo do
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
-      {:ok, transform_object(obj, obj_type, oid)}
+      {:ok, transform_object({obj, obj_type, oid}, repo)}
   end
 
   @doc """
@@ -234,7 +234,7 @@ defmodule GitGud.Repo do
   def git_object(%__MODULE__{} = repo, oid) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, obj, obj_type, oid} <- Git.object_lookup(handle, oid), do:
-      {:ok, transform_object(obj, obj_type, oid)}
+      {:ok, transform_object({obj, obj_type, oid}, repo)}
   end
 
   @doc """
@@ -336,16 +336,16 @@ defmodule GitGud.Repo do
     File.rm_rf(workdir(repo))
   end
 
-  defp transform_object(commit, :commit, oid), do: %GitCommit{oid: oid, __git__: commit}
-  defp transform_object(tag, :tag, oid), do: %GitTag{oid: oid, __git__: tag}
-  defp transform_object(tree, :tree, oid), do: %GitTree{oid: oid, __git__: tree}
-  defp transform_object(blob, :blob, oid), do: %GitBlob{oid: oid, __git__: blob}
+  defp transform_object({commit, :commit, oid}, repo), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
+  defp transform_object({tag, :tag, oid}, repo), do: %GitTag{oid: oid, repo: repo, __git__: tag}
+  defp transform_object({tree, :tree, oid}, repo), do: %GitTree{oid: oid, repo: repo, __git__: tree}
+  defp transform_object({blob, :blob, oid}, repo), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
 
-  defp transform_reference({name, shorthand, :oid, oid}, handle) do
-    %GitReference{oid: oid, name: name, shorthand: shorthand, __git__: handle}
+  defp transform_reference({name, shorthand, :oid, oid}, {repo, handle}) do
+    %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}
   end
 
-  defp transform_tag({_name, shorthand, :oid, oid}, handle) do
-    %GitTag{oid: oid, name: shorthand, __git__: handle}
+  defp transform_tag({_name, shorthand, :oid, oid}, {repo, handle}) do
+    %GitTag{oid: oid, name: shorthand, repo: repo, __git__: handle}
   end
 end

@@ -5,9 +5,12 @@ defmodule GitGud.GitBlob do
 
   alias GitRekt.Git
 
-  defstruct [:oid, :__git__]
+  alias GitGud.Repo
 
-  @type t :: %__MODULE__{oid: Git.oid, __git__: Git.blob}
+  @enforce_keys [:oid, :repo, :__git__]
+  defstruct [:oid, :repo, :__git__]
+
+  @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.blob}
 
   @doc """
   Returns the content of the given `blob`.

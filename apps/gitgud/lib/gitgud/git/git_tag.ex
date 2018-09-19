@@ -7,10 +7,12 @@ defmodule GitGud.GitTag do
 
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.Repo
 
-  defstruct [:oid, :name, :__git__]
+  @enforce_keys [:oid, :repo, :__git__]
+  defstruct [:oid, :name, :repo, :__git__]
 
-  @type t :: %__MODULE__{oid: Git.oid, name: binary, __git__: Git.tag}
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, repo: Repo.t, __git__: Git.tag}
 
   @doc """
   Returns the author of the given `tag`.
