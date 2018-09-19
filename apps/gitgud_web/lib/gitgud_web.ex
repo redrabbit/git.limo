@@ -28,7 +28,7 @@ defmodule GitGud.Web do
     quote do
       use Phoenix.View, root: "lib/gitgud_web/templates", namespace: GitGud.Web
 
-      import Phoenix.Controller, only: [get_flash: 2, view_module: 1, action_name: 1]
+      import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
 
       use Phoenix.HTML
 

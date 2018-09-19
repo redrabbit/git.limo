@@ -8,15 +8,25 @@
 
   <div class="tabs">
     <ul>
-    <%= if Map.has_key?(assigns, :spec) do %>
-      <li class="is-active"><a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @spec.shorthand, []) %>">Code</a></li>
-    <% else %>
-      <li class="is-active"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
-    <% end %>
-      <li><a href="#">Issues</a></li>
-      <li><a href="#">Wiki</a></li>
+      <%= if Map.has_key?(assigns, :reference) && current_route?(@conn, :repository, except: [:show]) do %>
+        <li class="is-active">
+          <a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, []) %>">Code</a></li>
+        </li>
+      <% else %>
+        <%= navigation_item @conn, :repository, except: [:edit] do %>
+          <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+        <% end %>
+      <% end %>
+      <li>
+        <a href="#">Issues</a>
+      </li>
+      <li>
+        <a href="#">Wiki</a>
+      </li>
       <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
-        <li><a href="<%= repository_path(@conn, :edit, @repo.owner, @repo) %>">Settings</a></li>
+        <%= navigation_item @conn, :repository, :edit do %>
+          <a href="<%= repository_path(@conn, :edit, @repo.owner, @repo) %>">Settings</a></li>
+        <% end %>
       <% end %>
     </ul>
   </div>
