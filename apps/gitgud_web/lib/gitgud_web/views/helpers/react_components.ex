@@ -6,7 +6,7 @@ defmodule GitGud.Web.ReactComponents do
   import Phoenix.HTML.Tag
 
   @doc """
-  Generates a div containing the named React component with no props or attrs.
+  Generates a `:div` containing the named React component with no props or attrs.
 
   Returns safe html: `{:safe, [60, "div", ...]}`.
   You can utilize this in your Phoenix views:
@@ -19,7 +19,7 @@ defmodule GitGud.Web.ReactComponents do
   def react_component(name), do: react_component(name, %{})
 
   @doc """
-  Generates a div containing the named React component with the given `props`.
+  Generates a `:div` containing the named React component with the given `props`.
 
   Returns safe html: `{:safe, [60, "div", ...]}`.
   Props can be passed in as a Map or a List.
@@ -37,7 +37,7 @@ defmodule GitGud.Web.ReactComponents do
   end
 
   @doc """
-  Generates a div containing the named React component with the given `props` and `attrs`.
+  Generates a `:div` containing the named React component with the given `props` and `attrs`.
 
   Returns safe html: `{:safe, [60, "div", ...]}`.
 

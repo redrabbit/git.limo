@@ -9,21 +9,6 @@ defmodule GitGud.Web.RepositoryView do
 
   import GitRekt.Git, only: [oid_fmt: 1]
 
-  @spec title(atom, map) :: binary
-  def title(:new, _assigns), do: "Create a new repository"
-  def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
-  def title(:edit, %{repo: repo}), do: "Settings · #{repo.owner.username}/#{repo.name}"
-  def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"
-  def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
-  def title(:commits, %{repo: repo}), do: "Commits · #{repo.owner.username}/#{repo.name}"
-  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.username}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: []}), do: "#{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
-  def title(:blob, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
-
-  @spec oid_fmt_short(Git.oid) :: binary
-  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..7)
-
   @spec blob_content(GitBlob.t) :: binary | nil
   def blob_content(%GitBlob{} = blob) do
     case GitBlob.content(blob) do
@@ -66,6 +51,9 @@ defmodule GitGud.Web.RepositoryView do
     end
   end
 
+  @spec oid_fmt_short(Git.oid) :: binary
+  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..7)
+
   @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(%GitTree{} = tree) do
     case GitTree.entries(tree) do
@@ -73,4 +61,16 @@ defmodule GitGud.Web.RepositoryView do
       {:error, _reason} -> []
     end
   end
+
+  @spec title(atom, map) :: binary
+  def title(:new, _assigns), do: "Create a new repository"
+  def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
+  def title(:edit, %{repo: repo}), do: "Settings · #{repo.owner.username}/#{repo.name}"
+  def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"
+  def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
+  def title(:commits, %{repo: repo}), do: "Commits · #{repo.owner.username}/#{repo.name}"
+  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.username}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
+  def title(:tree, %{repo: repo, reference: ref, tree_path: []}), do: "#{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
+  def title(:tree, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
+  def title(:blob, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
 end
