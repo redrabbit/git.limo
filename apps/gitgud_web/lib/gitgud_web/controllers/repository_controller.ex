@@ -49,8 +49,8 @@ defmodule GitGud.Web.RepositoryController do
       if authorized?(current_user(conn), repo, :edit) do
         changeset = Repo.changeset(repo)
         render(conn, "edit.html", repo: repo, changeset: changeset)
-      end
-    end || {:error, :not_found}
+      end || {:error, :unauthorized}
+    end   || {:error, :not_found}
   end
 
   @doc """
@@ -71,8 +71,8 @@ defmodule GitGud.Web.RepositoryController do
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> render("edit.html", changeset: %{changeset|action: :insert})
         end
-      end
-    end || {:error, :not_found}
+      end || {:error, :unauthorized}
+    end   || {:error, :not_found}
   end
 end
 

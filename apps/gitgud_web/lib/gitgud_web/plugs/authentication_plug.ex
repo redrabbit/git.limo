@@ -10,7 +10,7 @@ defmodule GitGud.Web.AuthenticationPlug do
 
   alias GitGud.UserQuery
 
-  alias GitGud.Web.ErrorView
+  alias GitGud.Web.FallbackController
 
   @doc """
   `Plug` to authenticate `conn` with either authorization or session tokens.
@@ -56,14 +56,9 @@ defmodule GitGud.Web.AuthenticationPlug do
   """
   @spec ensure_authenticated(Plug.Conn.t, keyword) :: Plug.Conn.t
   def ensure_authenticated(conn, _opts) do
-    unless authenticated?(conn) do
-      conn
-      |> put_status(:unauthorized)
-      |> render(ErrorView, "401.html")
-      |> halt()
-    else
-      conn
-    end
+    unless authenticated?(conn),
+      do: halt(FallbackController.call(conn, {:error, :unauthorized})),
+    else: conn
   end
 
   @doc """
@@ -104,9 +99,7 @@ defmodule GitGud.Web.AuthenticationPlug do
 
   defp authenticate_user(conn, user_id) do
     if user = UserQuery.by_id(user_id),
-      do: conn
-          |> assign(:current_user, user)
-          |> Absinthe.Plug.put_options(context: %{current_user: user}),
+      do: Absinthe.Plug.put_options(assign(conn, :current_user, user), context: %{current_user: user}),
     else: conn
   end
 end
