@@ -37,5 +37,5 @@ ssh-keygen -t rsa -f /tmp/ssh-keys/ssh_host_rsa_key
 In your `config/config.exs` file, add following entry:
 
 ```elixir
-config :gitgud, :ssh_key_dir: "/tmp/ssh-keys"
+config :gitgud, ssh_key_dir: "/tmp/ssh-keys"
 ```
