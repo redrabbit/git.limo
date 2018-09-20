@@ -17,10 +17,10 @@
 <%= if Enum.empty?(@user.repositories) do %>
   Nothing to see here.
 <% else %>
-  <%= for chunk <- Enum.chunk_every(@user.repositories, 2) do %>
+  <%= for chunk <- Enum.chunk_every(@user.repositories, 3) do %>
     <div class="columns">
     <%= for repo <- chunk do %>
-      <div class="column">
+      <div class="column is-one-third">
         <div class="card">
           <header class="card-header">
             <a class="card-header-title" href="<%= codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
