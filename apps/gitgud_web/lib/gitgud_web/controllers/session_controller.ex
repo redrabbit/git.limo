@@ -1,4 +1,4 @@
-defmodule GitGud.Web.AuthenticationController do
+defmodule GitGud.Web.SessionController do
   @moduledoc """
   Module responsible for user authentication.
   """

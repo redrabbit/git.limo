@@ -26,9 +26,9 @@ defmodule GitGud.Web.Router do
   scope "/", GitGud.Web do
     pipe_through :browser
 
-    get "/login", AuthenticationController, :new
-    post "/login", AuthenticationController, :create
-    get "/logout", AuthenticationController, :delete
+    get "/login", SessionController, :new
+    post "/login", SessionController, :create
+    get "/logout", SessionController, :delete
 
     get "/register", UserController, :new
     post "/users", UserController, :create

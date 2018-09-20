@@ -1,4 +1,4 @@
-defmodule GitGud.Web.AuthenticationView do
+defmodule GitGud.Web.SessionView do
   @moduledoc false
   use GitGud.Web, :view
 

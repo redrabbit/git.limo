@@ -1,6 +1,6 @@
 <h1 class="title">Login</h1>
 
-<%= form_for @conn, authentication_path(@conn, :create), [as: :credentials], fn f -> %>
+<%= form_for @conn, session_path(@conn, :create), [as: :credentials], fn f -> %>
   <div class="field">
     <label class="label">Login</label>
     <div class="control">

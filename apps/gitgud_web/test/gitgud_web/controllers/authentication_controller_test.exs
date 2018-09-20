@@ -1,4 +1,4 @@
-defmodule GitGud.Web.AuthenticationControllerTest do
+defmodule GitGud.Web.SessionControllerTest do
   use GitGud.Web.ConnCase
 
   alias GitGud.User

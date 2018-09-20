@@ -35,12 +35,12 @@
               <div class="navbar-dropdown is-right">
                 <a class="navbar-item" href="<%= user_path(@conn, :show, @current_user) %>">Your profile</a>
                 <hr class="navbar-divider">
-                <a class="navbar-item" href="<%= authentication_path(@conn, :delete) %>">Logout</a>
+                <a class="navbar-item" href="<%= session_path(@conn, :delete) %>">Logout</a>
               </div>
             </div>
           <% else %>
             <a class="navbar-item" href="<%= user_path(@conn, :new) %>">Register</a>
-            <a class="navbar-item" href="<%= authentication_path(@conn, :new) %>">Login</a>
+            <a class="navbar-item" href="<%= session_path(@conn, :new) %>">Login</a>
           <% end %>
         </div>
         </div>
