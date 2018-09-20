@@ -35,6 +35,17 @@ defmodule GitGud.Web.NavigationHelpers do
   end
 
   @doc """
+  Generates a `:li` navigation item for the given `helper`.
+  """
+  @spec navigation_item(Plug.Conn.t, atom, keyword) :: binary
+  def navigation_item(conn, helper, [do: block] = _do) do
+    attrs = if current_route?(conn, helper),
+        do: [class: "is-active"],
+      else: []
+    content_tag(:li, block, attrs)
+  end
+
+  @doc """
   Generates a `:li` navigation item for the given `helper` and `action`.
   """
   @spec navigation_item(Plug.Conn.t, atom, keyword | atom, keyword) :: binary

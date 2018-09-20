@@ -23,7 +23,7 @@
       <div class="column">
         <div class="card">
           <header class="card-header">
-            <a class="card-header-title" href="<%= repository_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+            <a class="card-header-title" href="<%= codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
           </header>
           <div class="card-content">
             <div class="content"><%= repo.description %></div>

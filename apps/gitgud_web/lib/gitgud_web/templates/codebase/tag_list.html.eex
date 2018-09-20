@@ -1,0 +1,7 @@
+<h2 class="subtitle">Tags</h2>
+
+<ul>
+  <%= for tag <- @tags do %>
+    <li><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag.name, []) %>"><%= tag.name %></a></li>
+  <% end %>
+</ul>

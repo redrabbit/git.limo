@@ -64,11 +64,11 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def url(%Repo{} = repo, %{} = _args, _info) do
-    {:ok, repository_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
+    {:ok, codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
   def url(%GitReference{repo: repo, shorthand: shorthand} = _reference, %{} = _args, _info) do
-    {:ok, repository_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, shorthand, [])}
+    {:ok, codebase_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, shorthand, [])}
   end
 
   @doc """

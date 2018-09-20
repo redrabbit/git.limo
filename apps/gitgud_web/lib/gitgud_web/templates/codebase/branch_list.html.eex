@@ -1,0 +1,7 @@
+<h2 class="subtitle">Branches</h2>
+
+<ul>
+<%= for branch <- @branches do %>
+  <li class="list-group-item"><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch.shorthand, []) %>"><%= branch.shorthand %></a></li>
+<% end %>
+</ul>

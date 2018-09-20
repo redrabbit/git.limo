@@ -2,19 +2,17 @@
   <nav class="breadcrumb is-large" aria-label="breadcrumbs">
     <ul>
       <li><h1 class="title"><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
-      <li><h1 class="title"><a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
+      <li><h1 class="title"><a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
     </ul>
   </nav>
 
   <div class="tabs">
     <ul>
-      <%= if Map.has_key?(assigns, :reference) && current_route?(@conn, :repository, except: [:show]) do %>
-        <li class="is-active">
-          <a href="<%= repository_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, []) %>">Code</a></li>
-        </li>
-      <% else %>
-        <%= navigation_item @conn, :repository, except: [:edit] do %>
-          <a href="<%= repository_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+      <%= navigation_item @conn, :codebase do %>
+        <%= if Map.has_key?(assigns, :reference) do %>
+          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, []) %>">Code</a></li>
+        <% else %>
+          <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
         <% end %>
       <% end %>
       <li>
