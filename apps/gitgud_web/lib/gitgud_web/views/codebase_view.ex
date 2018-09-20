@@ -63,9 +63,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:new, _assigns), do: "Create a new repository"
   def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
-  def title(:edit, %{repo: repo}), do: "Settings · #{repo.owner.username}/#{repo.name}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
   def title(:commits, %{repo: repo}), do: "Commits · #{repo.owner.username}/#{repo.name}"
