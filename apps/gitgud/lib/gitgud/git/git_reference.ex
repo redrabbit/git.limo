@@ -17,7 +17,7 @@ defmodule GitGud.GitReference do
   @type type :: :branch | :tag
 
   @doc """
-  Returns the commit of the given `reference`.
+  Returns the underlying commit of the given `reference`.
   """
   @spec commit(t) :: {:ok, GitCommit.t} | {:error, term}
   def commit(%__MODULE__{oid: oid, repo: repo, __git__: handle} = _reference) do
@@ -30,7 +30,7 @@ defmodule GitGud.GitReference do
   Returns the number of commits of the given `reference`.
   """
   @spec commit_count(t) :: {:ok, non_neg_integer} | {:error, term}
-  def commit_count(%__MODULE__{oid: oid, __git__: handle}) do
+  def commit_count(%__MODULE__{oid: oid, __git__: handle} = _reference) do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_push(walk, oid),
          {:ok, stream} <- Git.revwalk_stream(walk), do:

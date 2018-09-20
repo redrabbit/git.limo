@@ -18,7 +18,7 @@ defmodule GitGud.GitTreeEntry do
   @type t :: %__MODULE__{oid: Git.oid, name: binary, mode: integer, type: type, repo: Repo.t, __git__: Git.blob | Git.tree}
 
   @doc """
-  Returns the object of the `tree_entry`.
+  Returns the underlying object of the `tree_entry`.
   """
   @spec object(t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
   def object(%__MODULE__{oid: oid, type: :blob, repo: repo, __git__: blob} = _tree_entry), do: {:ok, %GitBlob{oid: oid, repo: repo, __git__: blob}}

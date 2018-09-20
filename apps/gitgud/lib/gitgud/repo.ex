@@ -272,7 +272,7 @@ defmodule GitGud.Repo do
   @doc """
   Returns the Git object matching the given `revision`.
   """
-  @spec git_revision(t, binary) :: {:ok, GitCommit.t | GitTag.t | GitTree.t | GitBlob.t} | {:error, term}
+  @spec git_revision(t, binary) :: {:ok, git_object} | {:error, term}
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
