@@ -13,24 +13,24 @@ defmodule GitGud.Web.SessionController do
   Renders the login page.
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
-  def new(conn, _params) do
-    render(conn, "new.html")
+  def new(conn, params) do
+    render(conn, "new.html", redirect: params["redirect_to"])
   end
 
   @doc """
   Authenticates user with credentials.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"credentials" => cred_params} = _params) do
-    if user = User.check_credentials(cred_params["email_or_username"], cred_params["password"]) do
+  def create(conn, %{"session" => session_params} = _params) do
+    if user = User.check_credentials(session_params["email_or_username"], session_params["password"]) do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in.")
-      |> redirect(to: user_path(conn, :show, user))
+      |> redirect(to: session_params["redirect"] || user_path(conn, :show, user))
     else
       conn
       |> put_flash(:error, "Wrong login credentials")
-      |> render("new.html")
+      |> render("new.html", redirect: session_params["redirect"])
     end
   end
 

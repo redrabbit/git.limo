@@ -7,6 +7,15 @@ defmodule GitGud.Web.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
+  @spec session_params(Plug.Conn.t) :: keyword
+  def session_params(conn) do
+    cond do
+      current_route?(conn, :session) -> []
+      current_route?(conn, :user, :new) -> []
+      true -> [redirect_to: conn.request_path]
+    end
+  end
+
   @spec title(Plug.Conn.t, binary) :: binary
   def title(conn, default \\ "") do
     try do

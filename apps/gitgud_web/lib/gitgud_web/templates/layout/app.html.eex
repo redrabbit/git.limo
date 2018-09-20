@@ -40,7 +40,7 @@
             </div>
           <% else %>
             <a class="navbar-item" href="<%= user_path(@conn, :new) %>">Register</a>
-            <a class="navbar-item" href="<%= session_path(@conn, :new) %>">Login</a>
+            <a class="navbar-item" href="<%= session_path(@conn, :new, session_params(@conn)) %>">Login</a>
           <% end %>
         </div>
         </div>
