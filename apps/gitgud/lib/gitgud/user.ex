@@ -69,7 +69,7 @@ defmodule GitGud.User do
   def registration_changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:username, :name, :email, :password])
-    |> validate_required([:username, :email, :password])
+    |> validate_required([:username, :name, :email, :password])
     |> validate_length(:username, min: 3, max: 20)
     |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_format(:email, ~r/@/)
