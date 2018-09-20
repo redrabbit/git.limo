@@ -44,7 +44,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_message(GitCommit.t) :: User.t | nil
   def commit_message_title(%GitCommit{} = commit) do
     if message = commit_message(commit) do
-      [title, _body] =  String.split(message, "\n", parts: 2)
+      [title|_body] =  String.split(message, "\n", parts: 2)
       if String.length(title) > 50,
         do: String.slice(title, 0..49) <> "…",
       else: title
