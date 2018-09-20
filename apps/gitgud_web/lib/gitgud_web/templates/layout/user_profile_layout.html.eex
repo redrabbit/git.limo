@@ -5,8 +5,8 @@
   <div class="tabs">
     <ul>
       <li><a href="#">Overview</a></li>
-      <%= navigation_item @conn, :user_profile, :show do %>
-        <a href="<%= user_profile_path(@conn, :show, @user) %>">Repositories</a></li>
+      <%= navigation_item @conn, :user, :show do %>
+        <a href="<%= user_path(@conn, :show, @user) %>">Repositories</a></li>
       <% end %>
       <li><a href="#">Organizations</a></li>
       <li><a href="#">Settings</a></li>

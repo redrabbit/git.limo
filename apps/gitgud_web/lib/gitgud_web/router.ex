@@ -30,8 +30,8 @@ defmodule GitGud.Web.Router do
     post "/login", AuthenticationController, :create
     get "/logout", AuthenticationController, :delete
 
-    get "/register", RegistrationController, :new
-    post "/users", RegistrationController, :create
+    get "/register", UserController, :new
+    post "/users", UserController, :create
 
     get "/new", RepositoryController, :new
     post "/repositories", RepositoryController, :create
@@ -49,7 +49,7 @@ defmodule GitGud.Web.Router do
       put "/settings", RepositoryController, :update
     end
 
-    get "/:username", UserProfileController, :show
+    get "/:username", UserController, :show
   end
 
   scope "/:username/:repo_name" do

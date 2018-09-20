@@ -60,7 +60,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec url(map, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def url(%User{username: username} = _resource, %{} = _args, _info) do
-    {:ok, user_profile_url(GitGud.Web.Endpoint, :show, username)}
+    {:ok, user_url(GitGud.Web.Endpoint, :show, username)}
   end
 
   def url(%Repo{} = repo, %{} = _args, _info) do

@@ -14,7 +14,7 @@ defmodule GitGud.Web.AuthenticationController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    render(conn, "login.html")
+    render(conn, "new.html")
   end
 
   @doc """
@@ -26,11 +26,11 @@ defmodule GitGud.Web.AuthenticationController do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in.")
-      |> redirect(to: user_profile_path(conn, :show, user))
+      |> redirect(to: user_path(conn, :show, user))
     else
       conn
       |> put_flash(:error, "Wrong login credentials")
-      |> render("login.html")
+      |> render("new.html")
     end
   end
 

@@ -1,7 +1,7 @@
 <%= render_layout "app.html", assigns do %>
   <nav class="breadcrumb is-large" aria-label="breadcrumbs">
     <ul>
-      <li><h1 class="title"><a href="<%= user_profile_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
+      <li><h1 class="title"><a href="<%= user_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
       <li><h1 class="title"><a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
     </ul>
   </nav>
@@ -9,7 +9,7 @@
   <div class="tabs">
     <ul>
       <%= navigation_item @conn, :codebase do %>
-        <%= if Map.has_key?(assigns, :reference) do %>
+        <%= if assigns[:reference] do %>
           <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, []) %>">Code</a></li>
         <% else %>
           <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>

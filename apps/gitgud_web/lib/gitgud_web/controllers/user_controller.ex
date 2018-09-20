@@ -1,11 +1,14 @@
-defmodule GitGud.Web.RegistrationController do
+defmodule GitGud.Web.UserController do
   @moduledoc """
-  Module responsible for user registration.
+  Module responsible for CRUD actions on `GitGud.User`.
   """
 
   use GitGud.Web, :controller
 
   alias GitGud.User
+  alias GitGud.UserQuery
+
+  plug :put_layout, :user_profile_layout when action == :show
 
   action_fallback GitGud.Web.FallbackController
 
@@ -28,12 +31,22 @@ defmodule GitGud.Web.RegistrationController do
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome!")
-        |> redirect(to: user_profile_path(conn, :show, user))
+        |> redirect(to: user_path(conn, :show, user))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> render("new.html", changeset: %{changeset|action: :insert})
     end
+  end
+
+  @doc """
+  Renders a user profile.
+  """
+  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
+  def show(conn, %{"username" => username} = _params) do
+    if user = UserQuery.by_username(username, preload: :repositories, viewer: current_user(conn)),
+      do: render(conn, "show.html", user: user),
+    else: {:error, :not_found}
   end
 end
 
