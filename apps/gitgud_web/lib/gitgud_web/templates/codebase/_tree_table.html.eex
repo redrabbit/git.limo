@@ -2,12 +2,12 @@
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
-        <th><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, Enum.drop(@tree_path, -1)) %>">..</a></th>
+        <th><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference, Enum.drop(@tree_path, -1)) %>">..</a></th>
       </tr>
     <% end %>
     <%= for entry <- tree_entries(@tree) do %>
       <tr>
-        <td><a href="<%= codebase_path(@conn, entry.type, @repo.owner, @repo, @reference.shorthand, @tree_path ++ [entry.name]) %>"><%= entry.name %></a></td>
+        <td><a href="<%= codebase_path(@conn, entry.type, @repo.owner, @repo, @reference, @tree_path ++ [entry.name]) %>"><%= entry.name %></a></td>
       </tr>
     <% end %>
   <tbody>

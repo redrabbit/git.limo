@@ -5,7 +5,7 @@
 <div class="tabs is-toggle is-fullwidth">
   <ul>
     <li>
-      <a href="<%= codebase_path(@conn, :commits, @repo.owner, @repo, @reference.shorthand, []) %>">Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></a>
+      <a href="<%= codebase_path(@conn, :commits, @repo.owner, @repo, @reference, []) %>">Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></a>
     </li>
     <li>
       <a href="<%= codebase_path(@conn, :branches, @repo.owner, @repo) %>">Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></a>

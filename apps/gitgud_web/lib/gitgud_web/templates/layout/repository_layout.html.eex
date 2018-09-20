@@ -10,7 +10,7 @@
     <ul>
       <%= navigation_item @conn, :codebase do %>
         <%= if assigns[:reference] do %>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference.shorthand, []) %>">Code</a></li>
+          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference, []) %>">Code</a></li>
         <% else %>
           <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
         <% end %>
