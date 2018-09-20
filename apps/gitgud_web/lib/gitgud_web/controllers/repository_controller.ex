@@ -57,7 +57,7 @@ defmodule GitGud.Web.RepositoryController do
       else: with {:ok, head} <- Repo.git_head(repo),
                  {:ok, commit} <- GitReference.commit(head),
                  {:ok, tree} <- GitCommit.tree(commit), do:
-              render(conn, "show.html", repo: repo, reference: head, tree: tree, tree_path: [], stats: stats(head))
+              render(conn, "show.html", repo: repo, reference: head, tree: tree, tree_path: [], stats: stats!(head))
     else
       {:error, :not_found}
     end
@@ -169,7 +169,7 @@ defmodule GitGud.Web.RepositoryController do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
            {:ok, commit} <- GitReference.commit(reference),
            {:ok, tree} <- GitCommit.tree(commit), do:
-        render(conn, "show.html", repo: repo, reference: reference, tree: tree, tree_path: [], stats: stats(reference))
+        render(conn, "show.html", repo: repo, reference: reference, tree: tree, tree_path: [], stats: stats!(reference))
     else
       {:error, :not_found}
     end
@@ -209,7 +209,14 @@ defmodule GitGud.Web.RepositoryController do
   # Helpers
   #
 
-  defp stats(_reference) do
-    %{commits: 0, branches: 0, tags: 0, maintainers: 0}
+  defp stats!(%GitReference{repo: repo} = reference) do
+    with {:ok, commit_count} <- GitReference.commit_count(reference),
+         {:ok, branch_count} <- Repo.git_branch_count(repo),
+         {:ok, tag_count} <- Repo.git_tag_count(repo) do
+      maintainer_count = Repo.maintainer_count(repo)
+      %{commits: commit_count, branches: branch_count, tags: tag_count, maintainers: maintainer_count}
+    else
+      {:error, reason} -> raise RuntimeError, message: "failed to make stats: #{inspect reason}"
+    end
   end
 end

@@ -5,6 +5,7 @@ defmodule GitGud.Repo do
 
   use Ecto.Schema
 
+  import Ecto, only: [assoc: 2]
   import Ecto.Changeset
 
   alias Ecto.Multi
@@ -131,7 +132,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Puts the given `user` to the `repo`'s maintainers.
+  Puts the given `user` to `repo` maintainer list.
   """
   @spec put_maintainer(t, User.t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def put_maintainer(%__MODULE__{} = repo, %User{} = user) do
@@ -139,6 +140,15 @@ defmodule GitGud.Repo do
     unless Enum.find(repo.maintainers, &(&1.id == user.id)),
       do: DB.update(put_assoc(change(repo), :maintainers, [user|repo.maintainers])),
     else: repo
+  end
+
+  @doc """
+  Returns the number of maintainers for the given `repo`.
+  """
+  @spec maintainer_count(Repo.t) :: non_neg_integer
+  def maintainer_count(%__MODULE__{maintainers: maintainers} = _repo) when is_list(maintainers), do: length(maintainers)
+  def maintainer_count(%__MODULE__{} = repo) do
+    DB.aggregate(assoc(repo, :maintainers), :count, :id) || 0
   end
 
   @doc """
@@ -198,6 +208,27 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns a Git branch for the given `branch_name`.
+  """
+  @spec git_branch(t, binary) :: {:ok, GitReference.t} | {:error, term}
+  def git_branch(%__MODULE__{} = repo, branch_name) do
+    name = "refs/heads/" <> branch_name
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
+      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
+  end
+
+  @doc """
+  Returns the number of Git branches.
+  """
+  @spec git_branch_count(t) :: {:ok, non_neg_integer} | {:error, term}
+  def git_branch_count(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
+      {:ok, Enum.count(stream)}
+  end
+
+  @doc """
   Returns all Git branches.
   """
   @spec git_branches(t) :: {:ok, [GitReference.t]} | {:error, term}
@@ -205,6 +236,27 @@ defmodule GitGud.Repo do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
       {:ok, Enum.map(stream, &transform_reference(&1, {repo, handle}))}
+  end
+
+  @doc """
+  Returns a Git tag for the given `tag_name`.
+  """
+  @spec git_tag(t, binary) :: {:ok, GitTag.t} | {:error, term}
+  def git_tag(%__MODULE__{} = repo, tag_name) do
+    name = "refs/tags/" <> tag_name
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
+      {:ok, %GitTag{oid: oid, name: shorthand, repo: repo, __git__: handle}}
+  end
+
+  @doc """
+  Returns the number of Git tags.
+  """
+  @spec git_tag_count(t) :: {:ok, non_neg_integer} | {:error, term}
+  def git_tag_count(%__MODULE__{} = repo) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
+      {:ok, Enum.count(stream)}
   end
 
   @doc """
