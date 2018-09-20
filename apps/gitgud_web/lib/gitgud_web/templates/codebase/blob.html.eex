@@ -1,2 +1,7 @@
 <%= render "_tree_nav.html", assigns %>
-<%= render "_blob_content.html", assigns %>
+
+<pre>
+  <code>
+    <%= blob_content(@blob) %>
+  </code>
+</pre>
