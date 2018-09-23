@@ -69,7 +69,7 @@ defmodule GitGud.Web.RepositoryController do
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-            |> render("edit.html", changeset: %{changeset|action: :insert})
+            |> render("edit.html", repo: repo, changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end   || {:error, :not_found}

@@ -11,10 +11,7 @@ export default () => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
     const targetDiv = targetId ? targetId : e
     const reactProps = e.dataset.reactProps ? e.dataset.reactProps : "{}"
-    const reactElement = React.createElement(factory[e.dataset.reactClass], JSON.parse(reactProps, (key, val) => {
-      if(val && typeof val === 'object') Object.keys(val).reduce((ccObj, field) => ({...ccObj, [camelCase(field)]: val[field]}), {})
-      return val
-    }))
+    const reactElement = React.createElement(factory[e.dataset.reactClass], JSON.parse(reactProps))
     ReactDOM.render(reactElement, targetDiv)
   })
 }

@@ -14,6 +14,7 @@ defmodule GitGud.Repo do
 
   alias GitGud.DB
   alias GitGud.User
+  alias GitGud.UserQuery
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
@@ -26,7 +27,7 @@ defmodule GitGud.Repo do
     field         :name,        :string
     field         :public,      :boolean, default: true
     field         :description, :string
-    many_to_many  :maintainers, User, join_through: "repositories_maintainers", on_delete: :delete_all
+    many_to_many  :maintainers, User, join_through: "repositories_maintainers", on_replace: :delete, on_delete: :delete_all
     timestamps()
   end
 
@@ -56,6 +57,7 @@ defmodule GitGud.Repo do
     |> validate_length(:name, min: 3, max: 80)
     |> assoc_constraint(:owner)
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
+    |> put_maintainers(params)
   end
 
   @doc """
@@ -129,17 +131,6 @@ defmodule GitGud.Repo do
       {:ok, repo} -> repo
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
-  end
-
-  @doc """
-  Puts the given `user` to `repo` maintainer list.
-  """
-  @spec put_maintainer(t, User.t) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def put_maintainer(%__MODULE__{} = repo, %User{} = user) do
-    repo = DB.preload(repo, :maintainers)
-    unless Enum.find(repo.maintainers, &(&1.id == user.id)),
-      do: DB.update(put_assoc(change(repo), :maintainers, [user|repo.maintainers])),
-    else: repo
   end
 
   @doc """
@@ -344,6 +335,30 @@ defmodule GitGud.Repo do
   #
   # Helpers
   #
+
+  defp put_maintainers(changeset, params) do
+    try do
+      put_assoc(changeset, :maintainers, parse_maintainers(params))
+    catch
+      username ->
+        add_error(changeset, :maintainers, "invalid username #{username}")
+    end
+  end
+
+  defp parse_maintainers(params) do
+    params
+    |> Map.get("maintainers", "")
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(& &1 == "")
+    |> Enum.map(&fetch_maintainer/1)
+  end
+
+  defp fetch_maintainer(username) do
+    if user = UserQuery.by_username(username),
+      do: user,
+    else: throw(username)
+  end
 
   defp multi_create(changeset, bare?) do
     Multi.new()
