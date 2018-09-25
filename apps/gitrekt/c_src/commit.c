@@ -177,3 +177,18 @@ geef_commit_author(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     return enif_make_tuple5(env, atoms.ok, name, email, time, offset);
 }
+
+ERL_NIF_TERM
+geef_commit_time(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM time, offset;
+	geef_object *obj;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	time = enif_make_ulong(env, git_commit_time((git_commit *) obj->obj));
+	offset = enif_make_uint(env, git_commit_time_offset((git_commit *) obj->obj));
+
+    return enif_make_tuple3(env, atoms.ok, time, offset);
+}
