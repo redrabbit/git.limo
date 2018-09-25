@@ -34,6 +34,16 @@ defmodule GitGud.GitCommit do
   end
 
   @doc """
+  Returns the timestamp of the given `commit`.
+  """
+  @spec timestamp(t) :: {:ok, DateTime.t} | {:error, term}
+  def timestamp(%__MODULE__{__git__: commit} = _commit) do
+    with {:ok, time, _offset} <- Git.commit_time(commit), # TODO
+         {:ok, datetime} <- DateTime.from_unix(time), do:
+      {:ok, struct(datetime, [])}
+  end
+
+  @doc """
   Returns the tree of the given `commit`.
   """
   @spec tree(t) :: {:ok, GitTree.t} | {:error, term}

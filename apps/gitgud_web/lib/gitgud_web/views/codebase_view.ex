@@ -33,7 +33,25 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(GitCommit.t) :: User.t | nil
+  @spec commit_timestamp(GitCommit.t) :: binary | nil
+  def commit_timestamp(%GitCommit{} = commit) do
+    case GitCommit.timestamp(commit) do
+      {:ok, timestamp} ->
+        Timex.format!(timestamp, "{relative}", :relative)
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_timestamp(GitCommit.t, binary) :: binary | nil
+  def commit_timestamp(%GitCommit{} = commit, format) do
+    case GitCommit.timestamp(commit) do
+      {:ok, timestamp} ->
+        Timex.format!(timestamp, format)
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message(GitCommit.t) :: binary | nil
   def commit_message(%GitCommit{} = commit) do
     case GitCommit.message(commit) do
       {:ok, message} -> message
@@ -41,7 +59,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(GitCommit.t) :: User.t | nil
+  @spec commit_message_title(GitCommit.t) :: binary | nil
   def commit_message_title(%GitCommit{} = commit) do
     if message = commit_message(commit) do
       [title|_body] =  String.split(message, "\n", parts: 2)

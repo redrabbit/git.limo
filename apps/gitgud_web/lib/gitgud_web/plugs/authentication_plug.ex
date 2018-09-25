@@ -6,7 +6,6 @@ defmodule GitGud.Web.AuthenticationPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import Phoenix.Controller, only: [render: 3]
 
   alias GitGud.UserQuery
 
