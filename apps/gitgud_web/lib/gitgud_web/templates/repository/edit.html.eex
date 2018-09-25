@@ -37,7 +37,7 @@
       <div class="field">
         <%= label f, :maintainers, class: "label" %>
         <div class="control">
-          <%= text_input f, :maintainers, class: "input", value: comma_separated_maintainers(@changeset.data.maintainers) %>
+          <%= react_component "UsersInput", id: input_id(f, :maintainers), name: input_name(f, :maintainers), initial_users: Enum.map(@repo.maintainers, &(&1.username)) %>
         </div>
         <%= error_tag f, :maintainers %>
       </div>

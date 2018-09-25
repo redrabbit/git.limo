@@ -17,3 +17,10 @@ $fa-font-path: "../fonts";
     }
   }
 }
+
+.users-input {
+  display: block;
+  .dropdown-menu {
+    width: 100%;
+  }
+}
