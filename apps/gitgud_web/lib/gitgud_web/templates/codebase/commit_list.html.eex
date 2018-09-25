@@ -1,5 +1,7 @@
 <h2 class="subtitle">Commits</h2>
 
+<%= render "_tree_nav.html", assigns %>
+
 <table class="table is-fullwidth is-striped">
   <tbody>
     <%= for commit <- @commits do %>
