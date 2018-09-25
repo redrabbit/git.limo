@@ -1,9 +1,11 @@
+#include <string.h>
+#include <git2.h>
+
+#include "oid.h"
 #include "geef.h"
 #include "repository.h"
 #include "reference.h"
-#include "oid.h"
-#include <string.h>
-#include <git2.h>
+#include "object.h"
 
 static int ref_target(ERL_NIF_TERM *out, ErlNifEnv *env, git_reference *ref)
 {
@@ -69,6 +71,25 @@ static ERL_NIF_TERM ref_shorthand(ERL_NIF_TERM *out, ErlNifEnv *env, git_referen
     return 0;
 }
 
+struct list_data {
+	ErlNifEnv *env;
+	ERL_NIF_TERM list;
+};
+
+static int append_to_list(const char *name, void *payload)
+{
+	struct list_data *data = (struct list_data *) payload;
+	ErlNifBinary bin;
+	size_t len = strlen(name);
+
+	if (!enif_alloc_binary(len, &bin))
+		return -1;
+
+	memcpy(bin.data, name, len);
+	data->list = enif_make_list_cell(data->env, enif_make_binary(data->env, &bin), data->list);
+	return 0;
+}
+
 ERL_NIF_TERM
 geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -102,6 +123,62 @@ geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 on_error:
 	git_strarray_free(&array);
 	return geef_oom(env);
+}
+
+ERL_NIF_TERM
+geef_reference_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_repository *repo;
+	git_reference *ref;
+	ErlNifBinary id, bin;
+	git_otype type;
+	geef_object *peeled;
+	ERL_NIF_TERM term_peeled;
+	int error;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin))
+        return geef_oom(env);
+
+	type = geef_object_atom2type(argv[2]);
+	if (type == GIT_OBJ_BAD)
+		return enif_make_badarg(env);
+
+	error = git_reference_lookup(&ref, repo->repo, (char *)bin.data);
+	enif_release_binary(&bin);
+	if (error < 0)
+		return geef_error(env);
+
+	peeled = enif_alloc_resource(geef_object_type, sizeof(geef_object));
+	if (!peeled)
+		return geef_oom(env);
+
+	error = git_reference_peel(&peeled->obj, ref, type);
+	if (error < 0)
+		return geef_error(env);
+
+	if (geef_oid_bin(&id, git_object_id(peeled->obj)) < 0) {
+		enif_release_resource(peeled);
+		return geef_oom(env);
+	}
+
+	peeled->repo = repo;
+	enif_keep_resource(peeled->repo);
+
+	term_peeled = enif_make_resource(env, peeled);
+	enif_release_resource(peeled);
+
+	git_reference_free(ref);
+	if (error < 0)
+		return geef_error(env);
+
+	return enif_make_tuple4(env, atoms.ok, geef_object_type2atom(git_object_type(peeled->obj)),
+				enif_make_binary(env, &id), term_peeled);
 }
 
 ERL_NIF_TERM
@@ -326,25 +403,6 @@ geef_reference_dwim(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	memcpy(bin.data, name, len);
 
 	return enif_make_tuple4(env, atoms.ok, enif_make_binary(env, &bin), type, target);
-}
-
-struct list_data {
-	ErlNifEnv *env;
-	ERL_NIF_TERM list;
-};
-
-static int append_to_list(const char *name, void *payload)
-{
-	struct list_data *data = (struct list_data *) payload;
-	ErlNifBinary bin;
-	size_t len = strlen(name);
-
-	if (!enif_alloc_binary(len, &bin))
-		return -1;
-
-	memcpy(bin.data, name, len);
-	data->list = enif_make_list_cell(data->env, enif_make_binary(data->env, &bin), data->list);
-	return 0;
 }
 
 ERL_NIF_TERM

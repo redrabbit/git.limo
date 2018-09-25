@@ -5,7 +5,7 @@
     <%= for branch <- @branches do %>
       <tr>
         <td>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.shorthand %></a>
+          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.name %></a>
         </td>
       </tr>
     <% end %>

@@ -26,7 +26,7 @@ class BranchSelect extends React.Component {
               ... on Repo {
                 refs {
                   oid
-                  shorthand
+                  name
                   type
                   url
                 }
@@ -46,7 +46,7 @@ class BranchSelect extends React.Component {
               <div className="branch-select dropdown" ref={this.dropdown}>
                 <div className="dropdown-trigger">
                   <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
-                    <span>{ref.type.charAt(0) + ref.type.toLowerCase().slice(1)}: <strong>{ref.shorthand}</strong></span>
+                    <span>{ref.type.charAt(0) + ref.type.toLowerCase().slice(1)}: <strong>{ref.name}</strong></span>
                     <span className="icon is-small">
                       <i className="fa fa-angle-down" aria-hidden="true"></i>
                     </span>
@@ -69,9 +69,9 @@ class BranchSelect extends React.Component {
                     {props.node.refs.filter(ref =>
                       ref.type == this.state.type
                     ).filter(ref =>
-                      ref.shorthand.includes(this.state.filter)
+                      ref.name.includes(this.state.filter)
                     ).map(ref =>
-                      <a key={ref.oid} href={ref.url} className={"panel-block" + (this.props.oid == ref.oid ? " is-active" : "")}>{ref.shorthand}</a>
+                      <a key={ref.oid} href={ref.url} className={"panel-block" + (this.props.oid == ref.oid ? " is-active" : "")}>{ref.name}</a>
                     )}
                   </nav>
                 </div>

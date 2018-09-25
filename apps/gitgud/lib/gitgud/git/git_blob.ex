@@ -21,7 +21,7 @@ defmodule GitGud.GitBlob do
   end
 
   @doc """
-  Returns the size of the given `blob`.
+  Returns the size in bytes of the given `blob`.
   """
   @spec size(t) :: {:ok, non_neg_integer} | {:error, term}
   def size(%__MODULE__{__git__: blob} = _blob) do

@@ -24,6 +24,8 @@ ERL_NIF_TERM geef_object_type2atom(const git_otype type)
 		return atoms.blob;
 	case GIT_OBJ_TAG:
 		return atoms.tag;
+	case GIT_OBJ_ANY:
+		return atoms.any;
 	default:
 		return atoms.error;
 	}
@@ -39,6 +41,8 @@ git_otype geef_object_atom2type(ERL_NIF_TERM term)
 		return GIT_OBJ_BLOB;
 	else if (!enif_compare(term, atoms.tag))
 		return GIT_OBJ_TAG;
+	else if (!enif_compare(term, atoms.any))
+		return GIT_OBJ_ANY;
 
 	return GIT_OBJ_BAD;
 }
@@ -65,6 +69,7 @@ geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_repository *repo;
 	ErlNifBinary bin;
 	git_oid id;
+	git_otype type;
 	geef_object *obj;
 	ERL_NIF_TERM term_obj;
 

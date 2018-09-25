@@ -27,7 +27,7 @@ defmodule GitGud.Web.CodebaseController do
       if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
       else: with {:ok, head} <- Repo.git_head(repo),
-                 {:ok, commit} <- GitReference.commit(head),
+                 {:ok, commit} <- GitReference.target(head),
                  {:ok, tree} <- GitCommit.tree(commit), do:
               render(conn, "show.html", repo: repo, reference: head, tree: tree, tree_path: [], stats: stats!(head))
     else
@@ -68,8 +68,9 @@ defmodule GitGud.Web.CodebaseController do
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commits} <- GitReference.commit_history(reference), do:
-        render(conn, "commit_list.html", repo: repo, reference: reference, commits: commits)
+           {:ok, commit} <- GitReference.target(reference),
+           {:ok, history} <- GitCommit.history(commit), do:
+        render(conn, "commit_list.html", repo: repo, reference: reference, commits: history)
     else
       {:error, :not_found}
     end
@@ -78,7 +79,7 @@ defmodule GitGud.Web.CodebaseController do
   def commits(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, head} <- Repo.git_head(repo), do:
-        redirect(conn, to: codebase_path(conn, :commits, username, repo, head.shorthand))
+        redirect(conn, to: codebase_path(conn, :commits, username, repo, head))
     else
       {:error, :not_found}
     end
@@ -99,7 +100,7 @@ defmodule GitGud.Web.CodebaseController do
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => []} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.commit(reference),
+           {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit), do:
         render(conn, "show.html", repo: repo, reference: reference, tree: tree, tree_path: [], stats: stats!(reference))
     else
@@ -110,7 +111,7 @@ defmodule GitGud.Web.CodebaseController do
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.commit(reference),
+           {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(tree_path)),
            {:ok, tree} <- GitTreeEntry.object(tree_entry), do:
@@ -127,7 +128,7 @@ defmodule GitGud.Web.CodebaseController do
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.commit(reference),
+           {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(blob_path)),
            {:ok, blob} <- GitTreeEntry.object(tree_entry), do:
@@ -142,11 +143,12 @@ defmodule GitGud.Web.CodebaseController do
   #
 
   defp stats!(%GitReference{repo: repo} = reference) do
-    with {:ok, commit_count} <- GitReference.commit_count(reference),
-         {:ok, branch_count} <- Repo.git_branch_count(repo),
-         {:ok, tag_count} <- Repo.git_tag_count(repo) do
+    with {:ok, commit} <- GitReference.target(reference),
+         {:ok, history} <- GitCommit.history(commit),
+         {:ok, branches} <- Repo.git_branches(repo),
+         {:ok, tags} <- Repo.git_tags(repo) do
       maintainer_count = Repo.maintainer_count(repo)
-      %{commits: commit_count, branches: branch_count, tags: tag_count, maintainers: maintainer_count}
+      %{commits: Enum.count(history), branches: Enum.count(branches), tags: Enum.count(tags), maintainers: maintainer_count}
     else
       {:error, reason} -> raise RuntimeError, message: "failed to make stats: #{inspect reason}"
     end

@@ -2,12 +2,14 @@ defmodule GitGud.Web.CodebaseView do
   @moduledoc false
   use GitGud.Web, :view
 
+  alias GitGud.UserQuery
+
   alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
-  import GitRekt.Git, only: [oid_fmt: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   @spec blob_content(GitBlob.t) :: binary | nil
   def blob_content(%GitBlob{} = blob) do
@@ -25,10 +27,10 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(GitCommit.t) :: User.t | nil
-  def commit_author(%GitCommit{} = commit) do
+  @spec commit_user(GitCommit.t) :: User.t | nil
+  def commit_user(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
-      {:ok, author} -> author
+      {:ok, {_name, email, _datetime}} -> UserQuery.by_email(email)
       {:error, _reason} -> nil
     end
   end
@@ -69,9 +71,6 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec oid_fmt_short(Git.oid) :: binary
-  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..7)
-
   @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(%GitTree{} = tree) do
     case GitTree.entries(tree) do
@@ -86,7 +85,7 @@ defmodule GitGud.Web.CodebaseView do
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
   def title(:commits, %{repo: repo}), do: "Commits · #{repo.owner.username}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.username}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: []}), do: "#{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
-  def title(:blob, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.shorthand} · #{repo.owner.username}/#{repo.name}"
+  def title(:tree, %{repo: repo, reference: ref, tree_path: []}), do: "#{ref.name} · #{repo.owner.username}/#{repo.name}"
+  def title(:tree, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.name} · #{repo.owner.username}/#{repo.name}"
+  def title(:blob, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.name} · #{repo.owner.username}/#{repo.name}"
 end

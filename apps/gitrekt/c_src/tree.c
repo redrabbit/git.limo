@@ -105,7 +105,7 @@ geef_tree_nth(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	entry = git_tree_entry_byindex((git_tree *)obj->obj, nth);
 
 	if (!entry)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return tree_entry_to_term(env, entry);
 }

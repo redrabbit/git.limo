@@ -21,7 +21,14 @@ defmodule GitGud.UserQuery do
   Returns a user for the given `username`.
   """
   @spec by_username(binary, keyword) :: User.t | nil
-  def by_username(username, opts \\ []) do
+  @spec by_username([binary], keyword) :: [User.t]
+  def by_username(username, opts \\ [])
+  def by_username(usernames, opts) when is_list(usernames) do
+    {params, opts} = extract_opts(opts)
+    DB.all(user_query({:username, usernames}, params), opts)
+  end
+
+  def by_username(username, opts) do
     {params, opts} = extract_opts(opts)
     DB.one(user_query({:username, username}, params), opts)
   end
@@ -30,7 +37,14 @@ defmodule GitGud.UserQuery do
   Returns a user for the given `email`.
   """
   @spec by_email(binary, keyword) :: User.t | nil
-  def by_email(email, opts \\ []) do
+  @spec by_email([binary], keyword) :: [User.t]
+  def by_email(email, opts \\ [])
+  def by_email(emails, opts) when is_list(emails) do
+    {params, opts} = extract_opts(opts)
+    DB.all(user_query({:email, emails}, params), opts)
+  end
+
+  def by_email(email, opts) do
     {params, opts} = extract_opts(opts)
     DB.one(user_query({:email, email}, params), opts)
   end
@@ -46,6 +60,14 @@ defmodule GitGud.UserQuery do
 
   defp user_query(id) when is_integer(id) do
     where(User, id: ^id)
+  end
+
+  defp user_query({:username, val}) when is_list(val) do
+    from(u in User, where: u.username in ^val)
+  end
+
+  defp user_query({:email, val}) when is_list(val) do
+    from(u in User, where: u.email in ^val)
   end
 
   defp user_query({_key, _val} = where) do

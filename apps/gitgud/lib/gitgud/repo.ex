@@ -167,7 +167,7 @@ defmodule GitGud.Repo do
   def git_head(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
+      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   @doc """
@@ -179,23 +179,23 @@ defmodule GitGud.Repo do
   def git_reference(%__MODULE__{} = repo, "/refs/" <> _suffix = name) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
+      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   def git_reference(%__MODULE__{} = repo, shorthand) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
+      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec git_references(t, binary | :undefined) :: {:ok, GitReference.t} | {:error, term}
+  @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, glob), do:
-      {:ok, Enum.map(stream, &transform_reference(&1, {repo, handle}))}
+      {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
   end
 
   @doc """
@@ -206,58 +206,38 @@ defmodule GitGud.Repo do
     name = "refs/heads/" <> branch_name
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}}
-  end
-
-  @doc """
-  Returns the number of Git branches.
-  """
-  @spec git_branch_count(t) :: {:ok, non_neg_integer} | {:error, term}
-  def git_branch_count(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
-      {:ok, Enum.count(stream)}
+      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   @doc """
   Returns all Git branches.
   """
-  @spec git_branches(t) :: {:ok, [GitReference.t]} | {:error, term}
+  @spec git_branches(t) :: {:ok, Stream.t} | {:error, term}
   def git_branches(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
-      {:ok, Enum.map(stream, &transform_reference(&1, {repo, handle}))}
+      {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
   end
 
   @doc """
   Returns a Git tag for the given `tag_name`.
   """
-  @spec git_tag(t, binary) :: {:ok, GitTag.t} | {:error, term}
+  @spec git_tag(t, binary) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
   def git_tag(%__MODULE__{} = repo, tag_name) do
     name = "refs/tags/" <> tag_name
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, %GitTag{oid: oid, name: shorthand, repo: repo, __git__: handle}}
-  end
-
-  @doc """
-  Returns the number of Git tags.
-  """
-  @spec git_tag_count(t) :: {:ok, non_neg_integer} | {:error, term}
-  def git_tag_count(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, Enum.count(stream)}
+      {:ok, resolve_tag({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   @doc """
   Returns all Git tags.
   """
-  @spec git_tags(t) :: {:ok, [GitTag.t]} | {:error, term}
+  @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
   def git_tags(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
-      {:ok, Enum.map(stream, &transform_tag(&1, {repo, handle}))}
+      {:ok, Stream.map(stream, &resolve_tag(&1, {repo, handle}))}
   end
 
   @doc """
@@ -267,17 +247,7 @@ defmodule GitGud.Repo do
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
-      {:ok, transform_object({obj, obj_type, oid}, repo)}
-  end
-
-  @doc """
-  Returns the Git object matching the given `oid`.
-  """
-  @spec git_object(t, Git.oid) :: {:ok, git_object} | {:error, term}
-  def git_object(%__MODULE__{} = repo, oid) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, obj, obj_type, oid} <- Git.object_lookup(handle, oid), do:
-      {:ok, transform_object({obj, obj_type, oid}, repo)}
+      {:ok, resolve_object({obj, obj_type, oid}, repo)}
   end
 
   @doc """
@@ -403,16 +373,22 @@ defmodule GitGud.Repo do
     File.rm_rf(workdir(repo))
   end
 
-  defp transform_object({commit, :commit, oid}, repo), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
-  defp transform_object({tag, :tag, oid}, repo), do: %GitTag{oid: oid, repo: repo, __git__: tag}
-  defp transform_object({tree, :tree, oid}, repo), do: %GitTree{oid: oid, repo: repo, __git__: tree}
-  defp transform_object({blob, :blob, oid}, repo), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
+  defp resolve_object({blob, :blob, oid}, repo), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
+  defp resolve_object({commit, :commit, oid}, repo), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
+  defp resolve_object({tag, :tag, oid}, repo), do: %GitTag{oid: oid, repo: repo, __git__: tag}
+  defp resolve_object({tree, :tree, oid}, repo), do: %GitTree{oid: oid, repo: repo, __git__: tree}
 
-  defp transform_reference({name, shorthand, :oid, oid}, {repo, handle}) do
-    %GitReference{oid: oid, name: name, shorthand: shorthand, repo: repo, __git__: handle}
+  defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
+    prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
+    %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
   end
 
-  defp transform_tag({_name, shorthand, :oid, oid}, {repo, handle}) do
-    %GitTag{oid: oid, name: shorthand, repo: repo, __git__: handle}
+  defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do
+    case Git.reference_peel(handle, name, :tag) do
+      {:ok, :tag, oid, tag} ->
+        %GitTag{oid: oid, repo: repo, __git__: tag}
+      {:error, _reason} ->
+        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
+    end
   end
 end

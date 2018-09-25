@@ -83,6 +83,7 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.tree = enif_make_atom(env, "tree");
 	atoms.blob = enif_make_atom(env, "blob");
 	atoms.tag = enif_make_atom(env, "tag");
+	atoms.any = enif_make_atom(env, "any");
 	atoms.undefined = enif_make_atom(env, "undefined");
 	atoms.reflog_entry = enif_make_atom(env, "geef_reflog_entry");
 	/* Revwalk */
@@ -181,6 +182,7 @@ static ErlNifFunc geef_funcs[] =
     {"odb_read", 2, geef_odb_read},
 	{"odb_write", 3, geef_odb_write},
 	{"reference_list", 1, geef_reference_list},
+	{"reference_peel", 3, geef_reference_peel},
 	{"reference_to_id", 2, geef_reference_to_id},
 	{"reference_glob", 2, geef_reference_glob},
 	{"reference_lookup", 2, geef_reference_lookup},

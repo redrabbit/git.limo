@@ -18,6 +18,7 @@ typedef struct {
 	ERL_NIF_TERM tree;
 	ERL_NIF_TERM blob;
 	ERL_NIF_TERM tag;
+	ERL_NIF_TERM any;
 	ERL_NIF_TERM undefined;
 	ERL_NIF_TERM toposort;
 	ERL_NIF_TERM timesort;

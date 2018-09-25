@@ -152,6 +152,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Recursively peels the given reference `name` until an object of type `type` is found.
+  """
+  @spec reference_peel(repo, binary, obj_type | :any) :: {:ok, obj_type, oid, obj} | {:error, term}
+  def reference_peel(_repo, _name, _type \\ :any) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Creates a new reference name which points to an object or to an other reference.
   """
   @spec reference_create(repo, binary, ref_type, binary | oid, boolean) :: :ok | {:error, term}
@@ -291,6 +299,12 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the abbreviated SHA `hash` for the given `oid`.
+  """
+  @spec oid_fmt_short(oid) :: binary
+  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..7)
+
+  @doc """
   Returns the OID for the given SHA `hash`.
   """
   @spec oid_parse(binary) :: oid
@@ -413,12 +427,9 @@ defmodule GitRekt.Git do
   @doc """
   Returns all entries in the given `tree`.
   """
-  @spec tree_list(tree) :: {:ok, [tree_entry]} | {:error, term}
-  def tree_list(tree) do
-    case tree_count(tree) do
-      {:ok, size} -> {:ok, tree_to_list(tree, size)}
-      {:error, reason} -> {:error, reason}
-    end
+  @spec tree_entries(tree) :: {:ok, Stream.t} | {:error, term}
+  def tree_entries(tree) do
+    {:ok, Stream.resource(fn -> {tree, 0} end, &tree_stream_next/1, fn _iter -> :ok end)}
   end
 
   @doc """
@@ -776,11 +787,6 @@ defmodule GitRekt.Git do
   # Helpers
   #
 
-  defp tree_to_list(tree, size) do
-    for i <- 0..size-1, {:ok, mode, type, oid, path} = tree_nth(tree, i), do:
-      {mode, type, oid, path}
-  end
-
   defp reference_stream_next(iter) do
     case reference_next(iter) do
       {:ok, name, type, shortname, target} ->
@@ -796,6 +802,16 @@ defmodule GitRekt.Git do
         {[oid], walk}
       {:error, :iterover} ->
         {:halt, walk}
+    end
+  end
+
+  defp tree_stream_next(iter) do
+    {tree, i} = iter
+    case tree_nth(tree, i) do
+      {:ok, mode, type, oid, path} ->
+        {[{mode, type, oid, path}], {tree, i+1}}
+      {:error, :enomem} ->
+        {:halt, iter}
     end
   end
 end

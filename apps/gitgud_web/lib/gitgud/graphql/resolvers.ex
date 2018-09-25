@@ -16,7 +16,8 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.GitTree
 
   import String, only: [to_integer: 1]
-
+  import Absinthe.Resolution.Helpers, only: [batch: 3]
+  import GitRekt.Git, only: [oid_fmt: 1]
   import GitGud.Web.Router.Helpers
 
   @doc """
@@ -67,14 +68,18 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
-  def url(%GitReference{repo: repo, shorthand: shorthand} = _reference, %{} = _args, _info) do
-    {:ok, codebase_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, shorthand, [])}
+  def url(%GitReference{repo: repo, name: name} = _reference, %{} = _args, _info) do
+    {:ok, codebase_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, name, [])}
+  end
+
+  def url(%GitCommit{repo: repo, oid: oid} = _commit, %{} = _args, _info) do
+    {:ok, codebase_url(GitGud.Web.Endpoint, :commit, repo.owner, repo, oid_fmt(oid))}
   end
 
   @doc """
   Resolves an user object by username.
   """
-  @spec user(%{}, %{username: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec user(%{}, %{username: binary}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
   def user(%{} = _root, %{username: username} = _args, _info) do
     if user = UserQuery.by_username(username),
       do: {:ok, user},
@@ -84,7 +89,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a list of users for a given search term.
   """
-  @spec user_search(%{}, %{input: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec user_search(%{}, %{input: binary}, Absinthe.Resolution.t) :: {:ok, [User.t]} | {:error, term}
   def user_search(%{} = _root, %{input: input} = _args, _info) do
     {:ok, UserQuery.search(input)}
   end
@@ -118,57 +123,119 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the default branch object for a given `repo`.
   """
-  @spec repo_head(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec repo_head(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def repo_head(%Repo{} = repo, %{} = _args, _info) do
     Repo.git_head(repo)
   end
 
   @doc """
-  Resolves a Git reference object by name or shorthand for a given `repo`.
+  Resolves a Git reference object by name for a given `repo`.
   """
-  @spec repo_refs(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
-  def repo_refs(%Repo{} = repo, %{} = args, _info) do
-    Repo.git_references(repo, Map.get(args, :glob, :undefined))
+  @spec repo_ref(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
+  def repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
+    Repo.git_reference(repo, name)
   end
 
   @doc """
-  Resolves a Git reference object by name or shorthand for a given `repo`.
+  Resolves all Git reference objects for a given `repo`.
   """
-  @spec repo_ref(Repo.t, %{name: binary} | %{shorthand: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def repo_ref(%Repo{} = repo, %{name: name} = _args, _info), do: Repo.git_reference(repo, name)
-  def repo_ref(%Repo{} = repo, %{shorthand: dwim} = _args, _info), do: Repo.git_reference(repo, dwim)
+  @spec repo_refs(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitReference.t]} | {:error, term}
+  def repo_refs(%Repo{} = repo, %{} = args, _info) do
+    case Repo.git_references(repo, Map.get(args, :glob, :undefined)) do
+      {:ok, stream} ->
+        {:ok, Enum.to_list(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Resolves a Git tag object by name for a given `repo`.
+  """
+  @spec repo_tag(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
+  def repo_tag(%Repo{} = repo, %{name: name} = _args, _info) do
+    Repo.git_tag(repo, name)
+  end
+
+  @doc """
+  Resolves all Git tag objects for a given `repo`.
+  """
+  @spec repo_tags(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitReference.t | GitTag.t]} | {:error, term}
+  def repo_tags(%Repo{} = repo, %{} = _args, _info) do
+    case Repo.git_tags(repo) do
+      {:ok, stream} ->
+        {:ok, Enum.to_list(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Resolves the type for a given Git `actor`.
+  """
+  @spec git_actor_type(User.t | map, Absinthe.Resolution.t) :: atom
+  def git_actor_type(%User{} = _actor, _info), do: :user
+  def git_actor_type(actor, _info) when is_map(actor), do: :unknown_user
+
+  @doc """
+  Resolves a Git object for the given `repo`.
+  """
+  @spec git_object(Repo.t, %{rev: binary}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
+  def git_object(%Repo{} = repo, %{rev: rev} = _args, _info) do
+    Repo.git_revision(repo, rev)
+  end
+
+  @doc """
+  Resolves the type for a given Git `object`.
+  """
+  @spec git_object_type(Repo.git_object, Absinthe.Resolution.t) :: atom
+  def git_object_type(%GitBlob{} = _object, _info), do: :git_blob
+  def git_object_type(%GitCommit{} = _object, _info), do: :git_commit
+  def git_object_type(%GitTag{} = _object, _info), do: :git_annotated_tag
+  def git_object_type(%GitTree{} = _object, _info), do: :git_tree
+
+  @doc """
+  Resolves the Git target for the given Git `reference` object.
+  """
+  @spec git_reference_target(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
+  def git_reference_target(%GitReference{} = reference, %{} = _args, _info) do
+    GitReference.target(reference)
+  end
 
   @doc """
   Resolves the type for the given Git `reference` object.
   """
-  @spec git_reference_type(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
+  @spec git_reference_type(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.type} | {:error, term}
   def git_reference_type(%GitReference{} = reference, %{} = _args, _info) do
     GitReference.type(reference)
   end
 
   @doc """
-  Resolves a Git object for a given `object`.
+  Resolves the commit history starting from the given Git `reference` object.
   """
-  @spec git_object(struct, %{rev: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def git_object(%Repo{} = object, %{rev: rev} = _args, _info), do: Repo.git_revision(object, rev)
-  def git_object(%GitReference{} = object, %{} = _args, _info), do: GitReference.commit(object)
-  def git_object(%GitTreeEntry{} = object, %{} = _args, _info), do: GitTreeEntry.object(object)
-
-  @doc """
-  Resolves the type for a given Git object.
-  """
-  @spec git_object_type(struct, Absinthe.Resolution.t) :: atom
-  def git_object_type(%GitBlob{} = _object, _info), do: :git_blob
-  def git_object_type(%GitCommit{} = _object, _info), do: :git_commit
-  def git_object_type(%GitTag{} = _object, _info), do: :git_tag
-  def git_object_type(%GitTree{} = _object, _info), do: :git_tree
+  @spec git_commit_history(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitCommit.t]} | {:error, term}
+  def git_commit_history(%GitCommit{} = commit, %{} = _args, _info) do
+    case GitCommit.history(commit) do
+      {:ok, stream} ->
+        {:ok, Enum.to_list(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   @doc """
   Resolves the author for a given Git `commit` object.
   """
-  @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
   def git_commit_author(%GitCommit{} = commit, %{} = _args, _info) do
-    GitCommit.author(commit)
+    case GitCommit.author(commit) do
+      {:ok, {name, email, _datetime}} ->
+        batch({__MODULE__, :batch_users_by_email}, email, fn users ->
+          {:ok, users[email] || %{name: name, email: email}}
+        end)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -179,29 +246,87 @@ defmodule GitGud.GraphQL.Resolvers do
     GitCommit.message(commit)
   end
 
+  @doc """
+  Resolves the timestamp for a given Git `commit` object.
+  """
+  @spec git_commit_timestamp(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, DateTime.t} | {:error, term}
+  def git_commit_timestamp(%GitCommit{} = commit, %{} = _args, _info) do
+    GitCommit.timestamp(commit)
+  end
 
   @doc """
   Resolves the tree for a given Git `commit` object.
   """
-  @spec git_commit_tree(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  @spec git_commit_tree(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
   def git_commit_tree(%GitCommit{} = commit, %{} = _args, _info) do
     GitCommit.tree(commit)
   end
 
   @doc """
-  Resolves the number of entries for a given Git `tree` object.
+  Resolves the name for a given Git `tag` object.
   """
-  @spec git_tree_count(GitTree.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def git_tree_count(%GitTree{} = tree, %{} = _args, _info) do
-    GitTree.count(tree)
+  @spec git_tag_name(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
+  def git_tag_name(%GitTag{} = tag, %{} = _args, _info) do
+    GitTag.name(tag)
   end
+
+  @doc """
+  Resolves the author for a given Git `tag` object.
+  """
+  @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
+  def git_tag_author(%GitTag{} = tag, %{} = _args, _info) do
+    case GitTag.author(tag) do
+      {:ok, {name, email, _datetime}} ->
+        batch({__MODULE__, :batch_users_by_email}, email, fn users ->
+          {:ok, users[email] || %{name: name, email: email}}
+        end)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Resolves the message for a given Git `tag` object.
+  """
+  @spec git_tag_message(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
+  def git_tag_message(%GitTag{} = tag, %{} = _args, _info) do
+    GitTag.message(tag)
+  end
+
+  @doc """
+  Resolves the Git target for the given Git `tag` object.
+  """
+  @spec git_tag_target(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
+  def git_tag_target(%GitTag{} = tag, %{} = _args, _info) do
+    GitTag.target(tag)
+  end
+
+  @doc """
+  Resolves the type for a given Git `tag`.
+  """
+  @spec git_tag_type(GitReference.t | GitTag.t, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
+  def git_tag_type(%GitReference{} = _tag, _info), do: :git_reference
+  def git_tag_type(%GitTag{} = _tag, _info), do: :git_annotated_tag
 
   @doc """
   Resolves the tree entries for a given Git `tree` object.
   """
-  @spec git_tree_entries(GitTree.t, %{}, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
+  @spec git_tree_entries(GitTree.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
   def git_tree_entries(%GitTree{} = tree, %{} = _args, _info) do
-    GitTree.entries(tree)
+    case GitTree.entries(tree) do
+      {:ok, stream} ->
+        {:ok, Enum.to_list(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Returns the underlying Git object for a given Git `tree_entry` object.
+  """
+  @spec git_tree_entry_object(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
+  def git_tree_entry_object(%GitTreeEntry{} = tree_entry, %{} = _args, _info) do
+    GitTreeEntry.object(tree_entry)
   end
 
   @doc """
@@ -210,6 +335,15 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_blob_size(GitBlob.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def git_blob_size(%GitBlob{} = blob, %{} = _args, _info) do
     GitBlob.size(blob)
+  end
+
+  @doc false
+  @spec batch_users_by_email(any, [binary]) :: map
+  def batch_users_by_email(_, emails) do
+    emails
+    |> Enum.uniq()
+    |> UserQuery.by_email()
+    |> Map.new(&{&1.email, &1})
   end
 
   #
