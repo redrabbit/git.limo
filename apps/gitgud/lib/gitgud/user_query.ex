@@ -35,6 +35,11 @@ defmodule GitGud.UserQuery do
     DB.one(user_query({:email, email}, params), opts)
   end
 
+  def search(term, opts \\ []) do
+    {params, opts} = extract_opts(opts)
+    DB.all(user_search_query(term, params), opts)
+  end
+
   #
   # Helpers
   #
@@ -49,6 +54,15 @@ defmodule GitGud.UserQuery do
 
   defp user_query(match, {preloads, viewer}) do
     exec_preload(user_query(match), preloads, viewer)
+  end
+
+  defp user_search_query(search_term) do
+    term = "%#{search_term}%"
+    from(u in User, where: ilike(u.username, ^term))
+  end
+
+  defp user_search_query(match, {preloads, viewer}) do
+    exec_preload(user_search_query(match), preloads, viewer)
   end
 
   defp exec_preload(query, [], _viewer), do: query

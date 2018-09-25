@@ -51,10 +51,9 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.user/3
     end
 
-    field :repo, :repo do
-      arg :owner, non_null(:string)
-      arg :name, non_null(:string)
-      resolve &Resolvers.repo/3
+    field :user_search, list_of(:user) do
+      arg :input, non_null(:string)
+      resolve &Resolvers.user_search/3
     end
   end
 

@@ -82,6 +82,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves a list of users for a given search term.
+  """
+  @spec user_search(%{}, %{input: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
+  def user_search(%{} = _root, %{input: input} = _args, _info) do
+    {:ok, UserQuery.search(input)}
+  end
+
+  @doc """
   Resolves a repository object by name for a given `user`.
   """
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
@@ -97,16 +105,6 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec user_repos(User.t, %{}, Absinthe.Resolution.t) :: {:ok, [Repo.t]} | {:error, term}
   def user_repos(%User{} = user, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, RepoQuery.user_repositories(user, viewer: ctx[:current_user])}
-  end
-
-  @doc """
-  Resolves a repo object by owner and name.
-  """
-  @spec repo(%{}, %{owner: binary, name: binary}, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def repo(%{} = _root, %{owner: username, name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if repo = RepoQuery.user_repository(username, name, viewer: ctx[:current_user]),
-      do: {:ok, repo},
-    else: {:error, "this given repository '#{username}/#{name}' is not valid"}
   end
 
   @doc """
