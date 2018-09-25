@@ -7,7 +7,12 @@
     <%= for commit <- @commits do %>
       <tr>
         <td>
-          <a href="<%= codebase_path(@conn, :commit, @repo, @repo.owner, commit) %>"><%= commit_message_title(commit) %></a>
+          <p class="has-text-weight-bold">
+            <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
+          </p>
+        </td>
+        <td class="has-text-right">
+          <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>
         </td>
       </tr>
     <% end %>
