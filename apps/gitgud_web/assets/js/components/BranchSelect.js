@@ -52,31 +52,29 @@ class BranchSelect extends React.Component {
                     </span>
                   </button>
                 </div>
-                {this.state.toggled &&
-                  <div className="dropdown-menu">
-                    <nav className="panel">
-                      <div className="panel-heading">
-                        <p className="control has-icons-left">
-                          <input className="input is-small" value={this.state.filter} type="text" placeholder="search" onChange={this.handleSearch} />
-                          <span className="icon is-small is-left">
-                            <i className="fa fa-search" aria-hidden="true"></i>
-                          </span>
-                        </p>
-                      </div>
-                      <p className="panel-tabs">
-                        <a className={this.state.type == "BRANCH" ? "is-active" : ""} onClick={() => this.setState({type: "BRANCH"})}>Branches</a>
-                        <a className={this.state.type == "TAG" ? "is-active" : ""} onClick={() => this.setState({type: "TAG"})}>Tags</a>
+                <div className="dropdown-menu">
+                  <nav className="panel">
+                    <div className="panel-heading">
+                      <p className="control has-icons-left">
+                        <input className="input is-small" value={this.state.filter} type="text" placeholder="search" onChange={this.handleSearch} />
+                        <span className="icon is-small is-left">
+                          <i className="fa fa-search" aria-hidden="true"></i>
+                        </span>
                       </p>
-                      {props.node.refs.filter(ref =>
-                        ref.type == this.state.type
-                      ).filter(ref =>
-                        ref.shorthand.includes(this.state.filter)
-                      ).map(ref =>
-                        <a key={ref.oid} href={ref.url} className={"panel-block" + (this.props.oid == ref.oid ? " is-active" : "")}>{ref.shorthand}</a>
-                      )}
-                    </nav>
-                  </div>
-                }
+                    </div>
+                    <p className="panel-tabs">
+                      <a className={this.state.type == "BRANCH" ? "is-active" : ""} onClick={() => this.setState({type: "BRANCH"})}>Branches</a>
+                      <a className={this.state.type == "TAG" ? "is-active" : ""} onClick={() => this.setState({type: "TAG"})}>Tags</a>
+                    </p>
+                    {props.node.refs.filter(ref =>
+                      ref.type == this.state.type
+                    ).filter(ref =>
+                      ref.shorthand.includes(this.state.filter)
+                    ).map(ref =>
+                      <a key={ref.oid} href={ref.url} className={"panel-block" + (this.props.oid == ref.oid ? " is-active" : "")}>{ref.shorthand}</a>
+                    )}
+                  </nav>
+                </div>
               </div>
             )
           }
