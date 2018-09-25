@@ -1,7 +1,13 @@
 <h2 class="subtitle">Branches</h2>
 
-<ul>
-<%= for branch <- @branches do %>
-  <li class="list-group-item"><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.shorthand %></a></li>
-<% end %>
-</ul>
+<table class="table is-fullwidth is-striped">
+  <tbody>
+    <%= for branch <- @branches do %>
+      <tr>
+        <td>
+          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.shorthand %></a>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
