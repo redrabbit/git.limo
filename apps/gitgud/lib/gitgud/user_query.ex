@@ -74,8 +74,11 @@ defmodule GitGud.UserQuery do
     where(User, ^List.wrap(where))
   end
 
-  defp user_query(match, {preloads, viewer}) do
-    exec_preload(user_query(match), preloads, viewer)
+  defp user_query(match, {pagination, preloads, viewer}) do
+    match
+    |> user_query()
+    |> exec_pagination(pagination)
+    |> exec_preload(preloads, viewer)
   end
 
   defp user_search_query(search_term) do
@@ -83,8 +86,20 @@ defmodule GitGud.UserQuery do
     from(u in User, where: ilike(u.username, ^term))
   end
 
-  defp user_search_query(match, {preloads, viewer}) do
-    exec_preload(user_search_query(match), preloads, viewer)
+  defp user_search_query(match, {pagination, preloads, viewer}) do
+    match
+    |> user_search_query()
+    |> exec_pagination(pagination)
+    |> exec_preload(preloads, viewer)
+  end
+
+  defp exec_pagination(query, {nil, nil}), do: query
+  defp exec_pagination(query, {offset, nil}), do: offset(query, ^offset)
+  defp exec_pagination(query, {nil, limit}), do: limit(query, ^limit)
+  defp exec_pagination(query, {offset, limit}) do
+    query
+    |> offset(^offset)
+    |> limit(^limit)
   end
 
   defp exec_preload(query, [], _viewer), do: query
@@ -112,8 +127,10 @@ defmodule GitGud.UserQuery do
   end
 
   defp extract_opts(opts) do
+    {offset, opts} = Keyword.pop(opts, :offset)
+    {limit, opts} = Keyword.pop(opts, :limit)
     {preloads, opts} = Keyword.pop(opts, :preload, [])
     {viewer, opts} = Keyword.pop(opts, :viewer)
-    {{List.wrap(preloads), viewer}, opts}
+    {{{offset, limit}, List.wrap(preloads), viewer}, opts}
   end
 end

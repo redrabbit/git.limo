@@ -82,8 +82,20 @@ defmodule GitGud.RepoQuery do
     where(repo_query(user), name: ^name)
   end
 
-  defp repo_query(match, {preloads, viewer}) do
-    exec_preload(repo_query(match), preloads, viewer)
+  defp repo_query(match, {pagination, preloads, viewer}) do
+    match
+    |> repo_query()
+    |> exec_pagination(pagination)
+    |> exec_preload(preloads, viewer)
+  end
+
+  defp exec_pagination(query, {nil, nil}), do: query
+  defp exec_pagination(query, {offset, nil}), do: offset(query, ^offset)
+  defp exec_pagination(query, {nil, limit}), do: limit(query, ^limit)
+  defp exec_pagination(query, {offset, limit}) do
+    query
+    |> offset(^offset)
+    |> limit(^limit)
   end
 
   defp exec_preload(query, preloads, nil) do
@@ -100,8 +112,10 @@ defmodule GitGud.RepoQuery do
   end
 
   defp extract_opts(opts) do
+    {offset, opts} = Keyword.pop(opts, :offset)
+    {limit, opts} = Keyword.pop(opts, :limit)
     {preloads, opts} = Keyword.pop(opts, :preload, [])
     {viewer, opts} = Keyword.pop(opts, :viewer)
-    {{List.wrap(preloads), viewer}, opts}
+    {{{offset, limit}, List.wrap(preloads), viewer}, opts}
   end
 end
