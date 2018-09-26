@@ -24,11 +24,15 @@ class BranchSelect extends React.Component {
           query BranchSelectQuery($repoID: ID!) {
             node(id: $repoID) {
               ... on Repo {
-                refs {
-                  oid
-                  name
-                  type
-                  url
+                refs(first: 100) {
+                  edges {
+                    node {
+                      oid
+                      name
+                      type
+                      url
+                    }
+                  }
                 }
               }
             }
@@ -41,12 +45,12 @@ class BranchSelect extends React.Component {
           if(error) {
             return <div>{error.message}</div>
           } else if(props) {
-            let ref = props.node.refs.find(ref => ref.oid == this.props.oid)
+            let edge = props.node.refs.edges.find(edge => edge.node.oid == this.props.oid)
             return (
               <div className="branch-select dropdown" ref={this.dropdown}>
                 <div className="dropdown-trigger">
                   <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
-                    <span>{ref.type.charAt(0) + ref.type.toLowerCase().slice(1)}: <strong>{ref.name}</strong></span>
+                    <span>{edge.node.type.charAt(0) + edge.node.type.toLowerCase().slice(1)}: <strong>{edge.node.name}</strong></span>
                     <span className="icon is-small">
                       <i className="fa fa-angle-down" aria-hidden="true"></i>
                     </span>
@@ -66,12 +70,12 @@ class BranchSelect extends React.Component {
                       <a className={this.state.type == "BRANCH" ? "is-active" : ""} onClick={() => this.setState({type: "BRANCH"})}>Branches</a>
                       <a className={this.state.type == "TAG" ? "is-active" : ""} onClick={() => this.setState({type: "TAG"})}>Tags</a>
                     </p>
-                    {props.node.refs.filter(ref =>
-                      ref.type == this.state.type
-                    ).filter(ref =>
-                      ref.name.includes(this.state.filter)
-                    ).map(ref =>
-                      <a key={ref.oid} href={ref.url} className={"panel-block" + (this.props.oid == ref.oid ? " is-active" : "")}>{ref.name}</a>
+                    {props.node.refs.edges.filter(edge =>
+                      edge.node.type == this.state.type
+                    ).filter(edge =>
+                      edge.node.name.includes(this.state.filter)
+                    ).map(edge =>
+                      <a key={edge.node.oid} href={edge.node.url} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                     )}
                   </nav>
                 </div>

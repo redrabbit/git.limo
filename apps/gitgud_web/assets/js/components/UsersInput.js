@@ -47,10 +47,14 @@ class UsersInput extends React.Component {
                 environment={environment}
                 query={graphql`
                   query UsersInputQuery($input: String!) {
-                          userSearch(input: $input) {
-                            username
-                            name
-                          }
+                    userSearch(input: $input, first:10) {
+                      edges {
+                        node {
+                          username
+                          name
+                        }
+                      }
+                    }
                   }
                 `}
                 variables={{
@@ -61,10 +65,10 @@ class UsersInput extends React.Component {
                     return <div>{error.message}</div>
                   } else if(props) {
                     return (
-                      props.userSearch.filter(user =>
-                        !this.state.usernames.includes(user.username)
-                      ).map((user, i) =>
-                        <a key={i} className="dropdown-item" onClick={this.handleAddUser(user.username)}>{user.username} <span className="has-text-grey">{user.name}</span></a>
+                      props.userSearch.edges.filter(edge =>
+                        !this.state.usernames.includes(edge.node.username)
+                      ).map((edge, i) =>
+                        <a key={i} className="dropdown-item" onClick={this.handleAddUser(edge.node.username)}>{edge.node.username} <span className="has-text-grey">{edge.node.name}</span></a>
                       )
                     )
                   }
