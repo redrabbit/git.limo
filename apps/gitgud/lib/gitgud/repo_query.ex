@@ -5,9 +5,11 @@ defmodule GitGud.RepoQuery do
 
   @behaviour GitGud.DBQueryable
 
+  alias GitGud.DB
+  alias GitGud.DBQueryable
+
   alias GitGud.Repo
   alias GitGud.User
-  alias GitGud.DBQueryable
 
   import Ecto.Query
 
@@ -16,7 +18,7 @@ defmodule GitGud.RepoQuery do
   """
   @spec by_id(pos_integer, keyword) :: Repo.t | nil
   def by_id(id, opts \\ []) do
-    DBQueryable.one({__MODULE__, :query}, id, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, id, opts))
   end
 
   @doc """
@@ -25,11 +27,11 @@ defmodule GitGud.RepoQuery do
   @spec user_repositories(User.t|binary, keyword) :: [Repo.t]
   def user_repositories(user, opts \\ [])
   def user_repositories(%User{} = user, opts) do
-    DBQueryable.all({__MODULE__, :query}, user, opts)
+    DB.all(DBQueryable.query({__MODULE__, :query}, user, opts))
   end
 
   def user_repositories(username, opts) when is_binary(username) do
-    DBQueryable.all({__MODULE__, :query}, username, opts)
+    DB.all(DBQueryable.query({__MODULE__, :query}, username, opts))
   end
 
   @doc """
@@ -38,11 +40,11 @@ defmodule GitGud.RepoQuery do
   @spec user_repository(User.t|binary, binary, keyword) :: Repo.t | nil
   def user_repository(user, name, opts \\ [])
   def user_repository(%User{} = user, name, opts) do
-    DBQueryable.one({__MODULE__, :query}, {user, name}, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, {user, name}, opts))
   end
 
   def user_repository(username, name, opts) when is_binary(username) do
-    DBQueryable.one({__MODULE__, :query}, {username, name}, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, {username, name}, opts))
   end
 
   @doc """

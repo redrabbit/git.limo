@@ -3,37 +3,17 @@ defmodule GitGud.DBQueryable do
   Behaviour for implementing generic queries.
   """
 
-  import Ecto.Query
-
-  alias GitGud.DB
+  import Ecto.Query, only: [offset: 2, limit: 2]
 
   @callback alter_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
 
   @doc """
-  Returns a single result from the given queryable.
-  """
-  @spec one({module, atom}, term, keyword) :: term
-  def one(callback, args, opts \\ []) do
-    {params, opts} = extract_opts(opts)
-    DB.one(build_query(callback, args, params), opts)
-  end
-
-  @doc """
-  Returns all results matching the given queryable.
-  """
-  @spec all({module, atom}, term, keyword) :: [term]
-  def all(callback, args, opts \\ []) do
-    {params, opts} = extract_opts(opts)
-    DB.all(build_query(callback, args, params), opts)
-  end
-
-  @doc """
-  Returns a query for the given queryable.
+  Returns a query for the given `queryable`.
   """
   @spec query({module, atom}, term, keyword) :: Ecto.Query.t
-  def query(callback, args, opts \\ []) do
+  def query(queryable, args, opts \\ []) do
     {params, _opts} = extract_opts(opts)
-    build_query(callback, args, params)
+    build_query(queryable, args, params)
   end
 
   #
@@ -46,20 +26,20 @@ defmodule GitGud.DBQueryable do
 
   defp exec_query(query, module, {pagination, preloads, viewer}) do
     query
-    |> exec_pagination(pagination)
-    |> exec_preload(module, preloads, viewer)
+    |> alter(module, preloads, viewer)
+    |> paginate(pagination)
   end
 
-  defp exec_pagination(query, {nil, nil}), do: query
-  defp exec_pagination(query, {offset, nil}), do: offset(query, ^offset)
-  defp exec_pagination(query, {nil, limit}), do: limit(query, ^limit)
-  defp exec_pagination(query, {offset, limit}) do
+  defp paginate(query, {nil, nil}), do: query
+  defp paginate(query, {offset, nil}), do: offset(query, ^offset)
+  defp paginate(query, {nil, limit}), do: limit(query, ^limit)
+  defp paginate(query, {offset, limit}) do
     query
     |> offset(^offset)
     |> limit(^limit)
   end
 
-  defp exec_preload(query, module, preloads, viewer) do
+  defp alter(query, module, preloads, viewer) do
     apply(module, :alter_query, [query, preloads, viewer])
   end
 

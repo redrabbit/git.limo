@@ -5,8 +5,10 @@ defmodule GitGud.UserQuery do
 
   @behaviour GitGud.DBQueryable
 
-  alias GitGud.User
+  alias GitGud.DB
   alias GitGud.DBQueryable
+
+  alias GitGud.User
 
   import Ecto.Query
 
@@ -15,7 +17,7 @@ defmodule GitGud.UserQuery do
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
   def by_id(id, opts \\ []) do
-    DBQueryable.one({__MODULE__, :query}, id, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, id, opts))
   end
 
   @doc """
@@ -25,11 +27,11 @@ defmodule GitGud.UserQuery do
   @spec by_username([binary], keyword) :: [User.t]
   def by_username(username, opts \\ [])
   def by_username(usernames, opts) when is_list(usernames) do
-    DBQueryable.all({__MODULE__, :query}, {:username, usernames}, opts)
+    DB.all(DBQueryable.query({__MODULE__, :query}, {:username, usernames}, opts))
   end
 
   def by_username(username, opts) do
-    DBQueryable.one({__MODULE__, :query}, {:username, username}, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, {:username, username}, opts))
   end
 
   @doc """
@@ -39,15 +41,15 @@ defmodule GitGud.UserQuery do
   @spec by_email([binary], keyword) :: [User.t]
   def by_email(email, opts \\ [])
   def by_email(emails, opts) when is_list(emails) do
-    DBQueryable.all({__MODULE__, :query}, {:email, emails}, opts)
+    DB.all(DBQueryable.query({__MODULE__, :query}, {:email, emails}, opts))
   end
 
   def by_email(email, opts) do
-    DBQueryable.one({__MODULE__, :query}, {:email, email}, opts)
+    DB.one(DBQueryable.query({__MODULE__, :query}, {:email, email}, opts))
   end
 
   def search(input, opts \\ []) do
-    DBQueryable.all({__MODULE__, :search_query}, input, opts)
+    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
   end
 
   @doc """
