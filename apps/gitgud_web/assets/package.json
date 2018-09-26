@@ -3,8 +3,8 @@
   "license": "MIT",
   "scripts": {
     "deploy": "brunch build --production",
-    "relay": "relay-compiler --src ./js --schema ../priv/graphql/schema.json",
-    "watch": "brunch watch --stdin"
+    "relay-compile": "relay-compiler --src ./js --schema ../priv/graphql/schema.json",
+    "watch": "brunch watch --stdin && relay-compiler --src ./js --schema ../priv/graphql/schema.json --watch"
   },
   "dependencies": {
     "@absinthe/socket": "^0.1.10",
