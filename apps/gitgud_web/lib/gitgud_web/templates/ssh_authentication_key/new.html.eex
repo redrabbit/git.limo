@@ -1,0 +1,15 @@
+<h2 class="subtitle">Add a new SSH key</h1>
+
+<%= form_for @changeset, ssh_authentication_key_path(@conn, :create), [as: :ssh_key], fn f -> %>
+  <div class="field">
+    <%= label f, :key, class: "label" %>
+    <div class="control">
+      <%= textarea f, :key, class: "textarea" %>
+    </div>
+    <%= error_tag f, :key %>
+  </div>
+
+  <div class="field">
+    <%= submit "Add SSH key", class: "button is-link" %>
+  </div>
+<% end %>

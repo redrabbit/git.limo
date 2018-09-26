@@ -1,0 +1,34 @@
+<%= render_layout "app.html", assigns do %>
+<h1 class="title">Settings</h1>
+
+<hr />
+
+<div class="columns">
+  <aside class="menu column is-one-fifth">
+    <p class="menu-label">Account</p>
+    <ul class="menu-list">
+      <li>
+        <%= navigation_item @conn, :user, [only: [:edit, :update]], :a, href: user_path(@conn, :edit) do %>Profile<% end %>
+      </li>
+      <li>
+        <a class="has-text-grey-light">Emails</a>
+      </li>
+      <li>
+        <a class="has-text-grey-light">Password</a>
+      </li>
+    </ul>
+    <p class="menu-label">Authentication</p>
+    <ul class="menu-list">
+      <li>
+        <%= navigation_item @conn, :ssh_authentication_key, [], :a, href: ssh_authentication_key_path(@conn, :index) do %>SSH keys<% end %>
+      </li>
+      <li>
+        <a class="has-text-grey-light">GPG keys</a>
+      </li>
+    </ul>
+  </aside>
+  <div class="column">
+    <%= render_inner_layout(@conn, assigns) %>
+  </div>
+<% end %>
+

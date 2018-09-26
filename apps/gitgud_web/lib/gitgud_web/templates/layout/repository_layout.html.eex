@@ -16,10 +16,10 @@
         <% end %>
       <% end %>
       <li>
-        <a class="has-text-grey-light" href="#">Issues</a>
+        <a class="has-text-grey-light">Issues</a>
       </li>
       <li>
-        <a class="has-text-grey-light" href="#">Wiki</a>
+        <a class="has-text-grey-light">Wiki</a>
       </li>
       <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
         <%= navigation_item @conn, :repository, only: [:edit, :update] do %>
@@ -29,5 +29,5 @@
     </ul>
   </div>
 
-  <%= render @view_module, @view_template, assigns %>
+  <%= render_inner_layout(@conn, assigns) %>
 <% end %>

@@ -17,13 +17,13 @@ defmodule GitGud.User do
   alias GitGud.SSHAuthenticationKey
 
   schema "users" do
-    field     :username,             :string
-    field     :name,                 :string
-    field     :email,                :string
-    has_many  :repositories,         Repo, foreign_key: :owner_id
-    has_many  :authentication_keys,  SSHAuthenticationKey, on_delete: :delete_all
-    field     :password,             :string, virtual: true
-    field     :password_hash,        :string
+    field     :username,      :string
+    field     :name,          :string
+    field     :email,         :string
+    has_many  :repositories,  Repo, foreign_key: :owner_id
+    has_many  :ssh_keys,      SSHAuthenticationKey, on_delete: :delete_all
+    field     :password,      :string, virtual: true
+    field     :password_hash, :string
     timestamps()
   end
 
@@ -33,7 +33,7 @@ defmodule GitGud.User do
     name: binary,
     email: binary,
     repositories: [Repo.t],
-    authentication_keys: [SSHAuthenticationKey.t],
+    ssh_keys: [SSHAuthenticationKey.t],
     password: binary,
     password_hash: binary,
     inserted_at: NaiveDateTime.t,
@@ -116,17 +116,6 @@ defmodule GitGud.User do
     |> cast(params, [:name, :email])
     |> validate_required([:name, :email])
     |> validate_email()
-  end
-
-  @doc """
-  Puts the given SSH `key` to the `user`'s authentication keys.
-  """
-  @spec put_ssh_key(t, binary) :: {:ok, SSHAuthenticationKey.t} | {:error, Ecto.Changeset.t}
-  def put_ssh_key(%__MODULE__{} = user, key) do
-    user
-    |> build_assoc(:authentication_keys)
-    |> struct(key: key)
-    |> DB.insert()
   end
 
   @doc """

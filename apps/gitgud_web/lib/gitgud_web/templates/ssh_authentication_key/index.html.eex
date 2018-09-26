@@ -1,0 +1,21 @@
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle">SSH keys</h2>
+    </div>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <a class="button is-success" href="<%= ssh_authentication_key_path(@conn, :new) %>">New</a>
+    </div>
+  </div>
+</div>
+
+<%= for ssh_key <- @user.ssh_keys do %>
+  <div class="card">
+    <div class="card-content">
+      <div class="content">
+      </div>
+    </div>
+  </div>
+<% end %>

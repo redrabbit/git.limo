@@ -1,51 +1,44 @@
-<div class="columns">
-  <%= render "_edit_menu.html", assigns %>
+<h2 class="subtitle">Settings</h2>
 
-  <div class="column">
-    <h2 class="subtitle">Settings</h2>
+<%= form_for @changeset, repository_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
+  <div class="field">
+    <%= label f, :name, class: "label" %>
+    <div class="control">
+      <%= text_input f, :name, class: "input" %>
+    </div>
+    <%= error_tag f, :name %>
+  </div>
 
-    <%= form_for @changeset, repository_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
-      <div class="field">
-        <%= label f, :name, class: "label" %>
-        <div class="control">
-          <%= text_input f, :name, class: "input" %>
-        </div>
-        <%= error_tag f, :name %>
-      </div>
+  <div class="field">
+    <%= label f, :description, class: "label" %>
+    <div class="control">
+      <%= text_input f, :description, class: "input" %>
+    </div>
+    <%= error_tag f, :description %>
+  </div>
 
-      <div class="field">
-        <%= label f, :description, class: "label" %>
-        <div class="control">
-          <%= text_input f, :description, class: "input" %>
-        </div>
-        <%= error_tag f, :description %>
-      </div>
+  <div class="field">
+    <div class="control">
+      <label class="radio">
+        <%= radio_button f, :public, true %>
+        Public
+      </label>
+      <label class="radio">
+        <%= radio_button f, :public, false %>
+        Private
+      </label>
+    </div>
+  </div>
 
-      <div class="field">
-        <div class="control">
-          <label class="radio">
-            <%= radio_button f, :public, true %>
-            Public
-          </label>
-          <label class="radio">
-            <%= radio_button f, :public, false %>
-            Private
-          </label>
-        </div>
-      </div>
+  <div class="field">
+    <%= label f, :maintainers, class: "label" %>
+    <div class="control">
+      <%= react_component "UsersInput", id: input_id(f, :maintainers), name: input_name(f, :maintainers), initial_users: Enum.map(@repo.maintainers, &(&1.username)) %>
+    </div>
+    <%= error_tag f, :maintainers %>
+  </div>
 
-      <div class="field">
-        <%= label f, :maintainers, class: "label" %>
-        <div class="control">
-          <%= react_component "UsersInput", id: input_id(f, :maintainers), name: input_name(f, :maintainers), initial_users: Enum.map(@repo.maintainers, &(&1.username)) %>
-        </div>
-        <%= error_tag f, :maintainers %>
-      </div>
-
-      <div class="field">
-        <%= submit "Update repository", class: "button is-link" %>
-      </div>
-    <% end %>
-  </div
-</div>
-
+  <div class="field">
+    <%= submit "Update repository", class: "button is-link" %>
+  </div>
+<% end %>

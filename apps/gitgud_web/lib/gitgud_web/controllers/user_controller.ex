@@ -9,7 +9,8 @@ defmodule GitGud.Web.UserController do
   alias GitGud.UserQuery
 
   plug :ensure_authenticated when action in [:edit, :update]
-  plug :put_layout, :user_profile_layout when action != :new
+  plug :put_layout, :user_profile_layout when action == :show
+  plug :put_layout, :user_settings_layout when action in [:edit, :update]
 
   action_fallback GitGud.Web.FallbackController
 
@@ -67,7 +68,7 @@ defmodule GitGud.Web.UserController do
   def update(conn, %{"profile" => profile_params} = _params) do
     user = current_user(conn)
     case User.update(user, :profile, profile_params) do
-      {:ok, user} ->
+      {:ok, _user} ->
         conn
         |> put_flash(:info, "Profile updated.")
         |> redirect(to: user_path(conn, :edit))

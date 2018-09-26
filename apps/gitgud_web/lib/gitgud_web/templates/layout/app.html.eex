@@ -33,7 +33,7 @@
               <a class="navbar-link"><%= @current_user.username %></a>
 
               <div class="navbar-dropdown is-right">
-                <a class="navbar-item" href="<%= user_path(@conn, :show, @current_user) %>">Your profile</a>
+                <a class="navbar-item" href="<%= user_path(@conn, :show, @current_user) %>">Profile</a>
                 <a class="navbar-item" href="<%= user_path(@conn, :edit) %>">Settings</a>
                 <hr class="navbar-divider">
                 <a class="navbar-item" href="<%= session_path(@conn, :delete) %>">Logout</a>
@@ -61,7 +61,7 @@
         </div>
         -->
 
-        <%= Map.get(assigns, :inner_layout) || render @view_module, @view_template, assigns %>
+        <%= render_inner_layout(@conn, assigns) %>
       </div>
     </main>
 

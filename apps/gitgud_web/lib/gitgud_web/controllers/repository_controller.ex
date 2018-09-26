@@ -9,7 +9,7 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.RepoQuery
 
   plug :ensure_authenticated
-  plug :put_layout, :repository_layout when action not in [:new]
+  plug :put_layout, :repository_settings_layout when action not in [:new, :create]
 
   action_fallback GitGud.Web.FallbackController
 

@@ -13,7 +13,6 @@
   <% end %>
 </div>
 
-
 <%= if Enum.empty?(@user.repositories) do %>
   Nothing to see here.
 <% else %>

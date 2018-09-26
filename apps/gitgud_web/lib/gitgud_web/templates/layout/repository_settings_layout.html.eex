@@ -1,0 +1,16 @@
+<%= render_layout "repository_layout.html", assigns do %>
+<div class="columns">
+  <aside class="menu column is-one-fifth">
+    <ul class="menu-list">
+      <li>
+        <%= navigation_item @conn, :repository, [only: [:edit, :update]], :a, href: repository_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %>
+      </li>
+      <li>
+        <a class="has-text-grey-light">Maintainers</a>
+      </li>
+    </ul>
+  </aside>
+  <div class="column">
+    <%= render_inner_layout(@conn, assigns) %>
+  </div>
+<% end %>

@@ -1,31 +1,23 @@
-<div class="columns">
-  <%= render "_edit_menu.html", assigns %>
+<h2 class="subtitle">Profile</h2>
 
-  <div class="column">
-    <h2 class="subtitle">Profile</h2>
+<%= form_for @changeset, user_path(@conn, :update), [as: :profile], fn f -> %>
+  <div class="field">
+    <%= label f, :name, class: "label" %>
+    <div class="control">
+      <%= text_input f, :name, class: "input" %>
+    </div>
+    <%= error_tag f, :name %>
+  </div>
 
-    <%= form_for @changeset, user_path(@conn, :update), [as: :profile], fn f -> %>
-      <div class="field">
-        <%= label f, :name, class: "label" %>
-        <div class="control">
-          <%= text_input f, :name, class: "input" %>
-        </div>
-        <%= error_tag f, :name %>
-      </div>
+  <div class="field">
+    <%= label f, :email, class: "label" %>
+    <div class="control">
+      <%= email_input f, :email, class: "input" %>
+    </div>
+    <%= error_tag f, :email %>
+  </div>
 
-      <div class="field">
-        <%= label f, :email, class: "label" %>
-        <div class="control">
-          <%= email_input f, :email, class: "input" %>
-        </div>
-        <%= error_tag f, :email %>
-      </div>
-
-      <div class="field">
-        <%= submit "Update repository", class: "button is-link" %>
-      </div>
-    <% end %>
-  </div
-</div>
-
-
+  <div class="field">
+    <%= submit "Update repository", class: "button is-link" %>
+  </div>
+<% end %>
