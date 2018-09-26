@@ -65,7 +65,7 @@ defmodule GitGud.Web.RepositoryController do
           {:ok, repo} ->
             conn
             |> put_flash(:info, "Repository updated.")
-            |> redirect(to: codebase_path(conn, :show, repo.owner, repo))
+            |> redirect(to: repository_path(conn, :edit, repo.owner, repo))
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")

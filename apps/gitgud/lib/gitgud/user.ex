@@ -43,40 +43,79 @@ defmodule GitGud.User do
   @doc """
   Creates a new user with the given `params`.
   """
-  @spec register(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def register(params) do
-    params
-    |> Map.new()
-    |> registration_changeset()
-    |> DB.insert()
+  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(params) do
+    changeset = registration_changeset(Map.new(params))
+    DB.insert(changeset)
   end
 
   @doc """
-  Similar to `register/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec register!(map|keyword) :: t
-  def register!(params) do
-    case register(params) do
+  @spec create!(map|keyword) :: t
+  def create!(params) do
+    case create(params) do
       {:ok, user} -> user
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
   end
 
   @doc """
-  Returns a user changeset for the given `params`.
+  Updates the given `user` with the given `params`.
+  """
+  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
+  def update(%__MODULE__{} = user, changeset_type, params) do
+    DB.update(update_changeset(user, changeset_type, params))
+  end
+
+  defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
+
+  @doc """
+  Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update!(t, atom, map|keyword) :: t
+  def update!(%__MODULE__{} = user, changeset_type, params) do
+    DB.update!(update_changeset(user, changeset_type, params))
+  end
+
+  @doc """
+  Deletes the given `user`.
+  """
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def delete(%__MODULE__{} = user) do
+    DB.delete(user)
+  end
+
+  @doc """
+  Similar to `delete!/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec delete!(t) :: t
+  def delete!(%__MODULE__{} = user) do
+    DB.delete(user)
+  end
+
+  @doc """
+  Returns a registration changeset for the given `params`.
   """
   @spec registration_changeset(map) :: Ecto.Changeset.t
   def registration_changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:username, :name, :email, :password])
     |> validate_required([:username, :name, :email, :password])
-    |> validate_length(:username, min: 3, max: 20)
-    |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
-    |> validate_format(:email, ~r/@/)
-    |> validate_length(:password, min: 6)
-    |> put_password_hash(:password)
-    |> unique_constraint(:username)
-    |> unique_constraint(:email)
+    |> validate_username()
+    |> validate_email()
+    |> validate_password()
+  end
+
+  @doc """
+  Returns a profile changeset for the given `params`.
+  """
+  @spec profile_changeset(map) :: Ecto.Changeset.t
+  def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
+    user
+    |> cast(params, [:name, :email])
+    |> validate_required([:name, :email])
+    |> validate_email()
   end
 
   @doc """
@@ -105,6 +144,25 @@ defmodule GitGud.User do
   #
   # Helpers
   #
+
+  defp validate_username(changeset) do
+    changeset
+    |> validate_length(:username, min: 3, max: 20)
+    |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
+    |> unique_constraint(:username)
+  end
+
+  defp validate_email(changeset) do
+    changeset
+    |> validate_format(:email, ~r/@/)
+    |> unique_constraint(:email)
+  end
+
+  defp validate_password(changeset) do
+    changeset
+    |> validate_length(:password, min: 6)
+    |> put_password_hash(:password)
+  end
 
   defp put_password_hash(changeset, field) do
     if password = changeset.valid? && get_field(changeset, field),

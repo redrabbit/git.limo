@@ -1,0 +1,8 @@
+<aside class="menu column is-one-fifth">
+  <ul class="menu-list">
+    <li>
+      <%= navigation_item @conn, :user, [only: [:edit, :update]], :a, href: user_path(@conn, :edit) do %>Profile<% end %>
+    </li>
+    <li><a href="#">SSH keys</a></li>
+  </ul>
+</aside>

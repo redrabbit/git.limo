@@ -33,6 +33,9 @@ defmodule GitGud.Web.Router do
     get "/register", UserController, :new
     post "/users", UserController, :create
 
+    get "/settings", UserController, :edit
+    put "/settings", UserController, :update
+
     get "/new", RepositoryController, :new
     post "/repositories", RepositoryController, :create
 

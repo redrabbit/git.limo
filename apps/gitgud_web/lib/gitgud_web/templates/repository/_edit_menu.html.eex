@@ -1,7 +1,7 @@
 <aside class="menu column is-one-fifth">
   <ul class="menu-list">
     <li>
-      <%= navigation_item @conn, :repository, :edit, :a, href: repository_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %>
+      <%= navigation_item @conn, :repository, [only: [:edit, :update]], :a, href: repository_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %>
     </li>
   </ul>
 </aside>

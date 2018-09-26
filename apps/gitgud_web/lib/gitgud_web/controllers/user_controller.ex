@@ -8,7 +8,8 @@ defmodule GitGud.Web.UserController do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  plug :put_layout, :user_profile_layout when action == :show
+  plug :ensure_authenticated when action in [:edit, :update]
+  plug :put_layout, :user_profile_layout when action != :new
 
   action_fallback GitGud.Web.FallbackController
 
@@ -26,7 +27,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"user" => user_params} = _params) do
-    case User.register(user_params) do
+    case User.create(user_params) do
       {:ok, user} ->
         conn
         |> put_session(:user_id, user.id)
@@ -40,7 +41,7 @@ defmodule GitGud.Web.UserController do
   end
 
   @doc """
-  Renders a user profile.
+  Renders a user.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username} = _params) do
@@ -48,5 +49,32 @@ defmodule GitGud.Web.UserController do
       do: render(conn, "show.html", user: user),
     else: {:error, :not_found}
   end
-end
 
+  @doc """
+  Renders a user edit form.
+  """
+  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
+  def edit(conn, _params) do
+    user = current_user(conn)
+    changeset = User.profile_changeset(user)
+    render(conn, "edit.html", user: user, changeset: changeset)
+  end
+
+  @doc """
+  Updates a user.
+  """
+  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
+  def update(conn, %{"profile" => profile_params} = _params) do
+    user = current_user(conn)
+    case User.update(user, :profile, profile_params) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Profile updated.")
+        |> redirect(to: user_path(conn, :edit))
+      {:error, changeset} ->
+        conn
+        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+        |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
+    end
+  end
+end

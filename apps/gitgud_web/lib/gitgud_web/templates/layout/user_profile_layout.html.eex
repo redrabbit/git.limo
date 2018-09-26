@@ -4,12 +4,16 @@
 
   <div class="tabs">
     <ul>
-      <li><a href="#">Overview</a></li>
+      <li><a class="has-text-grey-light" href="#">Overview</a></li>
       <%= navigation_item @conn, :user, :show do %>
         <a href="<%= user_path(@conn, :show, @user) %>">Repositories</a></li>
       <% end %>
-      <li><a href="#">Organizations</a></li>
-      <li><a href="#">Settings</a></li>
+      <li><a class="has-text-grey-light" href="#">Organizations</a></li>
+      <%= if authenticated?(@conn) && @current_user.id == @user.id do %>
+        <%= navigation_item @conn, :user, only: [:edit, :update] do %>
+          <a href="<%= user_path(@conn, :edit) %>">Settings</a>
+        <% end %>
+      <% end %>
     </ul>
   </div>
 
