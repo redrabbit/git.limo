@@ -3,6 +3,9 @@ defmodule GitGud.GraphQL.Resolvers do
   Module providing resolution functions for GraphQL related queries.
   """
 
+  alias GitGud.DB
+  alias GitGud.DBQueryable
+
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
@@ -92,8 +95,9 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a list of users for a given search term.
   """
   @spec user_search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def user_search(%{input: input} = args, _info) do
-    Connection.from_list(UserQuery.search(input), args)
+  def user_search(%{input: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
+    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user])
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
@@ -111,7 +115,8 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
-    Connection.from_list(RepoQuery.user_repositories(user, viewer: ctx[:current_user]), args)
+    query = DBQueryable.query({RepoQuery, :query}, user, viewer: ctx[:current_user])
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
