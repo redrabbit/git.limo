@@ -26,14 +26,6 @@ defmodule GitGud.GraphQL.Resolvers do
   import GitGud.Web.Router.Helpers
 
   @doc """
-  Returns a new loader for resolving `Ecto` objects.
-  """
-  @spec ecto_loader() :: Dataloader.Ecto.t
-  def ecto_loader do
-    Dataloader.Ecto.new(GitGud.DB, query: &query/2)
-  end
-
-  @doc """
   Resolves a node object type.
   """
   @spec node_type(map, Absinthe.Resolution.t) :: atom | nil
@@ -352,10 +344,4 @@ defmodule GitGud.GraphQL.Resolvers do
     |> UserQuery.by_email()
     |> Map.new(&{&1.email, &1})
   end
-
-  #
-  # helpers
-  #
-
-  defp query(queryable, _params), do: queryable
 end
