@@ -15,6 +15,8 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.GitTreeEntry
   alias GitGud.GitTree
 
+  alias Absinthe.Relay.Connection
+
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
   import GitRekt.Git, only: [oid_fmt: 1]
@@ -89,9 +91,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a list of users for a given search term.
   """
-  @spec user_search(%{}, %{input: binary}, Absinthe.Resolution.t) :: {:ok, [User.t]} | {:error, term}
-  def user_search(%{} = _root, %{input: input} = _args, _info) do
-    {:ok, UserQuery.search(input)}
+  @spec user_search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def user_search(%{input: input} = args, _info) do
+    Connection.from_list(UserQuery.search(input), args)
   end
 
   @doc """
@@ -107,9 +109,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves all repositories for a given `user`.
   """
-  @spec user_repos(User.t, %{}, Absinthe.Resolution.t) :: {:ok, [Repo.t]} | {:error, term}
-  def user_repos(%User{} = user, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, RepoQuery.user_repositories(user, viewer: ctx[:current_user])}
+  @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
+    Connection.from_list(RepoQuery.user_repositories(user, viewer: ctx[:current_user]), args)
   end
 
   @doc """
@@ -139,11 +141,11 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves all Git reference objects for a given `repo`.
   """
-  @spec repo_refs(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitReference.t]} | {:error, term}
-  def repo_refs(%Repo{} = repo, %{} = args, _info) do
+  @spec repo_refs(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def repo_refs(args, %Absinthe.Resolution{source: repo} = _source) do
     case Repo.git_references(repo, Map.get(args, :glob, :undefined)) do
       {:ok, stream} ->
-        {:ok, Enum.to_list(stream)}
+        Connection.from_list(Enum.to_list(stream), args)
       {:error, reason} ->
         {:error, reason}
     end
@@ -160,11 +162,11 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves all Git tag objects for a given `repo`.
   """
-  @spec repo_tags(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitReference.t | GitTag.t]} | {:error, term}
-  def repo_tags(%Repo{} = repo, %{} = _args, _info) do
+  @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def repo_tags(args, %Absinthe.Resolution{source: repo} = _source) do
     case Repo.git_tags(repo) do
       {:ok, stream} ->
-        {:ok, Enum.to_list(stream)}
+        Connection.from_list(Enum.to_list(stream), args)
       {:error, reason} ->
         {:error, reason}
     end
@@ -213,11 +215,11 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the commit history starting from the given Git `reference` object.
   """
-  @spec git_commit_history(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitCommit.t]} | {:error, term}
-  def git_commit_history(%GitCommit{} = commit, %{} = _args, _info) do
+  @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_commit_history(args, %Absinthe.Resolution{source: commit} = _source) do
     case GitCommit.history(commit) do
       {:ok, stream} ->
-        {:ok, Enum.to_list(stream)}
+        Connection.from_list(Enum.to_list(stream), args)
       {:error, reason} ->
         {:error, reason}
     end
@@ -311,11 +313,11 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the tree entries for a given Git `tree` object.
   """
-  @spec git_tree_entries(GitTree.t, %{}, Absinthe.Resolution.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
-  def git_tree_entries(%GitTree{} = tree, %{} = _args, _info) do
+  @spec git_tree_entries(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_tree_entries(args, %Absinthe.Resolution{source: tree} = _source) do
     case GitTree.entries(tree) do
       {:ok, stream} ->
-        {:ok, Enum.to_list(stream)}
+        Connection.from_list(Enum.to_list(stream), args)
       {:error, reason} ->
         {:error, reason}
     end

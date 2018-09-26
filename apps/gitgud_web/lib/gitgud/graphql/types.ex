@@ -19,6 +19,13 @@ defmodule GitGud.GraphQL.Types do
     value :tag
   end
 
+  connection node_type: :user
+  connection node_type: :repo
+  connection node_type: :git_commit
+  connection node_type: :git_reference
+  connection node_type: :git_tag
+  connection node_type: :git_tree_entry
+
   interface :git_actor do
     field :name, :string
     field :email, :string
@@ -44,7 +51,9 @@ defmodule GitGud.GraphQL.Types do
     field :username, non_null(:string)
     field :name, :string
     field :email, :string
-    field :repos, non_null(list_of(:repo)), resolve: &Resolvers.user_repos/3
+    connection field :repos, node_type: :repo do
+      resolve &Resolvers.user_repos/2
+    end
     field :repo, :repo do
       arg :name, non_null(:string)
       resolve &Resolvers.user_repo/3
@@ -67,15 +76,17 @@ defmodule GitGud.GraphQL.Types do
       arg :rev, non_null(:string)
       resolve &Resolvers.git_object/3
     end
-    field :refs, non_null(list_of(:git_reference)) do
+    connection field :refs, node_type: :git_reference do
       arg :glob, :string
-      resolve &Resolvers.repo_refs/3
+      resolve &Resolvers.repo_refs/2
     end
     field :ref, :git_reference do
       arg :name, :string
       resolve &Resolvers.repo_ref/3
     end
-    field :tags, non_null(list_of(:git_tag)), resolve: &Resolvers.repo_tags/3
+    connection field :tags, node_type: :git_tag do
+      resolve &Resolvers.repo_tags/2
+    end
     field :tag, :git_tag do
       arg :name, :string
       resolve &Resolvers.repo_tag/3
@@ -100,7 +111,9 @@ defmodule GitGud.GraphQL.Types do
     field :author, non_null(:git_actor), resolve: &Resolvers.git_commit_author/3
     field :message, non_null(:string), resolve: &Resolvers.git_commit_message/3
     field :timestamp, non_null(:datetime), resolve: &Resolvers.git_commit_timestamp/3
-    field :history, non_null(list_of(:git_commit)), resolve: &Resolvers.git_commit_history/3
+    connection field :history, node_type: :git_commit do
+      resolve &Resolvers.git_commit_history/2
+    end
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_commit_tree/3
     field :repo, non_null(:repo)
     field :url, non_null(:string), resolve: &Resolvers.url/3
@@ -120,7 +133,9 @@ defmodule GitGud.GraphQL.Types do
   object :git_tree do
     interface :git_object
     field :oid, non_null(:git_oid)
-    field :entries, non_null(list_of(:git_tree_entry)), resolve: &Resolvers.git_tree_entries/3
+    connection field :entries, node_type: :git_tree_entry do
+      resolve &Resolvers.git_tree_entries/2
+    end
     field :repo, non_null(:repo)
   end
 
