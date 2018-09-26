@@ -3,8 +3,10 @@ defmodule GitGud.UserQuery do
   Conveniences for `GitGud.User` related queries.
   """
 
-  alias GitGud.DB
+  @behaviour GitGud.DBQueryable
+
   alias GitGud.User
+  alias GitGud.DBQueryable
 
   import Ecto.Query
 
@@ -13,8 +15,7 @@ defmodule GitGud.UserQuery do
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
   def by_id(id, opts \\ []) do
-    {params, opts} = extract_opts(opts)
-    DB.one(user_query(id, params), opts)
+    DBQueryable.one({__MODULE__, :query}, id, opts)
   end
 
   @doc """
@@ -24,13 +25,11 @@ defmodule GitGud.UserQuery do
   @spec by_username([binary], keyword) :: [User.t]
   def by_username(username, opts \\ [])
   def by_username(usernames, opts) when is_list(usernames) do
-    {params, opts} = extract_opts(opts)
-    DB.all(user_query({:username, usernames}, params), opts)
+    DBQueryable.all({__MODULE__, :query}, {:username, usernames}, opts)
   end
 
   def by_username(username, opts) do
-    {params, opts} = extract_opts(opts)
-    DB.one(user_query({:username, username}, params), opts)
+    DBQueryable.one({__MODULE__, :query}, {:username, username}, opts)
   end
 
   @doc """
@@ -40,74 +39,64 @@ defmodule GitGud.UserQuery do
   @spec by_email([binary], keyword) :: [User.t]
   def by_email(email, opts \\ [])
   def by_email(emails, opts) when is_list(emails) do
-    {params, opts} = extract_opts(opts)
-    DB.all(user_query({:email, emails}, params), opts)
+    DBQueryable.all({__MODULE__, :query}, {:email, emails}, opts)
   end
 
   def by_email(email, opts) do
-    {params, opts} = extract_opts(opts)
-    DB.one(user_query({:email, email}, params), opts)
+    DBQueryable.one({__MODULE__, :query}, {:email, email}, opts)
   end
 
-  def search(term, opts \\ []) do
-    {params, opts} = extract_opts(opts)
-    DB.all(user_search_query(term, params), opts)
+  def search(input, opts \\ []) do
+    DBQueryable.all({__MODULE__, :search_query}, input, opts)
+  end
+
+  @doc """
+  Returns a query for fetching users.
+  """
+  @spec query({atom, term}) :: Ecto.Query.t
+  def query({:username, val} = _arg) when is_list(val) do
+    from(u in User, where: u.username in ^val)
+  end
+
+  def query({:email, val}) when is_list(val) do
+    from(u in User, where: u.email in ^val)
+  end
+
+  def query({_key, _val} = where) do
+    where(User, ^List.wrap(where))
+  end
+
+  @spec query(pos_integer) :: Ecto.Query.t
+  def query(id) when is_integer(id) do
+    where(User, id: ^id)
+  end
+
+  @doc """
+  Returns a query for searching users.
+  """
+  @spec search_query(binary) :: Ecto.Query.t
+  def search_query(input) do
+    term = "%#{input}%"
+    from(u in User, where: ilike(u.username, ^term))
+  end
+
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def alter_query(query, [], _viewer), do: query
+
+  @impl true
+  def alter_query(query, [preload|tail], viewer) do
+    query
+    |> join_preload(preload, viewer)
+    |> alter_query(tail, viewer)
   end
 
   #
   # Helpers
   #
-
-  defp user_query(id) when is_integer(id) do
-    where(User, id: ^id)
-  end
-
-  defp user_query({:username, val}) when is_list(val) do
-    from(u in User, where: u.username in ^val)
-  end
-
-  defp user_query({:email, val}) when is_list(val) do
-    from(u in User, where: u.email in ^val)
-  end
-
-  defp user_query({_key, _val} = where) do
-    where(User, ^List.wrap(where))
-  end
-
-  defp user_query(match, {pagination, preloads, viewer}) do
-    match
-    |> user_query()
-    |> exec_pagination(pagination)
-    |> exec_preload(preloads, viewer)
-  end
-
-  defp user_search_query(search_term) do
-    term = "%#{search_term}%"
-    from(u in User, where: ilike(u.username, ^term))
-  end
-
-  defp user_search_query(match, {pagination, preloads, viewer}) do
-    match
-    |> user_search_query()
-    |> exec_pagination(pagination)
-    |> exec_preload(preloads, viewer)
-  end
-
-  defp exec_pagination(query, {nil, nil}), do: query
-  defp exec_pagination(query, {offset, nil}), do: offset(query, ^offset)
-  defp exec_pagination(query, {nil, limit}), do: limit(query, ^limit)
-  defp exec_pagination(query, {offset, limit}) do
-    query
-    |> offset(^offset)
-    |> limit(^limit)
-  end
-
-  defp exec_preload(query, [], _viewer), do: query
-  defp exec_preload(query, [preload|tail], viewer) do
-    query
-    |> join_preload(preload, viewer)
-    |> exec_preload(tail, viewer)
-  end
 
   defp join_preload(query, :repositories, nil) do
     query
@@ -124,13 +113,5 @@ defmodule GitGud.UserQuery do
 
   defp join_preload(query, preload, _viewer) do
     preload(query, ^preload)
-  end
-
-  defp extract_opts(opts) do
-    {offset, opts} = Keyword.pop(opts, :offset)
-    {limit, opts} = Keyword.pop(opts, :limit)
-    {preloads, opts} = Keyword.pop(opts, :preload, [])
-    {viewer, opts} = Keyword.pop(opts, :viewer)
-    {{{offset, limit}, List.wrap(preloads), viewer}, opts}
   end
 end
