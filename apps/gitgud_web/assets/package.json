@@ -4,7 +4,8 @@
   "scripts": {
     "deploy": "brunch build --production",
     "relay-compile": "relay-compiler --src ./js --schema ../priv/graphql/schema.json",
-    "watch": "brunch watch --stdin && relay-compiler --src ./js --schema ../priv/graphql/schema.json --watch"
+    "watch": "brunch watch --stdin && relay-compiler --src ./js --schema ../priv/graphql/schema.json --watch",
+    "postinstall": "cp node_modules/@fortawesome/fontawesome-free/webfonts/fa-* static/fonts"
   },
   "dependencies": {
     "@absinthe/socket": "^0.1.10",
