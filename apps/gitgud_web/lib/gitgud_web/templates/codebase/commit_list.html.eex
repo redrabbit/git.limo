@@ -13,7 +13,7 @@
           <%= if author = commit_user(commit) do %>
             <a href="<%= user_path(@conn, :show, author) %>" class="has-text-dark"><%= author.username %></a> committed
           <% end %>
-          <%= commit_timestamp(commit) %>
+          <%= datetime_format(commit_timestamp(commit), "{relative}") %>
         </td>
         <td class="has-text-right">
           <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>

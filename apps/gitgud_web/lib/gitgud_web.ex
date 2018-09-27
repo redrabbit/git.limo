@@ -37,9 +37,10 @@ defmodule GitGud.Web do
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, authentication_token: 1, current_user: 1]
-      import GitGud.Web.NavigationHelpers
+      import GitGud.Web.DateTimeFormatter
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
+      import GitGud.Web.NavigationHelpers
       import GitGud.Web.ReactComponents
       import GitGud.Web.Router.Helpers
     end

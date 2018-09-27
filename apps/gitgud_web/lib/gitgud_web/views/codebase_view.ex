@@ -38,17 +38,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_timestamp(GitCommit.t) :: binary | nil
   def commit_timestamp(%GitCommit{} = commit) do
     case GitCommit.timestamp(commit) do
-      {:ok, timestamp} ->
-        Timex.format!(timestamp, "{relative}", :relative)
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_timestamp(GitCommit.t, binary) :: binary | nil
-  def commit_timestamp(%GitCommit{} = commit, format) do
-    case GitCommit.timestamp(commit) do
-      {:ok, timestamp} ->
-        Timex.format!(timestamp, format)
+      {:ok, timestamp} -> timestamp
       {:error, _reason} -> nil
     end
   end

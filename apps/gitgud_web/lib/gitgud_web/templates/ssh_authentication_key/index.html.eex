@@ -24,5 +24,9 @@
         <code><%= ssh_key_fingerprint(ssh_key) %></code>
       </div>
     </div>
+    <footer class="card-footer">
+      <p class="card-footer-item">Added on <%= datetime_format(ssh_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
+      <p class="card-footer-item">Last used <%= datetime_format(ssh_key.updated_at, "{relative}") %></p>
+    </footer>
   </div>
 <% end %>

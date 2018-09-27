@@ -11,10 +11,10 @@ defmodule GitGud.SSHAuthenticationKey do
   import Ecto.Changeset
 
   schema "ssh_authentication_keys" do
-    belongs_to  :user, User
-    field       :name, :string
-    field       :data, :string
-    field       :fingerprint, :string
+    belongs_to :user, User
+    field      :name, :string
+    field      :data, :string
+    field      :fingerprint, :string
     timestamps()
   end
 
