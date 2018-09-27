@@ -72,7 +72,7 @@ defmodule GitGud.SSHServer do
   def is_auth_key(key, username, _opts) do
     user = UserQuery.by_username(to_string(username), preload: :ssh_keys)
     Enum.any?(user.ssh_keys, fn auth ->
-      if [{^key, _attrs}] = :public_key.ssh_decode(auth.key, :public_key), do: true
+      if [{^key, _attrs}] = :public_key.ssh_decode(auth.data, :public_key), do: true
     end)
   end
 

@@ -2,10 +2,6 @@ defmodule GitGud.DB.Migrations.AddRepositoriesPermissions do
   use Ecto.Migration
 
   def change do
-    alter table("repositories") do
-      add :public, :boolean, default: true
-    end
-
     create table("repositories_maintainers", primary_key: false) do
       add :repo_id, references("repositories"), on_delete: :delete_all
       add :user_id, references("users"), on_delete: :delete_all

@@ -13,8 +13,15 @@
 
 <%= for ssh_key <- @user.ssh_keys do %>
   <div class="card">
+    <header class="card-header">
+      <p class="card-header-title">
+        <%= ssh_key.name %>
+      </p>
+    </header>
     <div class="card-content">
       <div class="content">
+        <label>Fingerprint:</label>
+        <code><%= ssh_key_fingerprint(ssh_key) %></code>
       </div>
     </div>
   </div>

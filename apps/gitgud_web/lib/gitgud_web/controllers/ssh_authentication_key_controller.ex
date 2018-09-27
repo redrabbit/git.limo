@@ -40,7 +40,7 @@ defmodule GitGud.Web.SSHAuthenticationKeyController do
     case SSHAuthenticationKey.create(Map.put(key_params, "user_id", user.id)) do
       {:ok, ssh_key} ->
         conn
-        |> put_flash(:info, "SSH key added.")
+        |> put_flash(:info, "SSH key '#{ssh_key.name}' added.")
         |> redirect(to: ssh_authentication_key_path(conn, :index))
       {:error, changeset} ->
         conn
