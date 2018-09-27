@@ -14,6 +14,12 @@ $fa-font-path: "../fonts";
   font-family: $family-monospace;
 }
 
+.repo-grid {
+  .card {
+    width: 100%;
+  }
+}
+
 .branch-select {
   .dropdown-menu {
     .panel {
