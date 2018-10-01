@@ -44,12 +44,9 @@ defmodule GitGud.GitTree do
   """
   @spec entries(t) :: {:ok, Stream.t} | {:error, term}
   def entries(%__MODULE__{repo: repo, __git__: tree} = _tree) do
-    case Git.tree_entries(tree) do
-      {:ok, stream} ->
-        {:ok, Stream.map(stream, &resolve_entry(&1, {repo, tree}))}
-      {:error, reason} ->
-        {:error, reason}
-    end
+    with {:ok, stream} <- Git.tree_entries(tree),
+         {:ok, stream} <- Git.enumerate(stream), do:
+      {:ok, Stream.map(stream, &resolve_entry(&1, {repo, tree}))}
   end
 
   #

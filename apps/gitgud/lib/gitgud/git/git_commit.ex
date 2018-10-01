@@ -49,7 +49,8 @@ defmodule GitGud.GitCommit do
     with {:ok, handle} <- Git.object_repository(commit),
          {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_push(walk, oid),
-         {:ok, stream} <- Git.revwalk_stream(walk), do:
+         {:ok, stream} <- Git.revwalk_stream(walk),
+         {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_commit(&1, {repo, handle}))}
   end
 

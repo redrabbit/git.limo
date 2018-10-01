@@ -194,7 +194,8 @@ defmodule GitGud.Repo do
   @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, stream} <- Git.reference_stream(handle, glob), do:
+         {:ok, stream} <- Git.reference_stream(handle, glob),
+         {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
   end
 
@@ -215,7 +216,8 @@ defmodule GitGud.Repo do
   @spec git_branches(t) :: {:ok, Stream.t} | {:error, term}
   def git_branches(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"), do:
+         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"),
+         {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
   end
 
@@ -236,7 +238,8 @@ defmodule GitGud.Repo do
   @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
   def git_tags(%__MODULE__{} = repo) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"), do:
+         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"),
+         {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_tag(&1, {repo, handle}))}
   end
 

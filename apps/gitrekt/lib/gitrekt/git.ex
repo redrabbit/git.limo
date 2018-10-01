@@ -227,6 +227,17 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Enumerates the given `stream` by calling `Enum.to_list/1` on the internal enum.
+  """
+  @spec enumerate(Stream.t) :: {:ok, Stream.t} | {:error, term}
+  def enumerate(stream) when is_function(stream), do:
+    {:ok, Enum.to_list(stream)}
+  def enumerate(%Stream{} = stream), do:
+    {:ok, struct(stream, enum: Enum.to_list(struct(stream, funs: [])))}
+  def enumerate(_stream), do:
+    {:error, :invalid_stream}
+
+  @doc """
   Resolves a symbolic reference to a direct reference.
   """
   @spec reference_resolve(repo, binary) :: {:ok, binary, binary, oid} | {:error, term}
