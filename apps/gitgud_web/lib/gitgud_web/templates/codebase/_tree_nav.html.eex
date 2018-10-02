@@ -1,7 +1,7 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= react_component "BranchSelect", repo: to_relay_id(@repo), oid: oid_fmt(@reference.oid) %>
+      <%= react_component "BranchSelect", repo: to_relay_id(@repo), oid: oid_fmt(@reference.oid), name: @reference.name, type: reference_type(@reference) %>
     </div>
     <div class="level-item">
       <%= if Map.has_key?(assigns, :tree_path) && !Enum.empty?(@tree_path) do %>

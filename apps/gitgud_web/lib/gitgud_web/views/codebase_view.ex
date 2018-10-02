@@ -6,6 +6,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
+  alias GitGud.GitReference
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
@@ -58,6 +59,14 @@ defmodule GitGud.Web.CodebaseView do
       if String.length(title) > 50,
         do: String.slice(title, 0..49) <> "…",
       else: title
+    end
+  end
+
+  @spec reference_type(GitReference.t) :: binary
+  def reference_type(%GitReference{} = ref) do
+    case GitReference.type(ref) do
+      {:ok, type} -> to_string(type)
+      {:error, _reason} -> nil
     end
   end
 

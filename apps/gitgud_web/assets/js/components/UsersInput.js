@@ -12,7 +12,8 @@ class UsersInput extends React.Component {
     }
     this.dropdown = React.createRef()
     this.inputContainer = React.createRef()
-    this.inputSubmitKeys = [13, 32, 188]
+    this.inputRestrictedKeys = [13, 32, 188]
+    this.renderDropdown = this.renderDropdown.bind(this)
     this.handleFocus = this.handleFocus.bind(this)
     this.handleBlur = this.handleBlur.bind(this)
     this.handleInputChange = this.handleInputChange.bind(this)
@@ -41,43 +42,47 @@ class UsersInput extends React.Component {
           </div>
         </div>
         <div className="dropdown-menu">
-          <div className="dropdown-content">
-            {this.state.input.length &&
-              <QueryRenderer
-                environment={environment}
-                query={graphql`
-                  query UsersInputQuery($input: String!) {
-                    userSearch(input: $input, first:10) {
-                      edges {
-                        node {
-                          username
-                          name
-                        }
-                      }
-                    }
-                  }
-                `}
-                variables={{
-                  input: this.state.input
-                }}
-                render={({error, props}) => {
-                  if(error) {
-                    return <div>{error.message}</div>
-                  } else if(props) {
-                    return (
-                      props.userSearch.edges.filter(edge =>
-                        !this.state.usernames.includes(edge.node.username)
-                      ).map((edge, i) =>
-                        <a key={i} className="dropdown-item" onClick={this.handleAddUser(edge.node.username)}>{edge.node.username} <span className="has-text-grey">{edge.node.name}</span></a>
-                      )
-                    )
-                  }
-                  return <div></div>
-                }}
-              />
-            }
-          </div>
+          {this.state.input.length && this.renderDropdown()}
         </div>
+      </div>
+    )
+  }
+
+  renderDropdown() {
+    return (
+      <div className="dropdown-content">
+        <QueryRenderer
+          environment={environment}
+          query={graphql`
+            query UsersInputQuery($input: String!) {
+              userSearch(input: $input, first:10) {
+                edges {
+                  node {
+                    username
+                    name
+                  }
+                }
+              }
+            }
+          `}
+          variables={{
+            input: this.state.input
+          }}
+          render={({error, props}) => {
+            if(error) {
+              return <div>{error.message}</div>
+            } else if(props) {
+              return (
+                props.userSearch.edges.filter(edge =>
+                  !this.state.usernames.includes(edge.node.username)
+                ).map((edge, i) =>
+                  <a key={i} className="dropdown-item" onClick={this.handleAddUser(edge.node.username)}>{edge.node.username} <span className="has-text-grey">{edge.node.name}</span></a>
+                )
+              )
+            }
+            return <div></div>
+          }}
+        />
       </div>
     )
   }
@@ -100,7 +105,7 @@ class UsersInput extends React.Component {
   }
 
   handleInputKeyDown(event) {
-    if(this.inputSubmitKeys.includes(event.keyCode)) {
+    if(this.inputRestrictedKeys.includes(event.keyCode)) {
       event.preventDefault()
     } else if(event.keyCode == 8 && this.state.usernames.length && !this.state.input.length) {
       this.setState(state => ({
