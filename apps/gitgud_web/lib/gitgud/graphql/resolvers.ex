@@ -142,7 +142,8 @@ defmodule GitGud.GraphQL.Resolvers do
   def repo_refs(args, %Absinthe.Resolution{source: repo} = _source) do
     case Repo.git_references(repo, Map.get(args, :glob, :undefined)) do
       {:ok, stream} ->
-        Connection.from_list(Enum.to_list(stream), args)
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
       {:error, reason} ->
         {:error, reason}
     end
@@ -163,7 +164,8 @@ defmodule GitGud.GraphQL.Resolvers do
   def repo_tags(args, %Absinthe.Resolution{source: repo} = _source) do
     case Repo.git_tags(repo) do
       {:ok, stream} ->
-        Connection.from_list(Enum.to_list(stream), args)
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
       {:error, reason} ->
         {:error, reason}
     end
@@ -212,11 +214,12 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the commit history starting from the given Git `reference` object.
   """
-  @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  @spec git_commit_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_commit_history(args, %Absinthe.Resolution{source: commit} = _source) do
     case GitCommit.history(commit) do
       {:ok, stream} ->
-        Connection.from_list(Enum.to_list(stream), args)
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
       {:error, reason} ->
         {:error, reason}
     end
@@ -306,7 +309,8 @@ defmodule GitGud.GraphQL.Resolvers do
   def git_tree_entries(args, %Absinthe.Resolution{source: tree} = _source) do
     case GitTree.entries(tree) do
       {:ok, stream} ->
-        Connection.from_list(Enum.to_list(stream), args)
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
       {:error, reason} ->
         {:error, reason}
     end
@@ -335,5 +339,30 @@ defmodule GitGud.GraphQL.Resolvers do
     |> Enum.uniq()
     |> UserQuery.by_email()
     |> Map.new(&{&1.email, &1})
+  end
+
+  #
+  # Helpers
+  #
+
+  defp slice_stream(stream, args) do
+    count = Enum.count(stream.enum)
+    {offset, limit} = slice_range(count, args)
+    opts = [has_previous_page: offset > 0, has_next_page: count > offset + limit]
+    slice = Enum.to_list(Stream.take(Stream.drop(stream, offset), limit))
+    {slice, offset, opts}
+  end
+
+  defp slice_range(count, args) do
+    {:ok, dir, limit} = Connection.limit(args)
+    {:ok, offset} = Connection.offset(args)
+    case dir do
+      :forward -> {offset || 0, limit}
+      :backward ->
+        end_offset = offset || count
+        start_offset = max(end_offset - limit, 0)
+        limit = if start_offset == 0, do: end_offset, else: limit
+        {start_offset, limit}
+    end
   end
 end
