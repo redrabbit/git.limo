@@ -38,10 +38,35 @@ defmodule GitGud.GitReference do
   end
 
   @doc """
+  Returns the commit history starting from the given `reference`.
+  """
+  @spec history(t) :: {:ok, Stream.t} | {:error, term}
+  def history(%__MODULE__{oid: oid, repo: repo, __git__: handle} = _reference) do
+    with {:ok, walk} <- Git.revwalk_new(handle),
+          :ok <- Git.revwalk_push(walk, oid),
+         {:ok, stream} <- Git.revwalk_stream(walk),
+         {:ok, stream} <- Git.enumerate(stream), do:
+      {:ok, Stream.map(stream, &resolve_commit(&1, {repo, handle}))}
+  end
+
+  @doc """
   Returns the type of the given `reference`.
   """
   @spec type(t) :: {:ok, reference_type} | {:error, term}
   def type(%__MODULE__{prefix: "refs/heads/"} = _reference), do: {:ok, :branch}
   def type(%__MODULE__{prefix: "refs/tags/"} = _reference), do: {:ok, :tag}
   def type(%__MODULE__{} = _reference), do: {:error, :invalid_reference}
+
+  #
+  # Helpers
+  #
+
+  defp resolve_commit(oid, {repo, handle}) do
+    case Git.object_lookup(handle, oid) do
+      {:ok, :commit, commit} ->
+        %GitCommit{oid: oid, repo: repo, __git__: commit}
+      {:error, _reason} ->
+        nil
+    end
+  end
 end

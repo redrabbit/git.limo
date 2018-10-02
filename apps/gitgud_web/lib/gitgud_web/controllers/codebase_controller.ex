@@ -68,8 +68,7 @@ defmodule GitGud.Web.CodebaseController do
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
     if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
-           {:ok, commit} <- GitReference.target(reference),
-           {:ok, history} <- GitCommit.history(commit), do:
+           {:ok, history} <- GitReference.history(reference), do:
         render(conn, "commit_list.html", repo: repo, reference: reference, commits: history)
     else
       {:error, :not_found}
@@ -143,14 +142,9 @@ defmodule GitGud.Web.CodebaseController do
   #
 
   defp stats!(%GitReference{repo: repo} = reference) do
-    with {:ok, commit} <- GitReference.target(reference),
-         {:ok, history} <- GitCommit.history(commit),
+    with {:ok, history} <- GitReference.history(reference),
          {:ok, branches} <- Repo.git_branches(repo),
-         {:ok, tags} <- Repo.git_tags(repo) do
-      maintainer_count = Repo.maintainer_count(repo)
-      %{commits: Enum.count(history), branches: Enum.count(branches), tags: Enum.count(tags), maintainers: maintainer_count}
-    else
-      {:error, reason} -> raise RuntimeError, message: "failed to make stats: #{inspect reason}"
-    end
+         {:ok, tags} <- Repo.git_tags(repo), do:
+      %{commits: Enum.count(history.enum), branches: Enum.count(branches.enum), tags: Enum.count(tags.enum), maintainers: Repo.maintainer_count(repo)}
   end
 end
