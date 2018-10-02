@@ -1,13 +1,16 @@
 <h2 class="subtitle">Branches</h2>
 
-<table class="table is-fullwidth is-striped">
-  <tbody>
-    <%= for branch <- @branches do %>
-      <tr>
-        <td>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.name %></a>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<%= with page <- paginate(@conn, @branches) do %>
+  <table class="table is-fullwidth is-striped">
+    <tbody>
+      <%= for branch <- page.slice do %>
+        <tr>
+          <td>
+            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>"><%= branch.name %></a>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= pagination(page) %>
+<% end %>

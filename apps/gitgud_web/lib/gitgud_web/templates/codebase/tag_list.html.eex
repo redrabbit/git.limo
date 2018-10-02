@@ -1,13 +1,16 @@
 <h2 class="subtitle">Tags</h2>
 
-<table class="table is-fullwidth is-striped">
-  <tbody>
-    <%= for tag <- @tags do %>
-      <tr>
-        <td>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>"><%= tag.name %></a>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<%= with page <- paginate(@conn, @tags) do %>
+  <table class="table is-fullwidth is-striped">
+    <tbody>
+      <%= for tag <- page.slice do %>
+        <tr>
+          <td>
+            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>"><%= tag.name %></a>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= pagination(page) %>
+<% end %>

@@ -2,23 +2,26 @@
 
 <%= render "_tree_nav.html", assigns %>
 
-<table class="table is-fullwidth is-striped">
-  <tbody>
-    <%= for commit <- @commits do %>
-      <tr>
-        <td>
-          <p class="has-text-weight-bold">
-            <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
-          </p>
-          <%= if author = commit_user(commit) do %>
-            <a href="<%= user_path(@conn, :show, author) %>" class="has-text-dark"><%= author.username %></a> committed
-          <% end %>
-          <%= datetime_format(commit_timestamp(commit), "{relative}") %>
-        </td>
-        <td class="has-text-right">
-          <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<%= with page <- paginate(@conn, @commits) do %>
+  <table class="table is-fullwidth is-striped">
+    <tbody>
+      <%= for commit <- page.slice do %>
+        <tr>
+          <td>
+            <p class="has-text-weight-bold">
+              <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
+            </p>
+            <%= if author = commit_user(commit) do %>
+              <a href="<%= user_path(@conn, :show, author) %>" class="has-text-dark"><%= author.username %></a> committed
+            <% end %>
+            <%= datetime_format(commit_timestamp(commit), "{relative}") %>
+          </td>
+          <td class="has-text-right">
+            <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= pagination(page) %>
+<% end %>
