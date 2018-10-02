@@ -262,14 +262,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the name for a given Git `tag` object.
-  """
-  @spec git_tag_name(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
-  def git_tag_name(%GitTag{} = tag, %{} = _args, _info) do
-    GitTag.name(tag)
-  end
-
-  @doc """
   Resolves the author for a given Git `tag` object.
   """
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}

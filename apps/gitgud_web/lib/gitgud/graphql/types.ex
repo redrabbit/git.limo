@@ -123,7 +123,7 @@ defmodule GitGud.GraphQL.Types do
     interface :git_tag
     interface :git_object
     field :oid, non_null(:git_oid)
-    field :name, non_null(:string), resolve: &Resolvers.git_tag_name/3
+    field :name, non_null(:string)
     field :author, non_null(:git_actor), resolve: &Resolvers.git_tag_author/3
     field :message, non_null(:string), resolve: &Resolvers.git_tag_message/3
     field :target, non_null(:git_object), resolve: &Resolvers.git_tag_target/3

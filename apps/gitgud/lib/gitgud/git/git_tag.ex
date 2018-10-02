@@ -10,10 +10,10 @@ defmodule GitGud.GitTag do
   alias GitGud.GitCommit
   alias GitGud.GitTree
 
-  @enforce_keys [:oid, :repo, :__git__]
-  defstruct [:oid, :repo, :__git__]
+  @enforce_keys [:oid, :name, :repo, :__git__]
+  defstruct [:oid, :name, :repo, :__git__]
 
-  @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.tag}
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, repo: Repo.t, __git__: Git.tag}
 
   @doc """
   Returns the author of the given `tag`.
@@ -31,14 +31,6 @@ defmodule GitGud.GitTag do
   @spec message(t) :: {:ok, binary} | {:error, term}
   def message(%__MODULE__{__git__: tag} = _tag) do
     Git.tag_message(tag)
-  end
-
-  @doc """
-  Returns the name of the given `tag`.
-  """
-  @spec name(t) :: {:ok, binary} | {:error, term}
-  def name(%__MODULE__{__git__: tag} = _tag) do
-    Git.tag_name(tag)
   end
 
   @doc """

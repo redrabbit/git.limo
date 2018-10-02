@@ -378,8 +378,13 @@ defmodule GitGud.Repo do
 
   defp resolve_object({blob, :blob, oid}, repo), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
   defp resolve_object({commit, :commit, oid}, repo), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
-  defp resolve_object({tag, :tag, oid}, repo), do: %GitTag{oid: oid, repo: repo, __git__: tag}
   defp resolve_object({tree, :tree, oid}, repo), do: %GitTree{oid: oid, repo: repo, __git__: tree}
+  defp resolve_object({tag, :tag, oid}, repo) do
+    case Git.tag_name(tag) do
+      {:ok, name} -> %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
+      {:error, _reason} -> nil
+    end
+  end
 
   defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
@@ -387,11 +392,11 @@ defmodule GitGud.Repo do
   end
 
   defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do
-    case Git.reference_peel(handle, name, :tag) do
-      {:ok, :tag, oid, tag} ->
-        %GitTag{oid: oid, repo: repo, __git__: tag}
-      {:error, _reason} ->
-        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
+    with {:ok, :tag, oid, tag} <- Git.reference_peel(handle, name, :tag),
+         {:ok, name} <- Git.tag_name(tag) do
+      %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
+    else
+      {:error, _reason} -> resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
     end
   end
 end
