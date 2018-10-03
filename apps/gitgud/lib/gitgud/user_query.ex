@@ -16,7 +16,13 @@ defmodule GitGud.UserQuery do
   Returns a user for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
-  def by_id(id, opts \\ []) do
+  @spec by_id([pos_integer], keyword) :: User.t | nil
+  def by_id(id, opts \\ [])
+  def by_id(ids, opts) when is_list(ids) do
+    DB.all(DBQueryable.query({__MODULE__, :query}, [ids], opts))
+  end
+
+  def by_id(id, opts) do
     DB.one(DBQueryable.query({__MODULE__, :query}, id, opts))
   end
 
@@ -55,7 +61,8 @@ defmodule GitGud.UserQuery do
   @doc """
   Returns a query for fetching users.
   """
-  @spec query({atom, term}) :: Ecto.Query.t
+  @spec query(pos_integer | {atom, binary}) :: Ecto.Query.t
+  @spec query([pos_integer] | {atom, [binary]}) :: Ecto.Query.t
   def query({:username, val} = _arg) when is_list(val) do
     from(u in User, where: u.username in ^val)
   end
@@ -68,9 +75,12 @@ defmodule GitGud.UserQuery do
     where(User, ^List.wrap(where))
   end
 
-  @spec query(pos_integer) :: Ecto.Query.t
   def query(id) when is_integer(id) do
     where(User, id: ^id)
+  end
+
+  def query(ids) when is_list(ids) do
+    from(u in User, where: u.id in ^ids)
   end
 
   @doc """

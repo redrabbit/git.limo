@@ -109,6 +109,9 @@ defmodule GitGud.GraphQL.Resolvers do
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
     query = DBQueryable.query({RepoQuery, :query}, user, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
+  # batch({__MODULE__, :batch_repos_by_user_ids, ctx[:current_user]}, user.id, fn repos ->
+  #   {:ok, repos[user.id]}
+  # end)
   end
 
   @doc """
@@ -229,10 +232,10 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the author for a given Git `commit` object.
   """
   @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
-  def git_commit_author(%GitCommit{} = commit, %{} = _args, _info) do
+  def git_commit_author(%GitCommit{} = commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
     case GitCommit.author(commit) do
       {:ok, {name, email, _datetime}} ->
-        batch({__MODULE__, :batch_users_by_email}, email, fn users ->
+        batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users ->
           {:ok, users[email] || %{name: name, email: email}}
         end)
       {:error, reason} ->
@@ -268,10 +271,10 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the author for a given Git `tag` object.
   """
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
-  def git_tag_author(%GitTag{} = tag, %{} = _args, _info) do
+  def git_tag_author(%GitTag{} = tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     case GitTag.author(tag) do
       {:ok, {name, email, _datetime}} ->
-        batch({__MODULE__, :batch_users_by_email}, email, fn users ->
+        batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users ->
           {:ok, users[email] || %{name: name, email: email}}
         end)
       {:error, reason} ->
@@ -334,11 +337,20 @@ defmodule GitGud.GraphQL.Resolvers do
 
   @doc false
   @spec batch_users_by_email(any, [binary]) :: map
-  def batch_users_by_email(_, emails) do
+  def batch_users_by_email(viewer, emails) do
     emails
     |> Enum.uniq()
-    |> UserQuery.by_email()
+    |> UserQuery.by_email(viewer: viewer)
     |> Map.new(&{&1.email, &1})
+  end
+
+  @doc false
+  @spec batch_repos_by_user_ids(User.t | nil, [pos_integer]) :: map
+  def batch_repos_by_user_ids(viewer, user_ids) do
+    user_ids
+    |> Enum.uniq()
+    |> RepoQuery.user_repositories(viewer: viewer)
+    |> Map.new(&{&1.owner_id, &1})
   end
 
   #
