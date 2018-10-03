@@ -14,6 +14,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitReference
+  alias GitGud.GitRevision
   alias GitGud.GitTag
   alias GitGud.GitTreeEntry
   alias GitGud.GitTree
@@ -216,7 +217,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_commit_history(args, %Absinthe.Resolution{source: commit} = _source) do
-    case GitCommit.history(commit) do
+    case GitRevision.history(commit) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
         Connection.from_slice(slice, offset, opts)
@@ -261,7 +262,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_tree(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
   def git_commit_tree(%GitCommit{} = commit, %{} = _args, _info) do
-    GitCommit.tree(commit)
+    GitRevision.tree(commit)
   end
 
   @doc """

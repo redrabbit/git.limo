@@ -5,10 +5,21 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitReference
+  alias GitGud.GitTag
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
+
+  def branch_select(conn) do
+    assigns = Map.take(conn.assigns, [:repo, :revision])
+    react_component("BranchSelect",
+      repo: to_relay_id(assigns.repo),
+      oid: revision_oid(assigns.revision),
+      name: revision_name(assigns.revision),
+      type: to_string(revision_type(assigns.revision))
+    )
+  end
 
   @spec blob_content(GitBlob.t) :: binary | nil
   def blob_content(%GitBlob{} = blob) do
@@ -58,13 +69,23 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec reference_type(GitReference.t) :: binary
-  def reference_type(%GitReference{} = ref) do
+  @spec revision_oid(Repo.git_object) :: binary
+  def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
+
+  @spec revision_type(Repo.git_object) :: atom
+  def revision_type(%GitCommit{} = _object), do: :commit
+  def revision_type(%GitTag{} = _object), do: :tag
+  def revision_type(%GitReference{} = ref) do
     case GitReference.type(ref) do
-      {:ok, type} -> to_string(type)
+      {:ok, type} -> type
       {:error, _reason} -> nil
     end
   end
+
+  @spec revision_name(Repo.git_object) :: binary
+  def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
+  def revision_name(%GitTag{name: name} = _object), do: name
+  def revision_name(%GitReference{name: name} = _object), do: name
 
   @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(%GitTree{} = tree) do

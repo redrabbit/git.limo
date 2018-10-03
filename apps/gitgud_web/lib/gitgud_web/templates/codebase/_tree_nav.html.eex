@@ -1,15 +1,15 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= react_component "BranchSelect", repo: to_relay_id(@repo), oid: oid_fmt(@reference.oid), name: @reference.name, type: reference_type(@reference) %>
+      <%= branch_select(@conn) %>
     </div>
     <div class="level-item">
       <%= if Map.has_key?(assigns, :tree_path) && !Enum.empty?(@tree_path) do %>
         <nav class="breadcrumb" aria-label="breadcrumbs">
           <ul>
-            <li><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference, []) %>"><%= @repo.name %></a></li>
+            <li><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>"><%= @repo.name %></a></li>
             <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
-              <li><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @reference, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
+              <li><a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @revision, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
             <% end %>
             <li class="is-active"><a href="#"><%= List.last(@tree_path) %></a></li>
             <%= if assigns[:tree] do %>

@@ -246,10 +246,18 @@ defmodule GitGud.Repo do
   @doc """
   Returns the Git object matching the given `revision`.
   """
-  @spec git_revision(t, binary) :: {:ok, git_object} | {:error, term}
+  @spec git_revision(t, binary) :: {:ok, git_object, GitReference.t | nil} | {:error, term}
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, obj, obj_type, oid} <- Git.revparse_single(handle, revision), do:
+         {:ok, obj, obj_type, oid, refname} <- Git.revparse_ext(handle, revision), do:
+      {:ok, resolve_object({obj, obj_type, oid}, repo), resolve_reference(refname, {repo, handle})}
+  end
+
+  @spec git_object(t, binary) :: {:ok, git_object} | {:error, term}
+  def git_object(%__MODULE__{} = repo, oid) do
+    oid = Git.oid_parse(oid)
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
       {:ok, resolve_object({obj, obj_type, oid}, repo)}
   end
 
@@ -386,9 +394,18 @@ defmodule GitGud.Repo do
     end
   end
 
+  defp resolve_reference(nil, {_repo, _handle}), do: nil
   defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
     %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
+  end
+
+  defp resolve_reference(name, {repo, handle}) do
+    case Git.reference_lookup(handle, name) do
+      {:ok, shorthand, :oid, oid} ->
+        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
+      {:error, _reason} -> nil
+    end
   end
 
   defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do

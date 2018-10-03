@@ -1,1 +1,12 @@
-<h2 class="subtitle"><%= commit_message_title(@commit) %></h2>
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle"><%= commit_message_title(@commit) %></h2>
+    </div>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-warning has-text-weight-semibold">Tree</a>
+    </div>
+  </div>
+</div>

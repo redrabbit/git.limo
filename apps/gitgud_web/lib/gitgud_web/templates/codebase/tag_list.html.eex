@@ -8,6 +8,9 @@
           <td>
             <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>"><%= tag.name %></a>
           </td>
+          <td class="has-text-right">
+            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small is-warning has-text-weight-semibold">Tree</a>
+          </td>
         </tr>
       <% end %>
     </tbody>
