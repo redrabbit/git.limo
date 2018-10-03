@@ -722,6 +722,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Finds a single object and intermediate reference, as specified by the given `revision`.
+  """
+  @spec revparse_ext(repo, binary) :: {:ok, obj, obj_type, oid, binary | nil} | {:error, term}
+  def revparse_ext(_repo, _revision) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Sets the `config` entry with the given `name` to `val`.
   """
   @spec config_set_bool(config, binary, boolean) :: :ok | {:error, term}

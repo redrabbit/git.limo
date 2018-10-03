@@ -74,6 +74,7 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 
 	atoms.ok = enif_make_atom(env, "ok");
 	atoms.error = enif_make_atom(env, "error");
+	atoms.nil = enif_make_atom(env, "nil");
 	atoms.true = enif_make_atom(env, "true");
 	atoms.false = enif_make_atom(env, "false");
 	atoms.repository = enif_make_atom(env, "repository");
@@ -239,6 +240,7 @@ static ErlNifFunc geef_funcs[] =
 	{"index_read_tree",  2, geef_index_read_tree},
 	{"signature_default", 1, geef_signature_default},
 	{"revparse_single", 2, geef_revparse_single},
+	{"revparse_ext", 2, geef_revparse_ext},
 	{"config_set_bool", 3, geef_config_set_bool},
 	{"config_get_bool", 2, geef_config_get_bool},
 	{"config_set_string", 3, geef_config_set_string},
