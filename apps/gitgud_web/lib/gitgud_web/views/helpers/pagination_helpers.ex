@@ -7,7 +7,7 @@ defmodule GitGud.Web.PaginationHelpers do
   import Phoenix.HTML.Tag
 
   @doc """
-  Paginates the given `stream` with the given per-page `limit`.
+  Paginates the given `list`.
   """
   @spec paginate(Plug.Conn.t, Enumerable.t, pos_integer) :: map
   def paginate(conn, list, limit \\ 20) do
@@ -17,7 +17,7 @@ defmodule GitGud.Web.PaginationHelpers do
   end
 
   @doc """
-  Returns a pagination `<nav>`  for the given `page`.
+  Renders a pagination widget for the given `page`.
   """
   @spec pagination(map) :: binary
   def pagination(%{first: first, last: first} = _page), do: []

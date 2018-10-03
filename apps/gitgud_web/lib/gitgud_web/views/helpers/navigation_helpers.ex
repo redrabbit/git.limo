@@ -33,7 +33,7 @@ defmodule GitGud.Web.NavigationHelpers do
   end
 
   @doc """
-  Generate a navigation `tag` for the given `helper` and `action`.
+  Renders a navigation item for the given `helper` and `action`.
   """
   @spec navigation_item(Plug.Conn.t, atom, keyword | atom, atom, keyword, [do: term]) :: binary
   def navigation_item(conn, helper, action \\ [], tag \\ :li, attrs \\ [], [do: block]) do
