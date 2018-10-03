@@ -97,7 +97,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def user_repo(%User{} = user, %{name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if repo = RepoQuery.user_repository(user, name, viewer: ctx[:current_user]),
+    if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user]),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
@@ -107,11 +107,8 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
-    query = DBQueryable.query({RepoQuery, :query}, user, viewer: ctx[:current_user])
+    query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
-  # batch({__MODULE__, :batch_repos_by_user_ids, ctx[:current_user]}, user.id, fn repos ->
-  #   {:ok, repos[user.id]}
-  # end)
   end
 
   @doc """
@@ -349,7 +346,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def batch_repos_by_user_ids(viewer, user_ids) do
     user_ids
     |> Enum.uniq()
-    |> RepoQuery.user_repositories(viewer: viewer)
+    |> RepoQuery.user_repos(viewer: viewer)
     |> Map.new(&{&1.owner_id, &1})
   end
 

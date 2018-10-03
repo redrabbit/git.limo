@@ -23,7 +23,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
       else: with {:ok, head} <- Repo.git_head(repo),
@@ -40,7 +40,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
   def branches(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, branches} <- Repo.git_branches(repo), do:
         render(conn, "branch_list.html", repo: repo, branches: branches)
     else
@@ -53,7 +53,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
   def tags(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, tags} <- Repo.git_tags(repo), do:
         render(conn, "tag_list.html", repo: repo, tags: tags)
     else
@@ -66,7 +66,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec commits(Plug.Conn.t, map) :: Plug.Conn.t
   def commits(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
            {:ok, history} <- GitReference.history(reference), do:
         render(conn, "commit_list.html", repo: repo, reference: reference, commits: history)
@@ -76,7 +76,7 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   def commits(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, head} <- Repo.git_head(repo), do:
         redirect(conn, to: codebase_path(conn, :commits, username, repo, head))
     else
@@ -97,7 +97,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => []} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
            {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit), do:
@@ -108,7 +108,7 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
            {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit),
@@ -125,7 +125,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "spec" => repo_spec, "path" => blob_path} = _params) do
-    if repo = RepoQuery.user_repository(username, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_reference(repo, repo_spec),
            {:ok, commit} <- GitReference.target(reference),
            {:ok, tree} <- GitCommit.tree(commit),

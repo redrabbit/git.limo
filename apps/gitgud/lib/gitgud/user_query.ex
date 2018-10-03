@@ -16,14 +16,14 @@ defmodule GitGud.UserQuery do
   Returns a user for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: User.t | nil
-  @spec by_id([pos_integer], keyword) :: User.t | nil
+  @spec by_id([pos_integer], keyword) :: [User.t]
   def by_id(id, opts \\ [])
   def by_id(ids, opts) when is_list(ids) do
-    DB.all(DBQueryable.query({__MODULE__, :query}, [ids], opts))
+    DB.all(DBQueryable.query({__MODULE__, :users_query}, [ids], opts))
   end
 
   def by_id(id, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :query}, id, opts))
+    DB.one(DBQueryable.query({__MODULE__, :user_query}, id, opts))
   end
 
   @doc """
@@ -33,11 +33,11 @@ defmodule GitGud.UserQuery do
   @spec by_username([binary], keyword) :: [User.t]
   def by_username(username, opts \\ [])
   def by_username(usernames, opts) when is_list(usernames) do
-    DB.all(DBQueryable.query({__MODULE__, :query}, {:username, usernames}, opts))
+    DB.all(DBQueryable.query({__MODULE__, :users_query}, [:username, usernames], opts))
   end
 
   def by_username(username, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :query}, {:username, username}, opts))
+    DB.one(DBQueryable.query({__MODULE__, :user_query}, [:username, username], opts))
   end
 
   @doc """
@@ -47,40 +47,53 @@ defmodule GitGud.UserQuery do
   @spec by_email([binary], keyword) :: [User.t]
   def by_email(email, opts \\ [])
   def by_email(emails, opts) when is_list(emails) do
-    DB.all(DBQueryable.query({__MODULE__, :query}, {:email, emails}, opts))
+    DB.all(DBQueryable.query({__MODULE__, :users_query}, [:email, emails], opts))
   end
 
   def by_email(email, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :query}, {:email, email}, opts))
+    DB.one(DBQueryable.query({__MODULE__, :user_query}, [:email, email], opts))
   end
 
+  @doc """
+  Returns a list of users matching the given `input`.
+  """
+  @spec search(binary, keyword) :: [User.t]
   def search(input, opts \\ []) do
     DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
   end
 
   @doc """
-  Returns a query for fetching users.
+  Returns a query for fetching a single user by `id`.
   """
-  @spec query(pos_integer | {atom, binary}) :: Ecto.Query.t
-  @spec query([pos_integer] | {atom, [binary]}) :: Ecto.Query.t
-  def query({:username, val} = _arg) when is_list(val) do
-    from(u in User, where: u.username in ^val)
+  @spec user_query(pos_integer) :: Ecto.Query.t
+  def user_query(id) when is_integer(id), do: user_query(:id, id)
+
+  @doc """
+  Returns a query for fetching a single user by `key` and `val`.
+  """
+  @spec user_query(atom, term) :: Ecto.Query.t
+  def user_query(key, val) do
+    where(User, ^List.wrap({key, val}))
   end
 
-  def query({:email, val}) when is_list(val) do
-    from(u in User, where: u.email in ^val)
-  end
-
-  def query({_key, _val} = where) do
-    where(User, ^List.wrap(where))
-  end
-
-  def query(id) when is_integer(id) do
-    where(User, id: ^id)
-  end
-
-  def query(ids) when is_list(ids) do
+  @doc """
+  Returns a query for fetching users by `ids`.
+  """
+  @spec users_query([pos_integer]) :: Ecto.Query.t
+  def users_query(ids) when is_list(ids) do
     from(u in User, where: u.id in ^ids)
+  end
+
+  @doc """
+  Returns a query for fetching users by `key` and `vals`.
+  """
+  @spec users_query(atom, [binary]) :: Ecto.Query.t
+  def users_query(:username = _key, vals) when is_list(vals) do
+    from(u in User, where: u.username in ^vals)
+  end
+
+  def users_query(:email = _key, vals) when is_list(vals) do
+    from(u in User, where: u.email in ^vals)
   end
 
   @doc """
