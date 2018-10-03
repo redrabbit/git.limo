@@ -88,8 +88,13 @@ defmodule GitGud.Web.CodebaseController do
   Renders a single commit.
   """
   @spec commit(Plug.Conn.t, map) :: Plug.Conn.t
-  def commit(_conn, %{"username" => _username, "repo_name" => _repo_name, "oid" => _oid} = _params) do
-    {:error, :not_found}
+  def commit(conn, %{"username" => username, "repo_name" => repo_name, "oid" => oid} = _params) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
+      with {:ok, commit} <- Repo.git_revision(repo, oid), do:
+        render(conn, "commit.html", repo: repo, commit: commit)
+    else
+      {:error, :not_found}
+    end
   end
 
   @doc """

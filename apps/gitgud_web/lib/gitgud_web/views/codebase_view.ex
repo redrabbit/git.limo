@@ -2,8 +2,6 @@ defmodule GitGud.Web.CodebaseView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitGud.UserQuery
-
   alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitReference
@@ -28,10 +26,10 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_user(GitCommit.t) :: User.t | nil
-  def commit_user(%GitCommit{} = commit) do
+  @spec commit_author(GitCommit.t) :: {binary, binary} | nil
+  def commit_author(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
-      {:ok, {_name, email, _datetime}} -> UserQuery.by_email(email)
+      {:ok, {name, email, _datetime}} -> {name, email}
       {:error, _reason} -> nil
     end
   end
@@ -54,11 +52,9 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_message_title(GitCommit.t) :: binary | nil
   def commit_message_title(%GitCommit{} = commit) do
-    if message = commit_message(commit) do
-      [title|_body] =  String.split(message, "\n", parts: 2)
-      if String.length(title) > 50,
-        do: String.slice(title, 0..49) <> "…",
-      else: title
+    case GitCommit.message(commit) do
+      {:ok, message} -> hd(String.split(message, "\n", parts: 2))
+      {:error, _reason} -> nil
     end
   end
 

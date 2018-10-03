@@ -1,0 +1,1 @@
+<h2 class="subtitle"><%= commit_message_title(@commit) %></h2>
