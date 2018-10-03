@@ -1,4 +1,4 @@
-<%= render_layout "repository_layout.html", assigns do %>
+<%= render_layout "repository.html", assigns do %>
 <div class="columns">
   <aside class="menu column is-one-fifth">
     <ul class="menu-list">

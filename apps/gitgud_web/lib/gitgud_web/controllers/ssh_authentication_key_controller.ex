@@ -9,7 +9,7 @@ defmodule GitGud.Web.SSHAuthenticationKeyController do
   alias GitGud.SSHAuthenticationKey
 
   plug :ensure_authenticated
-  plug :put_layout, :user_settings_layout
+  plug :put_layout, :user_settings
 
   action_fallback GitGud.Web.FallbackController
 
