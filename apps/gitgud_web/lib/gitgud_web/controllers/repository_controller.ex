@@ -1,6 +1,6 @@
 defmodule GitGud.Web.RepositoryController do
   @moduledoc """
-  Module responsible for user registration.
+  Module responsible for CRUD actions on `GitGud.SSHAuthenticationKey`.
   """
 
   use GitGud.Web, :controller
