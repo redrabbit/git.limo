@@ -42,6 +42,6 @@ defmodule GitGud.Web.SessionController do
     conn
     |> delete_session(:user_id)
     |> put_flash(:info, "Logged out.")
-    |> redirect(to: "/")
+    |> redirect(to: landing_page_path(conn, :index))
   end
 end
