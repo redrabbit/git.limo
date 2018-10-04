@@ -204,11 +204,11 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the commit history starting from the given Git `reference` object.
+  Resolves the commit history starting from the given Git `revision` object.
   """
-  @spec git_commit_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_commit_history(args, %Absinthe.Resolution{source: commit} = _source) do
-    case Repo.git_history(commit) do
+  @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_history(args, %Absinthe.Resolution{source: revision} = _source) do
+    case Repo.git_history(revision) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
         Connection.from_slice(slice, offset, opts)
@@ -249,14 +249,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the tree for a given Git `commit` object.
-  """
-  @spec git_commit_tree(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
-  def git_commit_tree(%GitCommit{} = commit, %{} = _args, _info) do
-    Repo.git_tree(commit)
-  end
-
-  @doc """
   Resolves the author for a given Git `tag` object.
   """
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
@@ -293,6 +285,14 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_tag_type(GitReference.t | GitTag.t, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
   def git_tag_type(%GitReference{} = _tag, _info), do: :git_reference
   def git_tag_type(%GitTag{} = _tag, _info), do: :git_annotated_tag
+
+  @doc """
+  Resolves the tree for a given Git `commit` object.
+  """
+  @spec git_tree(Repo.git_revision, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
+  def git_tree(revision, %{} = _args, _info) do
+    Repo.git_tree(revision)
+  end
 
   @doc """
   Resolves the tree entries for a given Git `tree` object.
