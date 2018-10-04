@@ -50,16 +50,24 @@
 
     <main class="section">
       <div class="container">
-        <!--
-        <div class="notification is-info">
-          <button class="delete"></button>
-          <%= get_flash(@conn, :info) %>
-        </div>
-        <div class="notification is-danger">
-          <button class="delete"></button>
-          <%= get_flash(@conn, :error) %>
-        </div>
-        -->
+        <%= if info = get_flash(@conn, :info) do %>
+          <article class="message is-primary is-small">
+            <div class="message-header">
+              <p>Info</p>
+              <button class="delete is-small" aria-label="delete"></button>
+            </div>
+            <div class="message-body"><%= info %></div>
+          </article>
+        <% end %>
+        <%= if error = get_flash(@conn, :error) do %>
+          <article class="message is-danger is-small">
+            <div class="message-header">
+              <p>Error</p>
+              <button class="delete is-small" aria-label="delete"></button>
+            </div>
+            <div class="message-body"><%= error %></div>
+          </article>
+        <% end %>
 
         <%= render_inner_layout(@conn, assigns) %>
       </div>
