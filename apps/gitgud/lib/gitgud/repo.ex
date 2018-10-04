@@ -5,9 +5,6 @@ defmodule GitGud.Repo do
 
   use Ecto.Schema
 
-  import Ecto, only: [assoc: 2]
-  import Ecto.Changeset
-
   alias Ecto.Multi
 
   alias GitRekt.Git
@@ -21,6 +18,8 @@ defmodule GitGud.Repo do
   alias GitGud.GitReference
   alias GitGud.GitTag
   alias GitGud.GitTree
+
+  import Ecto.Changeset
 
   schema "repositories" do
     belongs_to    :owner,       User
@@ -132,15 +131,6 @@ defmodule GitGud.Repo do
       {:ok, repo} -> repo
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
-  end
-
-  @doc """
-  Returns the number of maintainers for the given `repo`.
-  """
-  @spec maintainer_count(Repo.t) :: non_neg_integer
-  def maintainer_count(%__MODULE__{maintainers: maintainers} = _repo) when is_list(maintainers), do: length(maintainers)
-  def maintainer_count(%__MODULE__{} = repo) do
-    DB.aggregate(assoc(repo, :maintainers), :count, :id) || 0
   end
 
   @doc """
@@ -261,8 +251,8 @@ defmodule GitGud.Repo do
   @spec git_revision(t, binary) :: {:ok, git_object, GitReference.t | nil} | {:error, term}
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, obj, obj_type, oid, refname} <- Git.revparse_ext(handle, revision), do:
-      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle}), resolve_reference(refname, {repo, handle})}
+         {:ok, obj, obj_type, oid, name} <- Git.revparse_ext(handle, revision), do:
+      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle}), resolve_reference({name, nil, :oid, oid}, {repo, handle})}
   end
 
   @doc """
@@ -439,26 +429,24 @@ defmodule GitGud.Repo do
       {:ok, Stream.map(stream, &resolve_object(&1, {repo, handle}))}
   end
 
-  defp resolve_reference(nil, {_repo, _handle}), do: nil
+  defp resolve_reference({nil, nil, :oid, _oid}, {_repo, _handle}), do: nil
+  defp resolve_reference({name, nil, :oid, oid}, {repo, handle}) do
+    prefix = Path.dirname(name) <> "/"
+    shorthand = Path.basename(name)
+    %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
+  end
+
   defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
     %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
   end
 
-  defp resolve_reference(name, {repo, handle}) do
-    case Git.reference_lookup(handle, name) do
-      {:ok, shorthand, :oid, oid} ->
-        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
-      {:error, _reason} -> nil
-    end
-  end
-
   defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do
-    with {:ok, :tag, oid, tag} <- Git.reference_peel(handle, name, :tag),
-         {:ok, name} <- Git.tag_name(tag) do
-      %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
-    else
-      {:error, _reason} -> resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
+    case Git.reference_peel(handle, name, :tag) do
+      {:ok, :tag, oid, tag} ->
+        %GitTag{oid: oid, name: shorthand, repo: repo, __git__: tag}
+      {:error, _reason} ->
+        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
     end
   end
 

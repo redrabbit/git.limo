@@ -25,12 +25,7 @@ defmodule GitGud.GitReference do
       {:ok, :commit, oid, commit} ->
         {:ok, %GitCommit{oid: oid, repo: repo, __git__: commit}}
       {:ok, :tag, oid, tag} ->
-        case Git.tag_name(tag) do
-          {:ok, name} ->
-            {:ok, %GitTag{oid: oid, name: name, repo: repo, __git__: tag}}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        {:ok, %GitTag{oid: oid, name: name, repo: repo, __git__: tag}}
       {:error, reason} ->
         {:error, reason}
     end
