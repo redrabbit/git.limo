@@ -32,6 +32,7 @@ defmodule GitGud.Repo do
   end
 
   @type git_object :: GitBlob.t | GitCommit.t | GitTag.t | GitTree.t
+  @type git_revision :: GitReference.t | GitTag.t | GitCommit.t
 
   @type t :: %__MODULE__{
     id: pos_integer,
@@ -244,21 +245,67 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns the Git object matching the given `oid`.
+  """
+  @spec git_object(t, binary) :: {:ok, git_object} | {:error, term}
+  def git_object(%__MODULE__{} = repo, oid) do
+    oid = Git.oid_parse(oid)
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
+      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle})}
+  end
+
+  @doc """
   Returns the Git object matching the given `revision`.
   """
   @spec git_revision(t, binary) :: {:ok, git_object, GitReference.t | nil} | {:error, term}
   def git_revision(%__MODULE__{} = repo, revision) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
          {:ok, obj, obj_type, oid, refname} <- Git.revparse_ext(handle, revision), do:
-      {:ok, resolve_object({obj, obj_type, oid}, repo), resolve_reference(refname, {repo, handle})}
+      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle}), resolve_reference(refname, {repo, handle})}
   end
 
-  @spec git_object(t, binary) :: {:ok, git_object} | {:error, term}
-  def git_object(%__MODULE__{} = repo, oid) do
-    oid = Git.oid_parse(oid)
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
-      {:ok, resolve_object({obj, obj_type, oid}, repo)}
+  @doc """
+  Returns the commit history starting from the given `revision`.
+  """
+  @spec git_history(git_revision) :: {:ok, Stream.t} | {:error, term}
+  def git_history(%GitReference{oid: oid, repo: repo, __git__: handle} = _revision) do
+    resolve_history(oid, {repo, handle})
+  end
+
+  def git_history(%GitTag{oid: oid, repo: repo, __git__: tag} = _revision) do
+    case Git.object_repository(tag) do
+      {:ok, handle} -> resolve_history(oid, {repo, handle})
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def git_history(%GitCommit{oid: oid, repo: repo, __git__: commit} = _revision) do
+    case Git.object_repository(commit) do
+      {:ok, handle} -> resolve_history(oid, {repo, handle})
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Returns the tree of the given `revision`.
+  """
+  @spec git_tree(git_revision) :: {:ok, GitTree.t} | {:error, term}
+  def git_tree(%GitReference{name: name, prefix: prefix, repo: repo, __git__: handle} = _revision) do
+    with {:ok, :commit, _oid, commit} <- Git.reference_peel(handle, prefix <> name, :commit),
+         {:ok, oid, tree} <- Git.commit_tree(commit), do:
+      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
+  end
+
+  def git_tree(%GitTag{repo: repo, __git__: tag} = _revision) do
+    with {:ok, :commit, _oid, commit} <- Git.tag_peel(tag),
+         {:ok, oid, tree} <- Git.commit_tree(commit), do:
+      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
+  end
+
+  def git_tree(%GitCommit{repo: repo, __git__: commit} = _revision) do
+    with {:ok, oid, tree} <- Git.commit_tree(commit), do:
+      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
   end
 
   @doc """
@@ -384,14 +431,12 @@ defmodule GitGud.Repo do
     File.rm_rf(workdir(repo))
   end
 
-  defp resolve_object({blob, :blob, oid}, repo), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
-  defp resolve_object({commit, :commit, oid}, repo), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
-  defp resolve_object({tree, :tree, oid}, repo), do: %GitTree{oid: oid, repo: repo, __git__: tree}
-  defp resolve_object({tag, :tag, oid}, repo) do
-    case Git.tag_name(tag) do
-      {:ok, name} -> %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
-      {:error, _reason} -> nil
-    end
+  defp resolve_history(oid, {repo, handle}) do
+    with {:ok, walk} <- Git.revwalk_new(handle),
+          :ok <- Git.revwalk_push(walk, oid),
+         {:ok, stream} <- Git.revwalk_stream(walk),
+         {:ok, stream} <- Git.enumerate(stream), do:
+      {:ok, Stream.map(stream, &resolve_object(&1, {repo, handle}))}
   end
 
   defp resolve_reference(nil, {_repo, _handle}), do: nil
@@ -414,6 +459,24 @@ defmodule GitGud.Repo do
       %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
     else
       {:error, _reason} -> resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
+    end
+  end
+
+  defp resolve_object({blob, :blob, oid}, {repo, _handle}), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
+  defp resolve_object({commit, :commit, oid}, {repo, _handle}), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
+  defp resolve_object({tree, :tree, oid}, {repo, _handle}), do: %GitTree{oid: oid, repo: repo, __git__: tree}
+  defp resolve_object({tag, :tag, oid}, {repo, _handle}) do
+    case Git.tag_name(tag) do
+      {:ok, name} -> %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp resolve_object(oid, {repo, handle}) do
+    case Git.object_lookup(handle, oid) do
+      {:ok, obj_type, obj} ->
+        resolve_object({obj, obj_type, oid}, {repo, handle})
+      {:error, _reason} -> nil
     end
   end
 end

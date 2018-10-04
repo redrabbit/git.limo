@@ -72,10 +72,6 @@ defmodule GitGud.GraphQL.Types do
     field :description, :string
     field :owner, non_null(:user), resolve: &Resolvers.repo_owner/3
     field :head, :git_reference, resolve: &Resolvers.repo_head/3
-    field :object, :git_object do
-      arg :rev, non_null(:string)
-      resolve &Resolvers.git_object/3
-    end
     connection field :refs, node_type: :git_reference do
       arg :glob, :string
       resolve &Resolvers.repo_refs/2
@@ -143,7 +139,7 @@ defmodule GitGud.GraphQL.Types do
     field :name, non_null(:string)
     field :type, non_null(:string)
     field :mode, non_null(:integer)
-    field :object, non_null(:git_object), resolve: &Resolvers.git_tree_entry_object/3
+    field :target, non_null(:git_object), resolve: &Resolvers.git_tree_entry_target/3
     field :repo, non_null(:repo)
   end
 

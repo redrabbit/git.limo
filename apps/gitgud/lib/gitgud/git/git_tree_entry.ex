@@ -9,7 +9,7 @@ defmodule GitGud.GitTreeEntry do
   alias GitGud.GitBlob
   alias GitGud.GitTree
 
-  @enforce_keys [:oid, :repo, :__git__]
+  @enforce_keys [:oid, :name, :mode, :type, :repo, :__git__]
   defstruct [:oid, :name, :mode, :type, :repo, :__git__]
 
   @type entry_type :: :blob | :tree
@@ -17,10 +17,10 @@ defmodule GitGud.GitTreeEntry do
   @type t :: %__MODULE__{oid: Git.oid, name: binary, mode: integer, type: entry_type, repo: Repo.t, __git__: Git.blob | Git.tree}
 
   @doc """
-  Returns the underlying object of the given `tree_entry`.
+  Returns the underlying target of the given `tree_entry`.
   """
-  @spec object(t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
-  def object(%__MODULE__{oid: oid, type: type, repo: repo, __git__: tree} = _tree_entry) do
+  @spec target(t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
+  def target(%__MODULE__{oid: oid, type: type, repo: repo, __git__: tree} = _tree_entry) do
     with {:ok, handle} <- Git.object_repository(tree),
          {:ok, ^type, obj} <- Git.object_lookup(handle, oid), do:
     {:ok, struct(entry_module(type), oid: oid, repo: repo, __git__: obj)}

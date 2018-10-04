@@ -14,7 +14,7 @@
       <a href="<%= codebase_path(@conn, :tags, @repo.owner, @repo) %>">Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></a>
     </li>
     <li>
-      <a class="has-text-grey-light">Maintainers&nbsp;&nbsp;<span class="tag"><%= @stats.maintainers %></span></a>
+      <a class="has-text-grey-light">Contributors&nbsp;&nbsp;<span class="tag">0</span></a>
     </li>
   </ul>
 </div>

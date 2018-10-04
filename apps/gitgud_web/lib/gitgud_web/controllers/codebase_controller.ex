@@ -7,9 +7,6 @@ defmodule GitGud.Web.CodebaseController do
 
   alias GitGud.Repo
   alias GitGud.RepoQuery
-
-  alias GitGud.GitReference
-  alias GitGud.GitRevision
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
@@ -26,12 +23,9 @@ defmodule GitGud.Web.CodebaseController do
       if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
       else: with {:ok, head} <- Repo.git_head(repo),
-                 {:ok, commit} <- GitReference.target(head),
-                 {:ok, tree} <- GitRevision.tree(commit), do:
+                 {:ok, tree} <- Repo.git_tree(head), do:
               render(conn, "show.html", repo: repo, revision: head, tree: tree, tree_path: [], stats: stats!(head))
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -42,9 +36,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, branches} <- Repo.git_branches(repo), do:
         render(conn, "branch_list.html", repo: repo, branches: branches)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -55,9 +47,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, tags} <- Repo.git_tags(repo), do:
         render(conn, "tag_list.html", repo: repo, tags: tags)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -68,9 +58,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, commit} <- Repo.git_object(repo, oid), do:
         render(conn, "commit.html", repo: repo, commit: commit)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -80,21 +68,17 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
-           {:ok, history} <- GitRevision.history(object), do:
+           {:ok, history} <- Repo.git_history(object), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   def history(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, reference} <- Repo.git_head(repo),
-           {:ok, history} <- GitRevision.history(reference), do:
+           {:ok, history} <- Repo.git_history(reference), do:
         render(conn, "commit_list.html", repo: repo, revision: reference, commits: history)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -104,23 +88,19 @@ defmodule GitGud.Web.CodebaseController do
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
-           {:ok, tree} <- GitRevision.tree(object), do:
+           {:ok, tree} <- Repo.git_tree(object), do:
         render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats!(reference || object))
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   def tree(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
-           {:ok, tree} <- GitRevision.tree(object),
+           {:ok, tree} <- Repo.git_tree(object),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(tree_path)),
-           {:ok, tree} <- GitTreeEntry.object(tree_entry), do:
+           {:ok, tree} <- GitTreeEntry.target(tree_entry), do:
         render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -130,13 +110,11 @@ defmodule GitGud.Web.CodebaseController do
   def blob(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
-           {:ok, tree} <- GitRevision.tree(object),
+           {:ok, tree} <- Repo.git_tree(object),
            {:ok, tree_entry} <- GitTree.by_path(tree, Path.join(blob_path)),
-           {:ok, blob} <- GitTreeEntry.object(tree_entry), do:
+           {:ok, blob} <- GitTreeEntry.target(tree_entry), do:
         render(conn, "blob.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path)
-    else
-      {:error, :not_found}
-    end
+    end || {:error, :not_found}
   end
 
   #
@@ -144,9 +122,9 @@ defmodule GitGud.Web.CodebaseController do
   #
 
   defp stats!(%{repo: repo} = revision) do
-    with {:ok, history} <- GitRevision.history(revision),
+    with {:ok, history} <- Repo.git_history(revision),
          {:ok, branches} <- Repo.git_branches(repo),
          {:ok, tags} <- Repo.git_tags(repo), do:
-      %{commits: Enum.count(history.enum), branches: Enum.count(branches.enum), tags: Enum.count(tags.enum), maintainers: Repo.maintainer_count(repo)}
+      %{commits: Enum.count(history.enum), branches: Enum.count(branches.enum), tags: Enum.count(tags.enum)}
   end
 end

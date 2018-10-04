@@ -6,8 +6,6 @@ defmodule GitGud.GitCommit do
   alias GitRekt.Git
 
   alias GitGud.Repo
-  alias GitGud.GitRevision
-  alias GitGud.GitTree
 
   @enforce_keys [:oid, :repo, :__git__]
   defstruct [:oid, :repo, :__git__]
@@ -40,32 +38,5 @@ defmodule GitGud.GitCommit do
     with {:ok, time, _offset} <- Git.commit_time(commit), # TODO
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, struct(datetime, [])}
-  end
-
-  defimpl GitRevision do
-    alias GitGud.GitCommit
-
-    def history(%GitCommit{oid: oid, repo: repo, __git__: commit} = _commit) do
-      with {:ok, handle} <- Git.object_repository(commit),
-           {:ok, walk} <- Git.revwalk_new(handle),
-            :ok <- Git.revwalk_push(walk, oid),
-           {:ok, stream} <- Git.revwalk_stream(walk),
-           {:ok, stream} <- Git.enumerate(stream), do:
-        {:ok, Stream.map(stream, &resolve_commit(&1, {repo, handle}))}
-    end
-
-    def tree(%GitCommit{repo: repo, __git__: commit} = _commit) do
-      with {:ok, oid, tree} <- Git.commit_tree(commit), do:
-        {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
-    end
-
-    defp resolve_commit(oid, {repo, handle}) do
-      case Git.object_lookup(handle, oid) do
-        {:ok, :commit, commit} ->
-          %GitCommit{oid: oid, repo: repo, __git__: commit}
-        {:error, _reason} ->
-          nil
-      end
-    end
   end
 end

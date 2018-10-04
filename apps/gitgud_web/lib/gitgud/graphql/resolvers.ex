@@ -14,7 +14,6 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.GitBlob
   alias GitGud.GitCommit
   alias GitGud.GitReference
-  alias GitGud.GitRevision
   alias GitGud.GitTag
   alias GitGud.GitTreeEntry
   alias GitGud.GitTree
@@ -180,14 +179,6 @@ defmodule GitGud.GraphQL.Resolvers do
   def git_actor_type(actor, _info) when is_map(actor), do: :unknown_user
 
   @doc """
-  Resolves a Git object for the given `repo`.
-  """
-  @spec git_object(Repo.t, %{rev: binary}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
-  def git_object(%Repo{} = repo, %{rev: rev} = _args, _info) do
-    Repo.git_revision(repo, rev)
-  end
-
-  @doc """
   Resolves the type for a given Git `object`.
   """
   @spec git_object_type(Repo.git_object, Absinthe.Resolution.t) :: atom
@@ -217,7 +208,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_commit_history(args, %Absinthe.Resolution{source: commit} = _source) do
-    case GitRevision.history(commit) do
+    case Repo.git_history(commit) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
         Connection.from_slice(slice, offset, opts)
@@ -262,7 +253,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_tree(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
   def git_commit_tree(%GitCommit{} = commit, %{} = _args, _info) do
-    GitRevision.tree(commit)
+    Repo.git_tree(commit)
   end
 
   @doc """
@@ -320,9 +311,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Returns the underlying Git object for a given Git `tree_entry` object.
   """
-  @spec git_tree_entry_object(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
-  def git_tree_entry_object(%GitTreeEntry{} = tree_entry, %{} = _args, _info) do
-    GitTreeEntry.object(tree_entry)
+  @spec git_tree_entry_target(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
+  def git_tree_entry_target(%GitTreeEntry{} = tree_entry, %{} = _args, _info) do
+    GitTreeEntry.target(tree_entry)
   end
 
   @doc """
