@@ -1,6 +1,15 @@
 <h2 class="subtitle">Commits</h2>
 
-<%= render "_tree_nav.html", assigns %>
+<nav class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <%= branch_select(@conn) %>
+    </div>
+    <div class="level-item">
+      <%= render "_tree_breadcrumb.html", assigns %>
+    </div>
+  </div>
+</nav>
 
 <%= with page <- paginate(@conn, @commits) do %>
   <table class="table is-fullwidth is-striped">
