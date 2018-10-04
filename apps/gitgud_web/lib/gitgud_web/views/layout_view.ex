@@ -15,6 +15,7 @@ defmodule GitGud.Web.LayoutView do
   @spec session_params(Plug.Conn.t) :: keyword
   def session_params(conn) do
     cond do
+      current_route?(conn, :landing_page) -> []
       current_route?(conn, :session) -> []
       current_route?(conn, :user, :new) -> []
       true -> [redirect_to: conn.request_path]
