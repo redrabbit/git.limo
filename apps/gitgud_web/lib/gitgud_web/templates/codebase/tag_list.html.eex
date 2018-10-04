@@ -1,15 +1,18 @@
 <h2 class="subtitle">Tags</h2>
 
-<%= with page <- paginate(@conn, @tags) do %>
+<%= with page <- paginate(@conn, sort(@tags)) do %>
   <table class="table is-fullwidth is-striped">
     <tbody>
-      <%= for tag <- page.slice do %>
+      <%= for {tag, {commit, author}} <- batch_tags_commits_authors(page.slice) do %>
         <tr>
           <td>
-            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>"><%= tag.name %></a>
-          </td>
-          <td class="has-text-right">
-            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small is-warning has-text-weight-semibold">Tree</a>
+            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold"><%= tag.name %></a>
+            <%= if Map.has_key?(author, :id) do %>
+              <a href="<%= user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
+            <% else %>
+              <span class="has-text-black"><%= author.name %></span>
+            <% end %>
+            tagged this <%= datetime_format(commit_timestamp(commit), "{relative}") %>
           </td>
         </tr>
       <% end %>

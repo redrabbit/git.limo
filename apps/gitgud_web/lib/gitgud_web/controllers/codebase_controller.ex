@@ -34,8 +34,9 @@ defmodule GitGud.Web.CodebaseController do
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
   def branches(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
-      with {:ok, branches} <- Repo.git_branches(repo), do:
-        render(conn, "branch_list.html", repo: repo, branches: branches)
+      with {:ok, head} <- Repo.git_head(repo),
+           {:ok, branches} <- Repo.git_branches(repo), do:
+        render(conn, "branch_list.html", repo: repo, head: head, branches: branches)
     end || {:error, :not_found}
   end
 
