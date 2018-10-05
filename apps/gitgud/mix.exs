@@ -31,6 +31,7 @@ defmodule GitGud.Mixfile do
     [{:postgrex, ">= 0.0.0"},
      {:ecto, "~> 2.2"},
      {:plug, "~> 1.6", optional: true},
+     {:phoenix_pubsub, "~> 1.1", optional: true},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
      {:gitrekt, in_umbrella: true}]
