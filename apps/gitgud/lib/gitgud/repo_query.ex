@@ -22,7 +22,7 @@ defmodule GitGud.RepoQuery do
   @spec by_id([pos_integer], keyword) :: [Repo.t]
   def by_id(id, opts \\ [])
   def by_id(ids, opts) when is_list(ids) do
-    DB.all(DBQueryable.query({__MODULE__, :repos_query}, [ids], opts))
+    DB.all(DBQueryable.query({__MODULE__, :repo_query}, [ids], opts))
   end
 
   def by_id(id, opts) do
@@ -67,19 +67,16 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns a query for fetching a single repository by `id`.
+  Returns a query for fetching a repositories by `id`.
   """
   @spec repo_query(pos_integer) :: Ecto.Query.t
-  def repo_query(id) when is_integer(id) do
-    from(r in Repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
+  @spec repo_query([pos_integer]) :: Ecto.Query.t
+  def repo_query(id) when is_list(id) do
+    from(r in Repo, join: u in assoc(r, :owner), where: r.id in ^id, preload: [owner: u])
   end
 
-  @doc """
-  Returns a query for fetching a repositories by `ids`.
-  """
-  @spec repos_query([pos_integer]) :: Ecto.Query.t
-  def repos_query(ids) when is_list(ids) do
-    from(r in Repo, join: u in assoc(r, :owner), where: r.id in ^ids, preload: [owner: u])
+  def repo_query(id) when is_integer(id) do
+    from(r in Repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
   end
 
   @doc """
