@@ -13,6 +13,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @null_oid String.duplicate("0", 40)
 
+  @type callback :: {module, atom, [term]} | nil
+
   @type cmd :: {
     :create | :update | :delete,
     Git.oid,
@@ -21,7 +23,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @type t :: %__MODULE__{
     repo: Git.repo,
-    callback: {module, atom, [term]} | nil,
+    callback: callback,
     state: :disco | :update_req | :pack | :done,
     caps: [binary],
     cmds: [cmd],
