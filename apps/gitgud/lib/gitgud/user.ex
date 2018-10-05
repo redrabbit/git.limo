@@ -5,7 +5,6 @@ defmodule GitGud.User do
 
   use Ecto.Schema
 
-  import Ecto, only: [build_assoc: 2]
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
