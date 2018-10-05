@@ -2,10 +2,10 @@ defmodule GitGud.Web.RepositoryView do
   @moduledoc false
   use GitGud.Web, :view
 
-  @spec comma_separated_maintainers([GitGud.User.t]) :: binary
+  @spec comma_separated_maintainers([GitGud.User.t()]) :: binary
   def comma_separated_maintainers(maintainers) do
     maintainers
-    |> Enum.map(&(&1.username))
+    |> Enum.map(& &1.username)
     |> Enum.join(",")
   end
 

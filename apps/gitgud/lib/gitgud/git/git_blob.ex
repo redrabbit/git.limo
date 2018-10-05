@@ -10,7 +10,7 @@ defmodule GitGud.GitBlob do
   @enforce_keys [:oid, :repo, :__git__]
   defstruct [:oid, :repo, :__git__]
 
-  @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.blob}
+  @type t :: %__MODULE__{oid: Git.oid(), repo: Repo.t(), __git__: Git.blob()}
 
   @doc """
   Returns the content of the given `blob`.

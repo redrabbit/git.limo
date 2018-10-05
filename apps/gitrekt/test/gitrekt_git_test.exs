@@ -5,9 +5,10 @@ defmodule GitRekt.GitTest do
 
   setup do
     {:ok, repo} = Git.repository_init("priv/test", false)
-    on_exit fn ->
+
+    on_exit(fn ->
       File.rm_rf!(Git.repository_get_path(repo))
-    end
+    end)
 
     {:ok, %{repo: repo}}
   end

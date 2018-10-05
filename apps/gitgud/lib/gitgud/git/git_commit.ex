@@ -10,16 +10,17 @@ defmodule GitGud.GitCommit do
   @enforce_keys [:oid, :repo, :__git__]
   defstruct [:oid, :repo, :__git__]
 
-  @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.commit}
+  @type t :: %__MODULE__{oid: Git.oid(), repo: Repo.t(), __git__: Git.commit()}
 
   @doc """
   Returns the author of the given `commit`.
   """
-  @spec author(t) :: {:ok, {binary, binary, DateTime.t}} | {:error, term}
+  @spec author(t) :: {:ok, {binary, binary, DateTime.t()}} | {:error, term}
   def author(%__MODULE__{__git__: commit} = _commit) do
-    with {:ok, name, email, time, _offset} <- Git.commit_author(commit), # TODO
-         {:ok, datetime} <- DateTime.from_unix(time), do:
-      {:ok, {name, email, datetime}}
+    # TODO
+    with {:ok, name, email, time, _offset} <- Git.commit_author(commit),
+         {:ok, datetime} <- DateTime.from_unix(time),
+         do: {:ok, {name, email, datetime}}
   end
 
   @doc """
@@ -33,10 +34,11 @@ defmodule GitGud.GitCommit do
   @doc """
   Returns the timestamp of the given `commit`.
   """
-  @spec timestamp(t) :: {:ok, DateTime.t} | {:error, term}
+  @spec timestamp(t) :: {:ok, DateTime.t()} | {:error, term}
   def timestamp(%__MODULE__{__git__: commit} = _commit) do
-    with {:ok, time, _offset} <- Git.commit_time(commit), # TODO
-         {:ok, datetime} <- DateTime.from_unix(time), do:
-      {:ok, struct(datetime, [])}
+    # TODO
+    with {:ok, time, _offset} <- Git.commit_time(commit),
+         {:ok, datetime} <- DateTime.from_unix(time),
+         do: {:ok, struct(datetime, [])}
   end
 end

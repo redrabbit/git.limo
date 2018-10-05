@@ -22,7 +22,7 @@ defmodule GitRekt.WireProtocol.Service do
   @doc """
   Returns a new service object for the given `repo` and `executable`.
   """
-  @spec new(Git.repo, binary) :: struct
+  @spec new(Git.repo(), binary) :: struct
   def new(repo, executable, init_values \\ []) do
     struct(exec_impl(executable), Keyword.put(init_values, :repo, repo))
   end
@@ -32,6 +32,7 @@ defmodule GitRekt.WireProtocol.Service do
   """
   @spec next(struct, binary | :discovery) :: {struct, iolist}
   def next(service, data \\ :discovery)
+
   def next(service, :discovery) do
     {service, lines} = exec_next(service, [])
     {service, encode(lines)}
@@ -70,7 +71,8 @@ defmodule GitRekt.WireProtocol.Service do
     {service, _skip} =
       if skip = Keyword.get(opts, :skip),
         do: exec_skip(service, skip),
-      else: service
+        else: service
+
     {service, lines} = exec_all(service, lines)
     {service, encode(lines)}
   end
@@ -90,10 +92,10 @@ defmodule GitRekt.WireProtocol.Service do
 
   defp exec_skip(service, count) when count > 0 do
     Enum.reduce(1..count, {service, []}, fn _i, {service, states} ->
-      {skip(service), [service.state|states]}
+      {skip(service), [service.state | states]}
     end)
   end
 
-  defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
+  defp exec_impl("git-upload-pack"), do: GitRekt.WireProtocol.UploadPack
   defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
 end

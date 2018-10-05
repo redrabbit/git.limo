@@ -25,13 +25,13 @@ defmodule GitGud.Web.ChannelCase do
     end
   end
 
-
   setup tags do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+
     unless tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, {:shared, self()})
     end
+
     :ok
   end
-
 end

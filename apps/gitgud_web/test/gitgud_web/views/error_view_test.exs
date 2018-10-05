@@ -5,7 +5,10 @@ defmodule GitGud.Web.ErrorViewTest do
 
   test "renders 400.json" do
     assert render(GitGud.Web.ErrorView, "400.json", []) == %{errors: %{details: "Bad request"}}
-    assert render(GitGud.Web.ErrorView, "400.json", details: "Something went wrong.") == %{errors: %{details: "Something went wrong."}}
+
+    assert render(GitGud.Web.ErrorView, "400.json", details: "Something went wrong.") == %{
+             errors: %{details: "Something went wrong."}
+           }
   end
 
   test "renders 401.json" do
@@ -17,10 +20,14 @@ defmodule GitGud.Web.ErrorViewTest do
   end
 
   test "render 500.json" do
-    assert render(GitGud.Web.ErrorView, "500.json", []) == %{errors: %{details: "Internal server error"}}
+    assert render(GitGud.Web.ErrorView, "500.json", []) == %{
+             errors: %{details: "Internal server error"}
+           }
   end
 
   test "render any other" do
-    assert render(GitGud.Web.ErrorView, "505.json", []) == %{errors: %{details: "Internal server error"}}
+    assert render(GitGud.Web.ErrorView, "505.json", []) == %{
+             errors: %{details: "Internal server error"}
+           }
   end
 end

@@ -17,7 +17,7 @@ defmodule GitGud.Web.UserController do
   @doc """
   Renders the registration page.
   """
-  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec new(Plug.Conn.t(), map) :: Plug.Conn.t()
   def new(conn, _params) do
     changeset = User.registration_changeset()
     render(conn, "new.html", changeset: changeset)
@@ -26,7 +26,7 @@ defmodule GitGud.Web.UserController do
   @doc """
   Creates a new user.
   """
-  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"user" => user_params} = _params) do
     case User.create(user_params) do
       {:ok, user} ->
@@ -34,27 +34,28 @@ defmodule GitGud.Web.UserController do
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome!")
         |> redirect(to: user_path(conn, :show, user))
+
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-        |> render("new.html", changeset: %{changeset|action: :insert})
+        |> render("new.html", changeset: %{changeset | action: :insert})
     end
   end
 
   @doc """
   Renders a user.
   """
-  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"username" => username} = _params) do
     if user = UserQuery.by_username(username, preload: :repositories, viewer: current_user(conn)),
       do: render(conn, "show.html", user: user),
-    else: {:error, :not_found}
+      else: {:error, :not_found}
   end
 
   @doc """
   Renders a user edit form.
   """
-  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec edit(Plug.Conn.t(), map) :: Plug.Conn.t()
   def edit(conn, _params) do
     user = current_user(conn)
     changeset = User.profile_changeset(user)
@@ -64,18 +65,20 @@ defmodule GitGud.Web.UserController do
   @doc """
   Updates a user.
   """
-  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"profile" => profile_params} = _params) do
     user = current_user(conn)
+
     case User.update(user, :profile, profile_params) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Profile updated.")
         |> redirect(to: user_path(conn, :edit))
+
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-        |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
+        |> render("edit.html", user: user, changeset: %{changeset | action: :insert})
     end
   end
 end

@@ -17,33 +17,33 @@ defmodule GitGud.User do
   alias GitGud.SSHAuthenticationKey
 
   schema "users" do
-    field     :username,      :string
-    field     :name,          :string
-    field     :email,         :string
-    has_many  :repositories,  Repo, foreign_key: :owner_id
-    has_many  :ssh_keys,      SSHAuthenticationKey, on_delete: :delete_all
-    field     :password,      :string, virtual: true
-    field     :password_hash, :string
+    field :username, :string
+    field :name, :string
+    field :email, :string
+    has_many :repositories, Repo, foreign_key: :owner_id
+    has_many :ssh_keys, SSHAuthenticationKey, on_delete: :delete_all
+    field :password, :string, virtual: true
+    field :password_hash, :string
     timestamps()
   end
 
   @type t :: %__MODULE__{
-    id: pos_integer,
-    username: binary,
-    name: binary,
-    email: binary,
-    repositories: [Repo.t],
-    ssh_keys: [SSHAuthenticationKey.t],
-    password: binary,
-    password_hash: binary,
-    inserted_at: NaiveDateTime.t,
-    updated_at: NaiveDateTime.t
-  }
+          id: pos_integer,
+          username: binary,
+          name: binary,
+          email: binary,
+          repositories: [Repo.t()],
+          ssh_keys: [SSHAuthenticationKey.t()],
+          password: binary,
+          password_hash: binary,
+          inserted_at: NaiveDateTime.t(),
+          updated_at: NaiveDateTime.t()
+        }
 
   @doc """
   Creates a new user with the given `params`.
   """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec create(map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def create(params) do
     changeset = registration_changeset(Map.new(params))
     DB.insert(changeset)
@@ -52,18 +52,21 @@ defmodule GitGud.User do
   @doc """
   Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword) :: t
+  @spec create!(map | keyword) :: t
   def create!(params) do
     case create(params) do
-      {:ok, user} -> user
-      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+      {:ok, user} ->
+        user
+
+      {:error, changeset} ->
+        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
   end
 
   @doc """
   Updates the given `user` with the given `params`.
   """
-  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
+  @spec update(t, atom, map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t() | :file.posix()}
   def update(%__MODULE__{} = user, changeset_type, params) do
     DB.update(update_changeset(user, changeset_type, params))
   end
@@ -73,7 +76,7 @@ defmodule GitGud.User do
   @doc """
   Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, atom, map|keyword) :: t
+  @spec update!(t, atom, map | keyword) :: t
   def update!(%__MODULE__{} = user, changeset_type, params) do
     DB.update!(update_changeset(user, changeset_type, params))
   end
@@ -81,7 +84,7 @@ defmodule GitGud.User do
   @doc """
   Deletes the given `user`.
   """
-  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t()}
   def delete(%__MODULE__{} = user) do
     DB.delete(user)
   end
@@ -97,7 +100,7 @@ defmodule GitGud.User do
   @doc """
   Returns a registration changeset for the given `params`.
   """
-  @spec registration_changeset(map) :: Ecto.Changeset.t
+  @spec registration_changeset(map) :: Ecto.Changeset.t()
   def registration_changeset(params \\ %{}) do
     %__MODULE__{}
     |> cast(params, [:username, :name, :email, :password])
@@ -110,7 +113,7 @@ defmodule GitGud.User do
   @doc """
   Returns a profile changeset for the given `params`.
   """
-  @spec profile_changeset(map) :: Ecto.Changeset.t
+  @spec profile_changeset(map) :: Ecto.Changeset.t()
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [:name, :email])
@@ -123,7 +126,12 @@ defmodule GitGud.User do
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
-    user = DB.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
+    user =
+      DB.one(
+        from u in __MODULE__,
+          where: u.email == ^email_or_username or u.username == ^email_or_username
+      )
+
     case check_pass(user, password) do
       {:ok, user} -> user
       {:error, _reason} -> nil
@@ -156,6 +164,6 @@ defmodule GitGud.User do
   defp put_password_hash(changeset, field) do
     if password = changeset.valid? && get_field(changeset, field),
       do: change(changeset, add_hash(password)),
-    else: changeset
+      else: changeset
   end
 end

@@ -12,7 +12,7 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a stream describing each ref and it current value.
   """
-  @spec reference_discovery(Git.repo, binary) :: iolist
+  @spec reference_discovery(Git.repo(), binary) :: iolist
   def reference_discovery(repo, service) do
     [reference_head(repo), reference_list(repo), reference_tags(repo)]
     |> List.flatten()
@@ -24,7 +24,7 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns an *PKT-LINE* encoded representation of the given `lines`.
   """
-  @spec encode(Enumerable.t) :: iolist
+  @spec encode(Enumerable.t()) :: iolist
   def encode(lines) do
     Enum.map(lines, &pkt_line/1)
   end
@@ -32,7 +32,7 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a stream of decoded *PKT-LINE*s for the given `pkt`.
   """
-  @spec decode(binary) :: Stream.t
+  @spec decode(binary) :: Stream.t()
   def decode(pkt) do
     Stream.map(pkt_stream(pkt), &pkt_decode/1)
   end
@@ -40,13 +40,14 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns the given `data` formatted as *PKT-LINE*
   """
-  @spec pkt_line(binary|:flush) :: binary
+  @spec pkt_line(binary | :flush) :: binary
   def pkt_line(data \\ :flush)
   def pkt_line(:flush), do: "0000"
   def pkt_line({:ack, oid}), do: pkt_line("ACK #{Git.oid_fmt(oid)}")
   def pkt_line({:ack, oid, status}), do: pkt_line("ACK #{Git.oid_fmt(oid)} #{status}")
   def pkt_line(:nak), do: pkt_line("NAK")
   def pkt_line(<<"PACK", _rest::binary>> = pack), do: pack
+
   def pkt_line(data) when is_binary(data) do
     data
     |> byte_size()
@@ -105,15 +106,19 @@ defmodule GitRekt.WireProtocol do
   defp pkt_next(""), do: {:halt, nil}
   defp pkt_next("0000" <> rest), do: {[:flush], rest}
   defp pkt_next("PACK" <> rest), do: Packfile.parse(rest)
+
   defp pkt_next(<<hex::bytes-size(4), payload::binary>>) do
     {payload_size, ""} = Integer.parse(hex, 16)
     data_size = payload_size - 4
     data_size_skip_lf = data_size - 1
+
     case payload do
       <<data::bytes-size(data_size_skip_lf), "\n", rest::binary>> ->
         {[data], rest}
+
       <<data::bytes-size(data_size), rest::binary>> ->
         {[data], rest}
+
       <<data::bytes-size(data_size)>> ->
         {[data], ""}
     end

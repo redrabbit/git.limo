@@ -32,7 +32,9 @@ defmodule GitGud.Web.ReactComponents do
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component and then pass in the `props` specified.
   """
-  def react_component(name, props) when is_list(props), do: react_component(name, Enum.into(props, %{}))
+  def react_component(name, props) when is_list(props),
+    do: react_component(name, Enum.into(props, %{}))
+
   def react_component(name, props) when is_map(props) do
     props = Poison.encode!(transform_case(props))
     content_tag(:div, "", [{:data, [react_class: name, react_props: props]}])
@@ -54,7 +56,9 @@ defmodule GitGud.Web.ReactComponents do
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component and then pass in the `props` specified.
   """
-  def react_component(name, props, attrs) when is_list(props), do: react_component(name, Enum.into(props, %{}), attrs)
+  def react_component(name, props, attrs) when is_list(props),
+    do: react_component(name, Enum.into(props, %{}), attrs)
+
   def react_component(name, props, attrs) when is_map(props) do
     props = Poison.encode!(transform_case(props))
     react_attrs = [react_class: name, react_props: props]

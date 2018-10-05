@@ -26,13 +26,13 @@ defmodule GitGud.Web.ConnCase do
     end
   end
 
-
   setup tags do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+
     unless tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, {:shared, self()})
     end
+
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
-
 end

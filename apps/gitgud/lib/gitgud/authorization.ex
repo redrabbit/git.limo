@@ -8,7 +8,7 @@ defmodule GitGud.Authorization do
   @doc """
   Returns `true` if `user` has the permission to perform `action` on `resource`; otherwhise returns `false`.
   """
-  @spec authorized?(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: boolean
+  @spec authorized?(User.t() | nil, GitGud.AuthorizationPolicies.t(), atom) :: boolean
   def authorized?(user, resource, action) do
     GitGud.AuthorizationPolicies.can?(resource, user, action)
   end
@@ -16,17 +16,19 @@ defmodule GitGud.Authorization do
   @doc """
   Enforces the authorization policy.
   """
-  @spec enforce_policy(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: {:ok, GitGud.AuthorizationPolicies.t} | {:error, :unauthorized}
+  @spec enforce_policy(User.t() | nil, GitGud.AuthorizationPolicies.t(), atom) ::
+          {:ok, GitGud.AuthorizationPolicies.t()} | {:error, :unauthorized}
   def enforce_policy(user, resource, action) do
     if authorized?(user, resource, action),
       do: {:ok, resource},
-    else: {:error, :unauthorized}
+      else: {:error, :unauthorized}
   end
 
   @doc """
   Same as `enforce_policy/3` but returns the `resource` or `default` if the policy cannot be enforced.
   """
-  @spec enforce_policy!(User.t | nil, GitGud.AuthorizationPolicies.t, atom, any) :: GitGud.AuthorizationPolicies.t | any
+  @spec enforce_policy!(User.t() | nil, GitGud.AuthorizationPolicies.t(), atom, any) ::
+          GitGud.AuthorizationPolicies.t() | any
   def enforce_policy!(user, resource, action, default \\ nil) do
     case enforce_policy(user, resource, action) do
       {:ok, resource} -> resource
@@ -37,7 +39,9 @@ defmodule GitGud.Authorization do
   @doc """
   Filters the given list of `resources`, i.e. returns only those for which `enforce_policy/3` applies.
   """
-  @spec filter(User.t | nil, [GitGud.AuthorizationPolicies.t], atom) :: [GitGud.AuthorizationPolicies.t]
+  @spec filter(User.t() | nil, [GitGud.AuthorizationPolicies.t()], atom) :: [
+          GitGud.AuthorizationPolicies.t()
+        ]
   def filter(user, resources, action) do
     Enum.filter(resources, &enforce_policy!(user, &1, action))
   end

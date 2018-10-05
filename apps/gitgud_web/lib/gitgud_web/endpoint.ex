@@ -9,7 +9,9 @@ defmodule GitGud.Web.Endpoint do
   socket "/socket", GitGud.Web.UserSocket
 
   plug Plug.Static,
-    at: "/", from: :gitgud_web, gzip: false,
+    at: "/",
+    from: :gitgud_web,
+    gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
   if code_reloading? do

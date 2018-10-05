@@ -10,11 +10,17 @@ defmodule GitGud.RepoTest do
   @valid_attrs %{name: "project-awesome", description: "Awesome things are going on here!"}
 
   setup do
-    user = User.register!(name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234")
+    user =
+      User.register!(
+        name: "Mario Flach",
+        username: "redrabbit",
+        email: "m.flach@almightycouch.com",
+        password: "test1234"
+      )
 
-    on_exit fn ->
+    on_exit(fn ->
       File.rm_rf!(Path.join(Application.get_env(:gitgud, :git_dir), user.username))
-    end
+    end)
 
     {:ok, %{user: user}}
   end
@@ -28,9 +34,9 @@ defmodule GitGud.RepoTest do
 
   test "fails to create a repository with invalid params", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
-    assert {:error, changeset} = Repo.create(%{params|name: "foo$bar"})
+    assert {:error, changeset} = Repo.create(%{params | name: "foo$bar"})
     assert "has invalid format" in errors_on(changeset).name
-    assert {:error, changeset} = Repo.create(%{params|name: "xy"})
+    assert {:error, changeset} = Repo.create(%{params | name: "xy"})
     assert "should be at least 3 character(s)" in errors_on(changeset).name
   end
 
@@ -43,12 +49,14 @@ defmodule GitGud.RepoTest do
 
   test "gets all repositories owned by a user", %{user: user} do
     params = Map.put(@valid_attrs, :owner_id, user.id)
+
     repos =
       1..5
       |> Enum.map(fn i -> update_in(params.name, &"#{&1}-#{i}") end)
       |> Enum.map(&Repo.create!/1)
       |> Enum.map(&elem(&1, 0))
       |> DB.preload(:owner)
+
     assert repos == RepoQuery.user_repositories(user)
   end
 

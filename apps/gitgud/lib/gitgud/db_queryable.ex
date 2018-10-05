@@ -5,12 +5,16 @@ defmodule GitGud.DBQueryable do
 
   import Ecto.Query, only: [offset: 2, limit: 2]
 
-  @callback alter_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
+  @callback alter_query(
+              query :: Ecto.Query.t(),
+              preloads :: term,
+              viewer :: GitGud.User.t() | nil
+            ) :: Ecto.Query.t()
 
   @doc """
   Returns a query for the given `queryable`.
   """
-  @spec query({module, atom}, term, keyword) :: Ecto.Query.t
+  @spec query({module, atom}, term, keyword) :: Ecto.Query.t()
   def query(queryable, args, opts \\ []) do
     {params, _opts} = extract_opts(opts)
     build_query(queryable, args, params)
@@ -33,6 +37,7 @@ defmodule GitGud.DBQueryable do
   defp paginate(query, {nil, nil}), do: query
   defp paginate(query, {offset, nil}), do: offset(query, ^offset)
   defp paginate(query, {nil, limit}), do: limit(query, ^limit)
+
   defp paginate(query, {offset, limit}) do
     query
     |> offset(^offset)

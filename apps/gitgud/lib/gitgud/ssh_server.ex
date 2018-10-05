@@ -43,22 +43,24 @@ defmodule GitGud.SSHServer do
   defstruct [:conn, :chan, :user, :repo, :service]
 
   @type t :: %__MODULE__{
-    conn: :ssh_connection.ssh_connection_ref,
-    chan: :ssh_connection.ssh_channel_id,
-    user: User.t,
-    service: Module.t
-  }
+          conn: :ssh_connection.ssh_connection_ref(),
+          chan: :ssh_connection.ssh_channel_id(),
+          user: User.t(),
+          service: Module.t()
+        }
 
   @doc """
   Returns a child-spec to use as part of a supervision tree.
   """
-  @spec child_spec([integer]) :: Supervisor.Spec.spec
+  @spec child_spec([integer]) :: Supervisor.Spec.spec()
   def child_spec([port] = _args) do
-    %{id: __MODULE__,
+    %{
+      id: __MODULE__,
       start: {:ssh, :daemon, [port, daemon_opts()]},
       restart: :permanent,
       shutdown: 5000,
-      type: :worker}
+      type: :worker
+    }
   end
 
   #
@@ -71,6 +73,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def is_auth_key(key, username, _opts) do
     user = UserQuery.by_username(to_string(username), preload: :ssh_keys)
+
     Enum.any?(user.ssh_keys, fn auth ->
       if [{^key, _attrs}] = :public_key.ssh_decode(auth.data, :public_key), do: true
     end)
@@ -84,7 +87,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
     [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.by_username(to_string(username))}}
+    {:ok, %{state | conn: conn, chan: chan, user: UserQuery.by_username(to_string(username))}}
   end
 
   @impl true
@@ -93,9 +96,13 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service} = state) do
+  def handle_ssh_msg(
+        {:ssh_cm, conn, {:data, chan, _type, data}},
+        %__MODULE__{conn: conn, chan: chan, service: service} = state
+      ) do
     {service, output} = Service.next(service, data)
     :ssh_connection.send(conn, chan, output)
+
     service =
       if Service.done?(service) do
         {service, output} = Service.next(service)
@@ -105,25 +112,36 @@ defmodule GitGud.SSHServer do
         :ssh_connection.close(conn, chan)
         service
       end
-    {:ok, %{state|service: service}}
+
+    {:ok, %{state | service: service}}
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
-    [exec|args] = String.split(to_string(cmd))
-    [repo|_args] = parse_args(args)
+  def handle_ssh_msg(
+        {:ssh_cm, conn, {:exec, chan, _reply, cmd}},
+        %__MODULE__{conn: conn, chan: chan, user: user} = state
+      ) do
+    [exec | args] = String.split(to_string(cmd))
+    [repo | _args] = parse_args(args)
+
     if authorized?(user, repo, exec) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :push, [repo, user]}))
+
+      {service, output} =
+        Service.next(Service.new(handle, exec, callback: {Repo, :push, [repo, user]}))
+
       :ssh_connection.send(conn, chan, output)
-      {:ok, %{state|repo: repo, service: service}}
+      {:ok, %{state | repo: repo, service: service}}
     else
       {:stop, chan, state}
     end
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:shell, chan, _reply}}, %__MODULE__{conn: conn, chan: chan} = state) do
+  def handle_ssh_msg(
+        {:ssh_cm, conn, {:shell, chan, _reply}},
+        %__MODULE__{conn: conn, chan: chan} = state
+      ) do
     :ssh_connection.send(conn, chan, "You are not allowed to start a shell.\r\n")
     :ssh_connection.send_eof(conn, chan)
     {:stop, chan, state}
@@ -141,22 +159,29 @@ defmodule GitGud.SSHServer do
   # Helpers
   #
 
-  defp authorized?(user, repo, "git-upload-pack"),  do: Authorization.authorized?(user, repo, :read)
-  defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :write)
+  defp authorized?(user, repo, "git-upload-pack"),
+    do: Authorization.authorized?(user, repo, :read)
+
+  defp authorized?(user, repo, "git-receive-pack"),
+    do: Authorization.authorized?(user, repo, :write)
 
   defp daemon_opts() do
-    system_dir = Path.absname(Application.fetch_env!(:gitgud, :ssh_keys), Application.app_dir(:gitgud))
-    [key_cb: {__MODULE__, []},
-     ssh_cli: {__MODULE__, []},
-     parallel_login: true,
-     pwdfun: &check_credentials/2,
-     system_dir: to_charlist(system_dir)]
+    system_dir =
+      Path.absname(Application.fetch_env!(:gitgud, :ssh_keys), Application.app_dir(:gitgud))
+
+    [
+      key_cb: {__MODULE__, []},
+      ssh_cli: {__MODULE__, []},
+      parallel_login: true,
+      pwdfun: &check_credentials/2,
+      system_dir: to_charlist(system_dir)
+    ]
   end
 
   defp parse_args(args) do
     if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
       {path, args} = List.pop_at(args, idx)
-      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'")))|args]
+      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'"))) | args]
     end
   end
 

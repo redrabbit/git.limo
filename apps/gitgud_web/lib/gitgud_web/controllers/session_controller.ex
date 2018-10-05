@@ -12,7 +12,7 @@ defmodule GitGud.Web.SessionController do
   @doc """
   Renders the login page.
   """
-  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec new(Plug.Conn.t(), map) :: Plug.Conn.t()
   def new(conn, params) do
     render(conn, "new.html", redirect: params["redirect_to"])
   end
@@ -20,9 +20,10 @@ defmodule GitGud.Web.SessionController do
   @doc """
   Authenticates user with credentials.
   """
-  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"session" => session_params} = _params) do
-    if user = User.check_credentials(session_params["email_or_username"], session_params["password"]) do
+    if user =
+         User.check_credentials(session_params["email_or_username"], session_params["password"]) do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in.")
@@ -37,7 +38,7 @@ defmodule GitGud.Web.SessionController do
   @doc """
   Deletes user session.
   """
-  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, _params) do
     conn
     |> delete_session(:user_id)

@@ -4,7 +4,12 @@ defmodule GitGud.UserTest do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  @valid_attrs %{name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234"}
+  @valid_attrs %{
+    name: "Mario Flach",
+    username: "redrabbit",
+    email: "m.flach@almightycouch.com",
+    password: "test1234"
+  }
 
   test "registers a new user with valid params" do
     assert {:ok, user} = User.register(@valid_attrs)
@@ -13,13 +18,16 @@ defmodule GitGud.UserTest do
   end
 
   test "fails to register a new user with invalid params" do
-    assert {:error, changeset} = User.register(%{@valid_attrs|username: "mariö"})
+    assert {:error, changeset} = User.register(%{@valid_attrs | username: "mariö"})
     assert "has invalid format" in errors_on(changeset).username
-    assert {:error, changeset} = User.register(%{@valid_attrs|username: "rr"})
+    assert {:error, changeset} = User.register(%{@valid_attrs | username: "rr"})
     assert "should be at least 3 character(s)" in errors_on(changeset).username
-    assert {:error, changeset} = User.register(%{@valid_attrs|email: "m-dot-flach-at-almightycouch-dot-com"})
+
+    assert {:error, changeset} =
+             User.register(%{@valid_attrs | email: "m-dot-flach-at-almightycouch-dot-com"})
+
     assert "has invalid format" in errors_on(changeset).email
-    assert {:error, changeset} = User.register(%{@valid_attrs|password: "test1"})
+    assert {:error, changeset} = User.register(%{@valid_attrs | password: "test1"})
     assert "should be at least 6 character(s)" in errors_on(changeset).password
   end
 

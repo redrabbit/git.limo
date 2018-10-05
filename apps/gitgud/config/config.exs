@@ -7,4 +7,4 @@ config :gitgud,
 
 config :absinthe, schema: GitGud.GraphQL.Schema
 
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

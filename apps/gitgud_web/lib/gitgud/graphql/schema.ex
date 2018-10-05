@@ -13,7 +13,7 @@ defmodule GitGud.GraphQL.Schema do
   @doc """
   Returns the source id for the given Relay `global_id`.
   """
-  @spec from_relay_id(Absinthe.Relay.Node.global_id) :: pos_integer | nil
+  @spec from_relay_id(Absinthe.Relay.Node.global_id()) :: pos_integer | nil
   def from_relay_id(global_id) do
     case Absinthe.Relay.Node.from_global_id(global_id, __MODULE__) do
       {:ok, nil} -> nil
@@ -25,7 +25,7 @@ defmodule GitGud.GraphQL.Schema do
   @doc """
   Returns the Relay global id for the given `node`.
   """
-  @spec to_relay_id(struct) :: Absinthe.Relay.Node.global_id | nil
+  @spec to_relay_id(struct) :: Absinthe.Relay.Node.global_id() | nil
   def to_relay_id(node) do
     case Ecto.primary_key(node) do
       [{_, id}] -> to_relay_id(Resolvers.node_type(node, nil), id)
@@ -35,11 +35,10 @@ defmodule GitGud.GraphQL.Schema do
   @doc """
   Returns the Relay global id for the given `source_id`.
   """
-  @spec to_relay_id(atom | binary, pos_integer) :: Absinthe.Relay.Node.global_id | nil
+  @spec to_relay_id(atom | binary, pos_integer) :: Absinthe.Relay.Node.global_id() | nil
   def to_relay_id(node_type, source_id) do
     Absinthe.Relay.Node.to_global_id(node_type, source_id, __MODULE__)
   end
-
 
   query do
     node field do

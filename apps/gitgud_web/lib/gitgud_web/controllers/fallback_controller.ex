@@ -25,7 +25,8 @@ defmodule GitGud.Web.FallbackController do
   end
 
   def call(conn, val) do
-    Logger.warn("Uncaught #{inspect val}")
+    Logger.warn("Uncaught #{inspect(val)}")
+
     conn
     |> put_layout(:app)
     |> put_status(:internal_server_error)

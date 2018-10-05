@@ -37,32 +37,32 @@ defmodule GitGud.SmartHTTPBackend do
 
   alias GitGud.Authorization
 
-  plug :basic_authentication
-  plug :match
-  plug :dispatch
+  plug(:basic_authentication)
+  plug(:match)
+  plug(:dispatch)
 
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+      else: send_resp(conn, :not_found, "Page not found")
   end
 
   get "/HEAD" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_head_ref(conn, repo) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+      else: send_resp(conn, :not_found, "Page not found")
   end
 
   post "/git-receive-pack" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+      else: send_resp(conn, :not_found, "Page not found")
   end
 
   post "/git-upload-pack" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+      else: send_resp(conn, :not_found, "Page not found")
   end
 
   match _ do
@@ -73,9 +73,11 @@ defmodule GitGud.SmartHTTPBackend do
   # Helpers
   #
 
-  defp authorized?(conn, repo, "git-upload-pack"),  do: authorized?(conn, repo, :read)
+  defp authorized?(conn, repo, "git-upload-pack"), do: authorized?(conn, repo, :read)
   defp authorized?(conn, repo, "git-receive-pack"), do: authorized?(conn, repo, :write)
-  defp authorized?(conn, repo, action), do: Authorization.authorized?(conn.assigns[:current_user], repo, action)
+
+  defp authorized?(conn, repo, action),
+    do: Authorization.authorized?(conn.assigns[:current_user], repo, action)
 
   defp basic_authentication(conn, _opts) do
     with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
@@ -99,7 +101,7 @@ defmodule GitGud.SmartHTTPBackend do
   defp inflate_body(conn, body) do
     if deflated?(conn),
       do: :zlib.gunzip(body),
-    else: body
+      else: body
   end
 
   defp read_body_full(conn, buffer \\ "") do
@@ -115,6 +117,7 @@ defmodule GitGud.SmartHTTPBackend do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
       refs = WireProtocol.reference_discovery(handle, service)
       refs = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
+
       conn
       |> put_resp_content_type("application/x-#{service}-advertisement")
       |> send_resp(:ok, refs)
@@ -124,8 +127,8 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_head_ref(conn, repo) do
     if authorized?(conn, repo, :read) do
       with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD"), do:
-        send_resp(conn, :ok, "ref: #{target}")
+           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD"),
+           do: send_resp(conn, :ok, "ref: #{target}")
     end
   end
 

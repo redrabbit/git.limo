@@ -7,12 +7,12 @@ defmodule GitGud.Web.UserSocket do
 
   alias GitGud.UserQuery
 
-  transport :websocket, Phoenix.Transports.WebSocket
+  transport(:websocket, Phoenix.Transports.WebSocket)
 
   def connect(params, sock) do
     if token = params["token"],
       do: authenticate_socket(sock, token),
-    else: {:ok, sock}
+      else: {:ok, sock}
   end
 
   def id(_sock), do: nil
@@ -23,14 +23,14 @@ defmodule GitGud.Web.UserSocket do
 
   defp authenticate_socket(sock, token) do
     with {:ok, user_id} <- Phoenix.Token.verify(sock, "bearer", token, max_age: 86400),
-         {:ok, user} <- find_user(user_id), do:
-      {:ok, assign_user(sock, user)}
+         {:ok, user} <- find_user(user_id),
+         do: {:ok, assign_user(sock, user)}
   end
 
   defp find_user(user_id) do
     if user = UserQuery.by_id(user_id),
       do: {:ok, user},
-    else: {:error, :invalid}
+      else: {:error, :invalid}
   end
 
   defp assign_user(sock, user) do

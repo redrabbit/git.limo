@@ -5,21 +5,30 @@ defmodule GitGud.Web.SessionControllerTest do
   alias GitGud.Web.AuthenticationPlug
 
   setup %{conn: conn} do
-    user = User.register!(name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234")
+    user =
+      User.register!(
+        name: "Mario Flach",
+        username: "redrabbit",
+        email: "m.flach@almightycouch.com",
+        password: "test1234"
+      )
+
     conn = put_req_header(conn, "accept", "application/json")
     {:ok, conn: conn, user: user}
   end
 
   test "creates token with user credentials", %{conn: conn} do
-      conn = post conn, user_token_path(conn, :create), username: "redrabbit", password: "test1234"
-      resp = json_response(conn, :created)
-      assert byte_size(resp["token"]) == 100
-      assert resp["expiration_time"] == AuthenticationPlug.token_expiration_time()
+    conn = post conn, user_token_path(conn, :create), username: "redrabbit", password: "test1234"
+    resp = json_response(conn, :created)
+    assert byte_size(resp["token"]) == 100
+    assert resp["expiration_time"] == AuthenticationPlug.token_expiration_time()
   end
 
   test "fails to create token with invalid user credentials", %{conn: conn} do
-      conn = post conn, user_token_path(conn, :create), username: "redrabbit", password: "testpasswd"
-      assert json_response(conn, :unauthorized)
+    conn =
+      post conn, user_token_path(conn, :create), username: "redrabbit", password: "testpasswd"
+
+    assert json_response(conn, :unauthorized)
   end
 
   test "authenticates with valid token", %{conn: conn, user: user} do

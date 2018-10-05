@@ -12,7 +12,7 @@ config :gitgud_web, GitGud.Web.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    npm: ["run", "watch", cd: Path.expand("../assets", __DIR__)],
+    npm: ["run", "watch", cd: Path.expand("../assets", __DIR__)]
   ],
   live_reload: [
     patterns: [
@@ -38,5 +38,3 @@ config :gitgud_web, GitGud.Web.Endpoint,
 # If desired, both `http:` and `https:` keys can be
 # configured to run both http and https servers on
 # different ports.
-
-
