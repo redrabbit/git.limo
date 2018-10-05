@@ -310,12 +310,11 @@ defmodule GitGud.Repo do
   @doc """
   Pushes the given `receive_pack` to the `repo`.
   """
-  @spec push(t, User.t, ReceivePack.t) :: {:ok, ReceivePack.t} | {:error, term}
-  def push(%__MODULE__{} = _repo, %User{} = _user, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = receive_pack) do
+  @spec push(t, User.t, ReceivePack.t) :: :ok | {:error, term}
+  def push(%__MODULE__{} = _repo, %User{} = _user, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = _receive_pack) do
     {:ok, odb} = Git.repository_get_odb(handle)
     Enum.each(pack, &apply_pack_obj(odb, &1))
     Enum.each(cmds, &apply_pack_cmd(handle, &1))
-    {:ok, receive_pack}
   end
 
   #

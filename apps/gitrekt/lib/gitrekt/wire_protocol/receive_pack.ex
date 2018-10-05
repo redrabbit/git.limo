@@ -21,7 +21,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @type t :: %__MODULE__{
     repo: Git.repo,
-    callback: {module, atom, [term]},
+    callback: {module, atom, [term]} | nil,
     state: :disco | :update_req | :pack | :done,
     caps: [binary],
     cmds: [cmd],
@@ -64,7 +64,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @impl true
   def next(%__MODULE__{state: :done} = handle, []) do
     case odb_flush(handle) do
-      {:ok, handle} ->
+      :ok ->
         if "report-status" in handle.caps,
           do: {handle, [], report_status(handle.cmds)},
         else: {handle, [], []}
@@ -81,8 +81,13 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   # Helpers
   #
 
-  defp odb_flush(handle) do
-    {module, fun, args} = handle.callback
+  defp odb_flush(%__MODULE__{repo: repo, pack: pack, cmds: cmds, callback: nil} = _handle) do
+    :ok = apply_pack(repo, pack)
+    :ok = apply_cmds(repo, cmds)
+  end
+
+  defp odb_flush(%__MODULE__{callback: callback} = handle) do
+    {module, fun, args} = callback
     case resolve_pack(handle) do
       {:ok, pack} -> apply(module, fun, args ++ [%{handle|pack: pack}])
       {:error, reason} -> {:error, reason}
@@ -116,6 +121,29 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defp obj_match?({type, _oid}, type), do: true
   defp obj_match?(_line, _type), do: false
+
+   defp apply_cmds(repo, cmds) do
+    Enum.each(cmds, fn
+      {:create, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, false)
+      {:update, _old_oid, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, true)
+      {:delete, _old_oid, refname} -> Git.reference_delete(repo, refname)
+    end)
+  end
+
+  defp apply_pack(repo, pack) do
+    {:ok, odb} = Git.repository_get_odb(repo)
+    Enum.each(pack, &apply_pack_obj(odb, &1))
+  end
+
+  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
+    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
+    new_data = resolve_delta_chain(obj_data, "", cmds)
+    {:ok, _oid} = apply_pack_obj(odb, {obj_type, new_data})
+  end
+
+  defp apply_pack_obj(odb, {obj_type, obj_data}) do
+    {:ok, _oid} = Git.odb_write(odb, obj_data, obj_type)
+  end
 
   defp resolve_pack(handle) do
     case Git.repository_get_odb(handle.repo) do
