@@ -38,8 +38,13 @@ defmodule GitRekt.WireProtocol.Service do
   end
 
   def next(service, data) do
-    {service, lines} = exec_next(service, Enum.to_list(decode(data)))
-    {service, encode(lines)}
+    if service.state == :buffer do
+      {service, lines} = exec_next(service, data)
+      {service, encode(lines)}
+    else
+      {service, lines} = exec_next(service, Enum.to_list(decode(data)))
+      {service, encode(lines)}
+    end
   end
 
   @doc """

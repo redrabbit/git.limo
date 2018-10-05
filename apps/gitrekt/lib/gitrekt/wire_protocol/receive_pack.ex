@@ -6,12 +6,14 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @behaviour GitRekt.WireProtocol.Service
 
   alias GitRekt.Git
+  alias GitRekt.Packfile
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  defstruct [:repo, :callback, state: :disco, caps: [], cmds: [], pack: []]
-
   @null_oid String.duplicate("0", 40)
+  @null_iter {0, ""}
+
+  defstruct [:repo, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
 
   @type callback :: {module, atom, [term]} | nil
 
@@ -24,10 +26,11 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @type t :: %__MODULE__{
     repo: Git.repo,
     callback: callback,
-    state: :disco | :update_req | :pack | :done,
+    state: :disco | :update_req | :pack | :buffer | :done,
     caps: [binary],
     cmds: [cmd],
     pack: Packfile.obj_list,
+    iter: Packfile.obj_iter
   }
 
   @doc """
@@ -86,7 +89,13 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def next(%__MODULE__{state: :pack} = handle, lines) do
-    {%{handle|state: :done, pack: lines}, [], []}
+    {read_pack(handle, lines), [], []}
+  end
+
+  @impl true
+  def next(%__MODULE__{state: :buffer} = handle, pack) do
+    {lines, ""} = Packfile.parse(pack, handle.iter)
+    {%{handle|state: :pack}, lines, []}
   end
 
   @impl true
@@ -124,6 +133,9 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp report_status(cmds) do
     List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
   end
+
+  defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
+  defp read_pack(handle, pack) when is_list(pack), do: %{handle|state: :done, pack: handle.pack ++ pack, iter: @null_iter}
 
   defp parse_cmds(cmds) do
     Enum.map(cmds, fn cmd ->

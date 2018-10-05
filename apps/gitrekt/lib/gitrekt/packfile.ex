@@ -9,7 +9,8 @@ defmodule GitRekt.Packfile do
 
   alias GitRekt.Git
 
-  @type obj :: {Git.obj_type, binary}
+  @type obj_iter :: {pos_integer, binary}
+  @type obj :: {Git.obj_type, binary} | {:buffer, obj_list, obj_iter}
   @type obj_list :: [obj]
 
   @doc """
@@ -29,10 +30,17 @@ defmodule GitRekt.Packfile do
   def parse("PACK" <> pack), do: parse(pack)
   def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 
+  @doc """
+  Same as `parse/1` but starts from the given `iterator`.
+  """
+  @spec parse(binary, obj_iter) :: {obj_list, binary}
+  def parse(pack, {max, rest} = _iterator) do
+    unpack_obj_next(0, max, rest <> pack, [])
+  end
+
   #
   # Helpers
   #
-
 
   defp walk_insert(_walk, []), do: :ok
   defp walk_insert(walk, [{oid, hide}|oids]) do
@@ -54,8 +62,12 @@ defmodule GitRekt.Packfile do
   end
 
   defp unpack_obj_next(i, max, rest, acc) when i < max do
-    {obj_type, obj, rest} = unpack_obj(rest)
-    unpack_obj_next(i+1, max, rest, [{obj_type, obj}|acc])
+    case unpack_obj(rest) do
+      {obj_type, obj, rest} ->
+        unpack_obj_next(i+1, max, rest, [{obj_type, obj}|acc])
+      :need_more ->
+        {[{:buffer, Enum.reverse(acc), {max-i, rest}}], ""}
+    end
   end
 
   defp unpack_obj_next(max, max, rest, acc) do
@@ -71,12 +83,14 @@ defmodule GitRekt.Packfile do
       obj_type == :delta_reference ->
         <<base_oid::binary-20, rest::binary>> = rest
         {delta, rest} = unpack_obj_data(rest)
-        if byte_size(delta) != inflate_size, do: raise "inflate delta does not match given size: #{inflate_size} != #{byte_size(delta)}"
-        {obj_type, unpack_obj_delta(base_oid, delta), rest}
+        if byte_size(delta) != inflate_size,
+          do: :need_more,
+        else: {obj_type, unpack_obj_delta(base_oid, delta), rest}
       true ->
         {obj_data, rest} = unpack_obj_data(rest)
-        if byte_size(obj_data) != inflate_size, do: raise "inflate object does not match given size: #{inflate_size} != #{byte_size(obj_data)}"
-        {obj_type, obj_data, rest}
+        if byte_size(obj_data) != inflate_size,
+          do: :need_more,
+        else: {obj_type, obj_data, rest}
     end
   end
 
@@ -92,8 +106,11 @@ defmodule GitRekt.Packfile do
   end
 
   defp unpack_obj_data(data) do
+    data_size = byte_size(data)
     {:ok, obj, deflate_size} = Git.object_zlib_inflate(data)
-    {IO.iodata_to_binary(obj), binary_part(data, deflate_size, byte_size(data)-deflate_size)}
+    if data_size < deflate_size,
+      do: {"", data},
+    else: {IO.iodata_to_binary(obj), binary_part(data, deflate_size, data_size-deflate_size)}
   end
 
   defp unpack_obj_delta(base_oid, delta) do
