@@ -30,6 +30,32 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     pack: Packfile.obj_list,
   }
 
+  @doc """
+  Applies the given `receive_pack` *PACK* to the repository.
+  """
+  @spec apply_pack(t) :: {:ok, [Git.oid]} | {:error, term}
+  def apply_pack(%__MODULE__{repo: repo, pack: pack} = _receive_pack) do
+    case Git.repository_get_odb(repo) do
+      {:ok, odb} -> {:ok, Enum.map(pack, &apply_pack_obj(odb, &1))}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Applies the given `receive_pack` commands to the repository.
+  """
+  @spec apply_cmds(t) :: :ok | {:error, term}
+  def apply_cmds(%__MODULE__{repo: repo, cmds: cmds} = _receive_pack) do
+    Enum.each(cmds, fn
+      {:create, new_oid, name} ->
+        :ok = Git.reference_create(repo, name, :oid, new_oid, false)
+      {:update, _old_oid, new_oid, name} ->
+        :ok = Git.reference_create(repo, name, :oid, new_oid, true)
+      {:delete, _old_oid, name} ->
+        :ok = Git.reference_delete(repo, name)
+    end)
+  end
+
   #
   # Callbacks
   #
@@ -83,17 +109,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   # Helpers
   #
 
-  defp odb_flush(%__MODULE__{repo: repo, pack: pack, cmds: cmds, callback: nil} = _handle) do
-    :ok = apply_pack(repo, pack)
-    :ok = apply_cmds(repo, cmds)
+  defp odb_flush(%__MODULE__{callback: nil} = handle) do
+    case apply_pack(handle) do
+      {:ok, _oids} -> apply_cmds(handle)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp odb_flush(%__MODULE__{callback: callback} = handle) do
     {module, fun, args} = callback
-    case resolve_pack(handle) do
-      {:ok, pack} -> apply(module, fun, args ++ [%{handle|pack: pack}])
-      {:error, reason} -> {:error, reason}
-    end
+    apply(module, fun, args ++ [handle])
   end
 
   defp report_status(cmds) do
@@ -124,42 +149,17 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp obj_match?({type, _oid}, type), do: true
   defp obj_match?(_line, _type), do: false
 
-   defp apply_cmds(repo, cmds) do
-    Enum.each(cmds, fn
-      {:create, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, false)
-      {:update, _old_oid, new_oid, refname} -> Git.reference_create(repo, refname, :oid, new_oid, true)
-      {:delete, _old_oid, refname} -> Git.reference_delete(repo, refname)
-    end)
-  end
-
-  defp apply_pack(repo, pack) do
-    {:ok, odb} = Git.repository_get_odb(repo)
-    Enum.each(pack, &apply_pack_obj(odb, &1))
-  end
-
   defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
     {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
     new_data = resolve_delta_chain(obj_data, "", cmds)
-    {:ok, _oid} = apply_pack_obj(odb, {obj_type, new_data})
+    {:ok, oid} = apply_pack_obj(odb, {obj_type, new_data})
+    oid
   end
 
   defp apply_pack_obj(odb, {obj_type, obj_data}) do
-    {:ok, _oid} = Git.odb_write(odb, obj_data, obj_type)
+    {:ok, oid} = Git.odb_write(odb, obj_data, obj_type)
+    oid
   end
-
-  defp resolve_pack(handle) do
-    case Git.repository_get_odb(handle.repo) do
-      {:ok, odb} -> {:ok, Enum.map(handle.pack, &resolve_pack_obj(odb, &1))}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp resolve_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
-    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
-    {obj_type, resolve_delta_chain(obj_data, "", cmds)}
-  end
-
-  defp resolve_pack_obj(_odb, {obj_type, obj_data}), do: {obj_type, obj_data}
 
   defp resolve_delta_chain(_source, target, []), do: target
   defp resolve_delta_chain(source, target, [{:insert, chunk}|cmds]) do

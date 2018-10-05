@@ -311,11 +311,10 @@ defmodule GitGud.Repo do
   Applies the given `receive_pack` command to the `repo`.
   """
   @spec git_push(t, ReceivePack.t) :: :ok | {:error, term}
-  def git_push(%__MODULE__{} = repo, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = _receive_pack) do
-    case Git.repository_get_odb(handle) do
-      {:ok, odb} ->
-        oids = Enum.map(pack, &apply_pack_obj(odb, &1))
-        :ok = Enum.each(cmds, &apply_pack_cmd(handle, &1))
+  def git_push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
+    case ReceivePack.apply_pack(receive_pack) do
+      {:ok, oids} ->
+        :ok = ReceivePack.apply_cmds(receive_pack)
         :ok = Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
       {:error, reason} ->
         {:error, reason}
@@ -464,24 +463,5 @@ defmodule GitGud.Repo do
         resolve_object({obj, obj_type, oid}, {repo, handle})
       {:error, _reason} -> nil
     end
-  end
-
-  defp apply_pack_obj(odb, {obj_type, obj_data}) do
-    case Git.odb_write(odb, obj_data, obj_type) do
-      {:ok, oid} -> oid
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp apply_pack_cmd(handle, {:create, new_oid, name}) do
-    :ok = Git.reference_create(handle, name, :oid, new_oid, false)
-  end
-
-  defp apply_pack_cmd(handle, {:update, _old_oid, new_oid, name}) do
-    :ok = Git.reference_create(handle, name, :oid, new_oid, true)
-  end
-
-  defp apply_pack_cmd(handle, {:delete, _old_oid, name}) do
-    :ok = Git.reference_delete(handle, name)
   end
 end
