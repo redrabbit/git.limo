@@ -114,7 +114,7 @@ defmodule GitGud.SSHServer do
     [repo|_args] = parse_args(args)
     if authorized?(user, repo, exec) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :push, [repo, user]}))
+      {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :git_push, [repo]}))
       :ssh_connection.send(conn, chan, output)
       {:ok, %{state|repo: repo, service: service}}
     else

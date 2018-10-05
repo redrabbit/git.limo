@@ -135,14 +135,14 @@ defmodule GitGud.SmartHTTPBackend do
            {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(service, {repo, handle}, conn.assigns[:current_user], body))
+        |> send_resp(:ok, git_exec(service, {repo, handle}, body))
       end
     end
   end
 
-  defp git_exec(exec, {repo, handle}, user, data) do
+  defp git_exec(exec, {repo, handle}, data) do
     handle
-    |> Service.new(exec, callback: {Repo, :push, [repo, user]})
+    |> Service.new(exec, callback: {Repo, :git_push, [repo]})
     |> Service.run(data, skip: 1)
     |> elem(1)
   end

@@ -310,13 +310,13 @@ defmodule GitGud.Repo do
   @doc """
   Applies the given `receive_pack` command to the `repo`.
   """
-  @spec push(t, User.t, ReceivePack.t) :: :ok | {:error, term}
-  def push(%__MODULE__{} = repo, %User{} = user, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = _receive_pack) do
+  @spec git_push(t, ReceivePack.t) :: :ok | {:error, term}
+  def git_push(%__MODULE__{} = repo, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = _receive_pack) do
     case Git.repository_get_odb(handle) do
       {:ok, odb} ->
         oids = Enum.map(pack, &apply_pack_obj(odb, &1))
         :ok = Enum.each(cmds, &apply_pack_cmd(handle, &1))
-        :ok = Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, user_id: user.id, cmds: cmds, oids: oids}})
+        :ok = Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
       {:error, reason} ->
         {:error, reason}
     end
