@@ -7,7 +7,16 @@
     <% end %>
     <%= for entry <- tree_entries(@tree) do %>
       <tr>
-        <td><a href="<%= codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry.name %></a></td>
+        <td>
+          <a href="<%= codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>">
+            <%= if entry.type == :tree do %>
+              <span class="icon"><i class="fa fa-folder" aria-hidden="true"></i></span>
+            <% else %>
+              <span class="icon"><i class="fa fa-file" aria-hidden="true"></i></span>
+            <% end %>
+            <span><%= entry.name %></span>
+          </a>
+        </td>
       </tr>
     <% end %>
   <tbody>

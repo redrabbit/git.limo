@@ -10,20 +10,35 @@
     <ul>
       <%= navigation_item @conn, :codebase do %>
         <%= if assigns[:revision] do %>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">Code</a></li>
+          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
+            <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
+            <span>Code</span>
+          </a>
         <% else %>
-          <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">Code</a></li>
+          <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">
+            <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
+            <span>Code</span>
+          </a>
         <% end %>
       <% end %>
       <li>
-        <a class="has-text-grey-light">Issues</a>
+        <a class="has-text-grey-light">
+          <span class="icon"><i class="fa fa-bug" aria-hidden="true"></i></span>
+          <span>Issues</span>
+        </a>
       </li>
       <li>
-        <a class="has-text-grey-light">Wiki</a>
+        <a class="has-text-grey-light">
+          <span class="icon"><i class="fa fa-book" aria-hidden="true"></i></span>
+          <span>Wiki</span>
+        </a>
       </li>
       <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
         <%= navigation_item @conn, :repository, only: [:edit, :update] do %>
-          <a href="<%= repository_path(@conn, :edit, @repo.owner, @repo) %>">Settings</a></li>
+          <a href="<%= repository_path(@conn, :edit, @repo.owner, @repo) %>">
+            <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
+            <span>Settings</span>
+          </a>
         <% end %>
       <% end %>
     </ul>
