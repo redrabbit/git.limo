@@ -93,17 +93,18 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, user: user, repo: repo, service: service} = state) do
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service} = state) do
     {service, output} = Service.next(service, data)
     :ssh_connection.send(conn, chan, output)
-    if Service.done?(service) do
-      {service, output} = Service.next(service)
-      :ssh_connection.send(conn, chan, output)
-      :ok = Repo.notify_command(repo, user, service)
-      :ssh_connection.send_eof(conn, chan)
-      :ssh_connection.exit_status(conn, chan, 0)
-      :ssh_connection.close(conn, chan)
-    end
+    service =
+      if Service.done?(service) do
+        {service, output} = Service.next(service)
+        :ssh_connection.send(conn, chan, output)
+        :ssh_connection.send_eof(conn, chan)
+        :ssh_connection.exit_status(conn, chan, 0)
+        :ssh_connection.close(conn, chan)
+        service
+      end
     {:ok, %{state|service: service}}
   end
 
@@ -113,7 +114,7 @@ defmodule GitGud.SSHServer do
     [repo|_args] = parse_args(args)
     if authorized?(user, repo, exec) do
       {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      {service, output} = Service.next(Service.new(handle, exec))
+      {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :push, [repo, user]}))
       :ssh_connection.send(conn, chan, output)
       {:ok, %{state|repo: repo, service: service}}
     else

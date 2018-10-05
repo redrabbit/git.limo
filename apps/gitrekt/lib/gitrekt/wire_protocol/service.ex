@@ -23,8 +23,8 @@ defmodule GitRekt.WireProtocol.Service do
   Returns a new service object for the given `repo` and `executable`.
   """
   @spec new(Git.repo, binary) :: struct
-  def new(repo, executable) do
-    struct(exec_impl(executable), repo: repo)
+  def new(repo, executable, init_values \\ []) do
+    struct(exec_impl(executable), Keyword.put(init_values, :repo, repo))
   end
 
   @doc """

@@ -8,6 +8,7 @@ defmodule GitGud.Repo do
   alias Ecto.Multi
 
   alias GitRekt.Git
+  alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
   alias GitGud.User
@@ -307,22 +308,15 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Broadcasts notification(s) for the given `service` command.
+  Pushes the given `receive_pack` to the `repo`.
   """
-  @spec notify_command(t, User.t, struct) :: :ok
-  def notify_command(%__MODULE__{} = repo, %User{} = user, %GitRekt.WireProtocol.ReceivePack{state: :done, cmds: cmds} = _service) do
-    IO.puts "push notification from #{user.username} to #{repo.name}"
-    Enum.each(cmds, fn
-      {:create, oid, refname} ->
-        IO.puts "create #{refname} to #{Git.oid_fmt(oid)}"
-      {:update, old_oid, new_oid, refname} ->
-        IO.puts "update #{refname} from #{Git.oid_fmt(old_oid)} to #{Git.oid_fmt(new_oid)}"
-      {:delete, old_oid, refname} ->
-        IO.puts "delete #{refname} (was #{Git.oid_fmt(old_oid)})"
-    end)
+  @spec push(t, User.t, ReceivePack.t) :: {:ok, ReceivePack.t} | {:error, term}
+  def push(%__MODULE__{} = _repo, %User{} = _user, %ReceivePack{repo: handle, pack: pack, cmds: cmds} = receive_pack) do
+    {:ok, odb} = Git.repository_get_odb(handle)
+    Enum.each(pack, &apply_pack_obj(odb, &1))
+    Enum.each(cmds, &apply_pack_cmd(handle, &1))
+    {:ok, receive_pack}
   end
-
-  def notify_command(%__MODULE__{} = _repo, _user, _service), do: :ok
 
   #
   # Protocols
@@ -466,5 +460,24 @@ defmodule GitGud.Repo do
         resolve_object({obj, obj_type, oid}, {repo, handle})
       {:error, _reason} -> nil
     end
+  end
+
+  defp apply_pack_obj(odb, {obj_type, obj_data}) do
+    case Git.odb_write(odb, obj_data, obj_type) do
+      {:ok, oid} -> oid
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp apply_pack_cmd(handle, {:create, new_oid, name}) do
+    :ok = Git.reference_create(handle, name, :oid, new_oid, false)
+  end
+
+  defp apply_pack_cmd(handle, {:update, _old_oid, new_oid, name}) do
+    :ok = Git.reference_create(handle, name, :oid, new_oid, true)
+  end
+
+  defp apply_pack_cmd(handle, {:delete, _old_oid, name}) do
+    :ok = Git.reference_delete(handle, name)
   end
 end
