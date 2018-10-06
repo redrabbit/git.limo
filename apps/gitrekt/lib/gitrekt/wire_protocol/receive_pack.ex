@@ -5,6 +5,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @behaviour GitRekt.WireProtocol.Service
 
+  require Logger
+
   alias GitRekt.Git
   alias GitRekt.Packfile
 
@@ -134,7 +136,14 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
   end
 
-  defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
+  defp read_pack(%__MODULE__{iter: {count1, _rest1}} = handle, [{:buffer, pack, {count2, _rest2} = iter}]) do
+    Logger.info "add #{length(pack)} objects to pack (#{length(handle.pack)+length(pack)}/#{length(handle.pack)+count1})"
+    if count1 > 0 && count1 - length(pack) != count2,
+      do: Logger.warn "buffer #{count1} - #{length(pack)} != #{count2}"
+    %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
+  end
+
+# defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
   defp read_pack(handle, pack) when is_list(pack), do: %{handle|state: :done, pack: handle.pack ++ pack, iter: @null_iter}
 
   defp parse_cmds(cmds) do
