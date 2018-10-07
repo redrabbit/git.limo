@@ -5,8 +5,6 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @behaviour GitRekt.WireProtocol.Service
 
-  require Logger
-
   alias GitRekt.Git
   alias GitRekt.Packfile
 
@@ -136,14 +134,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
   end
 
-  defp read_pack(%__MODULE__{iter: {count1, _rest1}} = handle, [{:buffer, pack, {count2, _rest2} = iter}]) do
-    Logger.info "add #{length(pack)} objects to pack (#{length(handle.pack)+length(pack)}/#{length(handle.pack)+count1})"
-    if count1 > 0 && count1 - length(pack) != count2,
-      do: Logger.warn "buffer #{count1} - #{length(pack)} != #{count2}"
-    %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
-  end
-
-# defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
+  defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
   defp read_pack(handle, pack) when is_list(pack), do: %{handle|state: :done, pack: handle.pack ++ pack, iter: @null_iter}
 
   defp parse_cmds(cmds) do
@@ -170,16 +161,21 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp obj_match?({type, _oid}, type), do: true
   defp obj_match?(_line, _type), do: false
 
-  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, cmds}}) do
+  defp apply_pack_obj(odb, {:delta_reference, {base_oid, base_obj_size, result_obj_size, cmds}}) do
     {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
+    if base_obj_size != byte_size(obj_data),
+      do: raise ArgumentError, message: "invalid base PACK object size (#{base_obj_size} != #{byte_size(obj_data)})"
     new_data = resolve_delta_chain(obj_data, "", cmds)
-    {:ok, oid} = apply_pack_obj(odb, {obj_type, new_data})
-    oid
+      if result_obj_size != byte_size(new_data),
+        do: raise ArgumentError, message: "invalid result PACK object size (#{result_obj_size} != #{byte_size(new_data)})"
+    apply_pack_obj(odb, {obj_type, new_data})
   end
 
   defp apply_pack_obj(odb, {obj_type, obj_data}) do
-    {:ok, oid} = Git.odb_write(odb, obj_data, obj_type)
-    oid
+    case Git.odb_write(odb, obj_data, obj_type) do
+      {:ok, oid} -> oid
+      {:error, reason} -> raise ArgumentError, message: reason
+    end
   end
 
   defp resolve_delta_chain(_source, target, []), do: target

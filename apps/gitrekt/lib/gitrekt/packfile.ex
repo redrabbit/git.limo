@@ -3,9 +3,7 @@ defmodule GitRekt.Packfile do
   Conveniences for reading and writting Git pack files.
   """
 
-  use Bitwise
-
-  require Logger
+  use Bitwise, only_operators: true
 
   alias GitRekt.Git
 
@@ -78,7 +76,6 @@ defmodule GitRekt.Packfile do
   defp unpack_obj(data) when byte_size(data) > 2 do
     {id_type, inflate_size, rest} = unpack_obj_head(data)
     obj_type = format_obj_type(id_type)
-    Logger.debug "unpack #{obj_type} (#{inflate_size} bytes)"
     cond do
       obj_type == :delta_reference && byte_size(rest) > 20 ->
         <<base_oid::binary-20, rest::binary>> = rest
@@ -139,36 +136,66 @@ defmodule GitRekt.Packfile do
     unpack_obj_delta_hunk(rest, [{:insert, data}|cmds])
   end
 
-  defp unpack_obj_delta_hunk(<<1::1, l::bitstring-3, o::bitstring-4, rest::binary>>, cmds) do
-    # Thanks to @vaibhavsagar on #haskell
-    len_bits = delta_copy_length_size(l)
-    ofs_bits = delta_copy_offset_size(o)
-    try do
-      <<offset::little-size(ofs_bits), size::little-size(len_bits), rest::binary>> = rest
-      unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
-    rescue
-      MatchError ->
-        Logger.error "skip invalid delta copy command"
-        unpack_obj_delta_hunk(rest, cmds)
-    end
+  defp unpack_obj_delta_hunk(<<copy_instruction::size(8), rest::binary>>, cmds) do
+    {offset, size, rest} = delta_copy_range(copy_instruction, rest)
+    unpack_obj_delta_hunk(rest, [{:copy, {offset, size}}|cmds])
   end
 
   defp unpack_obj_delta_hunk("", cmds), do: Enum.reverse(cmds)
-  defp unpack_obj_delta_hunk(<<char::8, rest::binary>>, cmds) do
-    Logger.warn "skip invalid delta char #{inspect char}"
-    unpack_obj_delta_hunk(rest, cmds)
+
+  defp delta_copy_range(x, rest) do
+    offset = 0
+    size = 0
+
+    {offset, rest} =
+      if (x &&& 0x01) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {c, rest}
+      end || {offset, rest}
+
+    {offset, rest} =
+      if (x &&& 0x02) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {offset ||| (c <<< 8), rest}
+      end || {offset, rest}
+
+    {offset, rest} =
+      if (x &&& 0x04) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {offset ||| (c <<< 16), rest}
+      end || {offset, rest}
+
+    {offset, rest} =
+      if (x &&& 0x08) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {offset ||| (c <<< 24), rest}
+      end || {offset, rest}
+
+    {size, rest} =
+      if (x &&& 0x10) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {c, rest}
+      end || {size, rest}
+
+    {size, rest} =
+      if (x &&& 0x20) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {size ||| (c <<< 8), rest}
+      end || {size, rest}
+
+    {size, rest} =
+      if (x &&& 0x40) > 0 do
+        <<c::size(8), rest::binary>> = rest
+        {size ||| (c <<< 16), rest}
+      end || {size, rest}
+
+    size =
+      if size == 0,
+        do: 0x10000,
+      else: size
+
+    {offset, size, rest}
   end
-
-  defp delta_copy_length_size(<<_::1, _::1, 0::1>>), do: 0x10000
-  defp delta_copy_length_size(<<_::1, 0::1, 1::1>>), do: 8
-  defp delta_copy_length_size(<<0::1, 1::1, 1::1>>), do: 16
-  defp delta_copy_length_size(<<1::1, 1::1, 1::1>>), do: 24
-
-  defp delta_copy_offset_size(<<_::1, _::1, _::1, 0::1>>), do: 0
-  defp delta_copy_offset_size(<<_::1, _::1, 0::1, 1::1>>), do: 8
-  defp delta_copy_offset_size(<<_::1, 0::1, 1::1, 1::1>>), do: 16
-  defp delta_copy_offset_size(<<0::1, 1::1, 1::1, 1::1>>), do: 24
-  defp delta_copy_offset_size(<<1::1, 1::1, 1::1, 1::1>>), do: 32
 
   defp format_obj_type(1), do: :commit
   defp format_obj_type(2), do: :tree
