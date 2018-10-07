@@ -75,17 +75,19 @@ defmodule GitRekt.Packfile do
     {Enum.reverse(acc), rest}
   end
 
-  defp unpack_obj(data) do
+  defp unpack_obj(data) when byte_size(data) > 2 do
     {id_type, inflate_size, rest} = unpack_obj_head(data)
     obj_type = format_obj_type(id_type)
     Logger.debug "unpack #{obj_type} (#{inflate_size} bytes)"
     cond do
-      obj_type == :delta_reference ->
+      obj_type == :delta_reference && byte_size(rest) > 20 ->
         <<base_oid::binary-20, rest::binary>> = rest
         {delta, rest} = unpack_obj_data(rest)
         if byte_size(delta) != inflate_size,
           do: :need_more,
         else: {obj_type, unpack_obj_delta(base_oid, delta), rest}
+      obj_type == :delta_reference ->
+        :need_more
       true ->
         {obj_data, rest} = unpack_obj_data(rest)
         if byte_size(obj_data) != inflate_size,
@@ -93,6 +95,8 @@ defmodule GitRekt.Packfile do
         else: {obj_type, obj_data, rest}
     end
   end
+
+  defp unpack_obj(_data), do: :need_more
 
   defp unpack_obj_head(<<0::1, type::3, num::4, rest::binary>>), do: {type, num, rest}
   defp unpack_obj_head(<<1::1, type::3, num::4, rest::binary>>) do
@@ -105,13 +109,20 @@ defmodule GitRekt.Packfile do
     unpack_obj_size(rest, acc + (num <<< (4+7*i)), i+1)
   end
 
-  defp unpack_obj_data(data) do
+  defp unpack_obj_data(data) when byte_size(data) > 2 do
     data_size = byte_size(data)
-    {:ok, obj, deflate_size} = Git.object_zlib_inflate(data)
-    if data_size < deflate_size,
-      do: {"", data},
-    else: {IO.iodata_to_binary(obj), binary_part(data, deflate_size, data_size-deflate_size)}
+    try do
+      {:ok, obj, deflate_size} = Git.object_zlib_inflate(data)
+      if data_size < deflate_size,
+        do: {"", data},
+      else: {IO.iodata_to_binary(obj), binary_part(data, deflate_size, data_size-deflate_size)}
+    rescue
+      ErlangError ->
+        {"", data}
+    end
   end
+
+  defp unpack_obj_data(data), do: {"", data}
 
   defp unpack_obj_delta(base_oid, delta) do
     {base_obj_size, rest} = unpack_obj_delta_size(delta, 0, 0)
