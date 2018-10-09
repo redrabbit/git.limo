@@ -1,47 +1,73 @@
 defmodule GitGud.UserTest do
-  use GitGud.DataCase
+  use GitGud.DataCase, async: true
+  use GitGud.DataFactory
 
   alias GitGud.User
-  alias GitGud.UserQuery
 
-  @valid_attrs %{name: "Mario Flach", username: "redrabbit", email: "m.flach@almightycouch.com", password: "test1234"}
-
-  test "registers a new user with valid params" do
-    assert {:ok, user} = User.register(@valid_attrs)
+  test "creates a new user with valid params" do
+    assert {:ok, user} = User.create(factory(:user))
     assert is_nil(user.password)
     assert String.starts_with?(user.password_hash, "$argon2i$")
   end
 
-  test "fails to register a new user with invalid params" do
-    assert {:error, changeset} = User.register(%{@valid_attrs|username: "mariö"})
+  test "fails to create a new user with invalid username" do
+    params = factory(:user)
+    assert {:error, changeset} = User.create(Map.delete(params, :username))
+    assert "can't be blank" in errors_on(changeset).username
+    assert {:error, changeset} = User.create(Map.update!(params, :username, &(&1<>".")))
     assert "has invalid format" in errors_on(changeset).username
-    assert {:error, changeset} = User.register(%{@valid_attrs|username: "rr"})
+    assert {:error, changeset} = User.create(Map.update!(params, :username, &binary_part(&1, 0, 2)))
     assert "should be at least 3 character(s)" in errors_on(changeset).username
-    assert {:error, changeset} = User.register(%{@valid_attrs|email: "m-dot-flach-at-almightycouch-dot-com"})
-    assert "has invalid format" in errors_on(changeset).email
-    assert {:error, changeset} = User.register(%{@valid_attrs|password: "test1"})
+  end
+
+  test "fails to create a new user with invalid email" do
+    params = factory(:user)
+    assert {:error, changeset} = User.create(Map.delete(params, :email))
+    assert "can't be blank" in errors_on(changeset).email
+  end
+
+  test "fails to create a new user with invalid password" do
+    params = factory(:user)
+    assert {:error, changeset} = User.create(Map.delete(params, :password))
+    assert "can't be blank" in errors_on(changeset).password
+    assert {:error, changeset} = User.create(%{params|password: "abc"})
     assert "should be at least 6 character(s)" in errors_on(changeset).password
   end
 
-  test "gets user by id" do
-    assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuery.by_id(user.id)
+  describe "when user exists" do
+    setup [:create_user]
+
+    test "updates profile with valid params", %{user: user} do
+      assert {:ok, user} = User.update(user, :profile, name: "Alice", email: "alice1234@gmail.com")
+      assert user.name == "Alice"
+      assert user.email == "alice1234@gmail.com"
+    end
+
+    test "fails to update profile with invalid email", %{user: user} do
+      assert {:error, changeset} = User.update(user, :profile, email: "")
+      assert "can't be blank" in errors_on(changeset).email
+    end
+
+    test "deletes user", %{user: user} do
+      assert {:ok, _user} = User.delete(user)
+    end
+
+    test "checks credentials", %{user: user} do
+      assert ^user = User.check_credentials(user.username, "qwertz")
+      assert ^user = User.check_credentials(user.email, "qwertz")
+    end
+
+    test "fails to check credentials with invalid password", %{user: user} do
+      assert is_nil(User.check_credentials(user.email, "abc"))
+      assert is_nil(User.check_credentials(user.username, "abc"))
+    end
   end
 
-  test "gets user by username" do
-    assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = UserQuery.by_username(user.username)
-  end
+  #
+  # Helpers
+  #
 
-  test "authenticates user with email and username" do
-    assert {:ok, user} = User.register(@valid_attrs)
-    assert ^user = User.check_credentials(@valid_attrs.email, @valid_attrs.password)
-    assert ^user = User.check_credentials(@valid_attrs.username, @valid_attrs.password)
-  end
-
-  test "fails to authenticate user with invalid credentials" do
-    assert {:ok, user} = User.register(@valid_attrs)
-    assert is_nil(User.check_credentials(user.email, "testpasswd"))
-    assert is_nil(User.check_credentials(user.username, "testpasswd"))
+  defp create_user(context) do
+    Map.put(context, :user, User.create!(factory(:user)))
   end
 end

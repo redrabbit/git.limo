@@ -62,19 +62,17 @@ defmodule GitGud.User do
   @doc """
   Updates the given `user` with the given `params`.
   """
-  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
+  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
-    DB.update(update_changeset(user, changeset_type, params))
+    DB.update(update_changeset(user, changeset_type, Map.new(params)))
   end
-
-  defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
 
   @doc """
   Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec update!(t, atom, map|keyword) :: t
   def update!(%__MODULE__{} = user, changeset_type, params) do
-    DB.update!(update_changeset(user, changeset_type, params))
+    DB.update!(update_changeset(user, changeset_type, Map.new(params)))
   end
 
   @doc """
@@ -90,7 +88,7 @@ defmodule GitGud.User do
   """
   @spec delete!(t) :: t
   def delete!(%__MODULE__{} = user) do
-    DB.delete(user)
+    DB.delete!(user)
   end
 
   @doc """
@@ -132,6 +130,8 @@ defmodule GitGud.User do
   #
   # Helpers
   #
+
+  defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
 
   defp validate_username(changeset) do
     changeset
