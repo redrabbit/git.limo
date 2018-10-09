@@ -6,7 +6,7 @@ defmodule GitRekt.WireProtocol do
   alias GitRekt.Git
   alias GitRekt.Packfile
 
-  @upload_caps ~w(multi_ack multi_ack_detailed)
+  @upload_caps ~w(thin-pack multi_ack multi_ack_detailed)
   @receive_caps ~w(report-status delete-refs)
 
   @doc """
