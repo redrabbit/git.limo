@@ -44,25 +44,25 @@ defmodule GitGud.SmartHTTPBackend do
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+    else: send_resp(conn, :not_found, "Not found")
   end
 
   get "/HEAD" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_head_ref(conn, repo) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+    else: send_resp(conn, :not_found, "Not found")
   end
 
   post "/git-receive-pack" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+    else: send_resp(conn, :not_found, "Not found")
   end
 
   post "/git-upload-pack" do
     if repo = RepoQuery.user_repo(conn.params["username"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Page not found")
+    else: send_resp(conn, :not_found, "Not found")
   end
 
   match _ do
@@ -104,28 +104,43 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp read_body_full(conn, buffer \\ "") do
     case read_body(conn) do
-      {:ok, body, conn} -> {:ok, inflate_body(conn, buffer <> body), conn}
-      {:more, part, conn} -> read_body_full(conn, buffer <> part)
-      {:error, reason} -> {:error, reason}
+      {:ok, body, conn} ->
+        {:ok, inflate_body(conn, buffer <> body), conn}
+      {:more, part, conn} ->
+        read_body_full(conn, buffer <> part)
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
   defp git_info_refs(conn, repo, service) do
     if authorized?(conn, repo, service) do
-      {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      refs = WireProtocol.reference_discovery(handle, service)
-      refs = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
-      conn
-      |> put_resp_content_type("application/x-#{service}-advertisement")
-      |> send_resp(:ok, refs)
+      case Git.repository_open(Repo.workdir(repo)) do
+        {:ok, handle} ->
+          refs = WireProtocol.reference_discovery(handle, service)
+          info = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
+          conn
+          |> put_resp_content_type("application/x-#{service}-advertisement")
+          |> send_resp(:ok, info)
+        {:error, _reason} ->
+          conn
+          |> send_resp(:not_found, "Not found")
+          |> halt()
+      end
     end
   end
 
   defp git_head_ref(conn, repo) do
     if authorized?(conn, repo, :read) do
       with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD"), do:
+           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD") do
         send_resp(conn, :ok, "ref: #{target}")
+      else
+        {:error, reason} ->
+          conn
+          |> send_resp(:internal_server_error, reason)
+          |> halt()
+      end
     end
   end
 
@@ -136,6 +151,11 @@ defmodule GitGud.SmartHTTPBackend do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
         |> send_resp(:ok, git_exec(service, {repo, handle}, body))
+      else
+        {:error, reason} ->
+          conn
+          |> send_resp(:internal_server_error, reason)
+          |> halt()
       end
     end
   end

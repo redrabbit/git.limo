@@ -37,7 +37,7 @@ defmodule GitGud.SSHServer do
 
   alias GitGud.Authorization
 
-  @behaviour :ssh_daemon_channel
+  @behaviour :ssh_server_channel
   @behaviour :ssh_server_key_api
 
   defstruct [:conn, :chan, :user, :repo, :service]
@@ -113,10 +113,14 @@ defmodule GitGud.SSHServer do
     [exec|args] = String.split(to_string(cmd))
     [repo|_args] = parse_args(args)
     if authorized?(user, repo, exec) do
-      {:ok, handle} = Git.repository_open(Repo.workdir(repo))
-      {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :git_push, [repo]}))
-      :ssh_connection.send(conn, chan, output)
-      {:ok, %{state|repo: repo, service: service}}
+      case Git.repository_open(Repo.workdir(repo)) do
+        {:ok, handle} ->
+          {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :git_push, [repo]}))
+          :ssh_connection.send(conn, chan, output)
+          {:ok, %{state|repo: repo, service: service}}
+        {:error, _reason} ->
+          {:stop, chan, state}
+      end
     else
       {:stop, chan, state}
     end
