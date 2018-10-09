@@ -34,6 +34,7 @@ defmodule GitGud.Mixfile do
      {:phoenix_pubsub, "~> 1.1", optional: true},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
+     {:faker, "~> 0.11", only: :test},
      {:gitrekt, in_umbrella: true}]
   end
 
