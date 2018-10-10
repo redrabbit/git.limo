@@ -8,3 +8,5 @@ config :gitgud, GitGud.DB,
   database: "gitgud_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :gitgud, :git_root_dir, "test/git-root"

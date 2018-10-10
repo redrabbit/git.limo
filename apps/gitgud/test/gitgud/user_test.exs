@@ -37,10 +37,16 @@ defmodule GitGud.UserTest do
   describe "when user exists" do
     setup [:create_user]
 
-    test "updates profile with valid params", %{user: user} do
-      assert {:ok, user} = User.update(user, :profile, name: "Alice", email: "alice1234@gmail.com")
-      assert user.name == "Alice"
-      assert user.email == "alice1234@gmail.com"
+    test "fails to create a new user with same username", %{user: user} do
+      params = factory(:user)
+      assert {:error, changeset} = User.create(%{params|username: user.username})
+      assert "has already been taken" in errors_on(changeset).username
+    end
+
+    test "updates profile with valid params", %{user: user1} do
+      assert {:ok, user2} = User.update(user1, :profile, name: "Alice", email: "alice1234@gmail.com")
+      assert user2.name == "Alice"
+      assert user2.email == "alice1234@gmail.com"
     end
 
     test "fails to update profile with invalid email", %{user: user} do
@@ -48,8 +54,9 @@ defmodule GitGud.UserTest do
       assert "can't be blank" in errors_on(changeset).email
     end
 
-    test "deletes user", %{user: user} do
-      assert {:ok, _user} = User.delete(user)
+    test "deletes user", %{user: user1} do
+      assert {:ok, user2} = User.delete(user1)
+      assert user2.__meta__.state == :deleted
     end
 
     test "checks credentials", %{user: user} do
