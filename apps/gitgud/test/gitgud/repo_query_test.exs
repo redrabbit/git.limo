@@ -21,18 +21,24 @@ defmodule GitGud.RepoQueryTest do
 
   test "gets single user repository", %{repos: repos} do
     for repo <- repos do
+      assert repo == RepoQuery.user_repo(repo.owner.id, repo.name, preload: :maintainers)
+      assert repo == RepoQuery.user_repo(repo.owner.username, repo.name, preload: :maintainers)
       assert repo == RepoQuery.user_repo(repo.owner, repo.name, preload: :maintainers)
     end
   end
 
-  test "gets multiple user repositories", %{repos: repos} do
+  test "gets multiple repositories from single user", %{repos: repos} do
     for {user, repos} <- Enum.group_by(repos, &(&1.owner)) do
+      assert Enum.all?(RepoQuery.user_repos(user.id, preload: :maintainers), &(&1 in repos))
+      assert Enum.all?(RepoQuery.user_repos(user.username, preload: :maintainers), &(&1 in repos))
       assert Enum.all?(RepoQuery.user_repos(user, preload: :maintainers), &(&1 in repos))
     end
   end
 
-  test "gets multiple users repositories", %{repos: repos} do
+  test "gets multiple repositories from multiple users", %{repos: repos} do
     users = Enum.map(repos, &(&1.owner))
+    assert Enum.all?(RepoQuery.user_repos(Enum.map(users, &(&1.id)), preload: :maintainers), &(&1 in repos))
+    assert Enum.all?(RepoQuery.user_repos(Enum.map(users, &(&1.username)), preload: :maintainers), &(&1 in repos))
     assert Enum.all?(RepoQuery.user_repos(users, preload: :maintainers), &(&1 in repos))
   end
 
