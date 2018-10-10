@@ -9,32 +9,32 @@ defmodule GitGud.UserQueryTest do
 
   test "gets single user by id", %{users: users} do
     for user <- users do
-      assert ^user = UserQuery.by_id(user.id)
+      assert user == UserQuery.by_id(user.id)
     end
   end
 
   test "gets multiple users by id", %{users: users} do
-    assert ^users = UserQuery.by_id(Enum.map(users, &(&1.id)))
+    assert Enum.all?(UserQuery.by_id(Enum.map(users, &(&1.id))), &(&1 in users))
   end
 
   test "gets single user by username", %{users: users} do
     for user <- users do
-      assert ^user = UserQuery.by_username(user.username)
+      assert user == UserQuery.by_username(user.username)
     end
   end
 
   test "gets multiple users by username", %{users: users} do
-    assert ^users = UserQuery.by_username(Enum.map(users, &(&1.username)))
+    assert Enum.all?(UserQuery.by_username(Enum.map(users, &(&1.username))), &(&1 in users))
   end
 
   test "gets single user by email", %{users: users} do
     for user <- users do
-      assert ^user = UserQuery.by_email(user.email)
+      assert user == UserQuery.by_email(user.email)
     end
   end
 
   test "gets multiple users by email", %{users: users} do
-    assert ^users = UserQuery.by_email(Enum.map(users, &(&1.email)))
+    assert Enum.all?(UserQuery.by_email(Enum.map(users, &(&1.email))), &(&1 in users))
   end
 
   #
@@ -43,7 +43,7 @@ defmodule GitGud.UserQueryTest do
 
   defp create_users(context) do
     users = Stream.repeatedly(fn -> User.create!(factory(:user)) end)
-    Map.put(context, :users, Enum.take(users, 10))
+    Map.put(context, :users, Enum.take(users, 3))
   end
 end
 

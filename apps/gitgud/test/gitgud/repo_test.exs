@@ -14,7 +14,7 @@ defmodule GitGud.RepoTest do
 
   setup :create_user
 
-  test "creates a new repo with valid params", %{user: user} do
+  test "creates a new repository with valid params", %{user: user} do
     assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))
     assert user in repo.maintainers
     assert File.dir?(Repo.workdir(repo))
@@ -22,7 +22,7 @@ defmodule GitGud.RepoTest do
     assert Git.repository_empty?(git_handle)
   end
 
-  test "fails to create a new repo with invalid name", %{user: user} do
+  test "fails to create a new repository with invalid name", %{user: user} do
     params = factory(:repo, user)
     assert {:error, changeset} = Repo.create(Map.delete(params, :name))
     assert "can't be blank" in errors_on(changeset).name
@@ -32,28 +32,28 @@ defmodule GitGud.RepoTest do
     assert "should be at least 3 character(s)" in errors_on(changeset).name
   end
 
-  describe "when repo exists" do
+  describe "when repository exists" do
     setup [:create_repo]
 
-    test "fails to create a new repo with same name", %{user: user, repo: repo} do
+    test "fails to create a new repository with same name", %{user: user, repo: repo} do
       params = factory(:repo, user)
       assert {:error, changeset} = Repo.create(%{params|name: repo.name})
       assert "has already been taken" in errors_on(changeset).name
     end
 
-    test "updates repo with valid params", %{repo: repo1} do
+    test "updates repository with valid params", %{repo: repo1} do
       assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project", description: "This project is really awesome!")
       assert repo2.name == "my-awesome-project"
       assert repo2.description == "This project is really awesome!"
     end
 
-    test "updates repo name moves Git workdir accordingly", %{repo: repo1} do
+    test "updates repository name moves Git workdir accordingly", %{repo: repo1} do
       assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project")
       refute File.dir?(Repo.workdir(repo1))
       assert File.dir?(Repo.workdir(repo2))
     end
 
-    test "fails to update repo with invalid name", %{repo: repo} do
+    test "fails to update repository with invalid name", %{repo: repo} do
       assert {:error, changeset} = Repo.update(repo, name: "")
       assert "can't be blank" in errors_on(changeset).name
       assert {:error, changeset} = Repo.update(repo, name: "my awesome project")
@@ -62,14 +62,14 @@ defmodule GitGud.RepoTest do
       assert "should be at least 3 character(s)" in errors_on(changeset).name
     end
 
-    test "adds user to maintainers", %{user: user1, repo: repo1} do
+    test "adds user to repository maintainers", %{user: user1, repo: repo1} do
       assert {:ok, user2} = User.create(factory(:user))
       assert {:ok, repo2} = Repo.update(repo1, maintainers: [user2|repo1.maintainers])
       assert user1 in repo2.maintainers
       assert user2 in repo2.maintainers
     end
 
-    test "deletes repo", %{repo: repo1} do
+    test "deletes repository", %{repo: repo1} do
       assert {:ok, repo2} = Repo.delete(repo1)
       assert repo2.__meta__.state == :deleted
     end
