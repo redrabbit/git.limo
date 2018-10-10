@@ -103,13 +103,13 @@ defmodule GitGud.RepoQuery do
 
   def user_repos_query(users) when is_list(users) do
     cond do
-      Enum.all?(users, &is_binary/1) ->
-        from(r in Repo, join: u in assoc(r, :owner), where: u.username in ^users, preload: [owner: u])
-      Enum.all?(users, &is_integer/1) ->
-        from(r in Repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
       Enum.all?(users, &is_map/1) ->
         user_ids = Enum.map(users, &Map.fetch!(&1, :id))
-        from(r in Repo, join: u in assoc(r, :owner), where: u.username in ^user_ids, preload: [owner: u])
+        from(r in Repo, join: u in assoc(r, :owner), where: u.id in ^user_ids, preload: [owner: u])
+      Enum.all?(users, &is_integer/1) ->
+        from(r in Repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
+      Enum.all?(users, &is_binary/1) ->
+        from(r in Repo, join: u in assoc(r, :owner), where: u.username in ^users, preload: [owner: u])
     end
   end
 
