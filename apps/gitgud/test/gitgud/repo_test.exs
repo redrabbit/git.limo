@@ -2,6 +2,7 @@ defmodule GitGud.RepoTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
+  alias GitRekt.Git
   alias GitGud.User
   alias GitGud.Repo
 
@@ -14,8 +15,11 @@ defmodule GitGud.RepoTest do
   setup :create_user
 
   test "creates a new repo with valid params", %{user: user} do
-    assert {:ok, repo, _git_handle} = Repo.create(factory(:repo, user))
+    assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))
+    assert user in repo.maintainers
     assert File.dir?(Repo.workdir(repo))
+    assert Git.repository_bare?(git_handle)
+    assert Git.repository_empty?(git_handle)
   end
 
   test "fails to create a new repo with invalid name", %{user: user} do
@@ -41,6 +45,10 @@ defmodule GitGud.RepoTest do
       assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project", description: "This project is really awesome!")
       assert repo2.name == "my-awesome-project"
       assert repo2.description == "This project is really awesome!"
+    end
+
+    test "updates repo name moves Git workdir accordingly", %{repo: repo1} do
+      assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project")
       refute File.dir?(Repo.workdir(repo1))
       assert File.dir?(Repo.workdir(repo2))
     end
@@ -48,6 +56,17 @@ defmodule GitGud.RepoTest do
     test "fails to update repo with invalid name", %{repo: repo} do
       assert {:error, changeset} = Repo.update(repo, name: "")
       assert "can't be blank" in errors_on(changeset).name
+      assert {:error, changeset} = Repo.update(repo, name: "my awesome project")
+      assert "has invalid format" in errors_on(changeset).name
+      assert {:error, changeset} = Repo.update(repo, name: "ap")
+      assert "should be at least 3 character(s)" in errors_on(changeset).name
+    end
+
+    test "adds user to maintainers", %{user: user1, repo: repo1} do
+      assert {:ok, user2} = User.create(factory(:user))
+      assert {:ok, repo2} = Repo.update(repo1, maintainers: [user2|repo1.maintainers])
+      assert user1 in repo2.maintainers
+      assert user2 in repo2.maintainers
     end
 
     test "deletes repo", %{repo: repo1} do
@@ -55,7 +74,6 @@ defmodule GitGud.RepoTest do
       assert repo2.__meta__.state == :deleted
     end
   end
-
 
   #
   # Helpers

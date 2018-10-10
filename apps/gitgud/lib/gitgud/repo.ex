@@ -67,10 +67,15 @@ defmodule GitGud.Repo do
   @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
     case multi_create(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
-      {:ok, %{insert: repo, init: ref}} -> {:ok, repo, ref}
-      {:error, :insert, changeset, _changes} -> {:error, changeset}
-      {:error, :init, reason, _changes} -> {:error, reason}
-      {:error, :init_maintainer, changeset} -> {:error, changeset}
+      {:ok, %{insert: repo, init: ref}} ->
+        repo = DB.preload(repo, :owner)
+        {:ok, struct(repo, maintainers: [repo.owner]), ref}
+      {:error, :insert, changeset, _changes} ->
+        {:error, changeset}
+      {:error, :init, reason, _changes} ->
+        {:error, reason}
+      {:error, :init_maintainer, changeset} ->
+        {:error, changeset}
     end
   end
 
@@ -352,17 +357,19 @@ defmodule GitGud.Repo do
   #
 
   defp put_maintainers(changeset, params) do
-    try do
-      put_assoc(changeset, :maintainers, parse_maintainers(params))
-    catch
-      username ->
-        add_error(changeset, :maintainers, "invalid username #{username}")
-    end
+    if maintainers = params[:maintainers] || params["maintainers"] do
+      try do
+        put_assoc(changeset, :maintainers, parse_maintainers(maintainers))
+      catch
+        username ->
+          add_error(changeset, :maintainers, "invalid username #{username}")
+      end
+    end || changeset
   end
 
-  defp parse_maintainers(params) do
-    params
-    |> Map.get("maintainers", "")
+  defp parse_maintainers(maintainers) when is_list(maintainers), do: maintainers
+  defp parse_maintainers(maintainers) when is_binary(maintainers) do
+    maintainers
     |> String.split(",")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(& &1 == "")
@@ -386,7 +393,7 @@ defmodule GitGud.Repo do
   defp multi_update(changeset) do
     Multi.new()
     |> Multi.update(:update, changeset)
-    |> Multi.run(:rename, &rename(&1, changeset.data))
+    |> Multi.run(:rename, &rename(&1, changeset))
     |> DB.transaction()
   end
 
@@ -405,12 +412,16 @@ defmodule GitGud.Repo do
     Multi.insert_all(Multi.new(), :init_maintainer, "repositories_maintainers", [[repo_id: repo.id, user_id: repo.owner_id]])
   end
 
-  defp rename(%{update: repo}, old_repo) do
-    old_workdir = workdir(old_repo)
-    new_workdir = workdir(repo)
-    case File.rename(old_workdir, new_workdir) do
-      :ok -> {:ok, {old_workdir, new_workdir}}
-      {:error, reason} -> {:error, reason}
+  defp rename(%{update: repo}, changeset) do
+    old_workdir = workdir(changeset.data)
+    if get_change(changeset, :name) do
+      new_workdir = workdir(repo)
+      case File.rename(old_workdir, new_workdir) do
+        :ok -> {:ok, new_workdir}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      {:ok, old_workdir}
     end
   end
 
