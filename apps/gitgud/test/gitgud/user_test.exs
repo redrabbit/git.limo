@@ -24,6 +24,8 @@ defmodule GitGud.UserTest do
     params = factory(:user)
     assert {:error, changeset} = User.create(Map.delete(params, :email))
     assert "can't be blank" in errors_on(changeset).email
+    assert {:error, changeset} = User.create(Map.update!(params, :email, &(&1<>".0")))
+    assert "has invalid format" in errors_on(changeset).email
   end
 
   test "fails to create a new user with invalid password" do
@@ -52,6 +54,8 @@ defmodule GitGud.UserTest do
     test "fails to update profile with invalid email", %{user: user} do
       assert {:error, changeset} = User.update(user, :profile, email: "")
       assert "can't be blank" in errors_on(changeset).email
+      assert {:error, changeset} = User.update(user, :profile, email: "alice12345@nothing")
+    assert "has invalid format" in errors_on(changeset).email
     end
 
     test "deletes user", %{user: user1} do

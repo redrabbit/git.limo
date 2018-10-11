@@ -142,7 +142,7 @@ defmodule GitGud.User do
 
   defp validate_email(changeset) do
     changeset
-    |> validate_format(:email, ~r/@/)
+    |> validate_format(:email, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
     |> unique_constraint(:email)
   end
 
