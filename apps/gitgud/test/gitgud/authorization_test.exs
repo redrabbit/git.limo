@@ -16,6 +16,30 @@ defmodule GitGud.AuthorizationTest do
     assert Enum.all?(RepoQuery.user_repos(users), &(&1.public))
   end
 
+  test "anon has :read access to public repositories", %{repos: repos} do
+    for repo <- Enum.filter(repos, &(&1.public)) do
+      assert Authorization.authorized?(nil, repo, :read)
+    end
+  end
+
+  test "anon does not have :read access to private repositories", %{repos: repos} do
+    for repo <- Enum.filter(repos, &(!&1.public)) do
+      refute Authorization.authorized?(nil, repo, :read)
+    end
+  end
+
+  test "anon does not have :write access to public repositories", %{repos: repos} do
+    for repo <- Enum.filter(repos, &(&1.public)) do
+      refute Authorization.authorized?(nil, repo, :write)
+    end
+  end
+
+  test "anon does not have :write access to private repositories", %{repos: repos} do
+    for repo <- Enum.filter(repos, &(!&1.public)) do
+      refute Authorization.authorized?(nil, repo, :write)
+    end
+  end
+
   test "user can query private repositories he owns", %{users: users} do
     for user <- users do
       {public, private} =
@@ -51,30 +75,6 @@ defmodule GitGud.AuthorizationTest do
       assert length(public) == 3
       assert length(private) == 2
       assert Enum.all?(private, &(user in &1.maintainers))
-    end
-  end
-
-  test "anon has :read access to public repositories", %{repos: repos} do
-    for repo <- Enum.filter(repos, &(&1.public)) do
-      assert Authorization.authorized?(nil, repo, :read)
-    end
-  end
-
-  test "anon does not have write access to public repositories", %{repos: repos} do
-    for repo <- Enum.filter(repos, &(&1.public)) do
-      refute Authorization.authorized?(nil, repo, :write)
-    end
-  end
-
-  test "anon does not have read access to private repositories", %{repos: repos} do
-    for repo <- Enum.filter(repos, &(!&1.public)) do
-      refute Authorization.authorized?(nil, repo, :read)
-    end
-  end
-
-  test "anon does not have write access to private repositories", %{repos: repos} do
-    for repo <- Enum.filter(repos, &(!&1.public)) do
-      refute Authorization.authorized?(nil, repo, :write)
     end
   end
 
