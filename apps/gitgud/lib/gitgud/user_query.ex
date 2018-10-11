@@ -136,6 +136,12 @@ defmodule GitGud.UserQuery do
     |> preload([u, m, r], [repositories: r])
   end
 
+  defp join_preload(query, {parent, _children} = preload, viewer) do
+    query
+    |> join_preload(parent, viewer)
+    |> preload(^preload)
+  end
+
   defp join_preload(query, preload, _viewer) do
     preload(query, ^preload)
   end
