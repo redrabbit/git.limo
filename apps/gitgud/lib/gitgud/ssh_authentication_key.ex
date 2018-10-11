@@ -71,7 +71,7 @@ defmodule GitGud.SSHAuthenticationKey do
           do: put_change(changeset, :name, to_string(comment)),
         else: changeset
       rescue
-        MatchError ->
+        _ ->
           add_error(changeset, :data, "invalid")
       end
     end || changeset
