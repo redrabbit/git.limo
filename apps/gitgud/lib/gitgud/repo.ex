@@ -359,7 +359,7 @@ defmodule GitGud.Repo do
   defp put_maintainers(changeset, params) do
     if maintainers = params[:maintainers] || params["maintainers"] do
       try do
-        put_assoc(changeset, :maintainers, parse_maintainers(maintainers))
+        put_assoc(changeset, :maintainers, Enum.uniq(parse_maintainers(maintainers)))
       catch
         username ->
           add_error(changeset, :maintainers, "invalid username #{username}")
