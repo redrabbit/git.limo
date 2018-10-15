@@ -1,5 +1,5 @@
 defmodule GitGud.Web.SessionControllerTest do
-  use GitGud.Web.ConnCase
+  use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
   alias GitGud.User
@@ -47,4 +47,3 @@ defmodule GitGud.Web.SessionControllerTest do
     Map.put(context, :user, User.create!(factory(:user)))
   end
 end
-

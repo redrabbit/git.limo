@@ -9,4 +9,7 @@ config :gitgud, GitGud.DB,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :gitgud, :git_root_dir, "test/git-root"
+config :gitgud,
+  ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
+  git_root: Path.absname("test/data/git", Path.dirname(__DIR__))
+

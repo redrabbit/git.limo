@@ -149,7 +149,7 @@ defmodule GitGud.SSHServer do
   defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :write)
 
   defp daemon_opts() do
-    system_dir = Path.absname(Application.fetch_env!(:gitgud, :ssh_keys), Application.app_dir(:gitgud))
+    system_dir = Application.fetch_env!(:gitgud, :ssh_keys)
     [key_cb: {__MODULE__, []},
      ssh_cli: {__MODULE__, []},
      parallel_login: true,

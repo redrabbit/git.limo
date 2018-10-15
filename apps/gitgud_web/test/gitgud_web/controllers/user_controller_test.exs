@@ -1,5 +1,5 @@
 defmodule GitGud.Web.UserControllerTest do
-  use GitGud.Web.ConnCase
+  use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
   alias GitGud.User
@@ -53,6 +53,7 @@ defmodule GitGud.Web.UserControllerTest do
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.username}</h2>)
       for repo <- user_repos do
         assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
+        File.rm_rf!(Repo.workdir(repo))
       end
     end
 

@@ -1,9 +1,6 @@
 use Mix.Config
 
-config :gitgud,
-  ecto_repos: [GitGud.DB],
-  git_root: "priv/git-data",
-  ssh_keys: "priv/ssh-keys"
+config :gitgud, ecto_repos: [GitGud.DB]
 
 config :absinthe, schema: GitGud.GraphQL.Schema
 

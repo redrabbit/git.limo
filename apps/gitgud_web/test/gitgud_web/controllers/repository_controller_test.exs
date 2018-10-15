@@ -1,5 +1,5 @@
 defmodule GitGud.Web.RepositoryControllerTest do
-  use GitGud.Web.ConnCase
+  use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
   alias GitGud.User
@@ -26,6 +26,7 @@ defmodule GitGud.Web.RepositoryControllerTest do
     repo = RepoQuery.user_repo(user, repo_params.name)
     assert get_flash(conn, :info) == "Repository created."
     assert redirected_to(conn) == codebase_path(conn, :show, user, repo)
+    File.rm_rf!(Repo.workdir(repo))
   end
 
   test "fails to create repository with invalid name", %{conn: conn, user: user} do
@@ -43,7 +44,7 @@ defmodule GitGud.Web.RepositoryControllerTest do
   end
 
   describe "when repository exists" do
-    setup [:create_repo, :clear_git_root]
+    setup :create_repo
 
     test "renders repository edit form if authenticated user is owner", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
@@ -71,6 +72,7 @@ defmodule GitGud.Web.RepositoryControllerTest do
       assert repo.description == "This project is really awesome!"
       assert get_flash(conn, :info) == "Repository updated."
       assert redirected_to(conn) == repository_path(conn, :edit, user, repo)
+      File.rm_rf!(Repo.workdir(repo))
     end
 
     test "fails to update repository with invalid name", %{conn: conn, user: user, repo: repo} do
@@ -94,12 +96,9 @@ defmodule GitGud.Web.RepositoryControllerTest do
 
   defp create_repo(context) do
     {repo, _git_handle} = Repo.create!(factory(:repo, context.user))
-    Map.put(context, :repo, repo)
-  end
-
-  defp clear_git_root(_context) do
     on_exit fn ->
-      File.rm_rf!(Repo.root_path())
+      File.rm_rf!(Repo.workdir(repo))
     end
+    Map.put(context, :repo, repo)
   end
 end

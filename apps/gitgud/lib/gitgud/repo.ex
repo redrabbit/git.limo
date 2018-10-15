@@ -309,7 +309,7 @@ defmodule GitGud.Repo do
   """
   @spec root_path() :: Path.t | nil
   def root_path() do
-    Path.absname(Application.fetch_env!(:gitgud, :git_root), Application.app_dir(:gitgud))
+    Application.fetch_env!(:gitgud, :git_root)
   end
 
   @doc """

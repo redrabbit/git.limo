@@ -5,7 +5,12 @@ defmodule GitGud.UserQueryTest do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  setup :create_users
+  setup_all do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
+  end
+
+  setup_all :create_users
 
   test "gets single user by id", %{users: users} do
     for user <- users do
@@ -46,4 +51,3 @@ defmodule GitGud.UserQueryTest do
     Map.put(context, :users, Enum.take(users, 3))
   end
 end
-

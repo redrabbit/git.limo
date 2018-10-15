@@ -6,7 +6,12 @@ defmodule GitGud.RepoTest do
   alias GitGud.User
   alias GitGud.Repo
 
-  setup :create_user
+  setup_all do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
+  end
+
+  setup_all :create_user
 
   test "creates a new repository with valid params", %{user: user} do
     assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))
@@ -14,6 +19,7 @@ defmodule GitGud.RepoTest do
     assert File.dir?(Repo.workdir(repo))
     assert Git.repository_bare?(git_handle)
     assert Git.repository_empty?(git_handle)
+    File.rm_rf!(Repo.workdir(repo))
   end
 
   test "fails to create a new repository with invalid name", %{user: user} do
@@ -27,7 +33,7 @@ defmodule GitGud.RepoTest do
   end
 
   describe "when repository exists" do
-    setup [:create_repo, :clear_git_root]
+    setup :create_repo
 
     test "fails to create a new repository with same name", %{user: user, repo: repo} do
       params = factory(:repo, user)
@@ -39,12 +45,14 @@ defmodule GitGud.RepoTest do
       assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project", description: "This project is really awesome!")
       assert repo2.name == "my-awesome-project"
       assert repo2.description == "This project is really awesome!"
+      File.rm_rf!(Repo.workdir(repo2))
     end
 
     test "updates repository name moves Git workdir accordingly", %{repo: repo1} do
       assert {:ok, repo2} = Repo.update(repo1, name: "my-awesome-project")
       refute File.dir?(Repo.workdir(repo1))
       assert File.dir?(Repo.workdir(repo2))
+      File.rm_rf!(Repo.workdir(repo2))
     end
 
     test "fails to update repository with invalid name", %{repo: repo} do
@@ -79,12 +87,9 @@ defmodule GitGud.RepoTest do
 
   defp create_repo(context) do
     {repo, _git_handle} = Repo.create!(factory(:repo, context.user))
-    Map.put(context, :repo, repo)
-  end
-
-  defp clear_git_root(_context) do
     on_exit fn ->
-      File.rm_rf!(Repo.root_path())
+      File.rm_rf!(Repo.workdir(repo))
     end
+    Map.put(context, :repo, repo)
   end
 end

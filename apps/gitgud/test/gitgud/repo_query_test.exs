@@ -6,8 +6,12 @@ defmodule GitGud.RepoQueryTest do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  setup :create_users
-  setup :create_repos
+  setup_all do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
+  end
+
+  setup_all [:create_users, :create_repos]
 
   test "gets single repository by id", %{repos: repos} do
     for repo <- repos do
@@ -59,7 +63,11 @@ defmodule GitGud.RepoQueryTest do
 
   defp create_repos(context) do
     repos = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> elem(Repo.create!(factory(:repo, &1)), 0) end), 3))
+    on_exit fn ->
+      for repo <- repos do
+        File.rm_rf!(Repo.workdir(repo))
+      end
+    end
     Map.put(context, :repos, repos)
   end
 end
-

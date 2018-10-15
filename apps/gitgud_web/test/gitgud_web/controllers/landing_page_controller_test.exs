@@ -1,5 +1,5 @@
 defmodule GitGud.Web.LandingPageControllerTest do
-  use GitGud.Web.ConnCase
+  use GitGud.Web.ConnCase, async: true
 
   test "renders landing page", %{conn: conn} do
     conn = get(conn, landing_page_path(conn, :index))

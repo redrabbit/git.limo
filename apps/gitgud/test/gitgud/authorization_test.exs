@@ -9,8 +9,13 @@ defmodule GitGud.AuthorizationTest do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  setup :create_users
-  setup :create_repos
+  setup_all do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
+    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
+  end
+
+  setup_all :create_users
+  setup_all :create_repos
 
   test "anon can query public repositories", %{users: users} do
     assert Enum.all?(RepoQuery.user_repos(users), &(&1.public))
@@ -140,6 +145,11 @@ defmodule GitGud.AuthorizationTest do
         maintainers = if last_user, do: [last_user|repo2.maintainers], else: [List.last(context.users)|repo2.maintainers]
         {[repo1, Repo.update!(repo2, maintainers: maintainers)], user}
       end)
+    on_exit fn ->
+      for repo <- repos do
+        File.rm_rf!(Repo.workdir(repo))
+      end
+    end
     Map.put(context, :repos, repos)
   end
 end

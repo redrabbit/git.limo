@@ -1,5 +1,5 @@
 defmodule GitGud.Web.SSHAuthenticationKeyControllerTest do
-  use GitGud.Web.ConnCase
+  use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
   alias GitGud.User
