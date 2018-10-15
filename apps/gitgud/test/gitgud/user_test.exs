@@ -54,7 +54,7 @@ defmodule GitGud.UserTest do
     test "fails to update profile with invalid email", %{user: user} do
       assert {:error, changeset} = User.update(user, :profile, email: "")
       assert "can't be blank" in errors_on(changeset).email
-      assert {:error, changeset} = User.update(user, :profile, email: "alice12345@nothing")
+      assert {:error, changeset} = User.update(user, :profile, email: "alice1234@nothing")
     assert "has invalid format" in errors_on(changeset).email
     end
 
