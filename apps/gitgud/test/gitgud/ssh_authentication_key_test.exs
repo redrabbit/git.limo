@@ -13,7 +13,7 @@ defmodule GitGud.SSHAuthenticationKeyTest do
     assert ssh_key.fingerprint == to_string(:public_key.ssh_hostkey_fingerprint(key))
   end
 
-  test "fails to create a new ssh authentication key with invalid ssh public key", %{user: user} do
+  test "fails to create a new ssh authentication key with invalid public key", %{user: user} do
     params = factory(:ssh_authentication_key, user)
     assert {:error, changeset} = SSHAuthenticationKey.create(Map.delete(params, :data))
     assert "can't be blank" in errors_on(changeset).data

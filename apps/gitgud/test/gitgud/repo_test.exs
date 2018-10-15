@@ -6,12 +6,6 @@ defmodule GitGud.RepoTest do
   alias GitGud.User
   alias GitGud.Repo
 
-  setup_all do
-    on_exit fn ->
-      File.rm_rf!(Repo.root_path())
-    end
-  end
-
   setup :create_user
 
   test "creates a new repository with valid params", %{user: user} do
@@ -33,7 +27,7 @@ defmodule GitGud.RepoTest do
   end
 
   describe "when repository exists" do
-    setup [:create_repo]
+    setup [:create_repo, :clear_git_root]
 
     test "fails to create a new repository with same name", %{user: user, repo: repo} do
       params = factory(:repo, user)
@@ -86,5 +80,11 @@ defmodule GitGud.RepoTest do
   defp create_repo(context) do
     {repo, _git_handle} = Repo.create!(factory(:repo, context.user))
     Map.put(context, :repo, repo)
+  end
+
+  defp clear_git_root(_context) do
+    on_exit fn ->
+      File.rm_rf!(Repo.root_path())
+    end
   end
 end

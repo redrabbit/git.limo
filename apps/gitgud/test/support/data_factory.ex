@@ -20,9 +20,24 @@ defmodule GitGud.DataFactory do
   @doc """
   Returns a map representing `GitGud.Repo` params.
   """
+  def repo do
+    %{name: String.downcase(callsign()), description: sentence(2..8)}
+  end
+
+  @doc """
+  Returns a map representing `GitGud.Repo` params.
+  """
   def repo(%User{id: user_id}), do: repo(user_id)
   def repo(user_id) when is_integer(user_id) do
-    %{name: String.downcase(callsign()), description: sentence(2..8), owner_id: user_id}
+    Map.put(repo(), :owner_id, user_id)
+  end
+
+  @doc """
+  Returns a map representing `GitGud.SSHAuthenticationKey` params.
+  """
+  def ssh_authentication_key do
+    {ssh_rsa, 0} = System.cmd("sh", ["-c", "openssl genrsa 128 2>/dev/null | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
+    %{name: callsign(), data: ssh_rsa}
   end
 
   @doc """
@@ -30,8 +45,7 @@ defmodule GitGud.DataFactory do
   """
   def ssh_authentication_key(%User{id: user_id}), do: ssh_authentication_key(user_id)
   def ssh_authentication_key(user_id) when is_integer(user_id) do
-    {ssh_rsa, 0} = System.cmd("sh", ["-c", "openssl genrsa 128 2>/dev/null | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
-    %{name: callsign(), data: ssh_rsa, user_id: user_id}
+    Map.put(ssh_authentication_key(), :user_id, user_id)
   end
 
   @doc false
