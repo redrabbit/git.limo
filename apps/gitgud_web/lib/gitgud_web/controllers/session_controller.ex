@@ -30,6 +30,7 @@ defmodule GitGud.Web.SessionController do
     else
       conn
       |> put_flash(:error, "Wrong login credentials")
+      |> put_status(:unauthorized)
       |> render("new.html", redirect: session_params["redirect"])
     end
   end

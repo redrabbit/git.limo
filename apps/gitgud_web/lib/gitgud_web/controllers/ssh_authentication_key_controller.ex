@@ -45,6 +45,7 @@ defmodule GitGud.Web.SSHAuthenticationKeyController do
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+        |> put_status(:bad_request)
         |> render("new.html", changeset: %{changeset|action: :insert})
     end
   end

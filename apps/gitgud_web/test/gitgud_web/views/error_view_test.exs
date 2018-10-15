@@ -3,24 +3,19 @@ defmodule GitGud.Web.ErrorViewTest do
 
   import Phoenix.View
 
-  test "renders 400.json" do
-    assert render(GitGud.Web.ErrorView, "400.json", []) == %{errors: %{details: "Bad request"}}
-    assert render(GitGud.Web.ErrorView, "400.json", details: "Something went wrong.") == %{errors: %{details: "Something went wrong."}}
+  test "renders 401.html" do
+    assert render(GitGud.Web.ErrorView, "401.html", []) == "Unauthorized"
   end
 
-  test "renders 401.json" do
-    assert render(GitGud.Web.ErrorView, "401.json", []) == %{errors: %{details: "Unauthorized"}}
+  test "renders 404.html" do
+    assert render(GitGud.Web.ErrorView, "404.html", []) == "Page not found"
   end
 
-  test "renders 404.json" do
-    assert render(GitGud.Web.ErrorView, "404.json", []) == %{errors: %{details: "Page not found"}}
+  test "renders 500.html" do
+    assert render(GitGud.Web.ErrorView, "500.html", []) == "Internal server error"
   end
 
-  test "render 500.json" do
-    assert render(GitGud.Web.ErrorView, "500.json", []) == %{errors: %{details: "Internal server error"}}
-  end
-
-  test "render any other" do
-    assert render(GitGud.Web.ErrorView, "505.json", []) == %{errors: %{details: "Internal server error"}}
+  test "renders any other" do
+    assert render(GitGud.Web.ErrorView, "505.html", []) == "Internal server error"
   end
 end

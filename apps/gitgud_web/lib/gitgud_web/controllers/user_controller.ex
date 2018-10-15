@@ -37,6 +37,7 @@ defmodule GitGud.Web.UserController do
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+        |> put_status(:bad_request)
         |> render("new.html", changeset: %{changeset|action: :insert})
     end
   end
@@ -75,6 +76,7 @@ defmodule GitGud.Web.UserController do
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+        |> put_status(:bad_request)
         |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
     end
   end

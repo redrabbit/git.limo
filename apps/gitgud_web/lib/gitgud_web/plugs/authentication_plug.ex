@@ -6,10 +6,9 @@ defmodule GitGud.Web.AuthenticationPlug do
   @behaviour Plug
 
   import Plug.Conn
+  import Phoenix.Controller, only: [render: 4]
 
   alias GitGud.UserQuery
-
-  alias GitGud.Web.FallbackController
 
   @doc """
   `Plug` to authenticate `conn` with either authorization or session tokens.
@@ -39,7 +38,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   @spec authenticate_bearer_token(Plug.Conn.t, keyword) :: Plug.Conn.t
   def authenticate_bearer_token(conn, _opts) do
     with ["Bearer " <> token] <- get_req_header(conn, "authorization"),
-         {:ok, user_id} <- Phoenix.Token.verify(conn, "bearer", token, max_age: 86400) do
+         {:ok, user_id} <- Phoenix.Token.verify(endpoint(conn), "bearer", token, max_age: 86400) do
       authenticate_user(conn, user_id)
     else
       _ ->
@@ -55,9 +54,12 @@ defmodule GitGud.Web.AuthenticationPlug do
   """
   @spec ensure_authenticated(Plug.Conn.t, keyword) :: Plug.Conn.t
   def ensure_authenticated(conn, _opts) do
-    unless authenticated?(conn),
-      do: halt(FallbackController.call(conn, {:error, :unauthorized})),
-    else: conn
+    unless authenticated?(conn) do
+      conn
+      |> put_status(:unauthorized)
+      |> render(GitGud.Web.ErrorView, "401.html", %{})
+      |> halt()
+    end || conn
   end
 
   @doc """
@@ -78,7 +80,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   @spec authentication_token(Plug.Conn.t) :: binary | nil
   def authentication_token(%Plug.Conn{} = conn) do
     if authenticated?(conn),
-      do: Phoenix.Token.sign(conn, "bearer", current_user(conn).id),
+      do: Phoenix.Token.sign(endpoint(conn), "bearer", current_user(conn).id),
     else: nil
   end
 
@@ -95,6 +97,12 @@ defmodule GitGud.Web.AuthenticationPlug do
   #
   # Helpers
   #
+
+  defp endpoint(conn) do
+    if Map.has_key?(conn.private, :phoenix_endpoint),
+      do: conn,
+    else: GitGud.Web.Endpoint
+  end
 
   defp authenticate_user(conn, user_id) do
     if user = UserQuery.by_id(user_id),

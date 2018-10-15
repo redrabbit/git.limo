@@ -1,4 +1,4 @@
-<h2 class="subtitle">Add a new SSH key</h1>
+<h2 class="subtitle">Add a new SSH key</h2>
 
 <%= form_for @changeset, ssh_authentication_key_path(@conn, :create), [as: :ssh_key], fn f -> %>
   <div class="field">
