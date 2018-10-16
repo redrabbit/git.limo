@@ -17,6 +17,7 @@ defmodule GitGud.Repo do
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
+  alias GitGud.GitDiff
   alias GitGud.GitReference
   alias GitGud.GitTag
   alias GitGud.GitTree
@@ -303,6 +304,16 @@ defmodule GitGud.Repo do
   def git_tree(%GitCommit{repo: repo, __git__: commit} = _revision) do
     with {:ok, oid, tree} <- Git.commit_tree(commit), do:
       {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
+  end
+
+  @doc """
+  Returns a diff with the difference between `old_tree` and `new_tree`.
+  """
+  @spec git_diff(GitTree.t, GitTree.t) :: {:ok, GitDiff.t} | {:error, term}
+  def git_diff(%GitTree{repo: repo, __git__: old_tree} = _old_tree, %GitTree{repo: repo, __git__: new_tree} = _new_tree) do
+    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+         {:ok, diff} <- Git.diff_tree(handle, old_tree, new_tree), do:
+      {:ok, %GitDiff{repo: repo, __git__: diff}}
   end
 
   @doc """
