@@ -13,6 +13,7 @@ defmodule GitGud.Repo do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.RepoMaintainer
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
@@ -27,7 +28,7 @@ defmodule GitGud.Repo do
     field         :name,        :string
     field         :public,      :boolean, default: true
     field         :description, :string
-    many_to_many  :maintainers, User, join_through: "repositories_maintainers", on_replace: :delete, on_delete: :delete_all
+    many_to_many  :maintainers, User, join_through: RepoMaintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
   end
 
@@ -409,7 +410,7 @@ defmodule GitGud.Repo do
   end
 
   defp init_maintainer(%{insert: repo}) do
-    Multi.insert_all(Multi.new(), :init_maintainer, "repositories_maintainers", [[repo_id: repo.id, user_id: repo.owner_id]])
+    Multi.insert(Multi.new(), :init_maintainer, RepoMaintainer.changeset(%RepoMaintainer{}, %{user_id: repo.owner_id, repo_id: repo.id}))
   end
 
   defp rename(%{update: repo}, changeset) do
