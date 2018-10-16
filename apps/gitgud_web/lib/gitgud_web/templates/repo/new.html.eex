@@ -1,6 +1,6 @@
-<h2 class="subtitle">Settings</h2>
+<h1 class="title">Create a new repository</h1>
 
-<%= form_for @changeset, repository_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
+<%= form_for @changeset, repo_path(@conn, :create), [as: :repo], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">
@@ -31,14 +31,7 @@
   </div>
 
   <div class="field">
-    <%= label f, :maintainers, class: "label" %>
-    <div class="control">
-      <%= react_component "UsersInput", id: input_id(f, :maintainers), name: input_name(f, :maintainers), initial_users: Enum.map(@repo.maintainers, &(&1.username)) %>
-    </div>
-    <%= error_tag f, :maintainers %>
-  </div>
-
-  <div class="field">
-    <%= submit "Update repository", class: "button is-link" %>
+    <%= submit "Create repository", class: "button is-link" %>
   </div>
 <% end %>
+

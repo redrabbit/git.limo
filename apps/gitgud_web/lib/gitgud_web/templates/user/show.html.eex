@@ -7,7 +7,7 @@
   <%= if authenticated?(@conn) && @current_user.id == @user.id do %>
     <div class="level-right">
       <div class="level-item">
-        <a class="button is-success" href="<%= repository_path(@conn, :new) %>">New</a>
+        <a class="button is-success" href="<%= repo_path(@conn, :new) %>">New</a>
       </div>
     </div>
   <% end %>

@@ -10,7 +10,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
-  plug :put_layout, :repository
+  plug :put_layout, :repo
 
   action_fallback GitGud.Web.FallbackController
 

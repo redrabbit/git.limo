@@ -1,4 +1,4 @@
-defmodule GitGud.Web.RepositoryController do
+defmodule GitGud.Web.RepoController do
   @moduledoc """
   Module responsible for CRUD actions on `GitGud.SSHAuthenticationKey`.
   """
@@ -9,7 +9,7 @@ defmodule GitGud.Web.RepositoryController do
   alias GitGud.RepoQuery
 
   plug :ensure_authenticated
-  plug :put_layout, :repository_settings when action not in [:new, :create]
+  plug :put_layout, :repo_settings when action not in [:new, :create]
 
   action_fallback GitGud.Web.FallbackController
 
@@ -66,7 +66,7 @@ defmodule GitGud.Web.RepositoryController do
           {:ok, repo} ->
             conn
             |> put_flash(:info, "Repository updated.")
-            |> redirect(to: repository_path(conn, :edit, repo.owner, repo))
+            |> redirect(to: repo_path(conn, :edit, repo.owner, repo))
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")

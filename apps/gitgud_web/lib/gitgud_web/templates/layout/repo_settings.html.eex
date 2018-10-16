@@ -1,9 +1,9 @@
-<%= render_layout "repository.html", assigns do %>
+<%= render_layout "repo.html", assigns do %>
 <div class="columns">
   <aside class="menu column is-one-fifth">
     <ul class="menu-list">
       <li>
-        <%= navigation_item @conn, :repository, [only: [:edit, :update]], :a, href: repository_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %>
+        <%= navigation_item @conn, :repo, [only: [:edit, :update]], :a, href: repo_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %>
       </li>
       <li>
         <a class="has-text-grey-light">Maintainers</a>

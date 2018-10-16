@@ -42,8 +42,8 @@ defmodule GitGud.Web.Router do
     get "/settings/ssh/new", SSHAuthenticationKeyController, :new
     post "/settings/ssh", SSHAuthenticationKeyController, :create
 
-    get "/new", RepositoryController, :new
-    post "/repositories", RepositoryController, :create
+    get "/new", RepoController, :new
+    post "/repositories", RepoController, :create
 
     scope "/:username/:repo_name" do
       get "/", CodebaseController, :show
@@ -54,8 +54,8 @@ defmodule GitGud.Web.Router do
       get "/commits/:revision", CodebaseController, :history
       get "/tree/:revision/*path", CodebaseController, :tree
       get "/blob/:revision/*path", CodebaseController, :blob
-      get "/settings", RepositoryController, :edit
-      put "/settings", RepositoryController, :update
+      get "/settings", RepoController, :edit
+      put "/settings", RepoController, :update
     end
 
     get "/:username", UserController, :show
