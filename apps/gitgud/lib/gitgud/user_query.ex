@@ -55,6 +55,13 @@ defmodule GitGud.UserQuery do
   end
 
   @doc """
+  Returns a user for the given SSH key `fingerprint`.
+  """
+  def by_ssh_key(fingerprint, opts \\ []) do
+    DB.one(DBQueryable.query({__MODULE__, :user_ssh_key_query}, fingerprint, opts))
+  end
+
+  @doc """
   Returns a list of users matching the given `input`.
   """
   @spec search(binary, keyword) :: [User.t]
@@ -74,6 +81,13 @@ defmodule GitGud.UserQuery do
   @spec user_query(atom, term) :: Ecto.Query.t
   def user_query(key, val) do
     where(User, ^List.wrap({key, val}))
+  end
+
+  @doc """
+  Returns a query for fetching a single user by SSH key `fingerprint`.
+  """
+  def user_ssh_key_query(fingerprint) do
+    from(u in User, join: s in assoc(u, :ssh_keys), where: s.fingerprint == ^fingerprint, preload: [ssh_keys: s])
   end
 
   @doc """
