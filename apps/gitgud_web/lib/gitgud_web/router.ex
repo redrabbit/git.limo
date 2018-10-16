@@ -38,9 +38,9 @@ defmodule GitGud.Web.Router do
     get "/settings", UserController, :edit
     put "/settings", UserController, :update
 
-    get "/settings/ssh", SSHAuthenticationKeyController, :index
-    get "/settings/ssh/new", SSHAuthenticationKeyController, :new
-    post "/settings/ssh", SSHAuthenticationKeyController, :create
+    get "/settings/ssh", SSHKeyController, :index
+    get "/settings/ssh/new", SSHKeyController, :new
+    post "/settings/ssh", SSHKeyController, :create
 
     get "/new", RepoController, :new
     post "/repositories", RepoController, :create

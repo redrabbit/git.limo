@@ -1,6 +1,6 @@
 defmodule GitGud.Web.RepoController do
   @moduledoc """
-  Module responsible for CRUD actions on `GitGud.SSHAuthenticationKey`.
+  Module responsible for CRUD actions on `GitGud.SSHKey`.
   """
 
   use GitGud.Web, :controller

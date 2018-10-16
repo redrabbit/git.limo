@@ -15,9 +15,9 @@ defmodule GitGud.Web.NavigationHelpersTest do
 
   test "route does not match controller and action", %{conn: conn} do
     conn = get(conn, "/settings/ssh/new")
-    refute current_route?(conn, :ssh_authentication_key, :index)
-    refute current_route?(conn, :ssh_authentication_key, only: [:create])
-    refute current_route?(conn, :ssh_authentication_key, except: [:new])
+    refute current_route?(conn, :ssh_key, :index)
+    refute current_route?(conn, :ssh_key, only: [:create])
+    refute current_route?(conn, :ssh_key, except: [:new])
     refute current_route?(conn, :user)
   end
 

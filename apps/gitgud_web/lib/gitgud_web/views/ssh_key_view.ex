@@ -1,10 +1,10 @@
-defmodule GitGud.Web.SSHAuthenticationKeyView do
+defmodule GitGud.Web.SSHKeyView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitGud.SSHAuthenticationKey
+  alias GitGud.SSHKey
 
-  @spec ssh_key_fingerprint(SSHAuthenticationKey.t) :: binary
+  @spec ssh_key_fingerprint(SSHKey.t) :: binary
   def ssh_key_fingerprint(ssh_key) do
     case :public_key.ssh_decode(ssh_key.data, :public_key) do
       [{decoded_key, _attrs}] ->

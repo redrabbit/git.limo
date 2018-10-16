@@ -20,7 +20,7 @@
     <p class="menu-label">Authentication</p>
     <ul class="menu-list">
       <li>
-        <%= navigation_item @conn, :ssh_authentication_key, [], :a, href: ssh_authentication_key_path(@conn, :index) do %>SSH keys<% end %>
+        <%= navigation_item @conn, :ssh_key, [], :a, href: ssh_key_path(@conn, :index) do %>SSH keys<% end %>
       </li>
       <li>
         <a class="has-text-grey-light">GPG keys</a>

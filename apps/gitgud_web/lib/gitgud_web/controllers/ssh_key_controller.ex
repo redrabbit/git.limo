@@ -1,12 +1,12 @@
-defmodule GitGud.Web.SSHAuthenticationKeyController do
+defmodule GitGud.Web.SSHKeyController do
   @moduledoc """
-  Module responsible for CRUD actions on `GitGud.SSHAuthenticationKey`.
+  Module responsible for CRUD actions on `GitGud.SSHKey`.
   """
 
   use GitGud.Web, :controller
 
   alias GitGud.DB
-  alias GitGud.SSHAuthenticationKey
+  alias GitGud.SSHKey
 
   plug :ensure_authenticated
   plug :put_layout, :user_settings
@@ -27,7 +27,7 @@ defmodule GitGud.Web.SSHAuthenticationKeyController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    changeset = SSHAuthenticationKey.changeset(%SSHAuthenticationKey{})
+    changeset = SSHKey.changeset(%SSHKey{})
     render(conn, "new.html", changeset: changeset)
   end
 
@@ -37,11 +37,11 @@ defmodule GitGud.Web.SSHAuthenticationKeyController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"ssh_key" => key_params} = _params) do
     user = current_user(conn)
-    case SSHAuthenticationKey.create(Map.put(key_params, "user_id", user.id)) do
+    case SSHKey.create(Map.put(key_params, "user_id", user.id)) do
       {:ok, ssh_key} ->
         conn
         |> put_flash(:info, "SSH key '#{ssh_key.name}' added.")
-        |> redirect(to: ssh_authentication_key_path(conn, :index))
+        |> redirect(to: ssh_key_path(conn, :index))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")

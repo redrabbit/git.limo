@@ -1,4 +1,4 @@
-defmodule GitGud.SSHAuthenticationKey do
+defmodule GitGud.SSHKey do
   @moduledoc """
   Secure Shell (SSH) authentication key schema.
   """

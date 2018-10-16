@@ -13,14 +13,14 @@ defmodule GitGud.User do
   alias GitGud.DB
 
   alias GitGud.Repo
-  alias GitGud.SSHAuthenticationKey
+  alias GitGud.SSHKey
 
   schema "users" do
     field     :username,      :string
     field     :name,          :string
     field     :email,         :string
     has_many  :repos,         Repo, foreign_key: :owner_id
-    has_many  :ssh_keys,      SSHAuthenticationKey, on_delete: :delete_all
+    has_many  :ssh_keys,      SSHKey, on_delete: :delete_all
     field     :password,      :string, virtual: true
     field     :password_hash, :string
     timestamps()
@@ -32,7 +32,7 @@ defmodule GitGud.User do
     name: binary,
     email: binary,
     repos: [Repo.t],
-    ssh_keys: [SSHAuthenticationKey.t],
+    ssh_keys: [SSHKey.t],
     password: binary,
     password_hash: binary,
     inserted_at: NaiveDateTime.t,

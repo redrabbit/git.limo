@@ -11,7 +11,7 @@ defmodule GitGud.SSHServer do
 
   A registered `GitGud.User` can authenticate with following methods:
 
-  * *public-key* - if any of the associated `GitGud.SSHAuthenticationKey` matches.
+  * *public-key* - if any of the associated `GitGud.SSHKey` matches.
   * *password* - if the given credentials are correct.
   * *interactive* - interactive login prompt allowing several tries.
 
