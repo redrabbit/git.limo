@@ -13,6 +13,29 @@ defmodule GitGud.GitCommit do
   @type t :: %__MODULE__{oid: Git.oid, repo: Repo.t, __git__: Git.commit}
 
   @doc """
+  Returns the parents of the given `commit`.
+  """
+  @spec parents(t) :: {:ok, Stream.t} | {:error, term}
+  def parents(%__MODULE__{repo: repo, __git__: commit} = _commit) do
+    with {:ok, stream} <- Git.commit_parents(commit),
+         {:ok, stream} <- Git.enumerate(stream), do:
+      {:ok, Stream.map(stream, &resolve_parent(&1, repo))}
+  end
+
+  @doc """
+  Returns the first parent of the given `commit`.
+  """
+  @spec first_parent(t) :: {:ok, t} | {:error, term}
+  def first_parent(%__MODULE__{repo: repo, __git__: commit} = _commit) do
+    case Git.commit_parents(commit) do
+      {:ok, stream} ->
+        {:ok, resolve_first_parent(stream, repo)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Returns the author of the given `commit`.
   """
   @spec author(t) :: {:ok, {binary, binary, DateTime.t}} | {:error, term}
@@ -38,5 +61,21 @@ defmodule GitGud.GitCommit do
     with {:ok, time, _offset} <- Git.commit_time(commit), # TODO
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, struct(datetime, [])}
+  end
+
+  #
+  # Helpers
+  #
+
+  defp resolve_parent({oid, commit}, repo) do
+    %__MODULE__{oid: oid, repo: repo, __git__: commit}
+  end
+
+  defp resolve_first_parent(stream, repo) do
+    stream
+    |> Stream.take(1)
+    |> Enum.to_list()
+    |> hd()
+    |> resolve_parent(repo)
   end
 end

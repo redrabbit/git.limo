@@ -317,6 +317,16 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns a diff with the difference between the given `commit` and its ancestor.
+  """
+  @spec git_diff(GitCommit.t) :: {:ok, GitDiff.t} | {:error, term}
+  def git_diff(%GitCommit{} = commit) do
+    with {:ok, parent} <- GitCommit.first_parent(commit),
+         {:ok, old_tree} <- git_tree(parent),
+         {:ok, new_tree} <- git_tree(commit), do: git_diff(old_tree, new_tree)
+  end
+
+  @doc """
   Returns the absolute path to the Git root directory.
   """
   @spec root_path() :: Path.t | nil
