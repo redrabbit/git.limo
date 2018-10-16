@@ -19,7 +19,7 @@ defmodule GitGud.User do
     field     :username,      :string
     field     :name,          :string
     field     :email,         :string
-    has_many  :repositories,  Repo, foreign_key: :owner_id
+    has_many  :repos,         Repo, foreign_key: :owner_id
     has_many  :ssh_keys,      SSHAuthenticationKey, on_delete: :delete_all
     field     :password,      :string, virtual: true
     field     :password_hash, :string
@@ -31,7 +31,7 @@ defmodule GitGud.User do
     username: binary,
     name: binary,
     email: binary,
-    repositories: [Repo.t],
+    repos: [Repo.t],
     ssh_keys: [SSHAuthenticationKey.t],
     password: binary,
     password_hash: binary,

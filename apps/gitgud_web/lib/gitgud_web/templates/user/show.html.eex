@@ -14,10 +14,10 @@
 </div>
 
 <div class="repo-grid">
-  <%= if Enum.empty?(@user.repositories) do %>
+  <%= if Enum.empty?(@user.repos) do %>
     Nothing to see here.
   <% else %>
-    <%= for chunk <- Enum.chunk_every(@user.repositories, 3) do %>
+    <%= for chunk <- Enum.chunk_every(@user.repos, 3) do %>
       <div class="columns">
       <%= for repo <- chunk do %>
         <div class="column is-one-third is-flex">

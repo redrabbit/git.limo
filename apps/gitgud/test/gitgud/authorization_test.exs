@@ -74,8 +74,8 @@ defmodule GitGud.AuthorizationTest do
       {public, private} =
         users
         |> Enum.map(&(&1.id))
-        |> UserQuery.by_id(viewer: user, preload: [repositories: :maintainers])
-        |> Enum.flat_map(&(&1.repositories))
+        |> UserQuery.by_id(viewer: user, preload: [repos: :maintainers])
+        |> Enum.flat_map(&(&1.repos))
         |> Enum.split_with(&(&1.public))
       assert length(public) == 3
       assert length(private) == 2
@@ -87,8 +87,8 @@ defmodule GitGud.AuthorizationTest do
     for user <- users do
       {public, private} =
         user.id
-        |> UserQuery.by_id(viewer: user, preload: :repositories)
-        |> Map.fetch!(:repositories)
+        |> UserQuery.by_id(viewer: user, preload: :repos)
+        |> Map.fetch!(:repos)
         |> Enum.split_with(&(&1.public))
       assert length(public) == 1
       assert length(private) == 1

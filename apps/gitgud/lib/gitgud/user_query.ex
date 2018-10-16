@@ -123,17 +123,17 @@ defmodule GitGud.UserQuery do
   # Helpers
   #
 
-  defp join_preload(query, :repositories, nil) do
+  defp join_preload(query, :repos, nil) do
     query
-    |> join(:left, [u], r in assoc(u, :repositories), r.public == true)
-    |> preload([u, r], [repositories: r])
+    |> join(:left, [u], r in assoc(u, :repos), r.public == true)
+    |> preload([u, r], [repos: r])
   end
 
-  defp join_preload(query, :repositories, viewer) do
+  defp join_preload(query, :repos, viewer) do
     query
     |> join(:left, [u], m in "repositories_maintainers", m.user_id == ^viewer.id)
-    |> join(:left, [u, m], r in assoc(u, :repositories), r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id)
-    |> preload([u, m, r], [repositories: r])
+    |> join(:left, [u, m], r in assoc(u, :repos), r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id)
+    |> preload([u, m, r], [repos: r])
   end
 
   defp join_preload(query, {parent, _children} = preload, viewer) do
