@@ -25,7 +25,7 @@ ERL_NIF_TERM geef_object_type2atom(const git_otype type)
 	case GIT_OBJ_TAG:
 		return atoms.tag;
 	case GIT_OBJ_ANY:
-		return atoms.any;
+		return atoms.undefined;
 	default:
 		return atoms.error;
 	}
@@ -41,7 +41,7 @@ git_otype geef_object_atom2type(ERL_NIF_TERM term)
 		return GIT_OBJ_BLOB;
 	else if (!enif_compare(term, atoms.tag))
 		return GIT_OBJ_TAG;
-	else if (!enif_compare(term, atoms.any))
+	else if (!enif_compare(term, atoms.undefined))
 		return GIT_OBJ_ANY;
 
 	return GIT_OBJ_BAD;

@@ -9,6 +9,7 @@
 #include "tag.h"
 #include "library.h"
 #include "revwalk.h"
+#include "diff.h"
 #include "index.h"
 #include "signature.h"
 #include "revparse.h"
@@ -25,6 +26,7 @@ ErlNifResourceType *geef_odb_type;
 ErlNifResourceType *geef_ref_iter_type;
 ErlNifResourceType *geef_object_type;
 ErlNifResourceType *geef_revwalk_type;
+ErlNifResourceType *geef_diff_type;
 ErlNifResourceType *geef_index_type;
 ErlNifResourceType *geef_config_type;
 ErlNifResourceType *geef_pack_type;
@@ -59,6 +61,9 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	geef_revwalk_type = enif_open_resource_type(env, NULL,
 		  "revwalk_type", geef_revwalk_free, ERL_NIF_RT_CREATE, NULL);
 
+	geef_diff_type = enif_open_resource_type(env, NULL,
+		  "diff_type", geef_diff_free, ERL_NIF_RT_CREATE, NULL);
+
 	geef_index_type = enif_open_resource_type(env, NULL,
 		  "index_type", geef_index_free, ERL_NIF_RT_CREATE, NULL);
 
@@ -84,7 +89,11 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.tree = enif_make_atom(env, "tree");
 	atoms.blob = enif_make_atom(env, "blob");
 	atoms.tag = enif_make_atom(env, "tag");
-	atoms.any = enif_make_atom(env, "any");
+	atoms.format_patch = enif_make_atom(env, "patch");
+	atoms.format_patch_header = enif_make_atom(env, "patch_header");
+	atoms.format_raw = enif_make_atom(env, "raw");
+	atoms.format_name_only = enif_make_atom(env, "name_only");
+	atoms.format_name_status = enif_make_atom(env, "name_status");
 	atoms.undefined = enif_make_atom(env, "undefined");
 	atoms.reflog_entry = enif_make_atom(env, "geef_reflog_entry");
 	/* Revwalk */
@@ -228,6 +237,8 @@ static ErlNifFunc geef_funcs[] =
 	{"revwalk_reset", 1,   geef_revwalk_reset},
 	{"revwalk_repository", 1, geef_revwalk_repository},
 	{"revwalk_pack", 1, geef_revwalk_pack},
+	{"diff_tree",   3, geef_diff_tree},
+	{"diff_format", 2, geef_diff_format},
 	{"index_new",   0, geef_index_new},
 	{"index_write", 1, geef_index_write},
 	{"index_write_tree", 1, geef_index_write_tree},

@@ -19,7 +19,11 @@ typedef struct {
 	ERL_NIF_TERM tree;
 	ERL_NIF_TERM blob;
 	ERL_NIF_TERM tag;
-	ERL_NIF_TERM any;
+	ERL_NIF_TERM format_patch;
+	ERL_NIF_TERM format_patch_header;
+	ERL_NIF_TERM format_raw;
+	ERL_NIF_TERM format_name_only;
+	ERL_NIF_TERM format_name_status;
 	ERL_NIF_TERM undefined;
 	ERL_NIF_TERM toposort;
 	ERL_NIF_TERM timesort;

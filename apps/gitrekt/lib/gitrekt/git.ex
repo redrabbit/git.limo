@@ -37,6 +37,9 @@ defmodule GitRekt.Git do
   @type tree          :: reference
   @type tree_entry    :: {integer, :blob | :tree, oid, binary}
 
+  @type diff          :: reference
+  @type diff_format   :: :patch | :patch_header | :raw | :name_only | :name_status
+
   @type index         :: reference
   @type index_entry   :: {
     integer,
@@ -154,8 +157,8 @@ defmodule GitRekt.Git do
   @doc """
   Recursively peels the given reference `name` until an object of type `type` is found.
   """
-  @spec reference_peel(repo, binary, obj_type | :any) :: {:ok, obj_type, oid, obj} | {:error, term}
-  def reference_peel(_repo, _name, _type \\ :any) do
+  @spec reference_peel(repo, binary, obj_type | :undefined) :: {:ok, obj_type, oid, obj} | {:error, term}
+  def reference_peel(_repo, _name, _type \\ :undefined) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
@@ -579,6 +582,22 @@ defmodule GitRekt.Git do
   """
   @spec revwalk_repository(revwalk) :: {:ok, binary} | {:error, term}
   def revwalk_pack(_walk) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a diff with the difference between two tree objects.
+  """
+  @spec diff_tree(repo, tree, tree) :: {:ok, diff} | {:error, term}
+  def diff_tree(_repo, _old_tree, _new_tree) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a binary represention of the given `diff`.
+  """
+  @spec diff_format(diff, diff_format) :: {:ok, binary} | {:error, term}
+  def diff_format(_diff, _format \\ :patch) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
