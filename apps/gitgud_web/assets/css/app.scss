@@ -20,11 +20,17 @@ $fa-font-path: "../fonts";
   }
 }
 
-.branch-select {
+.dropdown.branch-select {
   .dropdown-menu {
     .panel {
       background-color: $dropdown-content-background-color;
     }
+  }
+}
+
+.dropdown.clone {
+  .dropdown-menu {
+    width: 300px;
   }
 }
 

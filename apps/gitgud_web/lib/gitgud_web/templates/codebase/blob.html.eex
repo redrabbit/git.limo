@@ -7,6 +7,15 @@
       <%= render "_tree_breadcrumb.html", assigns %>
     </div>
   </div>
+  <div class="level-right">
+    <div class="level-item">
+      <p class="buttons has-addons">
+        <a class="button" disabled>Raw</a>
+        <a class="button" disabled>Blame</a>
+        <a class="button" disabled>History</a>
+      </p>
+    </div>
+  </div>
 </nav>
 
 <pre>

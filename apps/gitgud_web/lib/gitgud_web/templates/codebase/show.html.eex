@@ -40,6 +40,48 @@
       <%= render "_tree_breadcrumb.html", assigns %>
     </div>
   </div>
+  <div class="level-right">
+    <div class="level-item">
+      <p class="buttons has-addons">
+        <a class="button" disabled>Create new file</a>
+        <a class="button" disabled>Upload files</a>
+        <a class="button" disabled>Find file</a>
+      </p>
+    </div>
+    <div class="level-item">
+      <div class="dropdown clone is-right is-hoverable">
+        <div class="dropdown-trigger">
+          <button class="button is-success" aria-haspopup="true">
+            <span>Clone repository</span>
+            <span class="icon is-small">
+              <i class="fas fa-angle-down" aria-hidden="true"></i>
+            </span>
+          </button>
+        </div>
+        <div class="dropdown-menu" role="menu">
+          <div class="dropdown-content">
+            <div class="dropdown-item">
+              <div class="field">
+                <label class="label">Clone with HTTP</label>
+                <div class="field has-addons">
+                  <div class="control is-expanded">
+                    <input type="text" value="<%= codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" />
+                  </div>
+                  <div class="control">
+                    <a class="button is-small">
+                      <span class="icon is-small">
+                        <i class="fa fa-clipboard"></i>
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <%= render "_tree_entries.html", assigns %>

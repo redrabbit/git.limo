@@ -7,6 +7,16 @@
       <%= render "_tree_breadcrumb.html", assigns %>
     </div>
   </div>
+  <div class="level-right">
+    <div class="level-item">
+      <p class="buttons has-addons">
+        <a class="button" disabled>Create new file</a>
+        <a class="button" disabled>Upload files</a>
+        <a class="button" disabled>Find file</a>
+        <a class="button" disabled>History</a>
+      </p>
+    </div>
+  </div>
 </nav>
 
 <%= render "_tree_entries.html", assigns %>
