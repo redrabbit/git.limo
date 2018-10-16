@@ -19,8 +19,8 @@ defmodule GitGud.GitReference do
   @doc """
   Returns the object pointed at by `reference`.
   """
-  @spec target(t, Git.obj_type | :any) :: {:ok, Repo.git_object} | {:error, term}
-  def target(%__MODULE__{name: name, prefix: prefix, repo: repo, __git__: handle} = _reference, type \\ :any) do
+  @spec target(t, Git.obj_type | :undefined) :: {:ok, Repo.git_object} | {:error, term}
+  def target(%__MODULE__{name: name, prefix: prefix, repo: repo, __git__: handle} = _reference, type \\ :undefined) do
     case Git.reference_peel(handle, prefix <> name, type) do
       {:ok, :commit, oid, commit} ->
         {:ok, %GitCommit{oid: oid, repo: repo, __git__: commit}}

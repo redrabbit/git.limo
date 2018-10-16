@@ -319,7 +319,21 @@ defmodule GitGud.Repo do
   @doc """
   Returns a diff with the difference between the given `commit` and its ancestor.
   """
-  @spec git_diff(GitCommit.t) :: {:ok, GitDiff.t} | {:error, term}
+  @spec git_diff(git_revision) :: {:ok, GitDiff.t} | {:error, term}
+  def git_diff(%GitReference{} = revision) do
+    case GitReference.target(revision, :commit) do
+      {:ok, commit} -> git_diff(commit)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def git_diff(%GitTag{} = revision) do
+    case GitTag.target(revision) do
+      {:ok, commit} -> git_diff(commit)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   def git_diff(%GitCommit{} = commit) do
     with {:ok, parent} <- GitCommit.first_parent(commit),
          {:ok, old_tree} <- git_tree(parent),
