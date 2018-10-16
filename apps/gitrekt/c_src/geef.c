@@ -211,6 +211,8 @@ static ErlNifFunc geef_funcs[] =
 	{"object_lookup", 2, geef_object_lookup},
 	{"object_id", 1, geef_object_id},
 	{"object_zlib_inflate", 1, geef_object_zlib_inflate},
+	{"commit_parent", 2, geef_commit_parent},
+	{"commit_parent_count", 1, geef_commit_parent_count},
 	{"commit_tree", 1, geef_commit_tree},
 	{"commit_tree_id", 1, geef_commit_tree_id},
 	{"commit_create",  8, geef_commit_create},

@@ -8,6 +8,48 @@
 #include <git2/sys/commit.h>
 
 ERL_NIF_TERM
+geef_commit_parent_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_object *obj;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_uint64(env, git_commit_parentcount((git_commit *) obj->obj)));
+}
+
+ERL_NIF_TERM
+geef_commit_parent(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	ErlNifBinary bin;
+	geef_object *obj, *parent;
+	ERL_NIF_TERM term_parent;
+	unsigned int nth;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	if (!enif_get_uint(env, argv[1], &nth))
+		return enif_make_badarg(env);
+
+	parent = enif_alloc_resource(geef_object_type, sizeof(geef_object));
+
+	if (git_commit_parent((git_commit **) &parent->obj, (git_commit *) obj->obj, nth) < 0)
+		return geef_error(env);
+
+	term_parent = enif_make_resource(env, parent);
+	enif_release_resource(parent);
+
+	if (geef_oid_bin(&bin, git_object_id(parent->obj)) < 0)
+		return geef_oom(env);
+
+	parent->repo = obj->repo;
+	enif_keep_resource(parent->repo);
+
+	return enif_make_tuple3(env, atoms.ok, enif_make_binary(env, &bin), term_parent);
+}
+
+ERL_NIF_TERM
 geef_commit_tree_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	const git_oid *id;

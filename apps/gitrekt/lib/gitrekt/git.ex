@@ -359,6 +359,33 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns parent commits of the given `commit`.
+  """
+  @spec commit_parents(commit) :: {:ok, [{oid, commit}]} | {:error, term}
+  def commit_parents(commit) do
+    case commit_parent_count(commit) do
+      {:ok, count} ->
+        {:ok, Stream.resource(fn -> {commit, 0, count} end, &commit_parent_stream_next/1, fn _iter -> :ok end)}
+    end
+  end
+
+  @doc """
+  Looks for a parent commit of the given `commit` by its `index`.
+  """
+  @spec commit_parent(commit, non_neg_integer) :: {:ok, oid, commit} | {:error, term}
+  def commit_parent(_commit, _index) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the number of parents for the given `commit`.
+  """
+  @spec commit_parent_count(commit) :: oid
+  def commit_parent_count(_commit) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns the tree id for the given `commit`.
   """
   @spec commit_tree_id(commit) :: oid
@@ -840,6 +867,13 @@ defmodule GitRekt.Git do
         {[oid], walk}
       {:error, :iterover} ->
         {:halt, walk}
+    end
+  end
+
+  defp commit_parent_stream_next({_commit, max, max} = iter), do: {:halt, iter}
+  defp commit_parent_stream_next({commit, i, max}) do
+    case commit_parent(commit, i) do
+      {:ok, oid, parent} -> {[{oid, parent}], {commit, i+1, max}}
     end
   end
 
