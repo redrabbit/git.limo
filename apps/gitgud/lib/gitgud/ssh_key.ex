@@ -13,7 +13,7 @@ defmodule GitGud.SSHKey do
   schema "ssh_authentication_keys" do
     belongs_to :user, User
     field      :name, :string
-    field      :data, :string
+    field      :data, :string, virtual: true
     field      :fingerprint, :string
     timestamps()
   end
