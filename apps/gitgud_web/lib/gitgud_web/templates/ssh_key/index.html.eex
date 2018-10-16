@@ -21,7 +21,7 @@
     <div class="card-content">
       <div class="content">
         <label>Fingerprint:</label>
-        <code><%= ssh_key_fingerprint(ssh_key) %></code>
+        <code><%= ssh_key.fingerprint %></code>
       </div>
     </div>
     <footer class="card-footer">
