@@ -72,7 +72,10 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_author(GitCommit.t) :: {binary, binary} | nil
   def commit_author(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
-      {:ok, {name, email, _datetime}} -> {name, email}
+      {:ok, {name, email, _datetime}} ->
+        if user = UserQuery.by_email(email),
+          do: user,
+        else: %{name: name, email: email}
       {:error, _reason} -> nil
     end
   end
