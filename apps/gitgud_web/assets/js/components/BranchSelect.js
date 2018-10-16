@@ -19,7 +19,7 @@ class BranchSelect extends React.Component {
 
   render() {
     return (
-      <div className="branch-select dropdown" ref={this.dropdown}>
+      <div className="dropdown branch-select" ref={this.dropdown}>
         <div className="dropdown-trigger">
           <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
             <span>{this.props.type.charAt(0).toUpperCase() + this.props.type.slice(1)}: <strong>{this.props.name}</strong></span>
