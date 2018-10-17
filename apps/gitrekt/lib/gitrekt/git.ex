@@ -39,6 +39,10 @@ defmodule GitRekt.Git do
 
   @type diff          :: reference
   @type diff_format   :: :patch | :patch_header | :raw | :name_only | :name_status
+  @type diff_delta    :: {diff_file, diff_file, non_neg_integer, non_neg_integer}
+  @type diff_file     :: {oid, binary, integer, non_neg_integer}
+  @type diff_hunk     :: {binary, integer, integer, integer, integer}
+  @type diff_line     :: {char, integer, integer, integer, integer, binary}
 
   @type index         :: reference
   @type index_entry   :: {
@@ -617,6 +621,14 @@ defmodule GitRekt.Git do
   """
   @spec diff_tree(repo, tree, tree) :: {:ok, diff} | {:error, term}
   def diff_tree(_repo, _old_tree, _new_tree) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a binary represention of the given `diff`.
+  """
+  @spec diff_deltas(diff) :: {:ok, [{diff_delta, [{diff_hunk, [diff_line]}]}]} | {:error, term}
+  def diff_deltas(_diff) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
