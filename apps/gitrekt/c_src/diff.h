@@ -15,6 +15,7 @@ typedef struct {
 void geef_diff_free(ErlNifEnv *env, void *cd);
 
 ERL_NIF_TERM geef_diff_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_diff_format(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 

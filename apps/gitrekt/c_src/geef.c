@@ -240,6 +240,7 @@ static ErlNifFunc geef_funcs[] =
 	{"revwalk_repository", 1, geef_revwalk_repository},
 	{"revwalk_pack", 1, geef_revwalk_pack},
 	{"diff_tree",   3, geef_diff_tree},
+	{"diff_stats",  1, geef_diff_stats},
 	{"diff_deltas", 1, geef_diff_deltas},
 	{"diff_format", 2, geef_diff_format},
 	{"index_new",   0, geef_index_new},

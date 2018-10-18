@@ -625,7 +625,15 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Returns a binary represention of the given `diff`.
+  Returns stats for the given `diff`.
+  """
+  @spec diff_stats(diff) :: {:ok, non_neg_integer, non_neg_integer, non_neg_integer} | {:error, term}
+  def diff_stats(_diff) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns a list of deltas for the given `diff`.
   """
   @spec diff_deltas(diff) :: {:ok, [{diff_delta, [{diff_hunk, [diff_line]}]}]} | {:error, term}
   def diff_deltas(_diff) do

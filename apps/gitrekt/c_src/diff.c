@@ -194,6 +194,28 @@ geef_diff_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_diff *diff;
+    git_diff_stats *stats;
+    int insertions, deletions, files_changed;
+
+	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
+		return enif_make_badarg(env);
+
+    if (!git_diff_get_stats(&stats, diff->diff) < 0)
+        return geef_error(env);
+
+    insertions = git_diff_stats_insertions(stats);
+    deletions = git_diff_stats_deletions(stats);
+    files_changed = git_diff_stats_files_changed(stats);
+
+    git_diff_stats_free(stats);
+
+	return enif_make_tuple4(env, atoms.ok, enif_make_uint(env, files_changed), enif_make_uint(env, insertions), enif_make_uint(env, deletions));
+}
+
+ERL_NIF_TERM
 geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     diff_pack pack;
