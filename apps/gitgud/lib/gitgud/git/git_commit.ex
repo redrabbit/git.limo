@@ -38,11 +38,11 @@ defmodule GitGud.GitCommit do
   @doc """
   Returns the author of the given `commit`.
   """
-  @spec author(t) :: {:ok, {binary, binary, DateTime.t}} | {:error, term}
+  @spec author(t) :: {:ok, map} | {:error, term}
   def author(%__MODULE__{__git__: commit} = _commit) do
     with {:ok, name, email, time, _offset} <- Git.commit_author(commit), # TODO
          {:ok, datetime} <- DateTime.from_unix(time), do:
-      {:ok, {name, email, datetime}}
+      {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
   @doc """

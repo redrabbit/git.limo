@@ -16,11 +16,11 @@ defmodule GitGud.GitTag do
   @doc """
   Returns the author of the given `tag`.
   """
-  @spec author(t) :: {:ok, {binary, binary, DateTime.t}} | {:error, term}
+  @spec author(t) :: {:ok, map} | {:error, term}
   def author(%__MODULE__{__git__: tag} = _tag) do
     with {:ok, name, email, time, _offset} <- Git.tag_author(tag), # TODO
          {:ok, datetime} <- DateTime.from_unix(time), do:
-      {:ok, {name, email, datetime}}
+      {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
   @doc """

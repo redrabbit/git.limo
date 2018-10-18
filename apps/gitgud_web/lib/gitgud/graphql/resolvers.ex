@@ -223,9 +223,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
   def git_commit_author(%GitCommit{} = commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
     case GitCommit.author(commit) do
-      {:ok, {name, email, _datetime}} ->
+      {:ok, %{email: email} = author} ->
         batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users ->
-          {:ok, users[email] || %{name: name, email: email}}
+          {:ok, users[email] || author}
         end)
       {:error, reason} ->
         {:error, reason}
@@ -254,9 +254,9 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
   def git_tag_author(%GitTag{} = tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     case GitTag.author(tag) do
-      {:ok, {name, email, _datetime}} ->
+      {:ok, %{email: email} = author} ->
         batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users ->
-          {:ok, users[email] || %{name: name, email: email}}
+          {:ok, users[email] || author}
         end)
       {:error, reason} ->
         {:error, reason}

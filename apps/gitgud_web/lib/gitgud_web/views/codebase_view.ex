@@ -70,13 +70,13 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(GitCommit.t) :: {binary, binary} | nil
+  @spec commit_author(GitCommit.t) :: map | nil
   def commit_author(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
-      {:ok, {name, email, _datetime}} ->
-        if user = UserQuery.by_email(email),
+      {:ok, author} ->
+        if user = UserQuery.by_email(author.email),
           do: user,
-        else: %{name: name, email: email}
+        else: author
       {:error, _reason} -> nil
     end
   end
@@ -207,7 +207,7 @@ defmodule GitGud.Web.CodebaseView do
 
   defp query_users(authors) do
     authors
-    |> Enum.map(&elem(&1, 1))
+    |> Enum.map(&(&1.email))
     |> Enum.uniq()
     |> UserQuery.by_email()
     |> Map.new(&{&1.email, &1})
@@ -221,7 +221,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  defp zip_author({parent, {name, email, _timestamp}}, users) do
-    {parent, Map.get(users, email, %{name: name, email: email})}
+  defp zip_author({parent, author}, users) do
+    {parent, Map.get(users, author.email, author)}
   end
 end
