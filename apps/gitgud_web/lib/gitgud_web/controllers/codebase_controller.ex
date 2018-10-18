@@ -57,8 +57,9 @@ defmodule GitGud.Web.CodebaseController do
   @spec commit(Plug.Conn.t, map) :: Plug.Conn.t
   def commit(conn, %{"username" => username, "repo_name" => repo_name, "oid" => oid} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
-      with {:ok, commit} <- Repo.git_object(repo, oid), do:
-        render(conn, "commit.html", repo: repo, commit: commit)
+      with {:ok, commit} <- Repo.git_object(repo, oid),
+           {:ok, diff} <- Repo.git_diff(commit), do:
+        render(conn, "commit.html", repo: repo, commit: commit, diff: diff)
     end || {:error, :not_found}
   end
 

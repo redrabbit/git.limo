@@ -7,18 +7,13 @@ defmodule GitGud.Web.CodebaseView do
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
+  alias GitGud.GitDiff
   alias GitGud.GitReference
   alias GitGud.GitTag
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
-
-  @spec sort(Enumerable.t) :: [{GitReference.t | GitTag.t, GitCommit.t}]
-  def sort(references_or_tags) do
-    commits = Enum.map(references_or_tags, &fetch_commit/1)
-    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(elem(&1, 1)), &compare_timestamps/2)
-  end
 
   @spec batch_branches_commits_authors(Enumerable.t) :: [{GitReference.t, {GitCommit.t, User.t | map}}]
   def batch_branches_commits_authors(references_commits) do
@@ -40,6 +35,12 @@ defmodule GitGud.Web.CodebaseView do
     authors = Enum.map(commits, &fetch_author/1)
     users = query_users(authors)
     Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
+  end
+
+  @spec sort_by_commit_timestamp(Enumerable.t) :: [{GitReference.t | GitTag.t, GitCommit.t}]
+  def sort_by_commit_timestamp(references_or_tags) do
+    commits = Enum.map(references_or_tags, &fetch_commit/1)
+    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(elem(&1, 1)), &compare_timestamps/2)
   end
 
   @spec branch_select(Plug.Conn.t) :: binary
@@ -127,6 +128,22 @@ defmodule GitGud.Web.CodebaseView do
     case GitTree.entries(tree) do
       {:ok, entries} -> entries
       {:error, _reason} -> []
+    end
+  end
+
+  @spec diff_stats(GitDiff.t) :: map | nil
+  def diff_stats(%GitDiff{} = diff) do
+    case GitDiff.stats(diff) do
+      {:ok, stats} -> stats
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec diff_deltas(GitDiff.t) :: [map] | nil
+  def diff_deltas(%GitDiff{} = diff) do
+    case GitDiff.deltas(diff) do
+      {:ok, deltas} -> deltas
+      {:error, _reason} -> nil
     end
   end
 
