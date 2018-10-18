@@ -7,20 +7,20 @@
 #include "diff.h"
 
 typedef struct {
-    ERL_NIF_TERM hunk;
-    ERL_NIF_TERM lines;
+	ERL_NIF_TERM hunk;
+	ERL_NIF_TERM lines;
 } diff_hunk;
 
 typedef struct {
-    ERL_NIF_TERM delta;
-    diff_hunk **hunks;
-    size_t size;
+	ERL_NIF_TERM delta;
+	diff_hunk **hunks;
+	size_t size;
 } diff_delta;
 
 typedef struct {
-    ErlNifEnv *env;
-    diff_delta **deltas;
-    size_t size;
+	ErlNifEnv *env;
+	diff_delta **deltas;
+	size_t size;
 } diff_pack;
 
 static git_diff_format_t diff_format_atom2type(ERL_NIF_TERM term)
@@ -63,10 +63,10 @@ static ERL_NIF_TERM diff_line_to_term(ErlNifEnv *env, const git_diff_line *line)
 {
 	ErlNifBinary bin;
 
-    if (enif_alloc_binary(line->content_len, &bin) < 0)
-        return geef_oom(env);
+	if (enif_alloc_binary(line->content_len, &bin) < 0)
+		return geef_oom(env);
 
-    memcpy(bin.data, line->content, line->content_len);
+	memcpy(bin.data, line->content, line->content_len);
 
 	return enif_make_tuple6(env,
 		enif_make_uint(env, line->origin),
@@ -109,46 +109,46 @@ static ERL_NIF_TERM diff_delta_to_term(ErlNifEnv *env, const git_diff_delta *del
 
 static int diff_delta_file_cb(const git_diff_delta *delta, float progress, void *payload)
 {
-    diff_pack* pack = payload;
-    diff_delta *delta_pack = malloc(sizeof(diff_delta));
+	diff_pack* pack = payload;
+	diff_delta *delta_pack = malloc(sizeof(diff_delta));
 
-    *delta_pack = (diff_delta){ diff_delta_to_term(pack->env, delta), NULL, 0 };
-    pack->deltas[pack->size++] = delta_pack;
-    return 0;
+	*delta_pack = (diff_delta){ diff_delta_to_term(pack->env, delta), NULL, 0 };
+	pack->deltas[pack->size++] = delta_pack;
+	return 0;
 }
 
 static int diff_delta_bin_cb(const git_diff_delta *delta, const git_diff_binary *binary, void *payload)
 {
-    return 0;
+	return 0;
 }
 
 static int diff_delta_hunk_cb(const git_diff_delta *delta, const git_diff_hunk *hunk, void *payload)
 {
-    diff_pack* pack = payload;
-    diff_delta *last_delta = pack->deltas[pack->size-1];
-    if(last_delta->hunks == NULL) {
-        last_delta->hunks = (diff_hunk **)malloc(sizeof(diff_hunk *));
-        last_delta->size = 1;
-    } else {
-        last_delta->hunks = realloc(last_delta->hunks, sizeof(diff_hunk *) * ++last_delta->size);
-    }
+	diff_pack* pack = payload;
+	diff_delta *last_delta = pack->deltas[pack->size-1];
+	if(last_delta->hunks == NULL) {
+		last_delta->hunks = (diff_hunk **)malloc(sizeof(diff_hunk *));
+		last_delta->size = 1;
+	} else {
+		last_delta->hunks = realloc(last_delta->hunks, sizeof(diff_hunk *) * ++last_delta->size);
+	}
 
-    diff_hunk *delta_hunk = malloc(sizeof(diff_hunk));
+	diff_hunk *delta_hunk = malloc(sizeof(diff_hunk));
 
-    *delta_hunk = (diff_hunk){ diff_hunk_to_term(pack->env, hunk), delta_hunk->lines = enif_make_list(pack->env, 0) };
-    last_delta->hunks[last_delta->size-1] = delta_hunk;
+	*delta_hunk = (diff_hunk){ diff_hunk_to_term(pack->env, hunk), delta_hunk->lines = enif_make_list(pack->env, 0) };
+	last_delta->hunks[last_delta->size-1] = delta_hunk;
 
-    return 0;
+	return 0;
 }
 
 static int diff_delta_line_cb(const git_diff_delta *delta, const git_diff_hunk *hunk, const git_diff_line *line, void *payload)
 {
-    diff_pack *pack = payload;
-    diff_delta *last_delta = pack->deltas[pack->size-1];
-    diff_hunk *last_hunk = last_delta->hunks[last_delta->size-1];
-    last_hunk->lines = enif_make_list_cell(pack->env, diff_line_to_term(pack->env, line), last_hunk->lines);
+	diff_pack *pack = payload;
+	diff_delta *last_delta = pack->deltas[pack->size-1];
+	diff_hunk *last_hunk = last_delta->hunks[last_delta->size-1];
+	last_hunk->lines = enif_make_list_cell(pack->env, diff_line_to_term(pack->env, line), last_hunk->lines);
 
-    return 0;
+	return 0;
 }
 
 void geef_diff_free(ErlNifEnv *env, void *cd)
@@ -197,20 +197,20 @@ ERL_NIF_TERM
 geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_diff *diff;
-    git_diff_stats *stats;
-    int insertions, deletions, files_changed;
+	git_diff_stats *stats;
+	int insertions, deletions, files_changed;
 
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
 		return enif_make_badarg(env);
 
-    if (!git_diff_get_stats(&stats, diff->diff) < 0)
-        return geef_error(env);
+	if (!git_diff_get_stats(&stats, diff->diff) < 0)
+		return geef_error(env);
 
-    insertions = git_diff_stats_insertions(stats);
-    deletions = git_diff_stats_deletions(stats);
-    files_changed = git_diff_stats_files_changed(stats);
+	insertions = git_diff_stats_insertions(stats);
+	deletions = git_diff_stats_deletions(stats);
+	files_changed = git_diff_stats_files_changed(stats);
 
-    git_diff_stats_free(stats);
+	git_diff_stats_free(stats);
 
 	return enif_make_tuple4(env, atoms.ok, enif_make_uint(env, files_changed), enif_make_uint(env, insertions), enif_make_uint(env, deletions));
 }
@@ -218,34 +218,34 @@ geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    diff_pack pack;
+	diff_pack pack;
 	geef_diff *diff;
 
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
 		return enif_make_badarg(env);
 
-    pack = (diff_pack){ env, (git_diff_delta **)malloc(sizeof(git_diff_delta *) * git_diff_num_deltas(diff->diff)), 0};
-    if (git_diff_foreach(diff->diff, diff_delta_file_cb, diff_delta_bin_cb, diff_delta_hunk_cb, diff_delta_line_cb, &pack) < 0)
-        return geef_error(env);
+	pack = (diff_pack){ env, (git_diff_delta **)malloc(sizeof(git_diff_delta *) * git_diff_num_deltas(diff->diff)), 0};
+	if (git_diff_foreach(diff->diff, diff_delta_file_cb, diff_delta_bin_cb, diff_delta_hunk_cb, diff_delta_line_cb, &pack) < 0)
+		return geef_error(env);
 
-    ERL_NIF_TERM deltas = enif_make_list(env, 0);
-    for (int i = 0; i < pack.size; i++) {
-        diff_delta *delta = pack.deltas[i];
-        ERL_NIF_TERM hunks = enif_make_list(env, 0);
-        for (int j = 0; j < delta->size; j++) {
-            diff_hunk *hunk = delta->hunks[j];
-            enif_make_reverse_list(env, hunk->lines, &hunk->lines);
-            hunks = enif_make_list_cell(env, enif_make_tuple2(env, hunk->hunk, hunk->lines), hunks);
-            free(hunk);
-        }
-        enif_make_reverse_list(env, hunks, &hunks);
-        deltas = enif_make_list_cell(env, enif_make_tuple2(env, delta->delta, hunks), deltas);
-        free(delta->hunks);
-        free(delta);
-    }
+	ERL_NIF_TERM deltas = enif_make_list(env, 0);
+	for (int i = 0; i < pack.size; i++) {
+		diff_delta *delta = pack.deltas[i];
+		ERL_NIF_TERM hunks = enif_make_list(env, 0);
+		for (int j = 0; j < delta->size; j++) {
+			diff_hunk *hunk = delta->hunks[j];
+			enif_make_reverse_list(env, hunk->lines, &hunk->lines);
+			hunks = enif_make_list_cell(env, enif_make_tuple2(env, hunk->hunk, hunk->lines), hunks);
+			free(hunk);
+		}
+		enif_make_reverse_list(env, hunks, &hunks);
+		deltas = enif_make_list_cell(env, enif_make_tuple2(env, delta->delta, hunks), deltas);
+		free(delta->hunks);
+		free(delta);
+	}
 
-    enif_make_reverse_list(env, deltas, &deltas);
-    free(pack.deltas);
+	enif_make_reverse_list(env, deltas, &deltas);
+	free(pack.deltas);
 
 	return enif_make_tuple2(env, atoms.ok, deltas);
 }
