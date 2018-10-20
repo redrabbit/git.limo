@@ -609,6 +609,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns `true` if `tree` matches the given `pathspec`; otherwise returns `false`.
+  """
+  @spec pathspec_match_tree(tree, [binary]) :: {:ok, boolean} | {:error, term}
+  def pathspec_match_tree(_tree, _pathspec) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns a *PACK* file for the given `walk`.
   """
   @spec revwalk_repository(revwalk) :: {:ok, binary} | {:error, term}
@@ -620,7 +628,7 @@ defmodule GitRekt.Git do
   Returns a diff with the difference between two tree objects.
   """
   @spec diff_tree(repo, tree, tree) :: {:ok, diff} | {:error, term}
-  def diff_tree(_repo, _old_tree, _new_tree) do
+  def diff_tree(_repo, _old_tree, _new_tree, _opts \\ []) do
     raise Code.LoadError, file: @nif_path_lib
   end
 

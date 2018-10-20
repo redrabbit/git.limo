@@ -9,6 +9,7 @@
 #include "tag.h"
 #include "library.h"
 #include "revwalk.h"
+#include "pathspec.h"
 #include "diff.h"
 #include "index.h"
 #include "signature.h"
@@ -94,6 +95,9 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.format_raw = enif_make_atom(env, "raw");
 	atoms.format_name_only = enif_make_atom(env, "name_only");
 	atoms.format_name_status = enif_make_atom(env, "name_status");
+	atoms.diff_opts_pathspec = enif_make_atom(env, "pathspec");
+	atoms.diff_opts_context_lines = enif_make_atom(env, "context_lines");
+	atoms.diff_opts_interhunk_lines = enif_make_atom(env, "interhunk_lines");
 	atoms.undefined = enif_make_atom(env, "undefined");
 	atoms.reflog_entry = enif_make_atom(env, "geef_reflog_entry");
 	/* Revwalk */
@@ -149,6 +153,34 @@ ERL_NIF_TERM
 geef_oom(ErlNifEnv *env)
 {
 	return enif_make_tuple2(env, atoms.error, atoms.enomem);
+}
+
+git_strarray git_strarray_from_list(ErlNifEnv *env, ERL_NIF_TERM list)
+{
+	ErlNifBinary bin;
+	ERL_NIF_TERM head, tail;
+	unsigned int size;
+	git_strarray array;
+
+	if (!enif_get_list_length(env, list, &size))
+		return array;
+
+	array.count = size;
+	array.strings = malloc(sizeof(char*) * size);
+
+	tail = list;
+	for(size_t i = 0; i < size; i++) {
+		if (!enif_get_list_cell(env, tail, &head, &tail))
+			return array;
+
+		if (!enif_inspect_binary(env, head, &bin))
+			return array;
+
+		array.strings[i] = memcpy(malloc((bin.size+1) * sizeof(char)), bin.data, bin.size+1);
+		array.strings[i][bin.size] = '\0';
+	}
+
+	return array;
 }
 
 int geef_terminate_binary(ErlNifBinary *bin)
@@ -239,7 +271,8 @@ static ErlNifFunc geef_funcs[] =
 	{"revwalk_reset", 1,   geef_revwalk_reset},
 	{"revwalk_repository", 1, geef_revwalk_repository},
 	{"revwalk_pack", 1, geef_revwalk_pack},
-	{"diff_tree",   3, geef_diff_tree},
+	{"pathspec_match_tree", 2, geef_pathspec_match_tree},
+	{"diff_tree",   4, geef_diff_tree},
 	{"diff_stats",  1, geef_diff_stats},
 	{"diff_deltas", 1, geef_diff_deltas},
 	{"diff_format", 2, geef_diff_format},

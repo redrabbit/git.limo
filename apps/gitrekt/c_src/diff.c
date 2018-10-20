@@ -36,7 +36,47 @@ static git_diff_format_t diff_format_atom2type(ERL_NIF_TERM term)
 	else if (!enif_compare(term, atoms.format_name_status))
 		return GIT_DIFF_FORMAT_NAME_STATUS;
 
-	return GIT_DIFF_FORMAT_RAW;
+	return GIT_DIFF_FORMAT_PATCH;
+}
+
+static git_diff_options diff_opts_atom2type(ErlNifEnv *env, ERL_NIF_TERM keyword)
+{
+	ERL_NIF_TERM head, tail, key, val;
+	size_t size;
+	const ERL_NIF_TERM *array;
+	size_t arity;
+	git_diff_options opts;
+
+	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
+
+	if (!enif_get_list_length(env, keyword, &size))
+		return opts;
+
+	tail = keyword;
+	for(size_t i = 0; i < size; i++) {
+		if (!enif_get_list_cell(env, tail, &head, &tail))
+			return opts;
+
+		if (!enif_get_tuple(env, head, &arity, &array))
+			return opts;
+
+		if (arity != 2 ) {
+			return opts;
+		}
+
+		key = array[0];
+		val = array[1];
+
+		if (!enif_compare(key, atoms.diff_opts_context_lines))
+			opts.context_lines = val;
+		else if (!enif_compare(key, atoms.diff_opts_interhunk_lines))
+			opts.interhunk_lines = val;
+		else if (!enif_compare(key, atoms.diff_opts_pathspec)) {
+			opts.pathspec = git_strarray_from_list(env, val);
+		}
+	}
+
+	return opts;
 }
 
 static ERL_NIF_TERM diff_file_to_term(ErlNifEnv *env, const git_diff_file *file)
@@ -165,6 +205,7 @@ geef_diff_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_object *old_tree;
 	geef_object *new_tree;
 	geef_diff *diff;
+	git_diff_options diff_opts;
 	ERL_NIF_TERM diff_term;
 
 	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
@@ -180,7 +221,8 @@ geef_diff_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!diff)
 		return geef_oom(env);
 
-	if (git_diff_tree_to_tree(&diff->diff, repo->repo, (git_tree *)old_tree->obj, (git_tree *)new_tree->obj, NULL) < 0) {
+	diff_opts = diff_opts_atom2type(env, argv[3]);
+	if (git_diff_tree_to_tree(&diff->diff, repo->repo, (git_tree *)old_tree->obj, (git_tree *)new_tree->obj, &diff_opts) < 0) {
 		enif_release_resource(diff);
 		return geef_error(env);
 	}

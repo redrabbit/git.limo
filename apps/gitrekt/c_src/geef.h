@@ -1,6 +1,7 @@
 #ifndef GEEF_H
 #define GEEF_H
 
+#include <git2.h>
 #include "erl_nif.h"
 
 ERL_NIF_TERM geef_error(ErlNifEnv *env);
@@ -24,6 +25,9 @@ typedef struct {
 	ERL_NIF_TERM format_raw;
 	ERL_NIF_TERM format_name_only;
 	ERL_NIF_TERM format_name_status;
+	ERL_NIF_TERM diff_opts_pathspec;
+	ERL_NIF_TERM diff_opts_context_lines;
+	ERL_NIF_TERM diff_opts_interhunk_lines;
 	ERL_NIF_TERM undefined;
 	ERL_NIF_TERM toposort;
 	ERL_NIF_TERM timesort;
@@ -36,6 +40,8 @@ typedef struct {
 } geef_atoms;
 
 extern geef_atoms atoms;
+
+git_strarray git_strarray_from_list(ErlNifEnv *env, ERL_NIF_TERM list);
 
 /** NUL-terminate a binary */
 int geef_terminate_binary(ErlNifBinary *bin);
