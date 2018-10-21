@@ -13,6 +13,8 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
+  alias Phoenix.Param
+
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   @spec batch_branches_commits_authors(Enumerable.t) :: [{GitReference.t, {GitCommit.t, User.t | map}}]
@@ -155,11 +157,12 @@ defmodule GitGud.Web.CodebaseView do
   def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
-  def title(:commits, %{repo: repo}), do: "Commits · #{repo.owner.username}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.username}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: []}), do: "#{ref.name} · #{repo.owner.username}/#{repo.name}"
-  def title(:tree, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.name} · #{repo.owner.username}/#{repo.name}"
-  def title(:blob, %{repo: repo, reference: ref, tree_path: path}), do: "#{Path.join(path)} at #{ref.name} · #{repo.owner.username}/#{repo.name}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}@#{Param.to_param(rev)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
+  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}/#{Path.join(path)}"
 
   #
   # Helpers

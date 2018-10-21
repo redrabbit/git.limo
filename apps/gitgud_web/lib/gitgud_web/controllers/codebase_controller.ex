@@ -75,7 +75,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, history} <- Repo.git_history(object), do:
-        render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history)
+        render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
     end || {:error, :not_found}
   end
 
