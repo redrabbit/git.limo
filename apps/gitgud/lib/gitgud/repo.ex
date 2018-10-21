@@ -286,6 +286,19 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns the commit history starting from the given `revision` and matching the given `pathspec`.
+  """
+  @spec git_history(git_revision, [binary]) :: {:ok, Stream.t} | {:error, term}
+  def git_history(revision, pathspec) do
+    case git_history(revision) do
+      {:ok, stream} ->
+        {:ok, Stream.filter(stream, &pathspec_match_commit(&1, pathspec))}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Returns the tree of the given `revision`.
   """
   @spec git_tree(git_revision) :: {:ok, GitTree.t} | {:error, term}
@@ -306,38 +319,14 @@ defmodule GitGud.Repo do
       {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
   end
 
+
   @doc """
   Returns a diff with the difference between `old_tree` and `new_tree`.
   """
-  @spec git_diff(GitTree.t, GitTree.t) :: {:ok, GitDiff.t} | {:error, term}
-  def git_diff(%GitTree{repo: repo, __git__: old_tree} = _old_tree, %GitTree{repo: repo, __git__: new_tree} = _new_tree) do
+  def git_diff(%GitTree{repo: repo, __git__: old_tree} = _old_tree, %GitTree{repo: repo, __git__: new_tree} = _new_tree, opts \\ []) do
     with {:ok, handle} <- Git.repository_open(workdir(repo)),
-         {:ok, diff} <- Git.diff_tree(handle, old_tree, new_tree), do:
+         {:ok, diff} <- Git.diff_tree(handle, old_tree, new_tree, opts), do:
       {:ok, %GitDiff{repo: repo, __git__: diff}}
-  end
-
-  @doc """
-  Returns a diff with the difference between the given `commit` and its ancestor.
-  """
-  @spec git_diff(git_revision) :: {:ok, GitDiff.t} | {:error, term}
-  def git_diff(%GitReference{} = revision) do
-    case GitReference.target(revision, :commit) do
-      {:ok, commit} -> git_diff(commit)
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  def git_diff(%GitTag{} = revision) do
-    case GitTag.target(revision) do
-      {:ok, commit} -> git_diff(commit)
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  def git_diff(%GitCommit{} = commit) do
-    with {:ok, parent} <- GitCommit.first_parent(commit),
-         {:ok, old_tree} <- git_tree(parent),
-         {:ok, new_tree} <- git_tree(commit), do: git_diff(old_tree, new_tree)
   end
 
   @doc """
@@ -511,4 +500,18 @@ defmodule GitGud.Repo do
       {:error, _reason} -> nil
     end
   end
+
+  defp pathspec_match_commit(commit, pathspec) do
+    with {:ok, tree} <- git_tree(commit),
+         {:ok, match?} <- GitTree.pathspec_match?(tree, pathspec), do:
+      if match?, do: pathspec_match_commit_tree(commit, tree, pathspec)
+  end
+
+  defp pathspec_match_commit_tree(commit, tree, pathspec) do
+    with {:ok, parent} <- GitCommit.first_parent(commit),
+         {:ok, parent_tree} <- git_tree(parent),
+         {:ok, diff} <- git_diff(parent_tree, tree, pathspec: pathspec),
+         {:ok, deltas} <- GitDiff.deltas(diff), do: !Enum.empty?(deltas)
+  end
+
 end

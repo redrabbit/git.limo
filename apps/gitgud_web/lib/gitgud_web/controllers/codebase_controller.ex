@@ -7,6 +7,7 @@ defmodule GitGud.Web.CodebaseController do
 
   alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.GitCommit
   alias GitGud.GitTree
   alias GitGud.GitTreeEntry
 
@@ -58,7 +59,10 @@ defmodule GitGud.Web.CodebaseController do
   def commit(conn, %{"username" => username, "repo_name" => repo_name, "oid" => oid} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, commit} <- Repo.git_object(repo, oid),
-           {:ok, diff} <- Repo.git_diff(commit), do:
+           {:ok, new_tree} <- Repo.git_tree(commit),
+           {:ok, parent} <- GitCommit.first_parent(commit),
+           {:ok, old_tree} <- Repo.git_tree(parent),
+           {:ok, diff} <- Repo.git_diff(old_tree, new_tree), do:
         render(conn, "commit.html", repo: repo, commit: commit, diff: diff)
     end || {:error, :not_found}
   end

@@ -49,6 +49,14 @@ defmodule GitGud.GitTree do
       {:ok, Stream.map(stream, &resolve_entry(&1, {repo, tree}))}
   end
 
+  @doc """
+  Returns `true` if `tree` matches the given `pathspec`; otherwise returns `false`.
+  """
+  @spec pathspec_match?(t, [binary]) :: {:ok, boolean} | {:error, term}
+  def pathspec_match?(%__MODULE__{__git__: tree}, pathspec) do
+    Git.pathspec_match_tree(tree, pathspec)
+  end
+
   #
   # Helpers
   #
