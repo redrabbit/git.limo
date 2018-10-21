@@ -147,6 +147,10 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
+  @spec breadcrump_action(atom) :: atom
+  def breadcrump_action(:blob), do: :tree
+  def breadcrump_action(action), do: action
+
   @spec title(atom, map) :: binary
   def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"

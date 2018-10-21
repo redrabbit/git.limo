@@ -51,7 +51,7 @@ defmodule GitGud.Web.Router do
       get "/tags", CodebaseController, :tags
       get "/commit/:oid", CodebaseController, :commit
       get "/commits", CodebaseController, :history
-      get "/commits/:revision", CodebaseController, :history
+      get "/commits/:revision/*path", CodebaseController, :history
       get "/tree/:revision/*path", CodebaseController, :tree
       get "/blob/:revision/*path", CodebaseController, :blob
       get "/settings", RepoController, :edit

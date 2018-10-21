@@ -11,7 +11,8 @@ defmodule GitGud.Web.PaginationHelpers do
   """
   @spec paginate(Plug.Conn.t, Enumerable.t, pos_integer) :: map
   def paginate(conn, list, limit \\ 20) do
-    count = trunc(Float.ceil(count(list) / limit))
+    list = Enum.to_list(list)
+    count = max(trunc(Float.ceil(Enum.count(list) / limit)), 1)
     page = min(max(page_params(conn), 1), count)
     %{current: page, has_previous?: page > 1, has_next?: page < count, previous: max(page-1, 1), next: min(page+1, count), first: 1, last: count, slice: slice(list, (page-1)*limit, limit)}
   end
@@ -78,19 +79,10 @@ defmodule GitGud.Web.PaginationHelpers do
       content_tag(:li, do: link(last, to: "?p=#{last}", class: "pagination-link"))
   end
 
-  defp count(list) when is_list(list), do: Enum.count(list)
-  defp count(stream), do: Enum.count(stream.enum)
-
-  defp slice(list, offset, limit) when is_list(list) do
+  defp slice(list, offset, limit) do
     list
     |> Enum.drop(offset)
     |> Enum.take(limit)
-  end
-
-  defp slice(stream, offset, limit) do
-    stream
-    |> Stream.drop(offset)
-    |> Stream.take(limit)
   end
 
   defp page_params(conn) do

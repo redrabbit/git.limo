@@ -12,7 +12,7 @@
       <p class="buttons has-addons">
         <a class="button" disabled>Raw</a>
         <a class="button" disabled>Blame</a>
-        <a class="button" disabled>History</a>
+        <a href="<%= codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
       </p>
     </div>
   </div>

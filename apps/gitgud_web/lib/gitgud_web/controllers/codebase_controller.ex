@@ -71,11 +71,19 @@ defmodule GitGud.Web.CodebaseController do
   Renders all commits for a specific revision.
   """
   @spec history(Plug.Conn.t, map) :: Plug.Conn.t
-  def history(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision} = _params) do
+  def history(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, history} <- Repo.git_history(object), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history)
+    end || {:error, :not_found}
+  end
+
+  def history(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
+    if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
+      with {:ok, object, reference} <- Repo.git_revision(repo, revision),
+           {:ok, history} <- Repo.git_history(object, [Path.join(tree_path)]), do:
+        render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: tree_path)
     end || {:error, :not_found}
   end
 

@@ -9,6 +9,14 @@ defmodule GitGud.Web.NavigationHelpers do
   import GitGud.Web.Router, only: [__routes__: 0]
 
   @doc """
+  Returns the `conn` *controller* and *action*  as tuple.
+  """
+  @spec current_route(Plug.Conn.t) :: {atom, atom}
+  def current_route(conn) do
+    {helper_name(controller_module(conn)), action_name(conn)}
+  end
+
+  @doc """
   Returns `true` if `conn` matches the given route `helper`; otherwhise return `false`.
   """
   @spec current_route?(Plug.Conn.t, atom, []) :: boolean
@@ -51,7 +59,9 @@ defmodule GitGud.Web.NavigationHelpers do
   for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.helper)) do
     helper = String.to_atom(route.helper)
     defp helper_controller(unquote(helper)), do: unquote(route.plug)
+    defp helper_name(unquote(route.plug)), do: unquote(helper)
   end
 
   defp helper_controller(helper), do: raise ArgumentError, message: "invalid helper #{inspect helper}"
+  defp helper_name(controller), do: raise ArgumentError, message: "invalid controller #{inspect controller}"
 end
