@@ -18,8 +18,13 @@ defmodule GitGud.GitCommit do
   @spec parents(t) :: {:ok, Stream.t} | {:error, term}
   def parents(%__MODULE__{repo: repo, __git__: commit} = _commit) do
     with {:ok, stream} <- Git.commit_parents(commit),
-         {:ok, stream} <- Git.enumerate(stream), do:
-      {:ok, Stream.map(stream, &resolve_parent(&1, repo))}
+         {:ok, stream} <- Git.enumerate(stream) do
+      try do
+        {:ok, Stream.map(stream, &resolve_parent(&1, repo))}
+      rescue
+        ArgumentError -> {:error, :badarg}
+      end
+    end
   end
 
   @doc """
@@ -29,7 +34,11 @@ defmodule GitGud.GitCommit do
   def first_parent(%__MODULE__{repo: repo, __git__: commit} = _commit) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
-        {:ok, resolve_first_parent(stream, repo)}
+        try do
+          {:ok, resolve_first_parent(stream, repo)}
+        rescue
+          ArgumentError -> {:error, :badarg}
+        end
       {:error, reason} ->
         {:error, reason}
     end
@@ -67,6 +76,7 @@ defmodule GitGud.GitCommit do
   # Helpers
   #
 
+  defp resolve_parent(nil, _repo), do: raise ArgumentError
   defp resolve_parent({oid, commit}, repo) do
     %__MODULE__{oid: oid, repo: repo, __git__: commit}
   end
@@ -75,7 +85,7 @@ defmodule GitGud.GitCommit do
     stream
     |> Stream.take(1)
     |> Enum.to_list()
-    |> hd()
+    |> List.first()
     |> resolve_parent(repo)
   end
 end

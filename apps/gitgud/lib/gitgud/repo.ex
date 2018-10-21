@@ -503,15 +503,21 @@ defmodule GitGud.Repo do
 
   defp pathspec_match_commit(commit, pathspec) do
     with {:ok, tree} <- git_tree(commit),
-         {:ok, match?} <- GitTree.pathspec_match?(tree, pathspec), do:
+         {:ok, match?} <- GitTree.pathspec_match?(tree, pathspec) do
       if match?, do: pathspec_match_commit_tree(commit, tree, pathspec)
+    else
+      {:error, _reason} -> false
+    end
   end
 
   defp pathspec_match_commit_tree(commit, tree, pathspec) do
     with {:ok, parent} <- GitCommit.first_parent(commit),
          {:ok, parent_tree} <- git_tree(parent),
          {:ok, diff} <- git_diff(parent_tree, tree, pathspec: pathspec),
-         {:ok, deltas} <- GitDiff.deltas(diff), do: !Enum.empty?(deltas)
+         {:ok, deltas} <- GitDiff.deltas(diff) do !Enum.empty?(deltas)
+    else
+      {:error, _reason} -> false
+    end
   end
 
 end
