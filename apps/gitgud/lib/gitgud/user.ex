@@ -135,7 +135,7 @@ defmodule GitGud.User do
 
   defp validate_username(changeset) do
     changeset
-    |> validate_length(:username, min: 3, max: 20)
+    |> validate_length(:username, min: 3, max: 24)
     |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
     |> unique_constraint(:username)
   end
