@@ -9,13 +9,7 @@ defmodule GitGud.AuthorizationTest do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  setup_all do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
-    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
-  end
-
-  setup_all :create_users
-  setup_all :create_repos
+  setup [:create_users, :create_repos]
 
   test "anon can query public repositories", %{users: users} do
     assert Enum.all?(RepoQuery.user_repos(users), &(&1.public))

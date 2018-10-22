@@ -6,12 +6,7 @@ defmodule GitGud.RepoTest do
   alias GitGud.User
   alias GitGud.Repo
 
-  setup_all do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
-    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
-  end
-
-  setup_all :create_user
+  setup :create_user
 
   test "creates a new repository with valid params", %{user: user} do
     assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))

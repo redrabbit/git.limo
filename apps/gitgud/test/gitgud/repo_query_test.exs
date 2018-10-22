@@ -6,12 +6,7 @@ defmodule GitGud.RepoQueryTest do
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  setup_all do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GitGud.DB)
-    Ecto.Adapters.SQL.Sandbox.mode(GitGud.DB, :auto)
-  end
-
-  setup_all [:create_users, :create_repos]
+  setup [:create_users, :create_repos]
 
   test "gets single repository by id", %{repos: repos} do
     for repo <- repos do
