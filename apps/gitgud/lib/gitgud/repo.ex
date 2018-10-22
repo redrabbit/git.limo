@@ -410,7 +410,7 @@ defmodule GitGud.Repo do
   defp multi_create(changeset, bare?) do
     Multi.new()
     |> Multi.insert(:insert, changeset)
-    |> Multi.run(:init, &init(&1, bare?))
+    |> Multi.run(:init, &init(&1, &2, bare?))
     |> Multi.merge(&init_maintainer/1)
     |> DB.transaction()
   end
@@ -418,18 +418,18 @@ defmodule GitGud.Repo do
   defp multi_update(changeset) do
     Multi.new()
     |> Multi.update(:update, changeset)
-    |> Multi.run(:rename, &rename(&1, changeset))
+    |> Multi.run(:rename, &rename(&1, &2, changeset))
     |> DB.transaction()
   end
 
   defp multi_delete(repo) do
     Multi.new()
     |> Multi.delete(:delete, repo)
-    |> Multi.run(:cleanup, &cleanup/1)
+    |> Multi.run(:cleanup, &cleanup/2)
     |> DB.transaction()
   end
 
-  defp init(%{insert: repo}, bare?) do
+  defp init(_db, %{insert: repo}, bare?) do
     Git.repository_init(workdir(repo), bare?)
   end
 
@@ -437,7 +437,7 @@ defmodule GitGud.Repo do
     Multi.insert(Multi.new(), :init_maintainer, RepoMaintainer.changeset(%RepoMaintainer{}, %{user_id: repo.owner_id, repo_id: repo.id}))
   end
 
-  defp rename(%{update: repo}, changeset) do
+  defp rename(_db, %{update: repo}, changeset) do
     old_workdir = workdir(changeset.data)
     if get_change(changeset, :name) do
       new_workdir = workdir(repo)
@@ -450,7 +450,7 @@ defmodule GitGud.Repo do
     end
   end
 
-  defp cleanup(%{delete: repo}) do
+  defp cleanup(_db, %{delete: repo}) do
     File.rm_rf(workdir(repo))
   end
 

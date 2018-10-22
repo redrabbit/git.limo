@@ -28,9 +28,10 @@ defmodule GitGud.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:postgrex, ">= 0.0.0"},
-     {:ecto, "~> 2.2"},
-     {:plug, "~> 1.6", optional: true},
+    [{:ecto, "~> 3.0-rc", override: true},
+     {:ecto_sql, "~> 3.0-rc", override: true},
+     {:postgrex, "~> 0.14.0-rc"},
+     {:plug, "~> 1.7", optional: true},
      {:phoenix_pubsub, "~> 1.1", optional: true},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},

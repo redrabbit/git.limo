@@ -3,7 +3,9 @@ defmodule GitGud.DB do
   Single source of data, mediates between domain and data mapping layer.
   """
 
-  use Ecto.Repo, otp_app: :gitgud
+  use Ecto.Repo,
+    otp_app: :gitgud,
+    adapter: Ecto.Adapters.Postgres
 
   @doc """
   Dynamically loads the repository url from the
