@@ -28,7 +28,7 @@ defmodule GitGud.UserTest do
     assert "has invalid format" in errors_on(changeset).email
   end
 
-  test "fails to create a new user with invalid password" do
+  test "fails to create a new user with weak password" do
     params = factory(:user)
     assert {:error, changeset} = User.create(Map.delete(params, :password))
     assert "can't be blank" in errors_on(changeset).password
@@ -68,7 +68,7 @@ defmodule GitGud.UserTest do
       assert ^user = User.check_credentials(user.email, "qwertz")
     end
 
-    test "fails to check credentials with invalid password", %{user: user} do
+    test "fails to check credentials with weak password", %{user: user} do
       assert is_nil(User.check_credentials(user.email, "abc"))
       assert is_nil(User.check_credentials(user.username, "abc"))
     end
