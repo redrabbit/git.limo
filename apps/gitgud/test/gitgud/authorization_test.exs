@@ -128,6 +128,11 @@ defmodule GitGud.AuthorizationTest do
 
   defp create_users(context) do
     users = Enum.take(Stream.repeatedly(fn -> User.create!(factory(:user)) end), 3)
+    on_exit fn ->
+      for user <- users do
+        File.rmdir(Path.join(Repo.root_path, user.username))
+      end
+    end
     Map.put(context, :users, users)
   end
 
@@ -141,7 +146,7 @@ defmodule GitGud.AuthorizationTest do
       end)
     on_exit fn ->
       for repo <- repos do
-        File.rm_rf!(Repo.workdir(repo))
+        File.rm_rf(Repo.workdir(repo))
       end
     end
     Map.put(context, :repos, repos)
