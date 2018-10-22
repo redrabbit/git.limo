@@ -1,6 +1,6 @@
 <h2 class="subtitle">Profile</h2>
 
-<%= form_for @changeset, user_path(@conn, :update), [as: :profile], fn f -> %>
+<%= form_for @changeset, Routes.user_path(@conn, :update), [as: :profile], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">

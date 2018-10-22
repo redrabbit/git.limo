@@ -6,12 +6,12 @@
       <%= for {tag, {commit, author}} <- batch_tags_commits_authors(page.slice) do %>
         <tr>
           <td>
-            <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
               <span class="icon"><i class="fa fa-tag" aria-hidden="true"></i></span>
               <span><%= tag.name %></span>
             </a>
             <%= if Map.has_key?(author, :id) do %>
-              <a href="<%= user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
+              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
             <% else %>
               <span class="has-text-black"><%= author.name %></span>
             <% end %>

@@ -12,7 +12,7 @@
 
     <title><%= title(@conn) %></title>
 
-    <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
   </head>
 
   <body>
@@ -33,15 +33,15 @@
               <a class="navbar-link"><%= @current_user.username %></a>
 
               <div class="navbar-dropdown is-right">
-                <a class="navbar-item" href="<%= user_path(@conn, :show, @current_user) %>">Profile</a>
-                <a class="navbar-item" href="<%= user_path(@conn, :edit) %>">Settings</a>
+                <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
+                <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit) %>">Settings</a>
                 <hr class="navbar-divider">
-                <a class="navbar-item" href="<%= session_path(@conn, :delete) %>">Logout</a>
+                <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
               </div>
             </div>
           <% else %>
-            <a class="navbar-item" href="<%= user_path(@conn, :new) %>">Register</a>
-            <a class="navbar-item" href="<%= session_path(@conn, :new, session_params(@conn)) %>">Login</a>
+            <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
+            <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
           <% end %>
         </div>
         </div>
@@ -73,6 +73,6 @@
       </div>
     </main>
 
-    <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

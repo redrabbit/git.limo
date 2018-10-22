@@ -1,6 +1,6 @@
 <h1 class="title">Login</h1>
 
-<%= form_for @conn, session_path(@conn, :create), [as: :session], fn f -> %>
+<%= form_for @conn, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
   <%= if redirect_path = assigns[:redirect] do %>
     <%= hidden_input f, :redirect, value: redirect_path %>
   <% end %>

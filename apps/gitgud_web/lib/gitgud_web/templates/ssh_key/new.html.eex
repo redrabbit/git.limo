@@ -1,6 +1,6 @@
 <h2 class="subtitle">Add a new SSH key</h2>
 
-<%= form_for @changeset, ssh_key_path(@conn, :create), [as: :ssh_key], fn f -> %>
+<%= form_for @changeset, Routes.ssh_key_path(@conn, :create), [as: :ssh_key], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">

@@ -13,13 +13,14 @@ defmodule GitGud.Web do
     quote do
       use Phoenix.Controller, namespace: GitGud.Web
 
+      alias GitGud.Web.Router.Helpers, as: Routes
+
       import Plug.Conn
 
       import GitGud.Authorization, only: [authorized?: 3]
 
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, current_user: 1, ensure_authenticated: 2]
       import GitGud.Web.Gettext
-      import GitGud.Web.Router.Helpers
     end
   end
 
@@ -32,6 +33,8 @@ defmodule GitGud.Web do
 
       use Phoenix.HTML
 
+      alias GitGud.Web.Router.Helpers, as: Routes
+
       import GitGud.Authorization, only: [authorized?: 3]
 
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
@@ -43,7 +46,6 @@ defmodule GitGud.Web do
       import GitGud.Web.NavigationHelpers
       import GitGud.Web.PaginationHelpers
       import GitGud.Web.ReactComponents
-      import GitGud.Web.Router.Helpers
     end
   end
 

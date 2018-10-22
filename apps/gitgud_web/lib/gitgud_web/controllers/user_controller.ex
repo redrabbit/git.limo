@@ -33,7 +33,7 @@ defmodule GitGud.Web.UserController do
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome!")
-        |> redirect(to: user_path(conn, :show, user))
+        |> redirect(to: Routes.user_path(conn, :show, user))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
@@ -72,7 +72,7 @@ defmodule GitGud.Web.UserController do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Profile updated.")
-        |> redirect(to: user_path(conn, :edit))
+        |> redirect(to: Routes.user_path(conn, :edit))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")

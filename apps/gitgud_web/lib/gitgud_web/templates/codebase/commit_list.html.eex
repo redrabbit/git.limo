@@ -18,10 +18,10 @@
         <tr>
           <td>
             <p class="has-text-weight-bold">
-              <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
+              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
             </p>
             <%= if Map.has_key?(author, :id) do %>
-              <a href="<%= user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
+              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
             <% else %>
               <span class="has-text-black"><%= author.name %></span>
             <% end %>
@@ -29,8 +29,8 @@
           </td>
           <td class="has-text-right">
             <p class="buttons is-pulled-right">
-              <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>
-              <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
+              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(commit.oid) %></a>
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
                 <span class="icon is-small">
                   <i class="fa fa-code"></i>
                 </span>

@@ -41,7 +41,7 @@ defmodule GitGud.Web.SSHKeyController do
       {:ok, ssh_key} ->
         conn
         |> put_flash(:info, "SSH key '#{ssh_key.name}' added.")
-        |> redirect(to: ssh_key_path(conn, :index))
+        |> redirect(to: Routes.ssh_key_path(conn, :index))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")

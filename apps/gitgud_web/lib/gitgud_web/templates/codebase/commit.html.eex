@@ -2,8 +2,8 @@
   <header class="card-header">
     <p class="card-header-title"><%= commit_message_title(@commit) %></p>
     <p class="card-header-icon buttons">
-      <a href="<%= codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(@commit.oid) %></a>
-      <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
+      <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(@commit.oid) %></a>
+      <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
         <span class="icon is-small">
           <i class="fa fa-code"></i>
         </span>
@@ -15,7 +15,7 @@
       <p>
         <%= with author <- commit_author(@commit) do %>
           <%= if Map.has_key?(author, :id) do %>
-            <a href="<%= user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
+            <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
           <% else %>
             <span class="has-text-black"><%= author.name %></span>
           <% end %>
@@ -39,7 +39,7 @@
     <header class="card-header">
       <p class="card-header-title"><%= delta.new_file.path %></p>
       <p class="card-header-icon buttons">
-        <a href="<%= codebase_path(@conn, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-warning has-text-weight-semibold">
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-warning has-text-weight-semibold">
           <span class="icon is-small">
             <i class="fa fa-code"></i>
           </span>

@@ -5,19 +5,19 @@
 <div class="tabs is-toggle is-fullwidth">
   <ul>
     <li>
-      <a href="<%= codebase_path(@conn, :history, @repo.owner, @repo, @revision, []) %>">
+      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @revision, []) %>">
         <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
         <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></span>
       </a>
     </li>
     <li>
-      <a href="<%= codebase_path(@conn, :branches, @repo.owner, @repo) %>">
+      <a href="<%= Routes.codebase_path(@conn, :branches, @repo.owner, @repo) %>">
         <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
         <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></span>
       </a>
     </li>
     <li>
-      <a href="<%= codebase_path(@conn, :tags, @repo.owner, @repo) %>">
+      <a href="<%= Routes.codebase_path(@conn, :tags, @repo.owner, @repo) %>">
         <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
         <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></span>
       </a>
@@ -65,7 +65,7 @@
                 <label class="label">Clone with HTTP</label>
                 <div class="field has-addons">
                   <div class="control is-expanded">
-                    <input type="text" value="<%= codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" />
+                    <input type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" />
                   </div>
                   <div class="control">
                     <a class="button is-small">

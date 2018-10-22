@@ -29,8 +29,9 @@ defmodule GitGud.Web.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:cowboy, "~> 1.1"},
-     {:phoenix, "~> 1.3"},
+    [{:plug, "~> 1.7"},
+     {:plug_cowboy, "~> 2.0"},
+     {:phoenix, "~> 1.4.0-rc", override: true},
      {:phoenix_html, "~> 2.10"},
      {:phoenix_pubsub, "~> 1.0"},
      {:phoenix_live_reload, "~> 1.1", only: :dev},

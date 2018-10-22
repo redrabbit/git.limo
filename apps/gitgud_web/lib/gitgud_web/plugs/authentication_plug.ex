@@ -6,9 +6,10 @@ defmodule GitGud.Web.AuthenticationPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import Phoenix.Controller, only: [render: 4]
+  import Phoenix.Controller, only: [put_view: 2, render: 3]
 
   alias GitGud.UserQuery
+  alias GitGud.Web.ErrorView
 
   @doc """
   `Plug` to authenticate `conn` with either authorization or session tokens.
@@ -57,7 +58,8 @@ defmodule GitGud.Web.AuthenticationPlug do
     unless authenticated?(conn) do
       conn
       |> put_status(:unauthorized)
-      |> render(GitGud.Web.ErrorView, "401.html", %{})
+      |> put_view(ErrorView)
+      |> render("401.html", %{})
       |> halt()
     end || conn
   end

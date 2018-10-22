@@ -7,8 +7,6 @@ defmodule GitGud.Web.UserSocket do
 
   alias GitGud.UserQuery
 
-  transport :websocket, Phoenix.Transports.WebSocket
-
   def connect(params, sock) do
     if token = params["token"],
       do: authenticate_socket(sock, token),

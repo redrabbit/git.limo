@@ -1,6 +1,6 @@
 <h2 class="subtitle">Settings</h2>
 
-<%= form_for @changeset, repo_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
+<%= form_for @changeset, Routes.repo_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">

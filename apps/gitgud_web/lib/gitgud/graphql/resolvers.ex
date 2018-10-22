@@ -20,10 +20,11 @@ defmodule GitGud.GraphQL.Resolvers do
 
   alias Absinthe.Relay.Connection
 
+  alias GitGud.Web.Router.Helpers, as: Routes
+
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
   import GitRekt.Git, only: [oid_fmt: 1]
-  import GitGud.Web.Router.Helpers
 
   @doc """
   Resolves a node object type.
@@ -58,19 +59,19 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec url(map, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def url(%User{username: username} = _resource, %{} = _args, _info) do
-    {:ok, user_url(GitGud.Web.Endpoint, :show, username)}
+    {:ok, Routes.user_url(GitGud.Web.Endpoint, :show, username)}
   end
 
   def url(%Repo{} = repo, %{} = _args, _info) do
-    {:ok, codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
   def url(%GitReference{repo: repo, name: name} = _reference, %{} = _args, _info) do
-    {:ok, codebase_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, name, [])}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :tree, repo.owner, repo, name, [])}
   end
 
   def url(%GitCommit{repo: repo, oid: oid} = _commit, %{} = _args, _info) do
-    {:ok, codebase_url(GitGud.Web.Endpoint, :commit, repo.owner, repo, oid_fmt(oid))}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, repo.owner, repo, oid_fmt(oid))}
   end
 
   @doc """

@@ -1,8 +1,8 @@
 <%= render_layout "app.html", assigns do %>
   <nav class="breadcrumb is-large" aria-label="breadcrumbs">
     <ul>
-      <li><h1 class="title"><a href="<%= user_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
-      <li><h1 class="title"><a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
+      <li><h1 class="title"><a href="<%= Routes.user_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.username %></a></h1></li>
+      <li><h1 class="title"><a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
     </ul>
   </nav>
 
@@ -10,12 +10,12 @@
     <ul>
       <%= navigation_item @conn, :codebase do %>
         <%= if assigns[:revision] do %>
-          <a href="<%= codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
+          <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
             <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
             <span>Code</span>
           </a>
         <% else %>
-          <a href="<%= codebase_path(@conn, :show, @repo.owner, @repo) %>">
+          <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
             <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
             <span>Code</span>
           </a>
@@ -35,7 +35,7 @@
       </li>
       <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
         <%= navigation_item @conn, :repo, only: [:edit, :update] do %>
-          <a href="<%= repo_path(@conn, :edit, @repo.owner, @repo) %>">
+          <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
             <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
             <span>Settings</span>
           </a>

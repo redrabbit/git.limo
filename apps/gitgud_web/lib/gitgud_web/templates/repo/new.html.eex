@@ -1,6 +1,6 @@
 <h1 class="title">Create a new repository</h1>
 
-<%= form_for @changeset, repo_path(@conn, :create), [as: :repo], fn f -> %>
+<%= form_for @changeset, Routes.repo_path(@conn, :create), [as: :repo], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">

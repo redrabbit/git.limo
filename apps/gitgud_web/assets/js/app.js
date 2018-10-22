@@ -1,3 +1,5 @@
+import css from "../css/app.scss"
+
 import {token} from "./auth"
 import factory from "./react-factory"
 import env from "./relay-environment"

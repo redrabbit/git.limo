@@ -26,7 +26,7 @@ defmodule GitGud.Web.SessionController do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in.")
-      |> redirect(to: session_params["redirect"] || user_path(conn, :show, user))
+      |> redirect(to: session_params["redirect"] || Routes.user_path(conn, :show, user))
     else
       conn
       |> put_flash(:error, "Wrong login credentials")
@@ -43,6 +43,6 @@ defmodule GitGud.Web.SessionController do
     conn
     |> delete_session(:user_id)
     |> put_flash(:info, "Logged out.")
-    |> redirect(to: landing_page_path(conn, :index))
+    |> redirect(to: Routes.landing_page_path(conn, :index))
   end
 end

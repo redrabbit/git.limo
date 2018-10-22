@@ -13,7 +13,7 @@
         <a class="button" disabled>Create new file</a>
         <a class="button" disabled>Upload files</a>
         <a class="button" disabled>Find file</a>
-        <a href="<%= codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
+        <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
       </p>
     </div>
   </div>

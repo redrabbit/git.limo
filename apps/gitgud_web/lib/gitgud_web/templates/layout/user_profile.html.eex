@@ -11,7 +11,7 @@
         </a>
       </li>
       <%= navigation_item @conn, :user, :show do %>
-        <a href="<%= user_path(@conn, :show, @user) %>">
+        <a href="<%= Routes.user_path(@conn, :show, @user) %>">
           <span class="icon"><i class="fa fa-boxes" aria-hidden="true"></i></span>
           <span>Repositories</span>
         </a>

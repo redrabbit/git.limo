@@ -32,7 +32,7 @@ defmodule GitGud.Web.RepoController do
       {:ok, repo, _handle} ->
         conn
         |> put_flash(:info, "Repository created.")
-        |> redirect(to: codebase_path(conn, :show, user, repo))
+        |> redirect(to: Routes.codebase_path(conn, :show, user, repo))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
@@ -66,7 +66,7 @@ defmodule GitGud.Web.RepoController do
           {:ok, repo} ->
             conn
             |> put_flash(:info, "Repository updated.")
-            |> redirect(to: repo_path(conn, :edit, repo.owner, repo))
+            |> redirect(to: Routes.repo_path(conn, :edit, repo.owner, repo))
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")

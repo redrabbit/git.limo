@@ -6,7 +6,7 @@
   </div>
   <div class="level-right">
     <div class="level-item">
-      <a class="button is-success" href="<%= ssh_key_path(@conn, :new) %>">New</a>
+      <a class="button is-success" href="<%= Routes.ssh_key_path(@conn, :new) %>">New</a>
     </div>
   </div>
 </div>
