@@ -22,10 +22,10 @@ defmodule GitGud.UserTest do
 
   test "fails to create a new user with invalid email" do
     params = factory(:user)
-    assert {:error, changeset} = User.create(Map.delete(params, :email))
-    assert "can't be blank" in errors_on(changeset).email
-    assert {:error, changeset} = User.create(Map.update!(params, :email, &(&1<>".0")))
-    assert "has invalid format" in errors_on(changeset).email
+    assert {:error, changeset} = User.create(Map.delete(params, :emails))
+    assert "can't be blank" in errors_on(changeset).emails
+    assert {:error, changeset} = User.create(Map.update!(params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|email: &1.email <> ".0"}) end))
+    assert %{email: ["has invalid format"]} in errors_on(changeset).emails
   end
 
   test "fails to create a new user with weak password" do
@@ -46,16 +46,8 @@ defmodule GitGud.UserTest do
     end
 
     test "updates profile with valid params", %{user: user1} do
-      assert {:ok, user2} = User.update(user1, :profile, name: "Alice", email: "alice1234@gmail.com")
+      assert {:ok, user2} = User.update(user1, :profile, name: "Alice")
       assert user2.name == "Alice"
-      assert user2.email == "alice1234@gmail.com"
-    end
-
-    test "fails to update profile with invalid email", %{user: user} do
-      assert {:error, changeset} = User.update(user, :profile, email: "")
-      assert "can't be blank" in errors_on(changeset).email
-      assert {:error, changeset} = User.update(user, :profile, email: "alice1234@nothing")
-    assert "has invalid format" in errors_on(changeset).email
     end
 
     test "deletes user", %{user: user1} do
@@ -64,13 +56,13 @@ defmodule GitGud.UserTest do
     end
 
     test "checks credentials", %{user: user} do
-      assert ^user = User.check_credentials(user.username, "qwertz")
-      assert ^user = User.check_credentials(user.email, "qwertz")
+      assert User.check_credentials(user.username, "qwertz")
+      assert User.check_credentials(hd(user.emails).email, "qwertz")
     end
 
     test "fails to check credentials with weak password", %{user: user} do
-      assert is_nil(User.check_credentials(user.email, "abc"))
-      assert is_nil(User.check_credentials(user.username, "abc"))
+      refute User.check_credentials(user.username, "abc")
+      refute User.check_credentials(hd(user.emails).email, "abc")
     end
   end
 

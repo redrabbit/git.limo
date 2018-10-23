@@ -10,7 +10,7 @@ defmodule GitGud.RepoTest do
 
   test "creates a new repository with valid params", %{user: user} do
     assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))
-    assert user in repo.maintainers
+    assert user.id in Enum.map(repo.maintainers, &(&1.id))
     assert File.dir?(Repo.workdir(repo))
     assert Git.repository_bare?(git_handle)
     assert Git.repository_empty?(git_handle)
@@ -62,8 +62,8 @@ defmodule GitGud.RepoTest do
     test "adds user to repository maintainers", %{user: user1, repo: repo1} do
       assert {:ok, user2} = User.create(factory(:user))
       assert {:ok, repo2} = Repo.update(repo1, maintainers: [user2|repo1.maintainers])
-      assert user1 in repo2.maintainers
-      assert user2 in repo2.maintainers
+      assert user1.id in Enum.map(repo2.maintainers, &(&1.id))
+      assert user2.id in Enum.map(repo2.maintainers, &(&1.id))
     end
 
     test "deletes repository", %{repo: repo1} do

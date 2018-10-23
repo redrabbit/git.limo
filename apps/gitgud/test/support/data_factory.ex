@@ -14,7 +14,12 @@ defmodule GitGud.DataFactory do
   Returns a map representing `GitGud.User` registration params.
   """
   def user do
-    %{name: name(), username: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true), email: String.replace(email(), "'", ""), password: "qwertz"}
+    %{
+      name: name(),
+      username: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true),
+      emails: [%{email: String.replace(email(), "'", "")}],
+      password: "qwertz"
+    }
   end
 
   @doc """

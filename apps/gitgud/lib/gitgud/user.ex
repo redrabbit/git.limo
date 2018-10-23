@@ -14,11 +14,12 @@ defmodule GitGud.User do
 
   alias GitGud.Repo
   alias GitGud.SSHKey
+  alias GitGud.UserEmail
 
   schema "users" do
     field     :username,      :string
     field     :name,          :string
-    field     :email,         :string
+    has_many  :emails,        UserEmail, on_delete: :delete_all
     has_many  :repos,         Repo, foreign_key: :owner_id
     has_many  :ssh_keys,      SSHKey, on_delete: :delete_all
     field     :password,      :string, virtual: true
@@ -30,7 +31,7 @@ defmodule GitGud.User do
     id: pos_integer,
     username: binary,
     name: binary,
-    email: binary,
+    emails: [UserEmail.t],
     repos: [Repo.t],
     ssh_keys: [SSHKey.t],
     password: binary,
@@ -97,10 +98,10 @@ defmodule GitGud.User do
   @spec registration_changeset(map) :: Ecto.Changeset.t
   def registration_changeset(params \\ %{}) do
     %__MODULE__{}
-    |> cast(params, [:username, :name, :email, :password])
-    |> validate_required([:username, :name, :email, :password])
+    |> cast(params, [:username, :name, :password])
+    |> cast_assoc(:emails, required: true)
+    |> validate_required([:username, :name, :password])
     |> validate_username()
-    |> validate_email()
     |> validate_password()
   end
 
@@ -110,9 +111,8 @@ defmodule GitGud.User do
   @spec profile_changeset(map) :: Ecto.Changeset.t
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:name, :email])
-    |> validate_required([:name, :email])
-    |> validate_email()
+    |> cast(params, [:name])
+    |> validate_required([:name])
   end
 
   @doc """
@@ -120,7 +120,7 @@ defmodule GitGud.User do
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
-    user = DB.one(from u in __MODULE__, where: u.email == ^email_or_username or u.username == ^email_or_username)
+    user = DB.one(from u in __MODULE__, join: e in assoc(u, :emails), where: u.username == ^email_or_username or e.email == ^email_or_username)
     case check_pass(user, password) do
       {:ok, user} -> user
       {:error, _reason} -> nil
@@ -138,12 +138,6 @@ defmodule GitGud.User do
     |> validate_length(:username, min: 3, max: 24)
     |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
     |> unique_constraint(:username)
-  end
-
-  defp validate_email(changeset) do
-    changeset
-    |> validate_format(:email, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
-    |> unique_constraint(:email)
   end
 
   defp validate_password(changeset) do

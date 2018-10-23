@@ -59,7 +59,7 @@ defmodule GitGud.AuthorizationTest do
         |> Enum.split_with(&(&1.public))
       assert length(public) == 3
       assert length(private) == 2
-      assert Enum.all?(private, &(user in &1.maintainers))
+      assert Enum.all?(private, fn repo -> user.id in Enum.map(repo.maintainers, &(&1.id)) end)
     end
   end
 
@@ -73,7 +73,7 @@ defmodule GitGud.AuthorizationTest do
         |> Enum.split_with(&(&1.public))
       assert length(public) == 3
       assert length(private) == 2
-      assert Enum.all?(private, &(user in &1.maintainers))
+      assert Enum.all?(private, fn repo -> user.id in Enum.map(repo.maintainers, &(&1.id)) end)
     end
   end
 
