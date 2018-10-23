@@ -17,13 +17,15 @@
     <%= error_tag f, :username %>
   </div>
 
-  <div class="field">
-    <%= label f, :email, class: "label" %>
-    <div class="control">
-      <%= email_input f, :email, class: "input" %>
+  <%= inputs_for f, :emails, fn fe -> %>
+    <div class="field">
+      <%= label fe, :email, class: "label" %>
+      <div class="control">
+        <%= email_input fe, :email, class: "input" %>
+      </div>
+      <%= error_tag fe, :email %>
     </div>
-    <%= error_tag f, :email %>
-  </div>
+  <% end %>
 
   <div class="field">
     <%= label f, :password, class: "label" %>
@@ -37,5 +39,3 @@
     <%= submit "Register", class: "button is-link" %>
   </div>
 <% end %>
-
-

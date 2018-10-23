@@ -45,7 +45,7 @@ defmodule GitGud.User do
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    changeset = registration_changeset(Map.new(params))
+    changeset = registration_changeset(%__MODULE__{}, Map.new(params))
     DB.insert(changeset)
   end
 
@@ -95,9 +95,9 @@ defmodule GitGud.User do
   @doc """
   Returns a registration changeset for the given `params`.
   """
-  @spec registration_changeset(map) :: Ecto.Changeset.t
-  def registration_changeset(params \\ %{}) do
-    %__MODULE__{}
+  @spec registration_changeset(t, map) :: Ecto.Changeset.t
+  def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
+    user
     |> cast(params, [:username, :name, :password])
     |> cast_assoc(:emails, required: true)
     |> validate_required([:username, :name, :password])

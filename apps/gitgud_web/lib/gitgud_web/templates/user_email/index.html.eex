@@ -1,0 +1,40 @@
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle">Emails</h2>
+    </div>
+  </div>
+</div>
+
+<nav class="panel">
+  <%= for email <- @user.emails do %>
+    <div class="panel-block">
+      <div class="level" style="width:100%">
+        <div class="level-left">
+          <div class="level-item"><%= email.email %></div>
+          <div class="level-item"><%= email_tags(@conn, email) %></div>
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <a class="delete"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</nav>
+
+<%= form_for @changeset, Routes.user_email_path(@conn, :create), [as: :email], fn f -> %>
+  <div class="field">
+    <%= label f, :email, "Add email address", class: "label" %>
+    <div class="field is-grouped">
+      <div class="control is-expanded">
+        <%= email_input f, :email, class: "input" %>
+      </div>
+      <div class="control">
+        <%= submit "Add email", class: "button is-success" %>
+      </div>
+    </div>
+    <%= error_tag f, :email %>
+  </div>
+<% end %>

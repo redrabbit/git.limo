@@ -11,7 +11,7 @@
         <%= navigation_item @conn, :user, [only: [:edit, :update]], :a, href: Routes.user_path(@conn, :edit) do %>Profile<% end %>
       </li>
       <li>
-        <a class="has-text-grey-light">Emails</a>
+        <%= navigation_item @conn, :user_email, [], :a, href: Routes.user_email_path(@conn, :index) do %>Emails<% end %>
       </li>
       <li>
         <a class="has-text-grey-light">Password</a>

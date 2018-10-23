@@ -12,7 +12,7 @@ defmodule GitGud.Web.AuthenticationPlugTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = authenticate_session(conn, [])
     assert authenticated?(conn)
-    assert current_user(conn) == user
+    assert current_user(conn).id == user.id
   end
 
   test "fails to authenticates with invalid user session", %{conn: conn} do
@@ -25,7 +25,7 @@ defmodule GitGud.Web.AuthenticationPlugTest do
     conn = put_req_header(conn, "authorization", "Bearer " <> Phoenix.Token.sign(GitGud.Web.Endpoint, "bearer", user.id))
     conn = authenticate_bearer_token(conn, [])
     assert authenticated?(conn)
-    assert current_user(conn) == user
+    assert current_user(conn).id == user.id
   end
 
   test "fails to authenticates with invalid bearer token", %{conn: conn} do

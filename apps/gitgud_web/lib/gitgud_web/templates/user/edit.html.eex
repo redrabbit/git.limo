@@ -10,14 +10,6 @@
   </div>
 
   <div class="field">
-    <%= label f, :email, class: "label" %>
-    <div class="control">
-      <%= email_input f, :email, class: "input" %>
-    </div>
-    <%= error_tag f, :email %>
-  </div>
-
-  <div class="field">
     <%= submit "Update repository", class: "button is-link" %>
   </div>
 <% end %>
