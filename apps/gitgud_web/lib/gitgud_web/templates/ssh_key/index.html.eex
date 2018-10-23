@@ -17,6 +17,9 @@
       <p class="card-header-title">
         <%= ssh_key.name %>
       </p>
+      <div class="card-header-icon" aria-label="more options">
+        <a class="delete"></a>
+      </div>
     </header>
     <div class="card-content">
       <div class="content">
