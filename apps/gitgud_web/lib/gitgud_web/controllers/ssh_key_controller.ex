@@ -35,9 +35,9 @@ defmodule GitGud.Web.SSHKeyController do
   Creates a new SSH key.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"ssh_key" => key_params} = _params) do
+  def create(conn, %{"ssh_key" => ssh_key_params} = _params) do
     user = current_user(conn)
-    case SSHKey.create(Map.put(key_params, "user_id", user.id)) do
+    case SSHKey.create(Map.put(ssh_key_params, "user_id", user.id)) do
       {:ok, ssh_key} ->
         conn
         |> put_flash(:info, "SSH key '#{ssh_key.name}' added.")
@@ -49,4 +49,22 @@ defmodule GitGud.Web.SSHKeyController do
         |> render("new.html", changeset: %{changeset|action: :insert})
     end
   end
+
+  @doc """
+  Deletes a SSH key.
+  """
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"ssh_key" => ssh_key_params} = _params) do
+    user = DB.preload(current_user(conn), :ssh_keys)
+    ssh_key_id = String.to_integer(ssh_key_params["id"])
+    if ssh_key = Enum.find(user.ssh_keys, &(&1.id == ssh_key_id)) do
+      ssh_key = SSHKey.delete!(ssh_key)
+      conn
+      |> put_flash(:info, "SSH key '#{ssh_key.name}' deleted.")
+      |> redirect(to: Routes.ssh_key_path(conn, :index))
+    else
+      {:error, :bad_request}
+    end
+  end
+
 end

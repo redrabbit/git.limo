@@ -46,6 +46,22 @@ defmodule GitGud.SSHKey do
   end
 
   @doc """
+  Deletes the given `ssh_key`.
+  """
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def delete(%__MODULE__{} = ssh_key) do
+    DB.delete(ssh_key)
+  end
+
+  @doc """
+  Similar to `delete!/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec delete!(t) :: t
+  def delete!(%__MODULE__{} = ssh_key) do
+    DB.delete!(ssh_key)
+  end
+
+  @doc """
   Returns a SSH key changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t

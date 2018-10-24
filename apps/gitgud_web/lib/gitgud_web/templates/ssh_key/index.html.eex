@@ -18,7 +18,10 @@
         <%= ssh_key.name %>
       </p>
       <div class="card-header-icon" aria-label="more options">
-        <a class="delete"></a>
+        <%= form_for @conn, Routes.ssh_key_path(@conn, :delete), [method: :delete, as: :ssh_key], fn f -> %>
+          <%= hidden_input(f, :id, value: ssh_key.id) %>
+          <button type="submit" class="delete"></button>
+        <% end %>
       </div>
     </header>
     <div class="card-content">
