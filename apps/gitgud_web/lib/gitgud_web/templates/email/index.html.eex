@@ -16,7 +16,10 @@
         </div>
         <div class="level-right">
           <div class="level-item">
-            <a class="delete"></a>
+            <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
+              <%= hidden_input(f, :id, value: email.id) %>
+              <button type="submit" class="delete"></button>
+            <% end %>
           </div>
         </div>
       </div>

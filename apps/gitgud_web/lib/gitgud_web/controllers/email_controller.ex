@@ -14,7 +14,7 @@ defmodule GitGud.Web.EmailController do
   action_fallback GitGud.Web.FallbackController
 
   @doc """
-  Renders emails.
+  Renders emails address.
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, _params) do
@@ -24,12 +24,12 @@ defmodule GitGud.Web.EmailController do
   end
 
   @doc """
-  Creates a new email.
+  Creates a new email address.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"email" => key_params} = _params) do
+  def create(conn, %{"email" => email_params} = _params) do
     user = DB.preload(current_user(conn), :emails)
-    case Email.create(Map.put(key_params, "user_id", user.id)) do
+    case Email.create(Map.put(email_params, "user_id", user.id)) do
       {:ok, email} ->
         GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
@@ -40,6 +40,23 @@ defmodule GitGud.Web.EmailController do
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
         |> render("index.html", user: user, changeset: %{changeset|action: :insert})
+    end
+  end
+
+  @doc """
+  Deletes an email address.
+  """
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"email" => email_params} = _params) do
+    user = DB.preload(current_user(conn), :emails)
+    email_id = String.to_integer(email_params["id"])
+    if email = Enum.find(user.emails, &(&1.id == email_id)) do
+      email = Email.delete!(email)
+      conn
+      |> put_flash(:info, "Email '#{email.email}' deleted.")
+      |> redirect(to: Routes.email_path(conn, :index))
+    else
+      {:error, :bad_request}
     end
   end
 
@@ -63,14 +80,14 @@ defmodule GitGud.Web.EmailController do
   @doc """
   Verifies an email address.
   """
-  @spec resend(Plug.Conn.t, map) :: Plug.Conn.t
+  @spec verify(Plug.Conn.t, map) :: Plug.Conn.t
   def verify(conn, %{"token" => token} = _params) do
     user = DB.preload(current_user(conn), :emails)
     case Phoenix.Token.verify(conn, to_string(user.id), token, max_age: 86400) do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
-            Email.update!(email, verified: true)
+            email = Email.update!(email, verified: true)
             conn
             |> put_flash(:info, "Email '#{email.email}' verified.")
             |> redirect(to: Routes.email_path(conn, :index))
