@@ -80,7 +80,7 @@ defmodule GitGud.UserQuery do
   """
   @spec user_query(atom, term) :: Ecto.Query.t
   def user_query(:email = _key, val) do
-    from(u in User, join: e in assoc(u, :emails), where: e.email == ^val)
+    from(u in User, join: e in assoc(u, :emails), where: e.verified == true and e.email == ^val)
   end
 
   def user_query(key, val) do
@@ -111,7 +111,7 @@ defmodule GitGud.UserQuery do
   end
 
   def users_query(:email = _key, vals) when is_list(vals) do
-    from(u in User, join: e in assoc(u, :emails), where: e.email in ^vals)
+    from(u in User, join: e in assoc(u, :emails), where: e.verified == true and e.email in ^vals)
   end
 
   @doc """
