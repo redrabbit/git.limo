@@ -8,13 +8,13 @@
     <p class="menu-label">Account</p>
     <ul class="menu-list">
       <li>
-        <%= navigation_item @conn, :user, [only: [:edit, :update]], :a, href: Routes.user_path(@conn, :edit) do %>Profile<% end %>
+        <%= navigation_item @conn, :user, [only: [:edit_profile, :update_profile]], :a, href: Routes.user_path(@conn, :edit_profile) do %>Profile<% end %>
       </li>
       <li>
         <%= navigation_item @conn, :email, [], :a, href: Routes.email_path(@conn, :index) do %>Emails<% end %>
       </li>
       <li>
-        <a class="has-text-grey-light">Password</a>
+        <%= navigation_item @conn, :user, [only: [:edit_password, :update_password]], :a, href: Routes.user_path(@conn, :edit_password) do %>Password<% end %>
       </li>
     </ul>
     <p class="menu-label">Authentication</p>
@@ -31,4 +31,3 @@
     <%= render_inner_layout(@conn, assigns) %>
   </div>
 <% end %>
-

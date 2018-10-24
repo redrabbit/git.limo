@@ -34,7 +34,7 @@
 
               <div class="navbar-dropdown is-right">
                 <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
-                <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit) %>">Settings</a>
+                <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>
                 <hr class="navbar-divider">
                 <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
               </div>

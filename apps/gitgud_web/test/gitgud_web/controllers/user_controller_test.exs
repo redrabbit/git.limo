@@ -59,22 +59,22 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "renders user edit form if authenticated", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = get(conn, Routes.user_path(conn, :edit))
+      conn = get(conn, Routes.user_path(conn, :edit_profile))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">Settings</h1>)
     end
 
     test "fails to render user edit form if not authenticated", %{conn: conn} do
-      conn = get(conn, Routes.user_path(conn, :edit))
+      conn = get(conn, Routes.user_path(conn, :edit_profile))
       assert html_response(conn, 401) =~ "Unauthorized"
     end
 
     test "updates user profile with valid params", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update), profile: %{name: "Alice"})
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice"})
       user = UserQuery.by_id(user.id)
       assert user.name == "Alice"
       assert get_flash(conn, :info) == "Profile updated."
-      assert redirected_to(conn) == Routes.user_path(conn, :edit)
+      assert redirected_to(conn) == Routes.user_path(conn, :edit_profile)
     end
   end
 

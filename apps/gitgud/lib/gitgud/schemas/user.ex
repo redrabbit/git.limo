@@ -116,6 +116,18 @@ defmodule GitGud.User do
   end
 
   @doc """
+  Returns a password changeset for the given `params`.
+  """
+  @spec password_changeset(map) :: Ecto.Changeset.t
+  def password_changeset(%__MODULE__{} = user, params \\ %{}) do
+    user
+    |> cast(params, [:password])
+    |> validate_required([:password])
+    |> validate_old_password()
+    |> validate_password()
+  end
+
+  @doc """
   Returns the matching user for the given credentials; elsewhise returns `nil`.
   """
   @spec check_credentials(binary, binary) :: t | nil
@@ -136,6 +148,7 @@ defmodule GitGud.User do
   #
 
   defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
+  defp update_changeset(user, :password, params), do: password_changeset(user, params)
 
   defp validate_username(changeset) do
     changeset
@@ -147,7 +160,26 @@ defmodule GitGud.User do
   defp validate_password(changeset) do
     changeset
     |> validate_length(:password, min: 6)
+    |> validate_confirmation(:password)
     |> put_password_hash(:password)
+  end
+
+  defp validate_old_password(%{params: params} = changeset) do
+    error_param = "old_password"
+    error_field = String.to_atom(error_param)
+    errors =
+      case Map.get(params, error_param) do
+        value when is_nil(value) or value == "" ->
+          [{error_field, {"can't be blank", [validation: :required]}}]
+        value ->
+          case check_pass(changeset.data, value) do
+            {:ok, _user} -> []
+            {:error, _reason} -> [{error_field, {"does not match old password", [validation: :old_password]}}]
+          end
+      end
+    %{changeset|validations: [{:old_password, []}|changeset.validations],
+                errors: errors ++ changeset.errors,
+                valid?: changeset.valid? and errors == []}
   end
 
   defp put_password_hash(changeset, field) do
