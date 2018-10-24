@@ -31,6 +31,7 @@ defmodule GitGud.Web.UserController do
   def create(conn, %{"user" => user_params} = _params) do
     case User.create(user_params) do
       {:ok, user} ->
+        GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(hd(user.emails)))
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome!")

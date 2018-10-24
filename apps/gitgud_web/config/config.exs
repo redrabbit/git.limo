@@ -18,8 +18,12 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :gitgud_web, :generators,
-  context_app: :gitgud
+config :gitgud_web, :generators, context_app: :gitgud
+
+config :gitgud_web, GitGud.Mailer,
+  adapter: Bamboo.MailgunAdapter,
+  api_key: "35980566b64ebcde760705856d180f58-4836d8f5-ceb7f151",
+  domain: "sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

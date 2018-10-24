@@ -40,6 +40,7 @@ defmodule GitGud.Web.Mixfile do
      {:absinthe, "~> 1.4"},
      {:absinthe_relay, "~> 1.4"},
      {:absinthe_phoenix, "~> 1.4"},
+     {:bamboo, "~> 1.1"},
      {:gettext, "~> 0.15"},
      {:timex, "~> 3.4"},
      {:gitgud, in_umbrella: true}]

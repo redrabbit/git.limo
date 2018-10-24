@@ -4,16 +4,14 @@ defmodule GitGud.Web.EmailView do
 
   alias GitGud.Email
 
-  import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
   @spec email_tags(Plug.Conn.t, Email.t) :: binary
   def email_tags(conn, email) do
     tags = []
-    tags = if tag = unverified_tag(conn, email), do: [tag|tags], else: tags
-
+    tags = if tag = verified_tag(conn, email), do: [tag|tags], else: tags
     content_tag(:div, [class: "field is-grouped is-grouped-multiline"], do:
-      for tag <- tags do
+      for tag <- Enum.reverse(tags) do
         content_tag(:div, [class: "control"], do: tag)
       end
     )
@@ -21,17 +19,26 @@ defmodule GitGud.Web.EmailView do
 
   @spec title(atom, map) :: binary
   def title(:index, _assigns), do: "Emails"
-  def title(:new, _assigns), do: "Add a new email"
 
   #
   # Helpers
   #
 
-  defp unverified_tag(_conn, %Email{verified: true}), do: nil
-  defp unverified_tag(conn, _email) do
-    content_tag(:div, [class: "tags has-addons"], do: [
-      content_tag(:span, [class: "tag"], do: "Unverified"),
-      link("resend", to: Routes.email_path(conn, :index), class: "tag is-link")
-    ])
+  defp verified_tag(_conn, %Email{verified: true}) do
+    content_tag(:span, [class: "tag is-success"], do: "Verified")
+  end
+
+  defp verified_tag(conn, email) do
+    form_for(conn, Routes.email_path(conn, :resend), [as: :email], &verified_tag_fields(&1, email))
+  end
+
+  defp verified_tag_fields(form, email) do
+    [
+      hidden_input(form, :id, value: email.id),
+      content_tag(:div, [class: "tags has-addons"], do: [
+        content_tag(:span, [class: "tag"], do: "Unverified"),
+        submit("resend", class: "button tag is-link", style: "line-height:1rem")
+      ])
+    ]
   end
 end

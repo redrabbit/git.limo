@@ -32,7 +32,7 @@
         <%= email_input f, :email, class: "input" %>
       </div>
       <div class="control">
-        <%= submit "Add email", class: "button is-success" %>
+        <%= submit "Add email", class: "button is-link" %>
       </div>
     </div>
     <%= error_tag f, :email %>
