@@ -1,13 +1,13 @@
-defmodule GitGud.Web.UserEmailView do
+defmodule GitGud.Web.EmailView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitGud.UserEmail
+  alias GitGud.Email
 
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
-  @spec email_tags(Plug.Conn.t, UserEmail.t) :: binary
+  @spec email_tags(Plug.Conn.t, Email.t) :: binary
   def email_tags(conn, email) do
     tags = []
     tags = if tag = unverified_tag(conn, email), do: [tag|tags], else: tags
@@ -27,12 +27,11 @@ defmodule GitGud.Web.UserEmailView do
   # Helpers
   #
 
-  defp unverified_tag(_conn, %UserEmail{verified: true}), do: nil
-  defp unverified_tag(conn, _user_email) do
+  defp unverified_tag(_conn, %Email{verified: true}), do: nil
+  defp unverified_tag(conn, _email) do
     content_tag(:div, [class: "tags has-addons"], do: [
       content_tag(:span, [class: "tag"], do: "Unverified"),
-      link("resend", to: Routes.user_email_path(conn, :index), class: "tag is-link")
+      link("resend", to: Routes.email_path(conn, :index), class: "tag is-link")
     ])
   end
 end
-

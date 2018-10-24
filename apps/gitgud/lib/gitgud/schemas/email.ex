@@ -1,4 +1,4 @@
-defmodule GitGud.UserEmail do
+defmodule GitGud.Email do
   @moduledoc """
   User email schema.
   """
@@ -10,7 +10,7 @@ defmodule GitGud.UserEmail do
 
   import Ecto.Changeset
 
-  schema "users_emails" do
+  schema "emails" do
     belongs_to :user, User
     field      :email, :string
     field      :verified, :boolean, default: false
@@ -47,8 +47,8 @@ defmodule GitGud.UserEmail do
   Returns a SSH key changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
-  def changeset(%__MODULE__{} = user_email, params \\ %{}) do
-    user_email
+  def changeset(%__MODULE__{} = email, params \\ %{}) do
+    email
     |> cast(params, [:user_id, :email])
     |> validate_required([:email])
     |> validate_format(:email, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
@@ -56,4 +56,3 @@ defmodule GitGud.UserEmail do
     |> foreign_key_constraint(:user_id)
   end
 end
-

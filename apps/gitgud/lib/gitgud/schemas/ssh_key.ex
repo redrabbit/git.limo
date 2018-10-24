@@ -10,7 +10,7 @@ defmodule GitGud.SSHKey do
 
   import Ecto.Changeset
 
-  schema "ssh_authentication_keys" do
+  schema "ssh_keys" do
     belongs_to :user, User
     field      :name, :string
     field      :data, :string, virtual: true

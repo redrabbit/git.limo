@@ -14,12 +14,12 @@ defmodule GitGud.User do
 
   alias GitGud.Repo
   alias GitGud.SSHKey
-  alias GitGud.UserEmail
+  alias GitGud.Email
 
   schema "users" do
     field     :username,      :string
     field     :name,          :string
-    has_many  :emails,        UserEmail, on_delete: :delete_all
+    has_many  :emails,        Email, on_delete: :delete_all
     has_many  :repos,         Repo, foreign_key: :owner_id
     has_many  :ssh_keys,      SSHKey, on_delete: :delete_all
     field     :password,      :string, virtual: true
@@ -31,7 +31,7 @@ defmodule GitGud.User do
     id: pos_integer,
     username: binary,
     name: binary,
-    emails: [UserEmail.t],
+    emails: [Email.t],
     repos: [Repo.t],
     ssh_keys: [SSHKey.t],
     password: binary,

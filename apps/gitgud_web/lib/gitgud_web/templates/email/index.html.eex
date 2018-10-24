@@ -24,7 +24,7 @@
   <% end %>
 </nav>
 
-<%= form_for @changeset, Routes.user_email_path(@conn, :create), [as: :email], fn f -> %>
+<%= form_for @changeset, Routes.email_path(@conn, :create), [as: :email], fn f -> %>
   <div class="field">
     <%= label f, :email, "Add email address", class: "label" %>
     <div class="field is-grouped">

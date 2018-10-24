@@ -6,7 +6,7 @@ defmodule GitGud.Web.UserController do
   use GitGud.Web, :controller
 
   alias GitGud.User
-  alias GitGud.UserEmail
+  alias GitGud.Email
   alias GitGud.UserQuery
 
   plug :ensure_authenticated when action in [:edit, :update]
@@ -20,7 +20,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    changeset = User.registration_changeset(%User{emails: [UserEmail.changeset(%UserEmail{})]})
+    changeset = User.registration_changeset(%User{emails: [Email.changeset(%Email{})]})
     render(conn, "new.html", changeset: changeset)
   end
 
