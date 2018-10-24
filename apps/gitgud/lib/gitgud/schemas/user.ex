@@ -120,8 +120,12 @@ defmodule GitGud.User do
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
-    user = DB.one(from u in __MODULE__, join: e in assoc(u, :emails), where: u.username == ^email_or_username or (e.verified == true and e.email == ^email_or_username))
-    case check_pass(user, password) do
+    query = from u in __MODULE__,
+           join: e in assoc(u, :emails),
+       or_where: u.username == ^email_or_username,
+       or_where: e.verified == true and e.email == ^email_or_username,
+        preload: [emails: e]
+    case check_pass(DB.one(query), password) do
       {:ok, user} -> user
       {:error, _reason} -> nil
     end
