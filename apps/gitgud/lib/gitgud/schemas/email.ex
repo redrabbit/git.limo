@@ -1,6 +1,6 @@
 defmodule GitGud.Email do
   @moduledoc """
-  User email schema.
+  Email schema  and helper functions.
   """
 
   use Ecto.Schema
@@ -44,7 +44,40 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Returns a SSH key changeset for the given `params`.
+  Updates the given `email` with the given `params`.
+  """
+  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update(%__MODULE__{} = email, params) do
+    DB.update(change(email, Map.take(Map.new(params), [:verified])))
+  end
+
+  @doc """
+  Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update!(t, map|keyword) :: t
+  def update!(%__MODULE__{} = email, params) do
+    DB.update!(change(email, Map.take(Map.new(params), [:verified])))
+  end
+
+  @doc """
+  Deletes the given `email`.
+  """
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def delete(%__MODULE__{} = email) do
+    DB.delete(email)
+  end
+
+  @doc """
+  Similar to `delete!/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec delete!(t) :: t
+  def delete!(%__MODULE__{} = email) do
+    DB.delete!(email)
+  end
+
+
+  @doc """
+  Returns an email changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = email, params \\ %{}) do

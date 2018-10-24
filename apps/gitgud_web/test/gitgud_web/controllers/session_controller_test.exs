@@ -44,6 +44,7 @@ defmodule GitGud.Web.SessionControllerTest do
   #
 
   defp create_user(context) do
-    Map.put(context, :user, User.create!(factory(:user)))
+    user = User.create!(factory(:user))
+    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &GitGud.Email.update!(&1, verified: true))))
   end
 end

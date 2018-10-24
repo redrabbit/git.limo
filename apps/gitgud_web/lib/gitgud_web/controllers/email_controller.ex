@@ -70,8 +70,7 @@ defmodule GitGud.Web.EmailController do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
-            changeset = Ecto.Changeset.change(email, verified: true)
-            email = DB.update!(changeset)
+            Email.update!(email, verified: true)
             conn
             |> put_flash(:info, "Email '#{email.email}' verified.")
             |> redirect(to: Routes.email_path(conn, :index))
