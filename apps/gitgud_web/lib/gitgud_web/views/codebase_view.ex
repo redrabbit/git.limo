@@ -216,8 +216,13 @@ defmodule GitGud.Web.CodebaseView do
     authors
     |> Enum.map(&(&1.email))
     |> Enum.uniq()
-    |> UserQuery.by_email()
-    |> Map.new(&{&1.email, &1})
+    |> UserQuery.by_email(preload: :emails)
+    |> Enum.flat_map(&flatten_user_emails/1)
+    |> Map.new()
+  end
+
+  defp flatten_user_emails(user) do
+    Enum.map(user.emails, &{&1.email, user})
   end
 
   defp compare_timestamps(one, two) do
