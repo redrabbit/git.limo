@@ -514,7 +514,7 @@ defmodule GitGud.Repo do
     with {:ok, parent} <- GitCommit.first_parent(commit),
          {:ok, parent_tree} <- git_tree(parent),
          {:ok, diff} <- git_diff(parent_tree, tree, pathspec: pathspec),
-         {:ok, deltas} <- GitDiff.deltas(diff) do !Enum.empty?(deltas)
+         {:ok, size} <- GitDiff.delta_count(diff) do size > 0
     else
       {:error, _reason} -> false
     end

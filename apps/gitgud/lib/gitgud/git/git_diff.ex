@@ -26,6 +26,14 @@ defmodule GitGud.GitDiff do
   end
 
   @doc """
+  Returns the number of deltas in the given `diff`.
+  """
+  @spec delta_count(t) :: {:ok, non_neg_integer} | {:error, term}
+  def delta_count(%__MODULE__{__git__: diff} = _diff) do
+    Git.diff_delta_count(diff)
+  end
+
+  @doc """
   Returns a list of deltas for the given `diff`.
   """
   @spec deltas(t) :: {:ok, [{Git.diff_delta, [{Git.diff_hunk, [Git.diff_line]}]}]} | {:error, term}
