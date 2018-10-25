@@ -274,6 +274,7 @@ static ErlNifFunc geef_funcs[] =
 	{"pathspec_match_tree", 2, geef_pathspec_match_tree},
 	{"diff_tree",   4, geef_diff_tree},
 	{"diff_stats",  1, geef_diff_stats},
+	{"diff_delta_count", 1, geef_diff_delta_count},
 	{"diff_deltas", 1, geef_diff_deltas},
 	{"diff_format", 2, geef_diff_format},
 	{"index_new",   0, geef_index_new},

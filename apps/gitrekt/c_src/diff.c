@@ -258,6 +258,17 @@ geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_diff_delta_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_diff *diff;
+
+	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
+		return enif_make_badarg(env);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_uint64(env, git_diff_num_deltas(diff->diff)));
+}
+
+ERL_NIF_TERM
 geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	diff_pack pack;

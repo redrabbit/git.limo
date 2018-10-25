@@ -641,6 +641,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the number of deltas in the given `diff`.
+  """
+  @spec diff_delta_count(diff) :: {:ok, non_neg_integer} | {:error, term}
+  def diff_delta_count(_diff) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns a list of deltas for the given `diff`.
   """
   @spec diff_deltas(diff) :: {:ok, [{diff_delta, [{diff_hunk, [diff_line]}]}]} | {:error, term}
