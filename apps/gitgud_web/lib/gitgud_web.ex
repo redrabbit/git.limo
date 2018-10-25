@@ -43,6 +43,7 @@ defmodule GitGud.Web do
       import GitGud.Web.DateTimeFormatter
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
+      import GitGud.Web.Gravatar
       import GitGud.Web.NavigationHelpers
       import GitGud.Web.PaginationHelpers
       import GitGud.Web.ReactComponents
