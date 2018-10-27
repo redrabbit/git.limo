@@ -9,11 +9,11 @@
   "dependencies": {
     "@absinthe/socket": "^0.1.10",
     "@absinthe/socket-relay": "^0.1.11",
-    "@fortawesome/fontawesome-free": "^5.3.1",
-    "bulma": "^0.7.1",
+    "@fortawesome/fontawesome-free": "^5.4.2",
+    "bulma": "^0.7.2",
     "phoenix": "file:../../../deps/phoenix",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
+    "react": "^16.6.0",
+    "react-dom": "^16.6.0",
     "react-relay": "^1.6.2"
   },
   "devDependencies": {
@@ -26,7 +26,7 @@
     "copy-webpack-plugin": "^4.5.0",
     "css-loader": "^0.28.11",
     "file-loader": "^2.0.0",
-    "graphql": "^14.0.0",
+    "graphql": "^14.0.2",
     "mini-css-extract-plugin": "^0.4.0",
     "node-sass": "^4.9.4",
     "optimize-css-assets-webpack-plugin": "^4.0.0",
