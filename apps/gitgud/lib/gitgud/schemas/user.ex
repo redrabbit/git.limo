@@ -10,20 +10,23 @@ defmodule GitGud.User do
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
+  alias Ecto.Multi
+
   alias GitGud.DB
 
+  alias GitGud.Email
   alias GitGud.Repo
   alias GitGud.SSHKey
-  alias GitGud.Email
 
   schema "users" do
-    field     :username,      :string
-    field     :name,          :string
-    has_many  :emails,        Email, on_delete: :delete_all
-    has_many  :repos,         Repo, foreign_key: :owner_id
-    has_many  :ssh_keys,      SSHKey, on_delete: :delete_all
-    field     :password,      :string, virtual: true
-    field     :password_hash, :string
+    field       :username,      :string
+    field       :name,          :string
+    belongs_to  :primary_email, Email
+    has_many    :emails,        Email, on_delete: :delete_all
+    has_many    :repos,         Repo, foreign_key: :owner_id
+    has_many    :ssh_keys,      SSHKey, on_delete: :delete_all
+    field       :password,      :string, virtual: true
+    field       :password_hash, :string
     timestamps()
   end
 
@@ -31,6 +34,7 @@ defmodule GitGud.User do
     id: pos_integer,
     username: binary,
     name: binary,
+    primary_email: Email.t,
     emails: [Email.t],
     repos: [Repo.t],
     ssh_keys: [SSHKey.t],
@@ -45,8 +49,12 @@ defmodule GitGud.User do
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    changeset = registration_changeset(%__MODULE__{}, Map.new(params))
-    DB.insert(changeset)
+    case create_user_with_primary_email(params) do
+      {:ok, multi} ->
+        {:ok, multi.user_with_primary_email}
+      {:error, _multi_name, changeset, _changes} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -146,6 +154,21 @@ defmodule GitGud.User do
   #
   # Helpers
   #
+
+  defp create_user_with_primary_email(params) do
+    Multi.new()
+    |> Multi.insert(:user, registration_changeset(%__MODULE__{}, Map.new(params)))
+    |> Multi.run(:user_with_primary_email, &create_primary_email/2)
+    |> DB.transaction()
+  end
+
+  defp create_primary_email(db, %{user: user}) do
+    user
+    |> struct(primary_email: nil)
+    |> change()
+    |> put_assoc(:primary_email, hd(user.emails))
+    |> db.update()
+  end
 
   defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
   defp update_changeset(user, :password, params), do: password_changeset(user, params)

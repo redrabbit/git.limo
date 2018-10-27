@@ -8,6 +8,7 @@ defmodule GitGud.UserQuery do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.Email
   alias GitGud.User
 
   import Ecto.Query
@@ -80,7 +81,7 @@ defmodule GitGud.UserQuery do
   """
   @spec user_query(atom, term) :: Ecto.Query.t
   def user_query(:email = _key, val) do
-    from(u in User, join: e in assoc(u, :emails), where: e.verified == true and e.email == ^val)
+    from(u in User, join: e in assoc(u, :emails), where: e.email == ^val)
   end
 
   def user_query(key, val) do
@@ -111,7 +112,7 @@ defmodule GitGud.UserQuery do
   end
 
   def users_query(:email = _key, vals) when is_list(vals) do
-    from(u in User, join: e in assoc(u, :emails), where: e.verified == true and e.email in ^vals)
+    from(u in User, join: e in assoc(u, :emails), where: e.email in ^vals, preload: [emails: e])
   end
 
   @doc """
@@ -140,6 +141,18 @@ defmodule GitGud.UserQuery do
   #
   # Helpers
   #
+
+  defp join_preload(query, :emails, _viewer) do
+    query
+    |> join(:left, [u], e in assoc(u, :emails))
+    |> preload([u, e], [emails: e])
+  end
+
+  defp join_preload(query, :primary_email, _viewer) do
+    query
+    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id)
+    |> preload([u, e], [primary_email: e])
+  end
 
   defp join_preload(query, :repos, nil) do
     query

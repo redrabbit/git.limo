@@ -9,5 +9,9 @@ defmodule GitGud.DB.Migrations.AddUsersEmails do
       timestamps()
     end
     create unique_index("emails", [:email])
+
+    alter table("users") do
+      add :primary_email_id,  references("emails", on_delete: :nilify_all)
+    end
   end
 end

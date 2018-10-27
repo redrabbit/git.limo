@@ -57,12 +57,12 @@ defmodule GitGud.UserTest do
 
     test "checks credentials", %{user: user} do
       assert User.check_credentials(user.username, "qwertz")
-      assert User.check_credentials(hd(user.emails).email, "qwertz")
+      assert User.check_credentials(user.primary_email.email, "qwertz")
     end
 
     test "fails to check credentials with weak password", %{user: user} do
       refute User.check_credentials(user.username, "abc")
-      refute User.check_credentials(hd(user.emails).email, "abc")
+      refute User.check_credentials(user.primary_email.email, "abc")
     end
   end
 
