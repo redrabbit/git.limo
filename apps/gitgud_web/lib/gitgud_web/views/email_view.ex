@@ -3,13 +3,15 @@ defmodule GitGud.Web.EmailView do
   use GitGud.Web, :view
 
   alias GitGud.Email
+  alias GitGud.User
 
   import Phoenix.HTML.Tag
 
-  @spec email_tags(Plug.Conn.t, Email.t) :: binary
-  def email_tags(conn, email) do
+  @spec email_tags(Plug.Conn.t, User.t, Email.t) :: binary
+  def email_tags(conn, user, email) do
     tags = []
-    tags = if tag = verified_tag(conn, email), do: [tag|tags], else: tags
+    tags = if tag = primary_tag(conn, user, email), do: [tag|tags], else: tags
+    tags = if tag = verified_tag(conn, user, email), do: [tag|tags], else: tags
     content_tag(:div, [class: "field is-grouped is-grouped-multiline"], do:
       for tag <- Enum.reverse(tags) do
         content_tag(:div, [class: "control"], do: tag)
@@ -24,13 +26,21 @@ defmodule GitGud.Web.EmailView do
   # Helpers
   #
 
-  defp verified_tag(_conn, %Email{verified: true}) do
+  defp primary_tag(_conn, %User{id: user_id, primary_email_id: email_id}, %Email{id: email_id, user_id: user_id}) do
+    content_tag(:span, [class: "tag is-primary"], do: "Primary")
+  end
+
+  defp primary_tag(_conn, %User{}, %Email{}), do: nil
+
+  defp verified_tag(_conn, %User{id: user_id}, %Email{user_id: user_id, verified: true}) do
     content_tag(:span, [class: "tag is-success"], do: "Verified")
   end
 
-  defp verified_tag(conn, email) do
+  defp verified_tag(conn, %User{id: user_id}, %Email{user_id: user_id} = email) do
     form_for(conn, Routes.email_path(conn, :resend), [as: :email], &verified_tag_fields(&1, email))
   end
+
+  defp verified_tag(_conn, %User{}, %Email{}), do: nil
 
   defp verified_tag_fields(form, email) do
     [

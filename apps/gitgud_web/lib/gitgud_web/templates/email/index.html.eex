@@ -12,16 +12,18 @@
       <div class="level" style="width:100%">
         <div class="level-left">
           <div class="level-item"><%= email.email %></div>
-          <div class="level-item"><%= email_tags(@conn, email) %></div>
+          <div class="level-item"><%= email_tags(@conn, @user, email) %></div>
         </div>
-        <div class="level-right">
-          <div class="level-item">
-            <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
-              <%= hidden_input(f, :id, value: email.id) %>
-              <button type="submit" class="delete"></button>
-            <% end %>
+        <%= if email.id != @user.primary_email_id do %>
+          <div class="level-right">
+            <div class="level-item">
+              <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
+                <%= hidden_input(f, :id, value: email.id) %>
+                <button type="submit" class="delete"></button>
+              <% end %>
+            </div>
           </div>
-        </div>
+        <% end %>
       </div>
     </div>
   <% end %>
