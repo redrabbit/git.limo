@@ -142,15 +142,27 @@ defmodule GitGud.UserQuery do
   # Helpers
   #
 
-  defp join_preload(query, :emails, _viewer) do
+  defp join_preload(query, :emails, nil) do
     query
-    |> join(:left, [u], e in assoc(u, :emails))
+    |> join(:left, [u], e in assoc(u, :emails), e.verified == true)
     |> preload([u, e], [emails: e])
   end
 
-  defp join_preload(query, :primary_email, _viewer) do
+  defp join_preload(query, :emails, viewer) do
     query
-    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id)
+    |> join(:left, [u], e in assoc(u, :emails), e.verified == true or e.user_id == ^viewer.id)
+    |> preload([u, e], [emails: e])
+  end
+
+  defp join_preload(query, :primary_email, nil) do
+    query
+    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id and e.verified == true)
+    |> preload([u, e], [primary_email: e])
+  end
+
+  defp join_preload(query, :primary_email, viewer) do
+    query
+    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id and e.user_id == ^viewer.id)
     |> preload([u, e], [primary_email: e])
   end
 
