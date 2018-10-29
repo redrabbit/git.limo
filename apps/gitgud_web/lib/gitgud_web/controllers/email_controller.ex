@@ -7,6 +7,7 @@ defmodule GitGud.Web.EmailController do
 
   alias GitGud.DB
   alias GitGud.Email
+  alias GitGud.User
 
   plug :ensure_authenticated
   plug :put_layout, :user_settings
@@ -40,6 +41,29 @@ defmodule GitGud.Web.EmailController do
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
         |> render("index.html", user: user, changeset: %{changeset|action: :insert})
+    end
+  end
+
+  @doc """
+  Updates an email address.
+  """
+  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
+  def update(conn, %{"email" => email_params} = _params) do
+    user = DB.preload(current_user(conn), [:primary_email, :emails])
+    email_id = String.to_integer(email_params["primary_email"])
+    if email = Enum.find(user.emails, &(&1.id == email_id)) do
+      if email != user.primary_email do
+        User.update!(user, :primary_email, email)
+        conn
+        |> put_flash(:info, "Email '#{email.email}' is now your primary email.")
+        |> redirect(to: Routes.email_path(conn, :index))
+      else
+        conn
+        |> put_flash(:info, "Email '#{email.email}' is already your primary email.")
+        |> redirect(to: Routes.email_path(conn, :index))
+      end
+    else
+      {:error, :bad_request}
     end
   end
 

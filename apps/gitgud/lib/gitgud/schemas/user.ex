@@ -21,7 +21,7 @@ defmodule GitGud.User do
   schema "users" do
     field       :username,      :string
     field       :name,          :string
-    belongs_to  :primary_email, Email
+    belongs_to  :primary_email, Email, on_replace: :update
     has_many    :emails,        Email, on_delete: :delete_all
     has_many    :repos,         Repo, foreign_key: :owner_id
     has_many    :ssh_keys,      SSHKey, on_delete: :delete_all
@@ -71,17 +71,17 @@ defmodule GitGud.User do
   @doc """
   Updates the given `user` with the given `params`.
   """
-  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, atom, map|keyword|any) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
-    DB.update(update_changeset(user, changeset_type, Map.new(params)))
+    DB.update(update_changeset(user, changeset_type, params))
   end
 
   @doc """
   Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, atom, map|keyword) :: t
+  @spec update!(t, atom, map|keyword|any) :: t
   def update!(%__MODULE__{} = user, changeset_type, params) do
-    DB.update!(update_changeset(user, changeset_type, Map.new(params)))
+    DB.update!(update_changeset(user, changeset_type, params))
   end
 
   @doc """
@@ -164,14 +164,22 @@ defmodule GitGud.User do
 
   defp create_primary_email(db, %{user: user}) do
     user
-    |> struct(primary_email: nil)
-    |> change()
-    |> put_assoc(:primary_email, hd(user.emails))
+    |> update_changeset(:primary_email, hd(user.emails))
     |> db.update()
   end
 
-  defp update_changeset(user, :profile, params), do: profile_changeset(user, params)
-  defp update_changeset(user, :password, params), do: password_changeset(user, params)
+  defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
+  defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
+  defp update_changeset(user, field, value) do
+    if __MODULE__.__schema__(:association, field) do
+      user
+      |> struct(primary_email: nil)
+      |> change()
+      |> put_assoc(field, value)
+    else
+      change(user, [{field, value}])
+    end
+  end
 
   defp validate_username(changeset) do
     changeset

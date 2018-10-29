@@ -33,13 +33,32 @@
   <div class="field">
     <%= label f, :email, "Add email address", class: "label" %>
     <div class="field is-grouped">
-      <div class="control is-expanded">
+      <div class="control">
         <%= email_input f, :email, class: "input" %>
       </div>
       <div class="control">
-        <%= submit "Add email", class: "button is-link" %>
+        <%= submit "Add", class: "button is-link" %>
       </div>
     </div>
     <%= error_tag f, :email %>
+  </div>
+<% end %>
+
+<hr />
+
+<%= form_for @changeset, Routes.email_path(@conn, :update), [method: :put, as: :email], fn f -> %>
+  <div class="field">
+    <%= label f, :primary_email, "Primary email address", class: "label" %>
+    <div class="field is-grouped">
+      <div class="control">
+        <div class="select">
+          <%= select f, :primary_email, Enum.map(@user.emails, &{&1.email, &1.id}), selected: @user.primary_email_id %>
+          <%= error_tag f, :primary_email %>
+        </div>
+      </div>
+      <div class="control">
+        <%= submit "Save", class: "button is-link" %>
+      </div>
+    </div>
   </div>
 <% end %>

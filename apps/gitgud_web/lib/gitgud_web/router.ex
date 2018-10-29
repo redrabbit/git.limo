@@ -42,6 +42,7 @@ defmodule GitGud.Web.Router do
 
     get "/settings/emails", EmailController, :index
     post "/settings/emails", EmailController, :create
+    put "/settings/emails", EmailController, :update
     delete "/settings/emails", EmailController, :delete
     post "/settings/emails/verify", EmailController, :resend
     get "/settings/emails/verify/:token", EmailController, :verify
