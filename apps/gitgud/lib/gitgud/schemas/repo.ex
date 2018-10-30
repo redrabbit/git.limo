@@ -1,6 +1,9 @@
 defmodule GitGud.Repo do
   @moduledoc """
-  Repository schema and helper functions.
+  Git repository schema and helper functions.
+
+  A `GitGud.Repo` is used to create, update and delete Git repositories.
+  It also provides a set of helper functions to run Git related functions.
   """
 
   use Ecto.Schema
@@ -49,22 +52,18 @@ defmodule GitGud.Repo do
   }
 
   @doc """
-  Returns a repository changeset for the given `params`.
-  """
-  @spec changeset(t, map) :: Ecto.Changeset.t
-  def changeset(%__MODULE__{} = repository, params \\ %{}) do
-    repository
-    |> cast(params, [:owner_id, :name, :public, :description])
-    |> validate_required([:owner_id, :name])
-    |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
-    |> validate_length(:name, min: 3, max: 80)
-    |> assoc_constraint(:owner)
-    |> unique_constraint(:name, name: :repositories_owner_id_name_index)
-    |> put_maintainers(params)
-  end
-
-  @doc """
   Creates a new repository.
+
+  ```elixir
+  {:ok, repo, git_handle} = GitGud.Repo.create(
+    owner_id: user.id,
+    name: "gitgud",
+    description: "GitHub clone entirely written in Elixir.",
+    public: true
+  )
+  ```
+
+  This function validates the given `params` using `changeset/2`.
   """
   @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
@@ -94,6 +93,12 @@ defmodule GitGud.Repo do
 
   @doc """
   Updates the given `repo` with the given `params`.
+
+  ```elixir
+  {:ok, repo} = GitGud.Repo.update(repo, description: "Host open-source project without hassle.")
+  ```
+
+  This function validates the given `params` using `changeset/2`.
   """
   @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
   def update(%__MODULE__{} = repo, params) do
@@ -120,6 +125,8 @@ defmodule GitGud.Repo do
 
   @doc """
   Deletes the given `repo`.
+
+  Repository associations (maintainers, issues, etc.) and related Git data will automatically be deleted.
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = repo) do
@@ -142,7 +149,24 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Returns a repository changeset for the given `params`.
+  """
+  @spec changeset(t, map) :: Ecto.Changeset.t
+  def changeset(%__MODULE__{} = repo, params \\ %{}) do
+    repo
+    |> cast(params, [:owner_id, :name, :public, :description])
+    |> validate_required([:owner_id, :name])
+    |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
+    |> validate_length(:name, min: 3, max: 80)
+    |> assoc_constraint(:owner)
+    |> unique_constraint(:name, name: :repositories_owner_id_name_index)
+    |> put_maintainers(params)
+  end
+
+  @doc """
   Returns the absolute path to the Git workdir for the given `repo`.
+
+  The path is a concatenation of `root_path/0`, `repo.owner.username` and `repo.name`.
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do

@@ -1,6 +1,8 @@
 defmodule GitGud.SSHKey do
   @moduledoc """
-  Secure Shell (SSH) authentication key schema.
+  Secure Shell (SSH) authentication key schema and helper functions.
+
+  An `GitGud.SSHKey` is used to authenticate users via *Public Key Authentication* in `GitGud.SSHServer`.
   """
 
   use Ecto.Schema
@@ -31,6 +33,12 @@ defmodule GitGud.SSHKey do
 
   @doc """
   Creates a new SSH key with the given `params`.
+
+  ```elixir
+  {:ok, ssh_key} = GitGud.SSHKey.create(user_id: user.id, name: "My SSH Key", data: "ssh-rsa AAAAB3NzaC1yc2...")
+  ```
+
+  This function validates the given `params` using `changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
@@ -63,6 +71,11 @@ defmodule GitGud.SSHKey do
 
   @doc """
   Returns a SSH key changeset for the given `params`.
+
+  If `:name` is omitted and the given public key contains a comment, the comment will be used as `:name`.
+
+  This function computes (see `:public_key.ssh_decode/2` and `:public_key.ssh_hostkey_fingerprint/1`)
+  and stores a fingerprint of the public key. It does not save the given `:data` into the database.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = ssh_key, params \\ %{}) do

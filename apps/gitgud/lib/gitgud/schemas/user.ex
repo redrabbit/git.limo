@@ -46,6 +46,18 @@ defmodule GitGud.User do
 
   @doc """
   Creates a new user with the given `params`.
+
+  ```elixir
+  {:ok, user} = GitGud.User.create(
+    username: "redrabbit",
+    name: "Mario Flach",
+    emails: [
+      %{email: "m.flach@almightycouch.com"}
+    ],
+    password: "qwertz"
+  )
+  ```
+  This function validates the given `params` using `registration_changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
@@ -70,6 +82,35 @@ defmodule GitGud.User do
 
   @doc """
   Updates the given `user` with the given `params`.
+
+  ```elixir
+  {:ok, user} = GitGud.User.update(user, username: "supermario", name: "Mario Bros")
+  ```
+
+  This function does not validate the given `params`. See `update/3` for changeset validation.
+  """
+  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update(%__MODULE__{} = user, params) do
+    DB.update(change(user, params))
+  end
+
+  @doc """
+  Updates the given `user` with the given `changeset_type` and `params`.
+
+  ```elixir
+  {:ok, user} = GitGud.User.update(user, :profile, name: "Mario Bros")
+  ```
+
+  Following changeset types are available:
+
+  * `:profile` -- see `profile_changeset/2`.
+  * `:password` -- see `password_changeset/2`.
+
+  This function can also be used to update associations, for example:
+
+  ```elixir
+  {:ok, user} = GitGud.User.update(user, :primary_email, email)
+  ```
   """
   @spec update(t, atom, map|keyword|any) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
@@ -79,6 +120,14 @@ defmodule GitGud.User do
   @doc """
   Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
+  @spec update!(t, map|keyword) :: t
+  def update!(%__MODULE__{} = user, params) do
+    DB.update!(change(user, params))
+  end
+
+  @doc """
+  Similar to `update/3`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
   @spec update!(t, atom, map|keyword|any) :: t
   def update!(%__MODULE__{} = user, changeset_type, params) do
     DB.update!(update_changeset(user, changeset_type, params))
@@ -86,6 +135,8 @@ defmodule GitGud.User do
 
   @doc """
   Deletes the given `user`.
+
+  User associations (emails, repositories, etc.) will automatically be deleted.
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = user) do
@@ -137,6 +188,14 @@ defmodule GitGud.User do
 
   @doc """
   Returns the matching user for the given credentials; elsewhise returns `nil`.
+
+  ```elixir
+  if user = GitGud.User.check_credentials("redrabbit", "qwertz") do
+    IO.puts "Welcome!"
+  else
+    IO.puts "Invalid login credentials."
+  end
+  ```
   """
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_username, password) do
@@ -177,7 +236,7 @@ defmodule GitGud.User do
       |> change()
       |> put_assoc(field, value)
     else
-      change(user, [{field, value}])
+      raise ArgumentError, message: "#{__MODULE__}.update_changeset/3 takes a changeset or a field assocation name; invalid #{inspect field}."
     end
   end
 

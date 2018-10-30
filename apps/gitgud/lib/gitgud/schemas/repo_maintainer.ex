@@ -1,6 +1,8 @@
 defmodule GitGud.RepoMaintainer do
   @moduledoc """
-  Repository maintainer schema.
+  Repository maintainer schema and helper functions.
+
+  A `GitGud.RepoMaintainer` is used to grant repository access to a given `GitGud.User`.
   """
 
   use Ecto.Schema
@@ -29,6 +31,12 @@ defmodule GitGud.RepoMaintainer do
 
   @doc """
   Creates a new maintainer with the given `params`.
+
+  ```elixir
+  {:ok, maintainer} = GitGud.RepoMaintainer.create(user_id: user.id, repo_id: repo.id)
+  ```
+
+  This function validates the given `params` using `changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
