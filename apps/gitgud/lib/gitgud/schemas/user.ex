@@ -81,20 +81,6 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Updates the given `user` with the given `params`.
-
-  ```elixir
-  {:ok, user} = GitGud.User.update(user, username: "supermario", name: "Mario Bros")
-  ```
-
-  This function does not validate the given `params`. See `update/3` for changeset validation.
-  """
-  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update(%__MODULE__{} = user, params) do
-    DB.update(change(user, params))
-  end
-
-  @doc """
   Updates the given `user` with the given `changeset_type` and `params`.
 
   ```elixir
@@ -115,14 +101,6 @@ defmodule GitGud.User do
   @spec update(t, atom, map|keyword|any) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
     DB.update(update_changeset(user, changeset_type, params))
-  end
-
-  @doc """
-  Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
-  """
-  @spec update!(t, map|keyword) :: t
-  def update!(%__MODULE__{} = user, params) do
-    DB.update!(change(user, params))
   end
 
   @doc """
@@ -232,7 +210,7 @@ defmodule GitGud.User do
   defp update_changeset(user, field, value) do
     if __MODULE__.__schema__(:association, field) do
       user
-      |> struct(primary_email: nil)
+      |> struct([{field, nil}])
       |> change()
       |> put_assoc(field, value)
     else
