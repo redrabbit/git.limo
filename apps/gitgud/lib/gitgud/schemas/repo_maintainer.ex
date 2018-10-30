@@ -17,6 +17,7 @@ defmodule GitGud.RepoMaintainer do
   schema "repositories_maintainers" do
     belongs_to :user, User
     belongs_to :repo, Repo
+    field :permission, :string
     timestamps()
   end
 
@@ -25,6 +26,7 @@ defmodule GitGud.RepoMaintainer do
     user: User.t,
     repo_id: pos_integer,
     repo: Repo.t,
+    permission: binary,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
   }
@@ -57,7 +59,8 @@ defmodule GitGud.RepoMaintainer do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = maintainer, params \\ %{}) do
     maintainer
-    |> cast(params, [:user_id, :repo_id])
+    |> cast(params, [:user_id, :repo_id, :permission])
     |> validate_required([:user_id, :repo_id])
+    |> validate_inclusion(:permission, ["read", "write", "admin"])
   end
 end
