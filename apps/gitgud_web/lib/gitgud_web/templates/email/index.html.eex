@@ -48,12 +48,12 @@
 
 <%= form_for @changeset, Routes.email_path(@conn, :update), [method: :put, as: :email], fn f -> %>
   <div class="field">
-    <%= label f, :primary_email, "Primary email address", class: "label" %>
+    <%= label f, :id, "Primary email address", class: "label" %>
     <div class="field is-grouped">
       <div class="control">
         <div class="select">
-          <%= select f, :primary_email, Enum.map(@user.emails, &{&1.email, &1.id}), selected: @user.primary_email_id %>
-          <%= error_tag f, :primary_email %>
+          <%= select f, :id, Enum.map(@user.emails, &{&1.email, &1.id}), selected: @user.primary_email_id %>
+          <%= error_tag f, :id %>
         </div>
       </div>
       <div class="control">
