@@ -47,7 +47,7 @@ defmodule GitGud.Web.RepoController do
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
   def edit(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :write) do
+      if authorized?(current_user(conn), repo, :admin) do
         changeset = Repo.changeset(repo)
         render(conn, "edit.html", repo: repo, changeset: changeset)
       end || {:error, :unauthorized}
@@ -61,7 +61,7 @@ defmodule GitGud.Web.RepoController do
   def update(conn, %{"username" => username, "repo_name" => repo_name, "repo" => repo_params} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(username, repo_name, viewer: user, preload: :maintainers) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :admin) do
         case Repo.update(repo, repo_params) do
           {:ok, repo} ->
             conn

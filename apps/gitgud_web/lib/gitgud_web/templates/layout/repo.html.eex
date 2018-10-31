@@ -33,7 +33,7 @@
           <span>Wiki</span>
         </a>
       </li>
-      <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :edit) do %>
+      <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :admin) do %>
         <%= navigation_item @conn, :repo, only: [:edit, :update] do %>
           <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
             <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>

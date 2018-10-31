@@ -67,25 +67,19 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Updates the given `email` with the given `params`.
-
-  ```elixir
-  {:ok, email} = GitGud.Email.update(email, verified: true)
-  ```
-
-  This function does not validate the given `params`.
+  Updates the verification status for the given `email`.
   """
-  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update(%__MODULE__{} = email, params) do
-    DB.update(change(email, Map.new(params)))
+  @spec update_verified(t, boolean) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update_verified(%__MODULE__{} = email, verified) do
+    DB.update(change(email, %{verified: verified}))
   end
 
   @doc """
-  Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `update_verified/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, map|keyword) :: t
-  def update!(%__MODULE__{} = email, params) do
-    DB.update!(change(email, Map.new(params)))
+  @spec update_verified!(t, boolean) :: t
+  def update_verified!(%__MODULE__{} = email, verified) do
+    DB.update!(change(email, %{verified: verified}))
   end
 
   @doc """

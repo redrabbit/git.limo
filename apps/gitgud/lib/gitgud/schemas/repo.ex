@@ -25,6 +25,7 @@ defmodule GitGud.Repo do
   alias GitGud.GitTree
 
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   schema "repositories" do
     belongs_to    :owner,       User
@@ -163,6 +164,27 @@ defmodule GitGud.Repo do
     |> validate_length(:name, min: 3, max: 80)
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
     |> put_maintainers()
+  end
+
+  @doc """
+  Returns the list of maintainers including permissions for the given `repo`.
+  """
+  @spec maintainers(t) :: [RepoMaintainer.t]
+  def maintainers(%__MODULE__{} = repo) do
+    query = from(m in GitGud.RepoMaintainer,
+           join: u in assoc(m, :user),
+          where: m.repo_id == ^repo.id,
+        preload: [user: u])
+    DB.all(query)
+  end
+
+  @doc """
+  Returns a single maintainer including permissions for the given `repo` and `user`.
+  """
+  @spec maintainer(t, User.t) :: RepoMaintainer.t | nil
+  def maintainer(%__MODULE__{} = repo, %User{id: user_id} = user) do
+    query = from(m in GitGud.RepoMaintainer, where: m.repo_id == ^repo.id and m.user_id == ^user_id)
+    if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
 
   @doc """
@@ -391,12 +413,19 @@ defmodule GitGud.Repo do
     def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
 
     # maintainers can read and write
-    def can?(%Repo{} = repo, %User{id: user_id}, action) when action in [:read, :write] do
-      repo = DB.preload(repo, :maintainers)
-      !!Enum.find(repo.maintainers, false, fn
-        %User{id: ^user_id} -> true
-        %User{} -> nil
-      end)
+    def can?(%Repo{} = repo, %User{} = user, action) do
+      if maintainer = Repo.maintainer(repo, user) do
+        cond do
+          action == :read && maintainer.permission in ["read", "write", "admin"] ->
+            true
+          action == :write && maintainer.permission in ["write", "admin"] ->
+            true
+          action == :admin && maintainer.permission == "admin" ->
+            true
+          true ->
+            false
+        end
+      end
     end
 
     # everything-else is forbidden

@@ -30,6 +30,7 @@ defmodule GitGud.Web.Router do
 
     get "/login", SessionController, :new
     post "/login", SessionController, :create
+
     get "/logout", SessionController, :delete
 
     get "/register", UserController, :new
@@ -37,6 +38,7 @@ defmodule GitGud.Web.Router do
 
     get "/settings/profile", UserController, :edit_profile
     put "/settings/profile", UserController, :update_profile
+
     get "/settings/password", UserController, :edit_password
     put "/settings/password", UserController, :update_password
 
@@ -57,15 +59,25 @@ defmodule GitGud.Web.Router do
 
     scope "/:username/:repo_name" do
       get "/", CodebaseController, :show
+
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
+
       get "/commit/:oid", CodebaseController, :commit
-      get "/commits", CodebaseController, :history
-      get "/commits/:revision/*path", CodebaseController, :history
+
+      get "/history", CodebaseController, :history
+      get "/history/:revision/*path", CodebaseController, :history
+
       get "/tree/:revision/*path", CodebaseController, :tree
       get "/blob/:revision/*path", CodebaseController, :blob
+
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update
+
+      get "/settings/maintainers", RepoMaintainerController, :index
+      post "/settings/maintainers", RepoMaintainerController, :create
+      put "/settings/maintainers", RepoMaintainerController, :update
+      delete "/settings/maintainers", RepoMaintainerController, :delete
     end
 
     get "/:username", UserController, :show

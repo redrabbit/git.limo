@@ -53,7 +53,7 @@ defmodule GitGud.Web.EmailController do
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
       if email != user.primary_email do
-        User.update!(user, :primary_email, email)
+        email = User.update!(user, :primary_email, email)
         conn
         |> put_flash(:info, "Email '#{email.email}' is now your primary email.")
         |> redirect(to: Routes.email_path(conn, :index))
@@ -111,7 +111,7 @@ defmodule GitGud.Web.EmailController do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
-            email = Email.update!(email, verified: true)
+            email = Email.update_verified!(email, true)
             conn
             |> put_flash(:info, "Email '#{email.email}' verified.")
             |> redirect(to: Routes.email_path(conn, :index))

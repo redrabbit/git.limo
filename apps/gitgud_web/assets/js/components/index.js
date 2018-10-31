@@ -1,2 +1,2 @@
 export BranchSelect from "./BranchSelect"
-export UsersInput from "./UsersInput"
+export UserInput from "./UserInput"

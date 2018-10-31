@@ -19,6 +19,8 @@ defmodule GitGud.Web do
 
       import GitGud.Authorization, only: [authorized?: 3]
 
+      import GitGud.GraphQL.Schema, only: [from_relay_id: 1, to_relay_id: 1, to_relay_id: 2]
+
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, current_user: 1, ensure_authenticated: 2]
       import GitGud.Web.Gettext
     end

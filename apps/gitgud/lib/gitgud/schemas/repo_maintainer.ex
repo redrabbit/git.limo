@@ -13,7 +13,6 @@ defmodule GitGud.RepoMaintainer do
 
   import Ecto.Changeset
 
-  @primary_key false
   schema "repositories_maintainers" do
     belongs_to :user, User
     belongs_to :repo, Repo
@@ -54,6 +53,32 @@ defmodule GitGud.RepoMaintainer do
   end
 
   @doc """
+  Updates the `permission` of the given `maintainer`.
+  """
+  @spec update_permission(t, binary) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update_permission(%__MODULE__{} = maintainer, permission) do
+    DB.update(changeset(maintainer, %{permission: permission}))
+  end
+
+  @doc """
+  Similar to `update_permission/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_permission!(t, binary) :: t
+  def update_permission!(%__MODULE__{} = maintainer, permission) do
+    DB.update!(changeset(maintainer, %{permission: permission}))
+  end
+
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def delete(%__MODULE__{} = maintainer) do
+    DB.delete(maintainer)
+  end
+
+  @spec delete(t) :: t
+  def delete!(%__MODULE__{} = maintainer) do
+    DB.delete!(maintainer)
+  end
+
+  @doc """
   Returns a maintainer changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
@@ -61,6 +86,7 @@ defmodule GitGud.RepoMaintainer do
     maintainer
     |> cast(params, [:user_id, :repo_id, :permission])
     |> validate_required([:user_id, :repo_id])
+    |> unique_constraint(:user_id, name: "repositories_maintainers_user_id_repo_id_index")
     |> validate_inclusion(:permission, ["read", "write", "admin"])
   end
 end
