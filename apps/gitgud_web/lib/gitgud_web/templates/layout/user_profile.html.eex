@@ -1,34 +1,71 @@
 <%= render_layout "app.html", assigns do %>
-  <h1 class="title"><%= @user.name %></h1>
-  <h2 class="subtitle"><%= @user.username %></h2>
+  <div class="columns">
+    <div class="column is-one-quarter">
+      <%= gravatar(@user, size: 516) %>
 
-  <div class="tabs">
-    <ul>
-      <li>
-        <a class="has-text-grey-light">
-          <span class="icon"><i class="fa fa-address-card" aria-hidden="true"></i></span>
-          <span>Overview</span>
-        </a>
-      </li>
-      <%= navigation_item @conn, :user, :show do %>
-        <a href="<%= Routes.user_path(@conn, :show, @user) %>">
-          <span class="icon"><i class="fa fa-boxes" aria-hidden="true"></i></span>
-          <span>Repositories</span>
-        </a>
-      <% end %>
-      <li>
-        <a class="has-text-grey-light">
-          <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
-          <span>Organizations</span>
-        </a>
-      </li>
-    </ul>
+      <h1 class="title"><%= @user.name %></h1>
+      <h2 class="subtitle"><%= @user.username %></h2>
+
+      <p class="has-text-grey"><%= @user.bio %></p>
+
+      <hr />
+
+      <ul>
+        <%= if @user.location do %>
+          <li>
+            <span class="icon has-text-grey">
+              <i class="fa fa-map-marker"></i>
+            </span>
+            <%= @user.location %>
+          </li>
+        <% end %>
+        <%= if @user.public_email do %>
+          <li>
+            <span class="icon has-text-grey">
+              <i class="fa fa-envelope"></i>
+            </span>
+            <a href="mailto:<%= @user.public_email.email %>"><%= @user.public_email.email %></a>
+          </li>
+        <% end %>
+        <%= if @user.url do %>
+          <li>
+            <span class="icon has-text-grey">
+              <i class="fa fa-link"></i>
+            </span>
+            <a href="<%= @user.url %>"><%= @user.url %></a>
+          </li>
+        <% end %>
+      </ul>
+
+    </div>
+    <div class="column">
+      <div class="tabs">
+        <ul>
+          <li>
+            <a class="has-text-grey-light">
+              <span class="icon"><i class="fa fa-address-card" aria-hidden="true"></i></span>
+              <span>Overview</span>
+            </a>
+          </li>
+          <%= navigation_item @conn, :user, :show do %>
+            <a href="<%= Routes.user_path(@conn, :show, @user) %>">
+              <span class="icon"><i class="fa fa-boxes" aria-hidden="true"></i></span>
+              <span>Repositories</span>
+            </a>
+          <% end %>
+          <li>
+            <a class="has-text-grey-light">
+              <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
+              <span>Organizations</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <br />
+
+      <%= render_inner_layout(@conn, assigns) %>
+    </div>
   </div>
 
-  <br />
-
-  <div class="container">
-    <%= render_inner_layout(@conn, assigns) %>
-  </div>
 <% end %>
-

@@ -2,6 +2,7 @@ defmodule GitGud.UserTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
+  alias GitGud.Email
   alias GitGud.User
 
   test "creates a new user with valid params" do
@@ -57,12 +58,12 @@ defmodule GitGud.UserTest do
 
     test "checks credentials", %{user: user} do
       assert User.check_credentials(user.username, "qwertz")
-      assert User.check_credentials(user.primary_email.email, "qwertz")
+      assert User.check_credentials(hd(user.emails).email, "qwertz")
     end
 
     test "fails to check credentials with weak password", %{user: user} do
       refute User.check_credentials(user.username, "abc")
-      refute User.check_credentials(user.primary_email.email, "abc")
+      refute User.check_credentials(hd(user.emails).email, "abc")
     end
   end
 
@@ -72,6 +73,6 @@ defmodule GitGud.UserTest do
 
   defp create_user(context) do
     user = User.create!(factory(:user))
-    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &GitGud.Email.update!(&1, verified: true))))
+    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
   end
 end

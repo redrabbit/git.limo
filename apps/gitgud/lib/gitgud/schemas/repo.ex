@@ -167,23 +167,23 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns the list of maintainers including permissions for the given `repo`.
+  Returns the list of associated `GitGud.RepoMaintainer` for the given `repo`.
   """
   @spec maintainers(t) :: [RepoMaintainer.t]
-  def maintainers(%__MODULE__{} = repo) do
-    query = from(m in GitGud.RepoMaintainer,
+  def maintainers(%__MODULE__{id: repo_id} = _repo) do
+    query = from(m in RepoMaintainer,
            join: u in assoc(m, :user),
-          where: m.repo_id == ^repo.id,
+          where: m.repo_id == ^repo_id,
         preload: [user: u])
     DB.all(query)
   end
 
   @doc """
-  Returns a single maintainer including permissions for the given `repo` and `user`.
+  Returns a single `GitGud.RepoMaintainer` for the given `repo` and `user`.
   """
   @spec maintainer(t, User.t) :: RepoMaintainer.t | nil
-  def maintainer(%__MODULE__{} = repo, %User{id: user_id} = user) do
-    query = from(m in GitGud.RepoMaintainer, where: m.repo_id == ^repo.id and m.user_id == ^user_id)
+  def maintainer(%__MODULE__{id: repo_id} = _repo, %User{id: user_id} = user) do
+    query = from(m in RepoMaintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
     if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
 
@@ -406,13 +406,13 @@ defmodule GitGud.Repo do
   defimpl GitGud.AuthorizationPolicies do
     alias GitGud.Repo
 
-    # everybody can read public repos
+    # Everybody can read public repos.
     def can?(%Repo{public: true}, _user, :read), do: true
 
-    # owner can do everything
+    # Owner can do everything
     def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
 
-    # maintainers can read and write
+    # Maintainers can perform action if he has granted permission to do so.
     def can?(%Repo{} = repo, %User{} = user, action) do
       if maintainer = Repo.maintainer(repo, user) do
         cond do
@@ -428,7 +428,7 @@ defmodule GitGud.Repo do
       end
     end
 
-    # everything-else is forbidden
+    # Everything-else is forbidden.
     def can?(%Repo{}, _user, _actions), do: false
   end
 

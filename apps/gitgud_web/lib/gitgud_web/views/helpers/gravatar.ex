@@ -3,9 +3,25 @@ defmodule GitGud.Web.Gravatar do
   Conveniences for generating Gravatar URLs.
   """
 
+  alias GitGud.Email
+  alias GitGud.User
+
+  import Phoenix.HTML.Tag
+
   @domain "gravatar.com/avatar/"
 
-  def gravatar_url(email, opts \\ []) do
+  @spec gravatar(User.t|Email.t|binary, keyword) :: binary
+  def gravatar(email, opts \\ []) do
+    opts = Keyword.put_new(opts, :size, 20)
+    {size, opts} = Keyword.get_and_update(opts, :size, &{&1, &1*2})
+    img_tag(gravatar_url(email, opts), class: "avatar", width: size)
+  end
+
+  @spec gravatar_url(User.t|Email.t|binary, keyword) :: binary
+  def gravatar_url(email, opts \\ [])
+  def gravatar_url(%User{primary_email: email}, opts), do: gravatar_url(email, opts)
+  def gravatar_url(%Email{email: email}, opts), do: gravatar_url(email, opts)
+  def gravatar_url(email, opts) when is_binary(email) do
     {secure, opts} = Keyword.pop(opts, :secure, true)
     %URI{}
     |> host(secure)

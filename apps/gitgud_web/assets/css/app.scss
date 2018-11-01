@@ -14,6 +14,12 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
   font-family: $family-monospace;
 }
 
+.avatar {
+  margin: 0 2px;
+  border-radius: 10%;
+  vertical-align: text-bottom;
+}
+
 .repo-grid {
   .card {
     width: 100%;

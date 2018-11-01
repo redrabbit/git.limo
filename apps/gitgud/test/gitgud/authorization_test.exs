@@ -102,19 +102,19 @@ defmodule GitGud.AuthorizationTest do
     end
   end
 
+  test "user has :admin access to private repositories he owns", %{repos: repos} do
+    for repo <- Enum.filter(repos, &(!&1.public)) do
+      assert Authorization.authorized?(repo.owner, repo, :admin)
+    end
+  end
+
   test "user has :read access to private repositories he maintains", %{repos: repos} do
     for repo <- Enum.filter(repos, &(!&1.public)) do
       assert Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :read))
     end
   end
 
-  test "user has :write access to private repositories he maintains", %{repos: repos} do
-    for repo <- Enum.filter(repos, &(!&1.public)) do
-      assert Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :write))
-    end
-  end
-
-  test "filters repositories based on user and action", %{repos: repos} do
+  test "filters repositories for anon", %{repos: repos} do
     {public, private} = Enum.split_with(repos, &(&1.public))
     assert Authorization.filter(nil, public, :read) == public
     assert Enum.empty?(Authorization.filter(nil, private, :read))

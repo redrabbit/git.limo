@@ -10,8 +10,6 @@ defmodule GitGud.User do
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
-  alias Ecto.Multi
-
   alias GitGud.DB
 
   alias GitGud.Email
@@ -22,6 +20,10 @@ defmodule GitGud.User do
     field       :username,      :string
     field       :name,          :string
     belongs_to  :primary_email, Email, on_replace: :update
+    belongs_to  :public_email,  Email, on_replace: :update
+    field       :bio,           :string
+    field       :url,           :string
+    field       :location,      :string
     has_many    :emails,        Email, on_delete: :delete_all
     has_many    :repos,         Repo, foreign_key: :owner_id
     has_many    :ssh_keys,      SSHKey, on_delete: :delete_all
@@ -35,6 +37,10 @@ defmodule GitGud.User do
     username: binary,
     name: binary,
     primary_email: Email.t,
+    public_email: Email.t,
+    bio: binary,
+    url: binary,
+    location: binary,
     emails: [Email.t],
     repos: [Repo.t],
     ssh_keys: [SSHKey.t],
@@ -61,12 +67,7 @@ defmodule GitGud.User do
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    case create_user_with_primary_email(params) do
-      {:ok, multi} ->
-        {:ok, multi.user_with_primary_email}
-      {:error, _multi_name, changeset, _changes} ->
-        {:error, changeset}
-    end
+    DB.insert(registration_changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
@@ -74,10 +75,7 @@ defmodule GitGud.User do
   """
   @spec create!(map|keyword) :: t
   def create!(params) do
-    case create(params) do
-      {:ok, user} -> user
-      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
-    end
+    DB.insert!(registration_changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
@@ -98,7 +96,8 @@ defmodule GitGud.User do
   {:ok, user} = GitGud.User.update(user, :primary_email, email)
   ```
   """
-  @spec update(t, atom, map|keyword|any) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, atom, struct) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
     DB.update(update_changeset(user, changeset_type, params))
   end
@@ -106,7 +105,8 @@ defmodule GitGud.User do
   @doc """
   Similar to `update/3`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, atom, map|keyword|any) :: t
+  @spec update!(t, atom, map|keyword) :: t
+  @spec update!(t, atom, struct) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update!(%__MODULE__{} = user, changeset_type, params) do
     DB.update!(update_changeset(user, changeset_type, params))
   end
@@ -135,10 +135,11 @@ defmodule GitGud.User do
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:username, :name, :password])
+    |> cast(params, [:username, :name, :bio, :url, :location, :password])
     |> cast_assoc(:emails, required: true)
-    |> validate_required([:username, :name, :password])
+    |> validate_required([:username, :password])
     |> validate_username()
+    |> validate_url()
     |> validate_password()
   end
 
@@ -148,8 +149,9 @@ defmodule GitGud.User do
   @spec profile_changeset(map) :: Ecto.Changeset.t
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:name])
-    |> validate_required([:name])
+    |> cast(params, [:name, :public_email_id, :bio, :url, :location])
+    |> assoc_constraint(:public_email)
+    |> validate_url()
   end
 
   @doc """
@@ -192,22 +194,9 @@ defmodule GitGud.User do
   # Helpers
   #
 
-  defp create_user_with_primary_email(params) do
-    Multi.new()
-    |> Multi.insert(:user, registration_changeset(%__MODULE__{}, Map.new(params)))
-    |> Multi.run(:user_with_primary_email, &create_primary_email/2)
-    |> DB.transaction()
-  end
-
-  defp create_primary_email(db, %{user: user}) do
-    user
-    |> update_changeset(:primary_email, hd(user.emails))
-    |> db.update()
-  end
-
   defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
   defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
-  defp update_changeset(user, field, value) do
+  defp update_changeset(user, field, value) when field in [:primary_email, :public_email] do
     if __MODULE__.__schema__(:association, field) do
       user
       |> struct([{field, nil}])
@@ -223,6 +212,19 @@ defmodule GitGud.User do
     |> validate_length(:username, min: 3, max: 24)
     |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
     |> unique_constraint(:username)
+  end
+
+  def validate_url(changeset) do
+    if url = get_change(changeset, :url) do
+      case URI.parse(url) do
+        %URI{scheme: nil} ->
+          add_error(changeset, :url, "invalid")
+        %URI{host: nil} ->
+          add_error(changeset, :url, "invalid")
+        %URI{} ->
+          changeset
+      end
+    end || changeset
   end
 
   defp validate_password(changeset) do

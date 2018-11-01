@@ -6,6 +6,7 @@ defmodule GitGud.Web.EmailController do
   use GitGud.Web, :controller
 
   alias GitGud.DB
+
   alias GitGud.Email
   alias GitGud.User
 
@@ -17,11 +18,11 @@ defmodule GitGud.Web.EmailController do
   @doc """
   Renders emails address.
   """
-  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
-  def index(conn, _params) do
+  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
+  def edit(conn, _params) do
     user = DB.preload(current_user(conn), :emails)
     changeset = Email.changeset(%Email{})
-    render(conn, "index.html", user: user, changeset: changeset)
+    render(conn, "edit.html", user: user, changeset: changeset)
   end
 
   @doc """
@@ -35,12 +36,12 @@ defmodule GitGud.Web.EmailController do
         GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
         |> put_flash(:info, "Email '#{email.email}' added.")
-        |> redirect(to: Routes.email_path(conn, :index))
+        |> redirect(to: Routes.email_path(conn, :edit))
       {:error, changeset} ->
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
-        |> render("index.html", user: user, changeset: %{changeset|action: :insert})
+        |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
     end
   end
 
@@ -48,19 +49,19 @@ defmodule GitGud.Web.EmailController do
   Updates an email address.
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
-  def update(conn, %{"email" => email_params} = _params) do
+  def update(conn, %{"primary_email" => email_params} = _params) do
     user = DB.preload(current_user(conn), [:primary_email, :emails])
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
       if email != user.primary_email do
-        email = User.update!(user, :primary_email, email)
+        User.update!(user, :primary_email, email)
         conn
         |> put_flash(:info, "Email '#{email.email}' is now your primary email.")
-        |> redirect(to: Routes.email_path(conn, :index))
+        |> redirect(to: Routes.email_path(conn, :edit))
       else
         conn
         |> put_flash(:info, "Email '#{email.email}' is already your primary email.")
-        |> redirect(to: Routes.email_path(conn, :index))
+        |> redirect(to: Routes.email_path(conn, :edit))
       end
     else
       {:error, :bad_request}
@@ -78,7 +79,7 @@ defmodule GitGud.Web.EmailController do
       email = Email.delete!(email)
       conn
       |> put_flash(:info, "Email '#{email.email}' deleted.")
-      |> redirect(to: Routes.email_path(conn, :index))
+      |> redirect(to: Routes.email_path(conn, :edit))
     else
       {:error, :bad_request}
     end
@@ -95,7 +96,7 @@ defmodule GitGud.Web.EmailController do
       GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
       conn
       |> put_flash(:info, "A verification email has been sent to '#{email.email}'.")
-      |> redirect(to: Routes.email_path(conn, :index))
+      |> redirect(to: Routes.email_path(conn, :edit))
     else
       {:error, :bad_request}
     end
@@ -111,28 +112,31 @@ defmodule GitGud.Web.EmailController do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
-            email = Email.update_verified!(email, true)
+            email = Email.verify!(email)
+            unless user.primary_email_id do
+              User.update!(user, :primary_email, email)
+            end
             conn
             |> put_flash(:info, "Email '#{email.email}' verified.")
-            |> redirect(to: Routes.email_path(conn, :index))
+            |> redirect(to: Routes.email_path(conn, :edit))
           else
             conn
             |> put_flash(:info, "Email '#{email.email}' already verified.")
-            |> redirect(to: Routes.email_path(conn, :index))
+            |> redirect(to: Routes.email_path(conn, :edit))
           end
         else
           conn
           |> put_flash(:error, "Invalid verification token.")
-          |> redirect(to: Routes.email_path(conn, :index))
+          |> redirect(to: Routes.email_path(conn, :edit))
         end
       {:error, :invalid} ->
         conn
         |> put_flash(:error, "Invalid verification token.")
-        |> redirect(to: Routes.email_path(conn, :index))
+        |> redirect(to: Routes.email_path(conn, :edit))
       {:error, :expired} ->
         conn
         |> put_flash(:error, "Verification token expired.")
-        |> redirect(to: Routes.email_path(conn, :index))
+        |> redirect(to: Routes.email_path(conn, :edit))
     end
   end
 end

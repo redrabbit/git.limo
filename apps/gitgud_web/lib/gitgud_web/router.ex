@@ -42,7 +42,7 @@ defmodule GitGud.Web.Router do
     get "/settings/password", UserController, :edit_password
     put "/settings/password", UserController, :update_password
 
-    get "/settings/emails", EmailController, :index
+    get "/settings/emails", EmailController, :edit
     post "/settings/emails", EmailController, :create
     put "/settings/emails", EmailController, :update
     delete "/settings/emails", EmailController, :delete
@@ -74,7 +74,7 @@ defmodule GitGud.Web.Router do
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update
 
-      get "/settings/maintainers", RepoMaintainerController, :index
+      get "/settings/maintainers", RepoMaintainerController, :edit
       post "/settings/maintainers", RepoMaintainerController, :create
       put "/settings/maintainers", RepoMaintainerController, :update
       delete "/settings/maintainers", RepoMaintainerController, :delete

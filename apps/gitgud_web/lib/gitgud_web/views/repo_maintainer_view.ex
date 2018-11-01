@@ -10,5 +10,5 @@ defmodule GitGud.Web.RepoMaintainerView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:index, %{repo: repo}), do: "Maintainers · #{repo.owner.username}/#{repo.name}"
+  def title(:edit, %{repo: repo}), do: "Maintainers · #{repo.owner.username}/#{repo.name}"
 end

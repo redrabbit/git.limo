@@ -9,6 +9,41 @@
     <%= error_tag f, :name %>
   </div>
 
+  <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.email, &1.id}) do %>
+    <div class="field">
+      <%= label f, :public_email_id, "Public email address", class: "label" %>
+      <div class="control">
+        <div class="select">
+          <%= select f, :public_email_id, verified_emails, prompt: "Don't show my email address", selected: @user.public_email_id %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= label f, :bio, class: "label" %>
+    <div class="control">
+      <%= textarea f, :bio, class: "textarea" %>
+    </div>
+    <%= error_tag f, :bio %>
+  </div>
+
+  <div class="field">
+    <%= label f, :url, "Website", class: "label" %>
+    <div class="control">
+      <%= text_input f, :url, class: "input" %>
+    </div>
+    <%= error_tag f, :url %>
+  </div>
+
+  <div class="field">
+    <%= label f, :location, class: "label" %>
+    <div class="control">
+      <%= text_input f, :location, class: "input" %>
+    </div>
+    <%= error_tag f, :location %>
+  </div>
+
   <div class="field">
     <%= submit "Update profile", class: "button is-link" %>
   </div>

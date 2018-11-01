@@ -17,12 +17,6 @@
 
   <body>
     <nav class="navbar is-warning" role="navigation" aria-label="dropdown navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="https://bulma.io">
-          <img src="https://bulma.io/images/bulma-logo.png" alt="Bulma: a modern CSS framework based on Flexbox" width="112" height="28">
-        </a>
-      </div>
-
       <div class="navbar-menu">
         <div class="navbar-start">
         </div>
@@ -48,8 +42,8 @@
       </div>
     </nav>
 
-    <main class="section">
-      <div class="container">
+    <main class="container">
+      <div class="section">
         <%= if info = get_flash(@conn, :info) do %>
           <article class="message is-primary is-small">
             <div class="message-header">

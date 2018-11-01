@@ -17,12 +17,12 @@ defmodule GitGud.Web.RepoMaintainerController do
   @doc """
   Renders maintainers.
   """
-  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
-  def index(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
+  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
+  def edit(conn, %{"username" => username, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         changeset = RepoMaintainer.changeset(%RepoMaintainer{})
-        render(conn, "index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: changeset)
+        render(conn, "edit.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: changeset)
       end || {:error, :unauthorized}
     end  || {:error, :not_found}
   end
@@ -40,13 +40,13 @@ defmodule GitGud.Web.RepoMaintainerController do
             user = UserQuery.by_id(maintainer.user_id)
             conn
             |> put_flash(:info, "Maintainer '#{user.username}' added.")
-            |> redirect(to: Routes.repo_maintainer_path(conn, :index, username, repo_name))
+            |> redirect(to: Routes.repo_maintainer_path(conn, :edit, username, repo_name))
           {:error, changeset} ->
             IO.inspect changeset
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: %{changeset|action: :insert})
+            |> render("edit.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}
@@ -65,11 +65,11 @@ defmodule GitGud.Web.RepoMaintainerController do
             maintainer = RepoMaintainer.update_permission!(maintainer, maintainer_params["permission"])
             conn
             |> put_flash(:info, "Maintainer '#{maintainer.user.username}' permission set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.repo_maintainer_path(conn, :index, username, repo_name))
+            |> redirect(to: Routes.repo_maintainer_path(conn, :edit, username, repo_name))
           else
             conn
             |> put_flash(:info, "Maintainer '#{maintainer.user.username}' permission already set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.repo_maintainer_path(conn, :index, username, repo_name))
+            |> redirect(to: Routes.repo_maintainer_path(conn, :edit, username, repo_name))
           end
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
@@ -88,7 +88,7 @@ defmodule GitGud.Web.RepoMaintainerController do
           maintainer = RepoMaintainer.delete!(maintainer)
           conn
           |> put_flash(:info, "Maintainer '#{maintainer.user.username}' deleted.")
-          |> redirect(to: Routes.repo_maintainer_path(conn, :index, username, repo_name))
+          |> redirect(to: Routes.repo_maintainer_path(conn, :edit, username, repo_name))
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
     end || {:error, :not_found}

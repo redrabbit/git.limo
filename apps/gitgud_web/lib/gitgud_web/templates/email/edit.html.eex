@@ -33,7 +33,7 @@
   <div class="field">
     <%= label f, :email, "Add email address", class: "label" %>
     <div class="field is-grouped">
-      <div class="control">
+      <div class="control is-expanded">
         <%= email_input f, :email, class: "input" %>
       </div>
       <div class="control">
@@ -46,19 +46,38 @@
 
 <hr />
 
-<%= form_for @changeset, Routes.email_path(@conn, :update), [method: :put, as: :email], fn f -> %>
-  <div class="field">
-    <%= label f, :id, "Primary email address", class: "label" %>
-    <div class="field is-grouped">
-      <div class="control">
-        <div class="select">
-          <%= select f, :id, Enum.map(@user.emails, &{&1.email, &1.id}), selected: @user.primary_email_id %>
-          <%= error_tag f, :id %>
+<%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.email, &1.id}) do %>
+  <%= unless Enum.empty?(verified_emails) do %>
+    <%= form_for @conn, Routes.email_path(@conn, :update), [method: :put, as: :primary_email], fn f -> %>
+      <div class="field">
+        <%= label f, :id, "Primary email address", class: "label" %>
+        <div class="field is-grouped">
+          <div class="control">
+            <div class="select">
+              <%= select f, :id, verified_emails, selected: @user.primary_email_id %>
+            </div>
+          </div>
+          <div class="control">
+            <%= submit "Save", class: "button is-link" %>
+          </div>
         </div>
       </div>
-      <div class="control">
-        <%= submit "Save", class: "button is-link" %>
+    <% end %>
+  <% else %>
+    <div class="field">
+      <label class="label">Primary email address</label>
+      <div class="field is-grouped">
+        <div class="control">
+          <div class="select">
+            <select disabled>
+              <option>Verify an email address first</option>
+            </select>
+          </div>
+        </div>
+        <div class="control">
+          <%= submit "Save", class: "button is-link", disabled: true %>
+        </div>
       </div>
-    </div>
-  </div>
+
+  <% end %>
 <% end %>

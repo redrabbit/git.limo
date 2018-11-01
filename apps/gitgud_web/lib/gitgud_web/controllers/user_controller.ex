@@ -5,6 +5,7 @@ defmodule GitGud.Web.UserController do
 
   use GitGud.Web, :controller
 
+  alias GitGud.DB
   alias GitGud.User
   alias GitGud.Email
   alias GitGud.UserQuery
@@ -61,7 +62,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"username" => username} = _params) do
-    if user = UserQuery.by_username(username, preload: :repos, viewer: current_user(conn)),
+    if user = UserQuery.by_username(username, preload: [:primary_email, :public_email, :repos], viewer: current_user(conn)),
       do: render(conn, "show.html", user: user),
     else: {:error, :not_found}
   end
@@ -71,7 +72,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec edit_profile(Plug.Conn.t, map) :: Plug.Conn.t
   def edit_profile(conn, _params) do
-    user = current_user(conn)
+    user = DB.preload(current_user(conn), [:public_email, :emails])
     changeset = User.profile_changeset(user)
     render(conn, "edit_profile.html", user: user, changeset: changeset)
   end
@@ -91,7 +92,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec update_profile(Plug.Conn.t, map) :: Plug.Conn.t
   def update_profile(conn, %{"profile" => profile_params} = _params) do
-    user = current_user(conn)
+    user = DB.preload(current_user(conn), [:public_email, :emails])
     case User.update(user, :profile, profile_params) do
       {:ok, _user} ->
         conn

@@ -26,8 +26,8 @@ class UserInput extends React.Component {
       <div className="users-input dropdown" ref={this.dropdown}>
         <div className="dropdown-trigger">
           <div className="field is-grouped">
-            <div className="control">
-              <div className="input field is-grouped" style={{width: "230px"}} ref={this.inputContainer} onFocus={this.handleFocus} onBlur={this.handleBlur}>
+            <div className="control is-expanded">
+              <div className="input field is-grouped" ref={this.inputContainer} onFocus={this.handleFocus} onBlur={this.handleBlur}>
                 {this.state.user &&
                   <div className="control">
                     <a className="tag">{this.state.user.username}</a>
@@ -78,7 +78,7 @@ class UserInput extends React.Component {
             } else if(props) {
               return (
                 <div>
-                  {props.userSearch.edges.map((edge, i) =>
+                  {props.userSearch.edges.filter(edge => !this.props.maintainers.includes(edge.node.id)).map((edge, i) =>
                     <a key={i} className="dropdown-item" onClick={this.handleSetUser(edge.node)}>{edge.node.username} <span className="has-text-grey">{edge.node.name}</span></a>
                   )}
                 </div>

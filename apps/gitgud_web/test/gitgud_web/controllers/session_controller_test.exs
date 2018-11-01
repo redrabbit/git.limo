@@ -2,6 +2,7 @@ defmodule GitGud.Web.SessionControllerTest do
   use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
+  alias GitGud.Email
   alias GitGud.User
 
   test "renders login form", %{conn: conn} do
@@ -45,6 +46,6 @@ defmodule GitGud.Web.SessionControllerTest do
 
   defp create_user(context) do
     user = User.create!(factory(:user))
-    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &GitGud.Email.update!(&1, verified: true))))
+    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
   end
 end

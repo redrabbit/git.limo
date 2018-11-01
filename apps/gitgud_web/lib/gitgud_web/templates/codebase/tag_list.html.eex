@@ -11,7 +11,7 @@
               <span><%= tag.name %></span>
             </a>
             <%= if Map.has_key?(author, :id) do %>
-              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author.username %></a>
+              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
             <% else %>
               <span class="has-text-black"><%= author.name %></span>
             <% end %>

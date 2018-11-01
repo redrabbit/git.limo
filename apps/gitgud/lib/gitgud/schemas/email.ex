@@ -5,15 +5,11 @@ defmodule GitGud.Email do
   An `GitGud.Email` is used for a many different tasks such as user authentication & verification,
   email notifications, identification of Git commit authors, etc.
 
-  ## Email verification
-
   Every `GitGud.User` has **at least one** email address. In order to be taken in account, an email address
-  must be verified first. See `GitGud.Web.EmailController` for implementation details.
+  must be verified first. See `verify/1` for more details.
 
   Once verified, an email address can be used to authenticate users (see `GitGud.User.check_credentials/2`)
   and resolve Git commit authors.
-
-  ## Commit association
 
   In order to associate Git commits to a specific `GitGud.User` account, every user can have has many email
   addresses as he likes. Once verified, emails appearing in Git commits will automatically be linked to the
@@ -67,19 +63,19 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Updates the verification status for the given `email`.
+  Verifies the given `email`.
   """
-  @spec update_verified(t, boolean) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update_verified(%__MODULE__{} = email, verified) do
-    DB.update(change(email, %{verified: verified}))
+  @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def verify(%__MODULE__{} = email) do
+    DB.update(change(email, %{verified: true}))
   end
 
   @doc """
-  Similar to `update_verified/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `verify/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update_verified!(t, boolean) :: t
-  def update_verified!(%__MODULE__{} = email, verified) do
-    DB.update!(change(email, %{verified: verified}))
+  @spec verify!(t) :: t
+  def verify!(%__MODULE__{} = email) do
+    DB.update!(change(email, %{verified: true}))
   end
 
   @doc """
