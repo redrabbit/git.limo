@@ -65,11 +65,11 @@
     <% end %>
   <% else %>
     <div class="field">
-      <label class="label">Primary email address</label>
+      <label class="label" for="primary_email_id">Primary email address</label>
       <div class="field is-grouped">
         <div class="control">
           <div class="select">
-            <select disabled>
+            <select id="primary_email_id" disabled>
               <option>Verify an email address first</option>
             </select>
           </div>
@@ -78,6 +78,5 @@
           <%= submit "Save", class: "button is-link", disabled: true %>
         </div>
       </div>
-
   <% end %>
 <% end %>

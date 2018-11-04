@@ -10,6 +10,7 @@
   </div>
 
   <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.email, &1.id}) do %>
+    <%= unless Enum.empty?(verified_emails) do %>
     <div class="field">
       <%= label f, :public_email_id, "Public email address", class: "label" %>
       <div class="control">
@@ -18,6 +19,17 @@
         </div>
       </div>
     </div>
+    <% else %>
+      <div class="field">
+        <label class="label" for="profile_public_email_id">Public email address</label>
+          <div class="control">
+            <div class="select">
+              <select id="profile_public_email_id" disabled>
+                <option>Verify an email address first</option>
+              </select>
+            </div>
+        </div>
+    <% end %>
   <% end %>
 
   <div class="field">
