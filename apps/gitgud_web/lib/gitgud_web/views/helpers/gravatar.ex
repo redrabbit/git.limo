@@ -11,7 +11,10 @@ defmodule GitGud.Web.Gravatar do
   @domain "gravatar.com/avatar/"
 
   @spec gravatar(User.t|Email.t|binary, keyword) :: binary
-  def gravatar(email, opts \\ []) do
+  def gravatar(email, opts \\ [])
+  def gravatar(%User{primary_email: nil}, _opts), do: []
+  def gravatar(%Email{email: nil}, _opts), do: []
+  def gravatar(email, opts) do
     opts = Keyword.put_new(opts, :size, 20)
     {size, opts} = Keyword.get_and_update(opts, :size, &{&1, &1*2})
     img_tag(gravatar_url(email, opts), class: "avatar", width: size)
