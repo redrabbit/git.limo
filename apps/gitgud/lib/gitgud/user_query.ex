@@ -10,6 +10,7 @@ defmodule GitGud.UserQuery do
 
   alias GitGud.Email
   alias GitGud.User
+  alias GitGud.RepoMaintainer
 
   import Ecto.Query
 
@@ -81,18 +82,18 @@ defmodule GitGud.UserQuery do
   """
   @spec user_query(atom, term) :: Ecto.Query.t
   def user_query(:email = _key, val) do
-    from(u in User, join: e in assoc(u, :emails), where: e.email == ^val)
+    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.email == ^val)
   end
 
   def user_query(key, val) do
-    where(User, ^List.wrap({key, val}))
+    from(u in User, as: :user, where: ^List.wrap({key, val}))
   end
 
   @doc """
   Returns a query for fetching a single user by SSH key `fingerprint`.
   """
   def user_ssh_key_query(fingerprint) do
-    from(u in User, join: s in assoc(u, :ssh_keys), where: s.fingerprint == ^fingerprint, preload: [ssh_keys: s])
+    from(u in User, as: :user, join: s in assoc(u, :ssh_keys), where: s.fingerprint == ^fingerprint)
   end
 
   @doc """
@@ -100,7 +101,7 @@ defmodule GitGud.UserQuery do
   """
   @spec users_query([pos_integer]) :: Ecto.Query.t
   def users_query(ids) when is_list(ids) do
-    from(u in User, where: u.id in ^ids)
+    from(u in User, as: :user, where: u.id in ^ids)
   end
 
   @doc """
@@ -108,11 +109,11 @@ defmodule GitGud.UserQuery do
   """
   @spec users_query(atom, [binary]) :: Ecto.Query.t
   def users_query(:username = _key, vals) when is_list(vals) do
-    from(u in User, where: u.username in ^vals)
+    from(u in User, as: :user, where: u.username in ^vals)
   end
 
   def users_query(:email = _key, vals) when is_list(vals) do
-    from(u in User, join: e in assoc(u, :emails), where: e.email in ^vals, preload: [emails: e])
+    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.email in ^vals)
   end
 
   @doc """
@@ -121,7 +122,7 @@ defmodule GitGud.UserQuery do
   @spec search_query(binary) :: Ecto.Query.t
   def search_query(input) do
     term = "%#{input}%"
-    from(u in User, where: ilike(u.username, ^term))
+    from(u in User, as: :user, where: ilike(u.username, ^term))
   end
 
   #
@@ -142,41 +143,35 @@ defmodule GitGud.UserQuery do
   # Helpers
   #
 
-  defp join_preload(query, :emails, nil) do
+  defp join_preload(query, :emails, _viewer) do
     query
-    |> join(:left, [u], e in assoc(u, :emails), e.verified == true)
-    |> preload([u, e], [emails: e])
+    |> join(:left, [user: u], e in assoc(u, :emails), as: :emails)
+    |> preload([emails: e], [emails: e])
   end
 
-  defp join_preload(query, :emails, viewer) do
+  defp join_preload(query, :primary_email, _viewer) do
     query
-    |> join(:left, [u], e in assoc(u, :emails), e.verified == true or e.user_id == ^viewer.id)
-    |> preload([u, e], [emails: e])
+    |> join(:left, [user: u], e in Email, on: e.id == u.primary_email_id, as: :primary_email)
+    |> preload([primary_email: e], [primary_email: e])
   end
 
-  defp join_preload(query, :primary_email, nil) do
+  defp join_preload(query, :public_email, _viewer) do
     query
-    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id and e.verified == true)
-    |> preload([u, e], [primary_email: e])
-  end
-
-  defp join_preload(query, :primary_email, viewer) do
-    query
-    |> join(:left, [u], e in Email, on: e.id == u.primary_email_id and e.user_id == ^viewer.id)
-    |> preload([u, e], [primary_email: e])
+    |> join(:left, [user: u], e in Email, on: e.id == u.public_email_id, as: :public_email)
+    |> preload([public_email: e], [public_email: e])
   end
 
   defp join_preload(query, :repos, nil) do
     query
-    |> join(:left, [u], r in assoc(u, :repos), r.public == true)
-    |> preload([u, r], [repos: r])
+    |> join(:left, [user: u], r in assoc(u, :repos), on: r.public == true, as: :repos)
+    |> preload([repos: r], [repos: r])
   end
 
   defp join_preload(query, :repos, viewer) do
     query
-    |> join(:left, [u], m in "repositories_maintainers", m.user_id == ^viewer.id)
-    |> join(:left, [u, m], r in assoc(u, :repos), r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id)
-    |> preload([u, m, r], [repos: r])
+    |> join(:left, [user: u], m in RepoMaintainer, on: m.user_id == ^viewer.id, as: :maintainer)
+    |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
+    |> preload([repos: r], [repos: r])
   end
 
   defp join_preload(query, {parent, _children} = preload, viewer) do
