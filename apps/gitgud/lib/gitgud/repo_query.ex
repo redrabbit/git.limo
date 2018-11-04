@@ -8,8 +8,9 @@ defmodule GitGud.RepoQuery do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
-  alias GitGud.Repo
   alias GitGud.User
+  alias GitGud.Repo
+  alias GitGud.RepoMaintainer
 
   import Ecto.Query
 
@@ -72,11 +73,11 @@ defmodule GitGud.RepoQuery do
   @spec repo_query(pos_integer) :: Ecto.Query.t
   @spec repo_query([pos_integer]) :: Ecto.Query.t
   def repo_query(id) when is_list(id) do
-    from(r in Repo, join: u in assoc(r, :owner), where: r.id in ^id, preload: [owner: u])
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id in ^id, preload: [owner: u])
   end
 
   def repo_query(id) when is_integer(id) do
-    from(r in Repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
   end
 
   @doc """
@@ -94,22 +95,22 @@ defmodule GitGud.RepoQuery do
   @spec user_repos_query([user_param]) :: Ecto.Query.t
   def user_repos_query(%User{id: user_id} = _user), do: user_repos_query(user_id)
   def user_repos_query(username) when is_binary(username) do
-    from(r in Repo, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
   end
 
   def user_repos_query(user_id) when is_integer(user_id) do
-    from(r in Repo, join: u in assoc(r, :owner), where: u.id == ^user_id, preload: [owner: u])
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id == ^user_id, preload: [owner: u])
   end
 
   def user_repos_query(users) when is_list(users) do
     cond do
       Enum.all?(users, &is_map/1) ->
         user_ids = Enum.map(users, &Map.fetch!(&1, :id))
-        from(r in Repo, join: u in assoc(r, :owner), where: u.id in ^user_ids, preload: [owner: u])
+        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^user_ids, preload: [owner: u])
       Enum.all?(users, &is_integer/1) ->
-        from(r in Repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
+        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
       Enum.all?(users, &is_binary/1) ->
-        from(r in Repo, join: u in assoc(r, :owner), where: u.username in ^users, preload: [owner: u])
+        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.username in ^users, preload: [owner: u])
     end
   end
 
@@ -120,15 +121,15 @@ defmodule GitGud.RepoQuery do
   @impl true
   def alter_query(query, preloads, nil) do
     query
-    |> where([r, u], r.public == true)
-    |> preload([r, u], ^preloads)
+    |> where([repo: r], r.public == true)
+    |> preload([], ^preloads)
   end
 
   @impl true
   def alter_query(query, preloads, viewer) do
     query
-    |> join(:left, [r, u], m in "repositories_maintainers", r.id == m.repo_id)
-    |> where([r, u, m], r.public == true or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
-    |> preload([r, u], ^preloads)
+    |> join(:left, [repo: r], m in RepoMaintainer, on: r.id == m.repo_id, as: :maintainer)
+    |> where([repo: r, maintainer: m], r.public == true or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
+    |> preload([], ^preloads)
   end
 end
