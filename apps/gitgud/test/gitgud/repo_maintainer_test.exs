@@ -8,17 +8,17 @@ defmodule GitGud.RepoMaintainerTest do
 
   setup [:create_users, :create_repo]
 
-  test "creates a new maintainer with valid params", %{users: [_user1, user2], repo: repo} do
+  test "creates a new repository maintainer with valid params", %{users: [_user1, user2], repo: repo} do
     assert {:ok, maintainer} = RepoMaintainer.create(user_id: user2.id, repo_id: repo.id)
     assert maintainer.permission == "read"
   end
 
-  test "fails to create a new maintainer with invalid permission", %{users: [_user1, user2], repo: repo} do
+  test "fails to create a new repository maintainer with invalid permission", %{users: [_user1, user2], repo: repo} do
     assert {:error, changeset} = RepoMaintainer.create(user_id: user2.id, repo_id: repo.id, permission: "foobar")
     assert "is invalid" in errors_on(changeset).permission
   end
 
-  describe "when maintainer exists" do
+  describe "when repository maintainer exists" do
     setup :create_maintainer
 
     test "updates maintainer permission with valid permission", %{maintainer: maintainer1} do
