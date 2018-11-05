@@ -27,7 +27,7 @@ defmodule GitGud.RepoMaintainer do
   schema "repositories_maintainers" do
     belongs_to :user, User
     belongs_to :repo, Repo
-    field :permission, :string
+    field :permission, :string, default: "read"
     timestamps()
   end
 

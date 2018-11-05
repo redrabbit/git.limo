@@ -6,7 +6,7 @@ defmodule GitGud.DataFactory do
   alias GitGud.User
 
   import Faker.Name, only: [name: 0]
-  import Faker.Internet, only: [email: 0, user_name: 0]
+  import Faker.Internet, only: [user_name: 0]
   import Faker.Lorem, only: [sentence: 1]
   import Faker.Nato, only: [callsign: 0]
 
@@ -17,7 +17,7 @@ defmodule GitGud.DataFactory do
     %{
       name: name(),
       username: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true),
-      emails: [%{email: String.replace(email(), "'", "")}],
+      emails: [email()],
       password: "qwertz"
     }
   end
@@ -35,6 +35,21 @@ defmodule GitGud.DataFactory do
   def repo(%User{id: user_id}), do: repo(user_id)
   def repo(user_id) when is_integer(user_id) do
     Map.put(repo(), :owner_id, user_id)
+  end
+
+  @doc """
+  Returns a map representing `GitGud.Email` params.
+  """
+  def email do
+    %{email: String.replace(Faker.Internet.email(), "'", "")}
+  end
+
+  @doc """
+  Returns a map representing `GitGud.Email` params.
+  """
+  def email(%User{id: user_id}), do: email(user_id)
+  def email(user_id) do
+    Map.put(email(), :user_id, user_id)
   end
 
   @doc """

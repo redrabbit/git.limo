@@ -21,11 +21,24 @@ defmodule GitGud.SSHKeyTest do
     assert "invalid" in errors_on(changeset).data
   end
 
+  describe "when ssh authentication key exists" do
+    setup :create_ssh_key
+
+    test "deletes key", %{ssh_key: ssh_key1} do
+      assert {:ok, ssh_key2} = SSHKey.delete(ssh_key1)
+      assert ssh_key2.__meta__.state == :deleted
+    end
+  end
+
   #
   # Helpers
   #
 
   defp create_user(context) do
     Map.put(context, :user, User.create!(factory(:user)))
+  end
+
+  defp create_ssh_key(context) do
+    Map.put(context, :ssh_key, SSHKey.create!(factory(:ssh_key, context.user)))
   end
 end

@@ -29,7 +29,7 @@ defmodule GitGud.UserTest do
     assert %{email: ["has invalid format"]} in errors_on(changeset).emails
   end
 
-  test "fails to create a new user with weak password" do
+  test "fails to create a new user with invalid password" do
     params = factory(:user)
     assert {:error, changeset} = User.create(Map.delete(params, :password))
     assert "can't be blank" in errors_on(changeset).password
@@ -38,32 +38,56 @@ defmodule GitGud.UserTest do
   end
 
   describe "when user exists" do
-    setup [:create_user]
-
-    test "fails to create a new user with same username", %{user: user} do
-      params = factory(:user)
-      assert {:error, changeset} = User.create(%{params|username: user.username})
-      assert "has already been taken" in errors_on(changeset).username
-    end
-
-    test "updates profile with valid params", %{user: user1} do
-      assert {:ok, user2} = User.update(user1, :profile, name: "Alice")
-      assert user2.name == "Alice"
-    end
-
-    test "deletes user", %{user: user1} do
-      assert {:ok, user2} = User.delete(user1)
-      assert user2.__meta__.state == :deleted
-    end
+    setup :create_user
 
     test "checks credentials", %{user: user} do
       assert User.check_credentials(user.username, "qwertz")
       assert User.check_credentials(hd(user.emails).email, "qwertz")
     end
 
-    test "fails to check credentials with weak password", %{user: user} do
+    test "fails to check credentials with invalid password", %{user: user} do
       refute User.check_credentials(user.username, "abc")
       refute User.check_credentials(hd(user.emails).email, "abc")
+    end
+
+    test "fails to create a new user with already existing username", %{user: user} do
+      params = factory(:user)
+      assert {:error, changeset} = User.create(%{params|username: user.username})
+      assert "has already been taken" in errors_on(changeset).username
+    end
+
+    test "updates profile with valid params", %{user: user1} do
+      assert {:ok, user2} = User.update(user1, :profile, name: "Alice", bio: "I love programming!", public_email_id: hd(user1.emails).id)
+      assert user2.name == "Alice"
+      assert user2.bio == "I love programming!"
+      assert user2.public_email_id == hd(user1.emails).id
+    end
+
+    test "fails to update profile with invalid public email", %{user: user} do
+      assert {:error, changeset} = User.update(user, :profile, public_email_id: 0)
+      assert "does not exist" in errors_on(changeset).public_email
+    end
+
+    test "updates password with valid params", %{user: user1} do
+      assert {:ok, user2} = User.update(user1, :password, old_password: "qwertz", password: "qwerty")
+      assert user1.password_hash != user2.password_hash
+    end
+
+    test "fails to update password with invalid old password", %{user: user} do
+      assert {:error, changeset} = User.update(user, :password, old_password: "abcdef", password: "qwerty")
+      assert "does not match old password" in errors_on(changeset).old_password
+    end
+
+    test "fails to update password with invalid new password", %{user: user} do
+      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz")
+      assert "can't be blank" in errors_on(changeset).password
+      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz", password: "abc")
+      assert "should be at least 6 character(s)" in errors_on(changeset).password
+    end
+
+    test "deletes user", %{user: user1} do
+      assert {:ok, user2} = User.delete(user1)
+      assert user2.__meta__.state == :deleted
     end
   end
 
