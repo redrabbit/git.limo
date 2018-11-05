@@ -10,6 +10,14 @@ defmodule GitGud.Web.FallbackController do
 
   alias GitGud.Web.ErrorView
 
+  def call(conn, {:error, :bad_request}) do
+    conn
+    |> put_status(:bad_request)
+    |> put_layout({GitGud.Web.LayoutView, :app})
+    |> put_view(ErrorView)
+    |> render(:"400")
+  end
+
   def call(conn, {:error, :unauthorized}) do
     conn
     |> put_status(:unauthorized)

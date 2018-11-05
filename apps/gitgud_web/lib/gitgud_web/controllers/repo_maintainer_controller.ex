@@ -34,7 +34,7 @@ defmodule GitGud.Web.RepoMaintainerController do
   def create(conn, %{"username" => username, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
-        maintainer_params = Map.update(maintainer_params, "user_id", "", &from_relay_id/1)
+        maintainer_params = Map.update(maintainer_params, "user_id", "", &parse_id/1)
         case RepoMaintainer.create(Map.put(maintainer_params, "repo_id", repo.id)) do
           {:ok, maintainer} ->
             user = UserQuery.by_id(maintainer.user_id)
@@ -42,7 +42,6 @@ defmodule GitGud.Web.RepoMaintainerController do
             |> put_flash(:info, "Maintainer '#{user.username}' added.")
             |> redirect(to: Routes.repo_maintainer_path(conn, :edit, username, repo_name))
           {:error, changeset} ->
-            IO.inspect changeset
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
@@ -92,5 +91,16 @@ defmodule GitGud.Web.RepoMaintainerController do
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
     end || {:error, :not_found}
+  end
+
+  #
+  # Helpers
+  #
+
+  defp parse_id(str) do
+    case Integer.parse(str) do
+      {user_id, ""} -> user_id
+      :error -> from_relay_id(str)
+    end
   end
 end

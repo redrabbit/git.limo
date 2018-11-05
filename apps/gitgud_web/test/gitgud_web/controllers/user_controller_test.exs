@@ -2,6 +2,7 @@ defmodule GitGud.Web.UserControllerTest do
   use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
+  alias GitGud.Email
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
@@ -70,11 +71,28 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "updates user profile with valid params", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice"})
-      user = UserQuery.by_id(user.id)
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice", bio: "I love programming!", public_email_id: hd(user.emails).id, url: "http://www.example.com"})
+      user = UserQuery.by_id(user.id, preload: :emails)
       assert user.name == "Alice"
+      assert user.bio == "I love programming!"
+      assert user.public_email_id == hd(user.emails).id
+      assert user.url == "http://www.example.com"
       assert get_flash(conn, :info) == "Profile updated."
       assert redirected_to(conn) == Routes.user_path(conn, :edit_profile)
+    end
+
+    test "fails to update user profile with invalid public email", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{public_email_id: 0})
+      assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
+      assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
+    end
+
+    test "fails to update user profile with invalid url", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{url: "oops"})
+      assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
+      assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
     end
   end
 
@@ -83,6 +101,7 @@ defmodule GitGud.Web.UserControllerTest do
   #
 
   defp create_user(context) do
-    Map.put(context, :user, User.create!(factory(:user)))
+    user = User.create!(factory(:user))
+    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
   end
 end

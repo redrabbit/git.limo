@@ -31,6 +31,11 @@ config :gitgud_web, GitGud.Web.Endpoint,
     ]
   ]
 
+config :gitgud_web, GitGud.Mailer,
+  adapter: Bamboo.MailgunAdapter,
+  api_key: "35980566b64ebcde760705856d180f58-4836d8f5-ceb7f151",
+  domain: "sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org"
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed
