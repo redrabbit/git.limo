@@ -85,6 +85,16 @@ defmodule GitGud.UserTest do
       assert "should be at least 6 character(s)" in errors_on(changeset).password
     end
 
+    test "updates primary email with valid email", %{user: user1} do
+      assert {:ok, user2} = User.update(user1, :primary_email, hd(user1.emails))
+      assert user2.primary_email == hd(user1.emails)
+    end
+
+    test "updates public email with valid email", %{user: user1} do
+      assert {:ok, user2} = User.update(user1, :public_email, hd(user1.emails))
+      assert user2.public_email == hd(user1.emails)
+    end
+
     test "deletes user", %{user: user1} do
       assert {:ok, user2} = User.delete(user1)
       assert user2.__meta__.state == :deleted

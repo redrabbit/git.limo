@@ -9,6 +9,7 @@ defmodule GitGud.EmailTest do
 
   test "creates a new email with valid params", %{user: user} do
     assert {:ok, email} = Email.create(factory(:email, user))
+    refute email.verified
   end
 
   test "fails to create a new email with invalid email address", %{user: user} do
