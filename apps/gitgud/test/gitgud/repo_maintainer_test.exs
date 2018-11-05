@@ -2,7 +2,6 @@ defmodule GitGud.RepoMaintainerTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
-  alias GitGud.Email
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoMaintainer
@@ -43,11 +42,7 @@ defmodule GitGud.RepoMaintainerTest do
   #
 
   defp create_users(context) do
-    users =
-      Stream.repeatedly(fn ->
-        user = User.create!(factory(:user))
-        struct(user, emails: Enum.map(user.emails, &Email.verify!/1))
-      end)
+    users = Stream.repeatedly(fn -> User.create!(factory(:user)) end)
     Map.put(context, :users, Enum.take(users, 2))
   end
 
@@ -58,6 +53,8 @@ defmodule GitGud.RepoMaintainerTest do
 
   defp create_maintainer(context) do
     maintainer = RepoMaintainer.create!(user_id: List.last(context.users).id, repo_id: context.repo.id)
-    Map.put(context, :maintainer, maintainer)
+    context
+    |> Map.put(:maintainer, maintainer)
+    |> Map.update!(:repo, &DB.preload(&1, :maintainers))
   end
 end
