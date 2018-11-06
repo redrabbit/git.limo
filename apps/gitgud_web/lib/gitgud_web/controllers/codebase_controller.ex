@@ -25,7 +25,7 @@ defmodule GitGud.Web.CodebaseController do
         do: render(conn, "initialize.html", repo: repo),
       else: with {:ok, head} <- Repo.git_head(repo),
                  {:ok, tree} <- Repo.git_tree(head), do:
-              render(conn, "show.html", repo: repo, revision: head, tree: tree, tree_path: [], stats: stats!(head))
+              render(conn, "show.html", repo: repo, revision: head, tree: tree, tree_path: [], stats: stats(head))
     end || {:error, :not_found}
   end
 
@@ -82,7 +82,7 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"username" => username, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
-           {:ok, history} <- Repo.git_history(object, [Path.join(tree_path)]), do:
+           {:ok, history} <- Repo.git_history(object, pathspec: Path.join(tree_path)), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: tree_path)
     end || {:error, :not_found}
   end
@@ -103,7 +103,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(username, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, tree} <- Repo.git_tree(object), do:
-        render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats!(reference || object))
+        render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats(reference || object))
     end || {:error, :not_found}
   end
 
@@ -135,10 +135,14 @@ defmodule GitGud.Web.CodebaseController do
   # Helpers
   #
 
-  defp stats!(%{repo: repo} = revision) do
+  defp stats(%{repo: repo} = revision) do
     with {:ok, history} <- Repo.git_history(revision),
          {:ok, branches} <- Repo.git_branches(repo),
-         {:ok, tags} <- Repo.git_tags(repo), do:
+         {:ok, tags} <- Repo.git_tags(repo) do
       %{commits: Enum.count(history.enum), branches: Enum.count(branches.enum), tags: Enum.count(tags.enum)}
+    else
+      {:error, _reason} ->
+        %{commits: 0, branches: 0, tags: 0}
+    end
   end
 end

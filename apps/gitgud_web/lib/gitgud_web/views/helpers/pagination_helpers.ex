@@ -6,26 +6,64 @@ defmodule GitGud.Web.PaginationHelpers do
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
+  import GitRekt.Git, only: [oid_fmt: 1]
+
   @doc """
-  Paginates the given `list`.
+  Paginates the given `stream`.
   """
-  @spec paginate(Plug.Conn.t, Enumerable.t, pos_integer) :: map
-  def paginate(conn, list, limit \\ 20) do
-    list = Enum.to_list(list)
+  @spec paginate(Plug.Conn.t, Stream.t, pos_integer) :: map
+  def paginate(conn, stream, limit \\ 20) do
+    list = Enum.to_list(stream)
     count = max(trunc(Float.ceil(Enum.count(list) / limit)), 1)
     page = min(max(page_params(conn), 1), count)
-    %{current: page, has_previous?: page > 1, has_next?: page < count, previous: max(page-1, 1), next: min(page+1, count), first: 1, last: count, slice: slice(list, (page-1)*limit, limit)}
+    %{current: page, previous?: page > 1, next?: page < count, previous: max(page-1, 1), next: min(page+1, count), first: 1, last: count, slice: slice(list, (page-1)*limit, limit)}
+  end
+
+  @doc """
+  Paginates the given `stream`.
+  """
+  @spec paginate_cursor(Plug.Conn.t, Stream.t, (any, binary -> boolean), (any -> binary), pos_integer) :: map
+  def paginate_cursor(conn, stream, filter_fn, cursor_fn, limit \\ 20) do
+    {slice, previous?, next?} =
+      cond do
+        cursor = conn.params["before"] ->
+          stream = struct(stream, enum: Enum.reverse(Enum.take_while(stream.enum, &!filter_fn.(&1, cursor))))
+          stream = Stream.take(stream, limit+1)
+          slice = Enum.to_list(stream)
+          {Enum.reverse(Enum.take(slice, limit)), Enum.count(slice) > limit, true}
+        cursor = conn.params["after"] ->
+          stream = struct(stream, enum: Enum.drop(Enum.drop_while(stream.enum, &!filter_fn.(&1, cursor)), 1))
+          stream = Stream.take(stream, limit+1)
+          slice = Enum.to_list(stream)
+          {Enum.take(slice, limit), true, Enum.count(slice) > limit}
+        true ->
+          stream = Stream.take(stream, limit+1)
+          slice = Enum.to_list(stream)
+          {Enum.take(slice, limit), false, Enum.count(slice) > limit}
+      end
+
+    before_cursor = if previous?, do: cursor_fn.(List.first(slice))
+    after_cursor = if next?, do: cursor_fn.(List.last(slice))
+
+    %{slice: slice, before: before_cursor, after: after_cursor}
   end
 
   @doc """
   Renders a pagination widget for the given `page`.
   """
   @spec pagination(map) :: binary
+  def pagination(%{before: before_cursor, after: after_cursor}) do
+    content_tag(:nav, [class: "", role: "navigation"], do: [
+      link("Previous", to: "?before=#{if before_cursor, do: before_cursor, else: "#"}", class: "pagination-previous", disabled: !before_cursor),
+      link("Next", to: "?after=#{if after_cursor, do: after_cursor, else: "#"}", class: "pagination-next", disabled: !after_cursor),
+    ])
+  end
+
   def pagination(%{first: first, last: first} = _page), do: []
   def pagination(page) do
-    content_tag(:nav, [class: "pagination", role: "navigation"], do: [
-      link("Previous", to: "?p=#{page.previous}", class: "pagination-previous", disabled: !page.has_previous?),
-      link("Next", to: "?p=#{page.next}", class: "pagination-next", disabled: !page.has_next?),
+    content_tag(:nav, [class: "pagination is-right", role: "navigation"], do: [
+      link("Previous", to: "?p=#{page.previous}", class: "pagination-previous", disabled: !page.previous?),
+      link("Next", to: "?p=#{page.next}", class: "pagination-next", disabled: !page.next?),
       pagination_list(page)
     ])
   end
@@ -79,7 +117,7 @@ defmodule GitGud.Web.PaginationHelpers do
       content_tag(:li, do: link(last, to: "?p=#{last}", class: "pagination-link"))
   end
 
-  defp slice(list, offset, limit) do
+  defp slice(list, offset, limit) when is_list(list) do
     list
     |> Enum.drop(offset)
     |> Enum.take(limit)

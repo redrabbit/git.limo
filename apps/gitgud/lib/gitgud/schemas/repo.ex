@@ -315,34 +315,22 @@ defmodule GitGud.Repo do
   Returns the commit history starting from the given `revision`.
   """
   @spec git_history(git_revision) :: {:ok, Stream.t} | {:error, term}
-  def git_history(%GitReference{oid: oid, repo: repo, __git__: handle} = _revision) do
-    resolve_history(oid, {repo, handle})
+  def git_history(revision, opts \\ [])
+  def git_history(%GitReference{oid: oid, repo: repo, __git__: handle} = _revision, opts) do
+    resolve_history(oid, {repo, handle}, opts)
   end
 
-  def git_history(%GitTag{oid: oid, repo: repo, __git__: tag} = _revision) do
+  def git_history(%GitTag{oid: oid, repo: repo, __git__: tag} = _revision, opts) do
     case Git.object_repository(tag) do
-      {:ok, handle} -> resolve_history(oid, {repo, handle})
+      {:ok, handle} -> resolve_history(oid, {repo, handle}, opts)
       {:error, reason} -> {:error, reason}
     end
   end
 
-  def git_history(%GitCommit{oid: oid, repo: repo, __git__: commit} = _revision) do
+  def git_history(%GitCommit{oid: oid, repo: repo, __git__: commit} = _revision, opts) do
     case Git.object_repository(commit) do
-      {:ok, handle} -> resolve_history(oid, {repo, handle})
+      {:ok, handle} -> resolve_history(oid, {repo, handle}, opts)
       {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Returns the commit history starting from the given `revision` and matching the given `pathspec`.
-  """
-  @spec git_history(git_revision, [binary]) :: {:ok, Stream.t} | {:error, term}
-  def git_history(revision, pathspec) do
-    case git_history(revision) do
-      {:ok, stream} ->
-        {:ok, Stream.filter(stream, &pathspec_match_commit(&1, pathspec))}
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
@@ -490,12 +478,21 @@ defmodule GitGud.Repo do
     else: changeset
   end
 
-  defp resolve_history(oid, {repo, handle}) do
+  defp resolve_history(oid, {repo, handle}, opts) when is_binary(oid) do
+    {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
     with {:ok, walk} <- Git.revwalk_new(handle),
+          :ok <- Git.revwalk_sorting(walk, sorting),
           :ok <- Git.revwalk_push(walk, oid),
          {:ok, stream} <- Git.revwalk_stream(walk),
          {:ok, stream} <- Git.enumerate(stream), do:
-      {:ok, Stream.map(stream, &resolve_object(&1, {repo, handle}))}
+      resolve_history(stream, {repo, handle}, opts)
+  end
+
+  defp resolve_history(stream, {repo, handle}, opts) do
+    stream = Stream.map(stream, &resolve_object(&1, {repo, handle}))
+    if pathspec = Keyword.get(opts, :pathspec),
+      do: {:ok, Stream.filter(stream, &pathspec_match_commit(handle, &1, List.wrap(pathspec)))},
+    else: {:ok, stream}
   end
 
   defp resolve_reference({nil, nil, :oid, _oid}, {_repo, _handle}), do: nil
@@ -537,23 +534,30 @@ defmodule GitGud.Repo do
     end
   end
 
-  defp pathspec_match_commit(commit, pathspec) do
+  defp pathspec_match_commit(handle, commit, pathspec) do
     with {:ok, tree} <- git_tree(commit),
          {:ok, match?} <- GitTree.pathspec_match?(tree, pathspec) do
-      if match?, do: pathspec_match_commit_tree(commit, tree, pathspec)
+      match? && pathspec_match_commit_tree(handle, commit, tree, pathspec)
     else
       {:error, _reason} -> false
     end
   end
 
-  defp pathspec_match_commit_tree(commit, tree, pathspec) do
+  defp pathspec_match_commit_tree(handle, commit, tree, pathspec) do
     with {:ok, parent} <- GitCommit.first_parent(commit),
          {:ok, parent_tree} <- git_tree(parent),
-         {:ok, diff} <- git_diff(parent_tree, tree, pathspec: pathspec),
-         {:ok, size} <- GitDiff.delta_count(diff) do size > 0
+         {:ok, delta_count} <- pathspec_match_commit_diff(handle, parent_tree, tree, pathspec) do
+      delta_count > 0
     else
       {:error, _reason} -> false
     end
   end
 
+  defp pathspec_match_commit_diff(_handle, %GitTree{repo: repo, __git__: old_tree}, %GitTree{__git__: new_tree}, pathspec) do
+    {:ok, handle} = Git.repository_open(workdir(repo)) # TODO
+    case Git.diff_tree(handle, old_tree, new_tree, pathspec: pathspec) do
+      {:ok, diff} -> Git.diff_delta_count(diff)
+      {:error, reason} -> {:error, reason}
+    end
+  end
 end
