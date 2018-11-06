@@ -24,7 +24,7 @@ defmodule GitRekt.Git do
   @type obj           :: blob | commit | tree | tag
   @type obj_type      :: :blob | :commit | :tree | :tag
 
-  @type reflog        :: {
+  @type reflog_entry  :: {
     binary,
     binary,
     non_neg_integer,
@@ -269,9 +269,17 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Reads the number of entry for the given reflog `name`.
+  """
+  @spec reflog_count(repo, binary) :: {:ok, pos_integer} | {:error, term}
+  def reflog_count(_repo, _name) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Reads the reflog for the given reference `name`.
   """
-  @spec reflog_read(repo, binary) :: {:ok, [reflog]} | {:error, term}
+  @spec reflog_read(repo, binary) :: {:ok, [reflog_entry]} | {:error, term}
   def reflog_read(_repo, _name) do
     raise Code.LoadError, file: @nif_path_lib
   end
@@ -594,10 +602,7 @@ defmodule GitRekt.Git do
   """
   @spec revwalk_stream(revwalk) :: {:ok, Stream.t} | {:error, term}
   def revwalk_stream(walk) do
-    case revwalk_simplify_first_parent(walk) do
-      :ok -> {:ok, Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)}
-      {:error, reason} -> {:error, reason}
-    end
+    {:ok, Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)}
   end
 
   @doc """

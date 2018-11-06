@@ -7,6 +7,33 @@
 #include <git2.h>
 
 ERL_NIF_TERM
+geef_reflog_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	git_reflog *reflog;
+	geef_repository *repo;
+	ErlNifBinary bin;
+	int error;
+	size_t count;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin))
+		return geef_oom(env);
+
+	if ((error = git_reflog_read(&reflog, repo->repo, (char *)bin.data)) < 0)
+		return geef_error(env);
+
+	count = git_reflog_entrycount(reflog);
+	git_reflog_free(reflog);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_uint64(env, count));
+}
+
+ERL_NIF_TERM
 geef_reflog_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	git_reflog *reflog;
