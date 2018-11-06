@@ -107,7 +107,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   end
 
   defp authenticate_user(conn, user_id) do
-    if user = UserQuery.by_id(user_id),
+    if user = UserQuery.by_id(user_id, preload: :primary_email),
       do: Absinthe.Plug.put_options(assign(conn, :current_user, user), context: %{current_user: user}),
     else: conn
   end
