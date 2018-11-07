@@ -33,8 +33,8 @@ config :gitgud_web, GitGud.Web.Endpoint,
 
 config :gitgud_web, GitGud.Mailer,
   adapter: Bamboo.MailgunAdapter,
-  api_key: "35980566b64ebcde760705856d180f58-4836d8f5-ceb7f151",
-  domain: "sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org"
+  api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx",
+  domain: "example.com"
 
 # ## SSL Support
 #
@@ -51,5 +51,3 @@ config :gitgud_web, GitGud.Mailer,
 # If desired, both `http:` and `https:` keys can be
 # configured to run both http and https servers on
 # different ports.
-
-

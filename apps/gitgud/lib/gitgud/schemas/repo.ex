@@ -370,7 +370,7 @@ defmodule GitGud.Repo do
   """
   @spec root_path() :: Path.t | nil
   def root_path() do
-    Application.fetch_env!(:gitgud, :git_root)
+    Application.get_env(:gitgud, :git_root, System.get_env("GIT_ROOT"))
   end
 
   @doc """
