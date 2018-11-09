@@ -45,25 +45,25 @@ defmodule GitGud.Web.PaginationHelpers do
     before_cursor = if previous?, do: cursor_fn.(List.first(slice))
     after_cursor = if next?, do: cursor_fn.(List.last(slice))
 
-    %{slice: slice, before: before_cursor, after: after_cursor}
+    %{slice: slice, previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}
   end
 
   @doc """
   Renders a pagination widget for the given `page`.
   """
   @spec pagination(map) :: binary
-  def pagination(%{before: before_cursor, after: after_cursor}) do
+  def pagination(%{previous?: false, next?: false} = _page), do: []
+  def pagination(%{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}) do
     content_tag(:nav, [class: "", role: "navigation"], do: [
-      link("Previous", to: "?before=#{if before_cursor, do: before_cursor, else: "#"}", class: "pagination-previous", disabled: !before_cursor),
-      link("Next", to: "?after=#{if after_cursor, do: after_cursor, else: "#"}", class: "pagination-next", disabled: !after_cursor),
+      link("Previous", to: "?before=#{if previous?, do: before_cursor, else: "#"}", class: "pagination-previous", disabled: !previous?),
+      link("Next", to: "?after=#{if next?, do: after_cursor, else: "#"}", class: "pagination-next", disabled: !next?),
     ])
   end
 
-  def pagination(%{first: first, last: first} = _page), do: []
-  def pagination(page) do
+  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next} = page) do
     content_tag(:nav, [class: "pagination is-right", role: "navigation"], do: [
-      link("Previous", to: "?p=#{page.previous}", class: "pagination-previous", disabled: !page.previous?),
-      link("Next", to: "?p=#{page.next}", class: "pagination-next", disabled: !page.next?),
+      link("Previous", to: "?p=#{if previous?, do: previous, else: "#"}", class: "pagination-previous", disabled: !previous?),
+      link("Next", to: "?p=#{if next?, do: next, else: "#"}", class: "pagination-next", disabled: !next?),
       pagination_list(page)
     ])
   end
