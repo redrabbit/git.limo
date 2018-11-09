@@ -39,7 +39,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec node(map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def node(%{id: id, type: :user} = _node_type, info) do
-    if user = UserQuery.by_id(to_integer(id)),
+    if user = UserQuery.by_id(to_integer(id), preload: :public_email),
       do: {:ok, user},
     else: node(%{id: id}, info)
   end
@@ -79,9 +79,19 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user(%{}, %{username: binary}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
   def user(%{} = _root, %{username: username} = _args, _info) do
-    if user = UserQuery.by_username(username),
+    if user = UserQuery.by_username(username, preload: :public_email),
       do: {:ok, user},
     else: {:error, "this given username '#{username}' is not valid"}
+  end
+
+  @doc """
+  Resolves the public email for a given `user`.
+  """
+  @spec user_public_email(User.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
+  def user_public_email(%User{} = user, %{} = _args, _info) do
+    if email = user.public_email,
+      do: {:ok, email.email},
+    else: {:ok, nil}
   end
 
   @doc """
@@ -89,7 +99,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_search(%{input: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user])
+    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user], preload: :public_email)
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -330,8 +340,9 @@ defmodule GitGud.GraphQL.Resolvers do
   def batch_users_by_email(viewer, emails) do
     emails
     |> Enum.uniq()
-    |> UserQuery.by_email(viewer: viewer)
-    |> Map.new(&{&1.email, &1})
+    |> UserQuery.by_email(viewer: viewer, preload: [:public_email, :emails])
+    |> Enum.flat_map(&flatten_user_emails/1)
+    |> Map.new()
   end
 
   @doc false
@@ -346,6 +357,10 @@ defmodule GitGud.GraphQL.Resolvers do
   #
   # Helpers
   #
+
+  defp flatten_user_emails(user) do
+    Enum.map(user.emails, &{&1.email, user})
+  end
 
   defp slice_stream(stream, args) do
     count = Enum.count(stream.enum)

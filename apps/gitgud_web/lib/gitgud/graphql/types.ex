@@ -50,7 +50,7 @@ defmodule GitGud.GraphQL.Types do
     interface :git_actor
     field :username, non_null(:string)
     field :name, :string
-    field :email, :string
+    field :email, :string, resolve: &Resolvers.user_public_email/3
     connection field :repos, node_type: :repo do
       resolve &Resolvers.user_repos/2
     end
