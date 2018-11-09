@@ -7,8 +7,7 @@
         <tr>
           <td>
             <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-link", else: "" %> has-text-weight-semibold">
-              <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
-              <span><%= branch.name %></span>
+              <%= branch %>
             </a>
             Updated <%= datetime_format(commit_timestamp(commit), "{relative}") %> by
             <%= if Map.has_key?(author, :id) do %>

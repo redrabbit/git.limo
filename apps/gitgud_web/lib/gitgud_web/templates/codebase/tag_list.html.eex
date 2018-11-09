@@ -7,8 +7,7 @@
         <tr>
           <td>
             <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
-              <span class="icon"><i class="fa fa-tag" aria-hidden="true"></i></span>
-              <span><%= tag.name %></span>
+              <%= tag %>
             </a>
             <%= if Map.has_key?(author, :id) do %>
               <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>

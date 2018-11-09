@@ -2,7 +2,7 @@
   <header class="card-header">
     <p class="card-header-title"><%= commit_message_title(@commit) %></p>
     <p class="card-header-icon buttons">
-      <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button is-small is-primary has-text-weight-semibold sha"><%= oid_fmt_short(@commit.oid) %></a>
+      <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button is-small is-primary has-text-weight-semibold"><%= @commit %></a>
       <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
         <span class="icon is-small">
           <i class="fa fa-code"></i>
