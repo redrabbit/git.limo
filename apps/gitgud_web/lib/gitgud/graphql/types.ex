@@ -25,6 +25,7 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_reference
   connection node_type: :git_tag
   connection node_type: :git_tree_entry
+  connection node_type: :search_result
 
   interface :git_actor do
     field :name, :string
@@ -44,6 +45,12 @@ defmodule GitGud.GraphQL.Types do
     field :target, non_null(:git_object), resolve: &Resolvers.git_tag_target/3
     field :repo, non_null(:repo)
     resolve_type &Resolvers.git_tag_type/2
+  end
+
+  union :search_result do
+    types [:user, :repo]
+
+    resolve_type &Resolvers.search_result_type/2
   end
 
   node object :user do

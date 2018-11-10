@@ -97,11 +97,15 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a list of users for a given search term.
   """
-  @spec user_search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def user_search(%{input: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
+  @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def search(%{user: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
     query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user], preload: :public_email)
     Connection.from_query(query, &DB.all/1, args)
   end
+
+  @spec search(User.t|Repo.t, Absinthe.Resolution.t) :: atom
+  def search_result_type(%User{}, _info), do: :user
+  def search_result_type(%Repo{}, _info), do: :repo
 
   @doc """
   Resolves a repository object by name for a given `user`.

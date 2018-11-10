@@ -51,9 +51,9 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.user/3
     end
 
-    connection field :user_search, node_type: :user do
-      arg :input, non_null(:string)
-      resolve &Resolvers.user_search/2
+    connection field :search, node_type: :search_result do
+      arg :user, :string
+      resolve &Resolvers.search/2
     end
   end
 
