@@ -19,6 +19,9 @@
     <nav class="navbar is-warning" role="navigation" aria-label="dropdown navigation">
       <div class="navbar-menu">
         <div class="navbar-start">
+          <div class="navbar-item">
+            <%= react_component("Search") %>
+          </div>
         </div>
 
         <div class="navbar-end">
