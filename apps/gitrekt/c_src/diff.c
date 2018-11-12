@@ -44,7 +44,7 @@ static git_diff_options diff_opts_atom2type(ErlNifEnv *env, ERL_NIF_TERM keyword
 	ERL_NIF_TERM head, tail, key, val;
 	size_t size;
 	const ERL_NIF_TERM *array;
-	size_t arity;
+	size_t arity, i;
 	git_diff_options opts;
 
 	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
@@ -53,7 +53,7 @@ static git_diff_options diff_opts_atom2type(ErlNifEnv *env, ERL_NIF_TERM keyword
 		return opts;
 
 	tail = keyword;
-	for(size_t i = 0; i < size; i++) {
+	for(i = 0; i < size; i++) {
 		if (!enif_get_list_cell(env, tail, &head, &tail))
 			return opts;
 
@@ -273,6 +273,7 @@ geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	diff_pack pack;
 	geef_diff *diff;
+	int i, j;
 
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
 		return enif_make_badarg(env);
@@ -282,10 +283,10 @@ geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_error(env);
 
 	ERL_NIF_TERM deltas = enif_make_list(env, 0);
-	for (int i = 0; i < pack.size; i++) {
+	for (i = 0; i < pack.size; i++) {
 		diff_delta *delta = pack.deltas[i];
 		ERL_NIF_TERM hunks = enif_make_list(env, 0);
-		for (int j = 0; j < delta->size; j++) {
+		for (j = 0; j < delta->size; j++) {
 			diff_hunk *hunk = delta->hunks[j];
 			enif_make_reverse_list(env, hunk->lines, &hunk->lines);
 			hunks = enif_make_list_cell(env, enif_make_tuple2(env, hunk->hunk, hunk->lines), hunks);

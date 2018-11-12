@@ -159,7 +159,7 @@ git_strarray git_strarray_from_list(ErlNifEnv *env, ERL_NIF_TERM list)
 {
 	ErlNifBinary bin;
 	ERL_NIF_TERM head, tail;
-	unsigned int size;
+	unsigned int i, size;
 	git_strarray array;
 
 	if (!enif_get_list_length(env, list, &size))
@@ -169,7 +169,7 @@ git_strarray git_strarray_from_list(ErlNifEnv *env, ERL_NIF_TERM list)
 	array.strings = malloc(sizeof(char*) * size);
 
 	tail = list;
-	for(size_t i = 0; i < size; i++) {
+	for(i = 0; i < size; i++) {
 		if (!enif_get_list_cell(env, tail, &head, &tail))
 			return array;
 
