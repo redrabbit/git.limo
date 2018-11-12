@@ -29,14 +29,14 @@ defmodule GitGud.Web.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:ecto, "~> 3.0-rc", override: true},
+    [{:ecto, "~> 3.0", override: true},
      {:plug, "~> 1.7"},
      {:plug_cowboy, "~> 2.0"},
-     {:phoenix, "~> 1.4.0-rc", override: true},
+     {:phoenix, "~> 1.4", override: true},
      {:phoenix_html, "~> 2.10"},
      {:phoenix_pubsub, "~> 1.0"},
-     {:phoenix_live_reload, "~> 1.2.0-rc", only: :dev},
-     {:phoenix_ecto, "~> 3.3"},
+     {:phoenix_live_reload, "~> 1.2", only: :dev},
+     {:phoenix_ecto, "~> 4.0"},
      {:absinthe, "~> 1.4"},
      {:absinthe_relay, "~> 1.4"},
      {:absinthe_phoenix, "~> 1.4"},
