@@ -1,6 +1,6 @@
 /**
  * @flow
- * @relayHash 2b86328d1d670b4f416679d15a2095da
+ * @relayHash c075e3ecbc8b3656206291359cd8897e
  */
 
 /* eslint-disable */
@@ -113,14 +113,14 @@ v3 = {
 v4 = {
   "kind": "ScalarField",
   "alias": null,
-  "name": "username",
+  "name": "name",
   "args": null,
   "storageKey": null
 },
 v5 = {
   "kind": "ScalarField",
   "alias": null,
-  "name": "name",
+  "name": "username",
   "args": null,
   "storageKey": null
 },
@@ -175,20 +175,10 @@ return {
                   v2,
                   {
                     "kind": "InlineFragment",
-                    "type": "User",
-                    "selections": [
-                      v3,
-                      v4,
-                      v5,
-                      v6
-                    ]
-                  },
-                  {
-                    "kind": "InlineFragment",
                     "type": "Repo",
                     "selections": [
                       v3,
-                      v5,
+                      v4,
                       {
                         "kind": "LinkedField",
                         "alias": null,
@@ -198,9 +188,19 @@ return {
                         "concreteType": "User",
                         "plural": false,
                         "selections": [
-                          v4
+                          v5
                         ]
                       },
+                      v6
+                    ]
+                  },
+                  {
+                    "kind": "InlineFragment",
+                    "type": "User",
+                    "selections": [
+                      v3,
+                      v5,
+                      v4,
                       v6
                     ]
                   }
@@ -248,18 +248,9 @@ return {
                   v3,
                   {
                     "kind": "InlineFragment",
-                    "type": "User",
-                    "selections": [
-                      v4,
-                      v5,
-                      v6
-                    ]
-                  },
-                  {
-                    "kind": "InlineFragment",
                     "type": "Repo",
                     "selections": [
-                      v5,
+                      v4,
                       {
                         "kind": "LinkedField",
                         "alias": null,
@@ -269,10 +260,19 @@ return {
                         "concreteType": "User",
                         "plural": false,
                         "selections": [
-                          v4,
+                          v5,
                           v3
                         ]
                       },
+                      v6
+                    ]
+                  },
+                  {
+                    "kind": "InlineFragment",
+                    "type": "User",
+                    "selections": [
+                      v5,
+                      v4,
                       v6
                     ]
                   }
