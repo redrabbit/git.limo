@@ -114,6 +114,23 @@ defmodule GitGud.RepoQuery do
     end
   end
 
+  @doc """
+  Returns a list of users matching the given `input`.
+  """
+  @spec search(binary, keyword) :: [User.t]
+  def search(input, opts \\ []) do
+    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
+  end
+
+  @doc """
+  Returns a query for searching repositories.
+  """
+  @spec search_query(binary) :: Ecto.Query.t
+  def search_query(input) do
+    term = "%#{input}%"
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: ilike(r.name, ^term), preload: [owner: u])
+  end
+
   #
   # Callbacks
   #

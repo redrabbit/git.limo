@@ -45,7 +45,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :repo} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
-    if repo = RepoQuery.by_id(to_integer(id), viewer: ctx[:current_user]),
+    if repo = RepoQuery.by_id(to_integer(id), viewer: ctx[:current_user], preload: [owner: :public_email]),
       do: {:ok, repo},
     else: node(%{id: id}, info)
   end
@@ -98,12 +98,23 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves a list of users for a given search term.
   """
   @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def search(%{all: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
+    users = UserQuery.search(input, viewer: ctx[:current_user], preload: :public_email)
+    repos = RepoQuery.search(input, viewer: ctx[:current_user], preload: [owner: :public_email])
+    Connection.from_list(users ++ repos, args)
+  end
+
   def search(%{user: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
     query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user], preload: :public_email)
     Connection.from_query(query, &DB.all/1, args)
   end
 
-  @spec search(User.t|Repo.t, Absinthe.Resolution.t) :: atom
+  def search(%{repo: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
+    query = DBQueryable.query({RepoQuery, :search_query}, input, viewer: ctx[:current_user], preload: [owner: :public_email])
+    Connection.from_query(query, &DB.all/1, args)
+  end
+
+  @spec search_result_type(User.t|Repo.t, Absinthe.Resolution.t) :: atom
   def search_result_type(%User{}, _info), do: :user
   def search_result_type(%Repo{}, _info), do: :repo
 
@@ -112,7 +123,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def user_repo(%User{} = user, %{name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user]),
+    if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
       do: {:ok, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
@@ -122,7 +133,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
-    query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user])
+    query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user], preload: [owner: :public_email])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -354,7 +365,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def batch_repos_by_user_ids(viewer, user_ids) do
     user_ids
     |> Enum.uniq()
-    |> RepoQuery.user_repos(viewer: viewer)
+    |> RepoQuery.user_repos(viewer: viewer, preload: [owner: :public_email])
     |> Map.new(&{&1.owner_id, &1})
   end
 

@@ -52,7 +52,9 @@ defmodule GitGud.GraphQL.Schema do
     end
 
     connection field :search, node_type: :search_result do
+      arg :all, :string
       arg :user, :string
+      arg :repo, :string
       resolve &Resolvers.search/2
     end
   end
