@@ -125,7 +125,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	ErlNifBinary bin;
 	ERL_NIF_TERM chunks, data;
-    int chunk_size = 256000;
+    int chunk_size = 512000;
     char chunk[chunk_size];
     int error;
     z_stream z;
