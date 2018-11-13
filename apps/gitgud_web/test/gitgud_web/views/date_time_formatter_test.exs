@@ -17,8 +17,8 @@ defmodule GitGud.Web.DateTimeFormatterTest do
     assert datetime_format(date, "{relative}") == "now"
     assert datetime_format(Timex.shift(date, minutes: -35), "{relative}") == "35 minutes ago"
     assert datetime_format(Timex.shift(date, hours: -4), "{relative}") == "4 hours ago"
-    assert datetime_format(Timex.shift(date, days: -20), "{relative}") == "20 days ago"
-    assert datetime_format(Timex.shift(date, days: -90), "{relative}") == "3 months ago"
+    assert datetime_format(Timex.shift(date, days: -16), "{relative}") == "15 days ago"
+    assert datetime_format(Timex.shift(date, days: -90), "{relative}") == "2 months ago"
     assert datetime_format(Timex.shift(date, years: -1), "{relative}") == "1 year ago"
   end
 end
