@@ -52,10 +52,13 @@ defmodule GitGud.SSHServer do
   @doc """
   Returns a child-spec to use as part of a supervision tree.
   """
-  @spec child_spec([integer]) :: Supervisor.Spec.spec
-  def child_spec([port] = _args) do
+  @spec child_spec([]) :: Supervisor.Spec.spec
+  def child_spec([] = _args) do
+    config = Application.fetch_env!(:gitgud, __MODULE__)
+    port = Keyword.fetch!(config, :port)
+    key_path = Keyword.fetch!(config, :key_path)
     %{id: __MODULE__,
-      start: {:ssh, :daemon, [port, daemon_opts()]},
+      start: {:ssh, :daemon, [port, daemon_opts(key_path)]},
       restart: :permanent,
       shutdown: 5000,
       type: :worker}
@@ -148,8 +151,7 @@ defmodule GitGud.SSHServer do
   defp authorized?(user, repo, "git-upload-pack"),  do: Authorization.authorized?(user, repo, :read)
   defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :write)
 
-  defp daemon_opts() do
-    system_dir = Application.get_env(:gitgud, :ssh_keys, System.get_env("SSH_KEYS"))
+  defp daemon_opts(system_dir) do
     [key_cb: {__MODULE__, []},
      ssh_cli: {__MODULE__, []},
      parallel_login: true,
