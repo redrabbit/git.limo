@@ -13,6 +13,8 @@ defimpl Phoenix.HTML.Safe, for: GitGud.GitTreeEntry do
           [content_tag(:span, content_tag(:i, [], class: "fa fa-folder"), class: "icon"), raw(tree_entry.name)]
         tree_entry.type == :blob ->
           [content_tag(:span, content_tag(:i, [], class: "fa fa-file"), class: "icon"), raw(tree_entry.name)]
+        tree_entry.type == :commit ->
+          [content_tag(:span, content_tag(:i, [], class: "fa fa-archive"), class: "icon"), raw(tree_entry.name)]
       end
     )
   end
