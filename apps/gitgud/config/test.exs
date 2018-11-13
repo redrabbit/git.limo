@@ -8,10 +8,7 @@ config :gitgud, GitGud.DB,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :gitgud, GitGud.SSHServer,
-  port: 8989,
-  key_path: Path.absname("priv/ssh-keys", Path.dirname(__DIR__))
-
-config :gitgud, GitGud.Repo,
-  root_path: Path.absname("test/data/git", Path.dirname(__DIR__))
-
+config :gitgud,
+  ssh_port: 9898,
+  ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__))
+  git_root: Path.absname("test/data/git", Path.dirname(__DIR__))

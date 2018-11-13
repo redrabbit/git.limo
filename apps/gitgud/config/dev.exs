@@ -8,10 +8,8 @@ config :gitgud, GitGud.DB,
   hostname: "localhost",
   pool_size: 10
 
-config :gitgud, GitGud.SSHServer,
-  port: 8989,
-  key_path: Path.absname("priv/ssh-keys", Path.dirname(__DIR__))
-
-config :gitgud, GitGud.Repo,
-  root_path: Path.absname("priv/git-data", Path.dirname(__DIR__))
+config :gitgud,
+  ssh_port: {:system, "SSH_PORT"},
+  ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
+  git_root: Path.absname("priv/git-data", Path.dirname(__DIR__))
 
