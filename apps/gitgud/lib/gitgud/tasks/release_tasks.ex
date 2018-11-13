@@ -1,4 +1,8 @@
 defmodule GitGud.ReleaseTasks do
+  @moduledoc """
+  Convenience tasks for Erlang releases.
+  """
+
   @start_apps [
     :crypto,
     :ssl,
@@ -9,18 +13,28 @@ defmodule GitGud.ReleaseTasks do
 
   @repos Application.get_env(:gitgud, :ecto_repos, [])
 
+  @doc """
+  Runs database migrations.
+  """
   def migrate(_argv) do
     start_services()
     run_migrations()
     stop_services()
   end
 
+  @doc """
+  Run database migrations and seed.exs script.
+  """
   def seed(_argv) do
     start_services()
     run_migrations()
     run_seeds()
     stop_services()
   end
+
+  #
+  # Helpers
+  #
 
   defp start_services do
     IO.puts("Starting dependencies...")
