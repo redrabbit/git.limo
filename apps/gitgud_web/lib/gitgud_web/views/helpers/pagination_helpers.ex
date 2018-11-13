@@ -6,8 +6,6 @@ defmodule GitGud.Web.PaginationHelpers do
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
-  import GitRekt.Git, only: [oid_fmt: 1]
-
   @doc """
   Paginates the given `stream`.
   """
