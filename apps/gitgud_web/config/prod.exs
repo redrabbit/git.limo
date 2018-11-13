@@ -6,7 +6,6 @@ use Mix.Config
 # GitGud.Web.Endpoint.init/2 when load_from_system_env is
 # true. Any dynamic configuration should be done there.
 config :gitgud_web, GitGud.Web.Endpoint,
-  load_from_system_env: true,
   http: [port: {:system, "PORT"}],
   url: [host: "locahost", port: {:system, "PORT"}],
   cache_static_manifest: "priv/static/cache_manifest.json"
