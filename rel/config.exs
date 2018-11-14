@@ -35,6 +35,11 @@ environment :dev do
 end
 
 environment :prod do
+  set plugins: [GitGud.Web.AssetPipeline]
+  set commands: [
+    migrate: "rel/commands/migrate.sh",
+    seed: "rel/commands/seed.sh",
+  ]
   set include_erts: true
   set include_src: false
   set cookie: :"x^j|nj1Y8$0xq2)C|QO]mJJ8Z6B!.H/EeYr]|.~1{E35Z};&OOAZmz&x/r4RDlV]"
@@ -53,10 +58,6 @@ release :gitgud do
     gitgud: :permanent,
     gitgud_web: :permanent,
     gitrekt: :permanent
-  ]
-  set commands: [
-    migrate: "rel/commands/migrate.sh",
-    seed: "rel/commands/seed.sh",
   ]
 end
 
