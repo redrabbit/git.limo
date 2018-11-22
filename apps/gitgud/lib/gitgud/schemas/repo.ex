@@ -32,6 +32,7 @@ defmodule GitGud.Repo do
     field         :name,        :string
     field         :public,      :boolean, default: true
     field         :description, :string
+    field         :__git__,     :any, virtual: true
     many_to_many  :maintainers, User, join_through: RepoMaintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
   end
@@ -199,11 +200,23 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Opens the Git repository for the given `repo`.
+  """
+  @spec open(t) :: t
+  def open(%__MODULE__{__git__: handle} = repo) when is_reference(handle), do: repo
+  def open(%__MODULE__{__git__: nil} = repo) do
+    case Git.repository_open(workdir(repo)) do
+      {:ok, handle} -> struct(repo, __git__: handle)
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   Returns `true` if `repo` is empty; otherwhise returns `false`.
   """
   @spec empty?(t) :: boolean
   def empty?(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)), do:
+    with {:ok, handle} <- resolve_handle(repo), do:
       Git.repository_empty?(handle)
   end
 
@@ -212,7 +225,7 @@ defmodule GitGud.Repo do
   """
   @spec git_head(t) :: {:ok, GitReference.t} | {:error, term}
   def git_head(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
       {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
@@ -224,13 +237,13 @@ defmodule GitGud.Repo do
   def git_reference(repo, name_or_shorthand \\ :head)
   def git_reference(%__MODULE__{} = repo, :head), do: git_head(repo)
   def git_reference(%__MODULE__{} = repo, "/refs/" <> _suffix = name) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
 
   def git_reference(%__MODULE__{} = repo, shorthand) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand), do:
       {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
@@ -240,7 +253,7 @@ defmodule GitGud.Repo do
   """
   @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
   def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, stream} <- Git.reference_stream(handle, glob),
          {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
@@ -252,7 +265,7 @@ defmodule GitGud.Repo do
   @spec git_branch(t, binary) :: {:ok, GitReference.t} | {:error, term}
   def git_branch(%__MODULE__{} = repo, branch_name) do
     name = "refs/heads/" <> branch_name
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
   end
@@ -262,7 +275,7 @@ defmodule GitGud.Repo do
   """
   @spec git_branches(t) :: {:ok, Stream.t} | {:error, term}
   def git_branches(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"),
          {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
@@ -274,7 +287,7 @@ defmodule GitGud.Repo do
   @spec git_tag(t, binary) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
   def git_tag(%__MODULE__{} = repo, tag_name) do
     name = "refs/tags/" <> tag_name
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
       {:ok, resolve_tag({name, shorthand, :oid, oid}, {repo, handle})}
   end
@@ -284,7 +297,7 @@ defmodule GitGud.Repo do
   """
   @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
   def git_tags(%__MODULE__{} = repo) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"),
          {:ok, stream} <- Git.enumerate(stream), do:
       {:ok, Stream.map(stream, &resolve_tag(&1, {repo, handle}))}
@@ -296,7 +309,7 @@ defmodule GitGud.Repo do
   @spec git_object(t, binary) :: {:ok, git_object} | {:error, term}
   def git_object(%__MODULE__{} = repo, oid) do
     oid = Git.oid_parse(oid)
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
       {:ok, resolve_object({obj, obj_type, oid}, {repo, handle})}
   end
@@ -306,7 +319,7 @@ defmodule GitGud.Repo do
   """
   @spec git_revision(t, binary) :: {:ok, git_object, GitReference.t | nil} | {:error, term}
   def git_revision(%__MODULE__{} = repo, revision) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, obj, obj_type, oid, name} <- Git.revparse_ext(handle, revision), do:
       {:ok, resolve_object({obj, obj_type, oid}, {repo, handle}), resolve_reference({name, nil, :oid, oid}, {repo, handle})}
   end
@@ -360,7 +373,7 @@ defmodule GitGud.Repo do
   Returns a diff with the difference between `old_tree` and `new_tree`.
   """
   def git_diff(%GitTree{repo: repo, __git__: old_tree} = _old_tree, %GitTree{repo: repo, __git__: new_tree} = _new_tree, opts \\ []) do
-    with {:ok, handle} <- Git.repository_open(workdir(repo)),
+    with {:ok, handle} <- resolve_handle(repo),
          {:ok, diff} <- Git.diff_tree(handle, old_tree, new_tree, opts), do:
       {:ok, %GitDiff{repo: repo, __git__: diff}}
   end
@@ -478,6 +491,9 @@ defmodule GitGud.Repo do
     else: changeset
   end
 
+  defp resolve_handle(%__MODULE__{__git__: handle}) when is_reference(handle), do: {:ok, handle}
+  defp resolve_handle(%__MODULE__{__git__: handle}), do: {:error, "invalid Git repository handle #{inspect handle}"}
+
   defp resolve_history(oid, {repo, handle}, opts) when is_binary(oid) do
     {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
     with {:ok, walk} <- Git.revwalk_new(handle),
@@ -554,7 +570,7 @@ defmodule GitGud.Repo do
   end
 
   defp pathspec_match_commit_diff(_handle, %GitTree{repo: repo, __git__: old_tree}, %GitTree{__git__: new_tree}, pathspec) do
-    {:ok, handle} = Git.repository_open(workdir(repo)) # TODO
+    {:ok, handle} = resolve_handle(repo) # TODO
     case Git.diff_tree(handle, old_tree, new_tree, pathspec: pathspec) do
       {:ok, diff} -> Git.diff_delta_count(diff)
       {:error, reason} -> {:error, reason}
