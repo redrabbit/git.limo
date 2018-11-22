@@ -15,6 +15,7 @@ defmodule GitGud.Repo do
 
   alias GitGud.DB
   alias GitGud.User
+  alias GitGud.UserQuery
   alias GitGud.RepoMaintainer
 
   alias GitGud.GitBlob
@@ -66,11 +67,12 @@ defmodule GitGud.Repo do
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map|keyword, keyword) :: {:ok, t, Git.repo} | {:error, Ecto.Changeset.t | term}
+  @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
     case create_and_init(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
-      {:ok, %{repo: repo, init: ref}} ->
-        {:ok, DB.preload(repo, [:owner, :maintainers]), ref}
+      {:ok, %{repo: repo, init: handle}} ->
+        owner = UserQuery.by_id(repo.owner_id)
+        {:ok, struct(repo, owner: owner, maintainers: [owner], __git__: handle)}
       {:error, :repo, changeset, _changes} ->
         {:error, changeset}
       {:error, :init, reason, _changes} ->
@@ -81,10 +83,10 @@ defmodule GitGud.Repo do
   @doc """
   Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword, keyword) :: {t, pid}
+  @spec create!(map|keyword, keyword) :: t
   def create!(params, opts \\ []) do
     case create(params, opts) do
-      {:ok, repo, pid} -> {repo, pid}
+      {:ok, repo} -> repo
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
   end

@@ -69,7 +69,7 @@ defmodule GitGud.Web.RepoMaintainerControllerTest do
   end
 
   defp create_repo(context) do
-    {repo, _git_handle} = Repo.create!(factory(:repo, hd(context.users)))
+    repo = Repo.create!(factory(:repo, hd(context.users)))
     Map.put(context, :repo, repo)
   end
 

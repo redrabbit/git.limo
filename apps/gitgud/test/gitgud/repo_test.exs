@@ -2,18 +2,16 @@ defmodule GitGud.RepoTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
-  alias GitRekt.Git
   alias GitGud.User
   alias GitGud.Repo
 
   setup :create_user
 
   test "creates a new repository with valid params", %{user: user} do
-    assert {:ok, repo, git_handle} = Repo.create(factory(:repo, user))
+    assert {:ok, repo} = Repo.create(factory(:repo, user))
     assert user.id in Enum.map(repo.maintainers, &(&1.id))
     assert File.dir?(Repo.workdir(repo))
-    assert Git.repository_bare?(git_handle)
-    assert Git.repository_empty?(git_handle)
+    assert Repo.empty?(repo)
     File.rm_rf!(Repo.workdir(repo))
   end
 
@@ -85,7 +83,7 @@ defmodule GitGud.RepoTest do
   end
 
   defp create_repo(context) do
-    {repo, _git_handle} = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(factory(:repo, context.user))
     on_exit fn ->
       File.rm_rf(Repo.workdir(repo))
     end

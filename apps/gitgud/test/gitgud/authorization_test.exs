@@ -131,8 +131,8 @@ defmodule GitGud.AuthorizationTest do
   defp create_repos(context) do
     {repos, _last_user} =
       Enum.flat_map_reduce(context.users, nil, fn user, last_user ->
-        {repo1, _git_handle} = Repo.create!(Map.put(factory(:repo, user), :public, true))
-        {repo2, _git_handle} = Repo.create!(Map.put(factory(:repo, user), :public, false))
+        repo1 = Repo.create!(Map.put(factory(:repo, user), :public, true))
+        repo2 = Repo.create!(Map.put(factory(:repo, user), :public, false))
         maintainers = if last_user, do: [last_user|repo2.maintainers], else: [List.last(context.users)|repo2.maintainers]
         {[repo1, Repo.update!(repo2, maintainers: maintainers)], user}
       end)

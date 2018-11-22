@@ -29,7 +29,7 @@ defmodule GitGud.Web.RepoController do
   def create(conn, %{"repo" => repo_params} = _params) do
     user = current_user(conn)
     case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
-      {:ok, repo, _handle} ->
+      {:ok, repo} ->
         conn
         |> put_flash(:info, "Repository created.")
         |> redirect(to: Routes.codebase_path(conn, :show, user, repo))

@@ -48,7 +48,7 @@ defmodule GitGud.Web.UserControllerTest do
     setup :create_user
 
     test "renders user profile", %{conn: conn, user: user} do
-      user_repos = Enum.take(Stream.repeatedly(fn -> elem(Repo.create!(factory(:repo, user)), 0) end), 3)
+      user_repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, user)) end), 3)
       conn = get(conn, Routes.user_path(conn, :show, user))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.username}</h2>)

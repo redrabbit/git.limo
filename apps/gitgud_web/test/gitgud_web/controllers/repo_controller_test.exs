@@ -95,7 +95,7 @@ defmodule GitGud.Web.RepoControllerTest do
   end
 
   defp create_repo(context) do
-    {repo, _git_handle} = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(factory(:repo, context.user))
     on_exit fn ->
       File.rm_rf!(Repo.workdir(repo))
     end
