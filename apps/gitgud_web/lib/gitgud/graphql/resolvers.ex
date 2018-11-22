@@ -150,7 +150,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_head(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def repo_head(%Repo{} = repo, %{} = _args, _info) do
-    Repo.git_head(repo)
+    repo
+    |> Repo.open()
+    |> Repo.git_head()
   end
 
   @doc """
@@ -158,7 +160,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_ref(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
-    Repo.git_reference(repo, name)
+    repo
+    |> Repo.open()
+    |> Repo.git_reference(name)
   end
 
   @doc """
@@ -166,6 +170,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_refs(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_refs(args, %Absinthe.Resolution{source: repo} = _source) do
+    repo = Repo.open(repo)
     case Repo.git_references(repo, Map.get(args, :glob, :undefined)) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -180,7 +185,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_tag(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
   def repo_tag(%Repo{} = repo, %{name: name} = _args, _info) do
-    Repo.git_tag(repo, name)
+    repo
+    |> Repo.open()
+    |> Repo.git_tag(name)
   end
 
   @doc """
@@ -188,6 +195,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_tags(args, %Absinthe.Resolution{source: repo} = _source) do
+    repo = Repo.open(repo)
     case Repo.git_tags(repo) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
