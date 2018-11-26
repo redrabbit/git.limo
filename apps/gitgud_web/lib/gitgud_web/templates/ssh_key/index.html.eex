@@ -32,7 +32,13 @@
     </div>
     <footer class="card-footer">
       <p class="card-footer-item">Added on <%= datetime_format(ssh_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
-      <p class="card-footer-item">Last used ---</p>
+      <p class="card-footer-item">
+        <%= if last_used_at = ssh_key.last_used_at do %>
+          Used <%= datetime_format(last_used_at, "{relative}") %>
+        <% else %>
+          Never used
+        <% end %>
+      </p>
     </footer>
   </div>
 <% end %>

@@ -24,7 +24,7 @@
             <span class="icon has-text-grey">
               <i class="fa fa-envelope"></i>
             </span>
-            <a href="mailto:<%= @user.public_email.email %>"><%= @user.public_email.email %></a>
+            <a href="mailto:<%= @user.public_email.address %>"><%= @user.public_email.address %></a>
           </li>
         <% end %>
         <%= if @user.url do %>

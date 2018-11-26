@@ -18,6 +18,7 @@ defmodule GitGud.SSHKey do
     field      :data, :string, virtual: true
     field      :fingerprint, :string
     timestamps(updated_at: false)
+    field      :last_used_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
@@ -28,6 +29,7 @@ defmodule GitGud.SSHKey do
     data: binary,
     fingerprint: binary,
     inserted_at: NaiveDateTime.t,
+    last_used_at: NaiveDateTime.t
   }
 
   @doc """
@@ -66,6 +68,14 @@ defmodule GitGud.SSHKey do
   @spec delete!(t) :: t
   def delete!(%__MODULE__{} = ssh_key) do
     DB.delete!(ssh_key)
+  end
+
+  def update_timestamp(%__MODULE__{} = ssh_key) do
+    DB.update(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
+  end
+
+  def update_timestamp!(%__MODULE__{} = ssh_key) do
+    DB.update!(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
   end
 
   @doc """
