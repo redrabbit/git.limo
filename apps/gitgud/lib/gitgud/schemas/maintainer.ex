@@ -1,8 +1,8 @@
-defmodule GitGud.RepoMaintainer do
+defmodule GitGud.Maintainer do
   @moduledoc """
   Repository maintainer schema and helper functions.
 
-  A `GitGud.RepoMaintainer` is primarly used to associate `GitGud.User` to `GitGud.Repo`.
+  A `GitGud.Maintainer` is primarly used to associate `GitGud.User` to `GitGud.Repo`.
 
   Each repository maintainer also has a permission defining which actions he is able to perform
   on the repository. Following permissions are available:
@@ -45,7 +45,7 @@ defmodule GitGud.RepoMaintainer do
   Creates a new maintainer with the given `params`.
 
   ```elixir
-  {:ok, maintainer} = GitGud.RepoMaintainer.create(user_id: user.id, repo_id: repo.id)
+  {:ok, maintainer} = GitGud.Maintainer.create(user_id: user.id, repo_id: repo.id)
   ```
 
   This function validates the given `params` using `changeset/2`.

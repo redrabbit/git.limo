@@ -1,10 +1,10 @@
-defmodule GitGud.Web.RepoMaintainerView do
+defmodule GitGud.Web.MaintainerView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitGud.RepoMaintainer
+  alias GitGud.Maintainer
 
-  @spec permission_select(Phoenix.HTML.Form.t, atom, RepoMaintainer.t) :: binary
+  @spec permission_select(Phoenix.HTML.Form.t, atom, Maintainer.t) :: binary
   def permission_select(form, key, maintainer) do
     select(form, key, ["admin", "read", "write"], selected: maintainer.permission)
   end

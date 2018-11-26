@@ -16,7 +16,7 @@ defmodule GitGud.Repo do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
-  alias GitGud.RepoMaintainer
+  alias GitGud.Maintainer
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
@@ -34,7 +34,7 @@ defmodule GitGud.Repo do
     field         :public,      :boolean, default: true
     field         :description, :string
     field         :__git__,     :any, virtual: true
-    many_to_many  :maintainers, User, join_through: RepoMaintainer, on_replace: :delete, on_delete: :delete_all
+    many_to_many  :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
   end
 
@@ -170,11 +170,11 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns the list of associated `GitGud.RepoMaintainer` for the given `repo`.
+  Returns the list of associated `GitGud.Maintainer` for the given `repo`.
   """
-  @spec maintainers(t) :: [RepoMaintainer.t]
+  @spec maintainers(t) :: [Maintainer.t]
   def maintainers(%__MODULE__{id: repo_id} = _repo) do
-    query = from(m in RepoMaintainer,
+    query = from(m in Maintainer,
            join: u in assoc(m, :user),
           where: m.repo_id == ^repo_id,
         preload: [user: u])
@@ -182,11 +182,11 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns a single `GitGud.RepoMaintainer` for the given `repo` and `user`.
+  Returns a single `GitGud.Maintainer` for the given `repo` and `user`.
   """
-  @spec maintainer(t, User.t) :: RepoMaintainer.t | nil
+  @spec maintainer(t, User.t) :: Maintainer.t | nil
   def maintainer(%__MODULE__{id: repo_id} = _repo, %User{id: user_id} = user) do
-    query = from(m in RepoMaintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
+    query = from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
     if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
 
@@ -448,7 +448,7 @@ defmodule GitGud.Repo do
   end
 
   defp create_maintainer(db, %{repo: repo}) do
-    changeset = RepoMaintainer.changeset(%RepoMaintainer{}, %{repo_id: repo.id, user_id: repo.owner_id, permission: "admin"})
+    changeset = Maintainer.changeset(%Maintainer{}, %{repo_id: repo.id, user_id: repo.owner_id, permission: "admin"})
     db.insert(changeset)
   end
 

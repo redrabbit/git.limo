@@ -16,7 +16,7 @@
         <div class="level-right">
           <%= if maintainer.user_id != @repo.owner_id do %>
             <div class="level-item">
-              <%= form_for @conn, Routes.repo_maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
+              <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
                 <%= hidden_input(f, :id, value: maintainer.id) %>
                 <div class="field">
                   <div class="field is-grouped">
@@ -34,7 +34,7 @@
               <% end %>
             </div>
             <div class="level-item">
-              <%= form_for @conn, Routes.repo_maintainer_path(@conn, :delete, @repo.owner, @repo), [method: :delete, as: :maintainer], fn f -> %>
+              <%= form_for @conn, Routes.maintainer_path(@conn, :delete, @repo.owner, @repo), [method: :delete, as: :maintainer], fn f -> %>
                 <%= hidden_input(f, :id, value: maintainer.id) %>
                 <button type="submit" class="delete"></button>
               <% end %>
@@ -65,7 +65,7 @@
   <% end %>
 </nav>
 
-<%= form_for @changeset, Routes.repo_maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
+<%= form_for @changeset, Routes.maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
   <div class="field">
     <%= label f, :user_id, "Add a maintainer", class: "label" %>
     <%= react_component "UserInput", id: input_id(f, :user_id), name: input_name(f, :user_id), maintainers: Enum.map(@repo.maintainers, &to_relay_id/1) %>

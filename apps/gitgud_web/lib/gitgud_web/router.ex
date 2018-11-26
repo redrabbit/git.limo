@@ -74,10 +74,10 @@ defmodule GitGud.Web.Router do
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update
 
-      get "/settings/maintainers", RepoMaintainerController, :edit
-      post "/settings/maintainers", RepoMaintainerController, :create
-      put "/settings/maintainers", RepoMaintainerController, :update
-      delete "/settings/maintainers", RepoMaintainerController, :delete
+      get "/settings/maintainers", MaintainerController, :edit
+      post "/settings/maintainers", MaintainerController, :create
+      put "/settings/maintainers", MaintainerController, :update
+      delete "/settings/maintainers", MaintainerController, :delete
     end
 
     get "/:user_name", UserController, :show

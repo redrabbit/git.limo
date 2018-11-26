@@ -10,7 +10,7 @@ defmodule GitGud.RepoQuery do
 
   alias GitGud.User
   alias GitGud.Repo
-  alias GitGud.RepoMaintainer
+  alias GitGud.Maintainer
 
   import Ecto.Query
 
@@ -145,7 +145,7 @@ defmodule GitGud.RepoQuery do
   @impl true
   def alter_query(query, preloads, viewer) do
     query
-    |> join(:left, [repo: r], m in RepoMaintainer, on: r.id == m.repo_id, as: :maintainer)
+    |> join(:left, [repo: r], m in Maintainer, on: r.id == m.repo_id, as: :maintainer)
     |> where([repo: r, maintainer: m], r.public == true or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
     |> preload([], ^preloads)
   end

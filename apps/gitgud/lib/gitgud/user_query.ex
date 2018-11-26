@@ -10,7 +10,7 @@ defmodule GitGud.UserQuery do
 
   alias GitGud.Email
   alias GitGud.User
-  alias GitGud.RepoMaintainer
+  alias GitGud.Maintainer
 
   import Ecto.Query
 
@@ -169,7 +169,7 @@ defmodule GitGud.UserQuery do
 
   defp join_preload(query, :repos, viewer) do
     query
-    |> join(:left, [user: u], m in RepoMaintainer, on: m.user_id == ^viewer.id, as: :maintainer)
+    |> join(:left, [user: u], m in Maintainer, on: m.user_id == ^viewer.id, as: :maintainer)
     |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
     |> preload([repos: r], [repos: r])
   end

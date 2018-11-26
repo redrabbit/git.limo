@@ -46,7 +46,7 @@ defmodule GitGud.UserQueryTest do
     users =
       Stream.repeatedly(fn ->
         user = User.create!(factory(:user))
-        struct(user, emails: Enum.map(user.emails, &Email.verify!/1))
+        struct(user, emails: Enum.map(user.emails, &Email.verify!/1), primary_email_id: hd(user.emails).id)
       end)
     Map.put(context, :users, Enum.take(users, 3))
   end

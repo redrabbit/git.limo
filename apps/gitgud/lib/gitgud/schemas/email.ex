@@ -68,12 +68,11 @@ defmodule GitGud.Email do
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
     DB.transaction(fn ->
-      email = DB.update!(change(email, %{verified: true}))
-      email = DB.preload(email, :user)
-      unless email.user.primary_email_id do
-        User.update!(email.user, :primary_email, email)
+      email_user = DB.preload(email, :user)
+      unless email_user.user.primary_email_id do
+        User.update!(email_user.user, :primary_email, email)
       end
-      email
+      DB.update!(change(email, %{verified: true}))
     end)
   end
 
