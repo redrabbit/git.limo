@@ -36,6 +36,7 @@ defmodule GitGud.Repo do
     field         :__git__,     :any, virtual: true
     many_to_many  :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
+    field         :pushed_at,   :naive_datetime
   end
 
   @type git_object :: GitBlob.t | GitCommit.t | GitTag.t | GitTree.t
@@ -51,6 +52,7 @@ defmodule GitGud.Repo do
     maintainers: [User.t],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
+    pushed_at: NaiveDateTime.t
   }
 
   @doc """
@@ -393,13 +395,10 @@ defmodule GitGud.Repo do
   """
   @spec git_push(t, ReceivePack.t) :: :ok | {:error, term}
   def git_push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
-    case ReceivePack.apply_pack(receive_pack) do
-      {:ok, oids} ->
-        :ok = ReceivePack.apply_cmds(receive_pack)
-        :ok = Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
-      {:error, reason} ->
-        {:error, reason}
-    end
+    with {:ok, oids} <- ReceivePack.apply_pack(receive_pack),
+          :ok <- ReceivePack.apply_cmds(receive_pack),
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
+      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
   end
 
   #

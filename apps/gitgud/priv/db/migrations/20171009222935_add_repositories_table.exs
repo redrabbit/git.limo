@@ -8,6 +8,7 @@ defmodule GitGud.DB.Migrations.AddRepositoriesTable do
       add :public,      :boolean, null: false, default: true
       add :description, :string
       timestamps()
+      add :pushed_at,   :naive_datetime
     end
     create unique_index("repositories", [:owner_id, :name])
   end
