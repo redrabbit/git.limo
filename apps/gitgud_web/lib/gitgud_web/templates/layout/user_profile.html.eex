@@ -4,7 +4,7 @@
       <%= gravatar(@user, size: 516) %>
 
       <h1 class="title"><%= @user.name %></h1>
-      <h2 class="subtitle"><%= @user.username %></h2>
+      <h2 class="subtitle"><%= @user.login %></h2>
 
       <p class="has-text-grey"><%= @user.bio %></p>
 

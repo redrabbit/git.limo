@@ -16,7 +16,7 @@ defmodule GitGud.DataFactory do
   def user do
     %{
       name: name(),
-      username: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true),
+      login: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true),
       emails: [email()],
       password: "qwertz"
     }
@@ -41,7 +41,7 @@ defmodule GitGud.DataFactory do
   Returns a map representing `GitGud.Email` params.
   """
   def email do
-    %{email: String.replace(Faker.Internet.email(), "'", "")}
+    %{address: String.replace(Faker.Internet.email(), "'", "")}
   end
 
   @doc """

@@ -11,22 +11,22 @@ defmodule GitGud.UserTest do
     assert String.starts_with?(user.password_hash, "$argon2i$")
   end
 
-  test "fails to create a new user with invalid username" do
+  test "fails to create a new user with invalid login" do
     params = factory(:user)
-    assert {:error, changeset} = User.create(Map.delete(params, :username))
-    assert "can't be blank" in errors_on(changeset).username
-    assert {:error, changeset} = User.create(Map.update!(params, :username, &(&1<>".")))
-    assert "has invalid format" in errors_on(changeset).username
-    assert {:error, changeset} = User.create(Map.update!(params, :username, &binary_part(&1, 0, 2)))
-    assert "should be at least 3 character(s)" in errors_on(changeset).username
+    assert {:error, changeset} = User.create(Map.delete(params, :login))
+    assert "can't be blank" in errors_on(changeset).login
+    assert {:error, changeset} = User.create(Map.update!(params, :login, &(&1<>".")))
+    assert "has invalid format" in errors_on(changeset).login
+    assert {:error, changeset} = User.create(Map.update!(params, :login, &binary_part(&1, 0, 2)))
+    assert "should be at least 3 character(s)" in errors_on(changeset).login
   end
 
   test "fails to create a new user with invalid email" do
     params = factory(:user)
     assert {:error, changeset} = User.create(Map.delete(params, :emails))
     assert "can't be blank" in errors_on(changeset).emails
-    assert {:error, changeset} = User.create(Map.update!(params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|email: &1.email <> ".0"}) end))
-    assert %{email: ["has invalid format"]} in errors_on(changeset).emails
+    assert {:error, changeset} = User.create(Map.update!(params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|address: &1.address <> ".0"}) end))
+    assert %{address: ["has invalid format"]} in errors_on(changeset).emails
   end
 
   test "fails to create a new user with invalid password" do
@@ -41,19 +41,19 @@ defmodule GitGud.UserTest do
     setup :create_user
 
     test "checks credentials", %{user: user} do
-      assert User.check_credentials(user.username, "qwertz")
-      assert User.check_credentials(hd(user.emails).email, "qwertz")
+      assert User.check_credentials(user.login, "qwertz")
+      assert User.check_credentials(hd(user.emails).address, "qwertz")
     end
 
     test "fails to check credentials with invalid password", %{user: user} do
-      refute User.check_credentials(user.username, "abc")
-      refute User.check_credentials(hd(user.emails).email, "abc")
+      refute User.check_credentials(user.login, "abc")
+      refute User.check_credentials(hd(user.emails).address, "abc")
     end
 
-    test "fails to create a new user with already existing username", %{user: user} do
+    test "fails to create a new user with already existing login", %{user: user} do
       params = factory(:user)
-      assert {:error, changeset} = User.create(%{params|username: user.username})
-      assert "has already been taken" in errors_on(changeset).username
+      assert {:error, changeset} = User.create(%{params|login: user.login})
+      assert "has already been taken" in errors_on(changeset).login
     end
 
     test "updates profile with valid params", %{user: user1} do

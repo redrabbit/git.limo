@@ -11,7 +11,7 @@
     <div class="panel-block">
       <div class="level" style="width:100%">
         <div class="level-left">
-          <div class="level-item"><%= maintainer.user.username %></div>
+          <div class="level-item"><%= maintainer.user.login %></div>
         </div>
         <div class="level-right">
           <%= if maintainer.user_id != @repo.owner_id do %>

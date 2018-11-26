@@ -25,7 +25,7 @@ defmodule GitGud.Web.EmailControllerTest do
     email_params = factory(:email)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
-    assert get_flash(conn, :info) == "Email '#{email_params.email}' added."
+    assert get_flash(conn, :info) == "Email '#{email_params.address}' added."
     assert redirected_to(conn) == Routes.email_path(conn, :edit)
     assert_email_delivered_with(subject: "Verify your email")
   end
@@ -33,7 +33,7 @@ defmodule GitGud.Web.EmailControllerTest do
   test "fails to create email with invalid email address", %{conn: conn, user: user} do
     email_params = factory(:email)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
-    conn = post(conn, Routes.email_path(conn, :create), email: Map.update!(email_params, :email, &(&1 <> ".0")))
+    conn = post(conn, Routes.email_path(conn, :create), email: Map.update!(email_params, :address, &(&1 <> ".0")))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
   end
@@ -68,14 +68,14 @@ defmodule GitGud.Web.EmailControllerTest do
       conn = get(conn, Routes.email_path(conn, :edit))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Emails</h2>)
       for email <- emails do
-        assert html_response(conn, 200) =~ email.email
+        assert html_response(conn, 200) =~ email.address
       end
     end
 
     test "fails to create email with already existing email address", %{conn: conn, user: user, emails: emails} do
       email_params = factory(:email)
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = post(conn, Routes.email_path(conn, :create), email: Map.put(email_params, :email, hd(emails).email))
+      conn = post(conn, Routes.email_path(conn, :create), email: Map.put(email_params, :address, hd(emails).address))
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
     end
@@ -84,7 +84,7 @@ defmodule GitGud.Web.EmailControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       for email <- emails do
         conn = delete(conn, Routes.email_path(conn, :delete), email: %{id: to_string(email.id)})
-        assert get_flash(conn, :info) == "Email '#{email.email}' deleted."
+        assert get_flash(conn, :info) == "Email '#{email.address}' deleted."
         assert redirected_to(conn) == Routes.email_path(conn, :edit)
       end
     end

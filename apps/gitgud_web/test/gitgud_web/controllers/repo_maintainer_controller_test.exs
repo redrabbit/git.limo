@@ -23,7 +23,7 @@ defmodule GitGud.Web.RepoMaintainerControllerTest do
   test "creates repository maintainer with valid params", %{conn: conn, users: [user1, user2], repo: repo} do
     conn = Plug.Test.init_test_session(conn, user_id: user1.id)
     conn = post(conn, Routes.repo_maintainer_path(conn, :create, user1, repo), maintainer: %{user_id: to_string(user2.id)})
-    assert get_flash(conn, :info) == "Maintainer '#{user2.username}' added."
+    assert get_flash(conn, :info) == "Maintainer '#{user2.login}' added."
     assert redirected_to(conn) == Routes.repo_maintainer_path(conn, :edit, user1, repo)
   end
 
@@ -34,13 +34,13 @@ defmodule GitGud.Web.RepoMaintainerControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = get(conn, Routes.repo_maintainer_path(conn, :edit, user1, repo))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Maintainers</h2>)
-      assert html_response(conn, 200) =~ user2.username
+      assert html_response(conn, 200) =~ user2.login
     end
 
     test "updates maintainer permission with valid permission", %{conn: conn, users: [user1, user2], repo: repo, maintainer: maintainer} do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = put(conn, Routes.repo_maintainer_path(conn, :update, user1, repo), maintainer: %{id: to_string(maintainer.id), permission: "write"})
-      assert get_flash(conn, :info) == "Maintainer '#{user2.username}' permission set to 'write'."
+      assert get_flash(conn, :info) == "Maintainer '#{user2.login}' permission set to 'write'."
       assert redirected_to(conn) == Routes.repo_maintainer_path(conn, :edit, user1, repo)
     end
 
@@ -54,7 +54,7 @@ defmodule GitGud.Web.RepoMaintainerControllerTest do
     test "deletes maintainer", %{conn: conn, users: [user1, user2], repo: repo, maintainer: maintainer} do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = delete(conn, Routes.repo_maintainer_path(conn, :delete, user1, repo), maintainer: %{id: to_string(maintainer.id)})
-      assert get_flash(conn, :info) == "Maintainer '#{user2.username}' deleted."
+      assert get_flash(conn, :info) == "Maintainer '#{user2.login}' deleted."
       assert redirected_to(conn) == Routes.repo_maintainer_path(conn, :edit, user1, repo)
     end
   end

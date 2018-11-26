@@ -77,7 +77,7 @@ defmodule GitGud.RepoTest do
   defp create_user(context) do
     user = User.create!(factory(:user))
     on_exit fn ->
-      File.rmdir(Path.join(Repo.root_path, user.username))
+      File.rmdir(Path.join(Repo.root_path, user.login))
     end
     Map.put(context, :user, user)
   end

@@ -12,12 +12,12 @@ defmodule GitGud.SSHKey do
 
   import Ecto.Changeset
 
-  schema "ssh_keys" do
+  schema "users_ssh_keys" do
     belongs_to :user, User
     field      :name, :string
     field      :data, :string, virtual: true
     field      :fingerprint, :string
-    timestamps()
+    timestamps(updated_at: false)
   end
 
   @type t :: %__MODULE__{
@@ -28,7 +28,6 @@ defmodule GitGud.SSHKey do
     data: binary,
     fingerprint: binary,
     inserted_at: NaiveDateTime.t,
-    updated_at: NaiveDateTime.t
   }
 
   @doc """

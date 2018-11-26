@@ -11,7 +11,7 @@
     <div class="panel-block">
       <div class="level" style="width:100%">
         <div class="level-left">
-          <div class="level-item"><%= email.email %></div>
+          <div class="level-item"><%= email.address %></div>
           <div class="level-item"><%= email_tags(@conn, @user, email) %></div>
         </div>
         <%= if email.id != @user.primary_email_id do %>
@@ -31,22 +31,22 @@
 
 <%= form_for @changeset, Routes.email_path(@conn, :create), [as: :email], fn f -> %>
   <div class="field">
-    <%= label f, :email, "Add email address", class: "label" %>
+    <%= label f, :address, "Add email address", class: "label" %>
     <div class="field is-grouped">
       <div class="control is-expanded">
-        <%= email_input f, :email, class: "input" %>
+        <%= email_input f, :address, class: "input" %>
       </div>
       <div class="control">
         <%= submit "Add", class: "button is-link" %>
       </div>
     </div>
-    <%= error_tag f, :email %>
+    <%= error_tag f, :address %>
   </div>
 <% end %>
 
 <hr />
 
-<%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.email, &1.id}) do %>
+<%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
   <%= unless Enum.empty?(verified_emails) do %>
     <%= form_for @conn, Routes.email_path(@conn, :update), [method: :put, as: :primary_email], fn f -> %>
       <div class="field">

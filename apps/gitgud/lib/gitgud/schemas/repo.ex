@@ -193,12 +193,12 @@ defmodule GitGud.Repo do
   @doc """
   Returns the absolute path to the Git workdir for the given `repo`.
 
-  The path is a concatenation of `root_path/0`, `repo.owner.username` and `repo.name`.
+  The path is a concatenation of `root_path/0`, `repo.owner.login` and `repo.name`.
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
     repo = DB.preload(repo, :owner)
-    Path.join([root_path(), repo.owner.username, repo.name])
+    Path.join([root_path(), repo.owner.login, repo.name])
   end
 
   @doc """

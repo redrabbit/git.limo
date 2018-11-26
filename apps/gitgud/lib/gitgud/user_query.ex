@@ -29,17 +29,17 @@ defmodule GitGud.UserQuery do
   end
 
   @doc """
-  Returns a user for the given `username`.
+  Returns a user for the given `login`.
   """
-  @spec by_username(binary, keyword) :: User.t | nil
-  @spec by_username([binary], keyword) :: [User.t]
-  def by_username(username, opts \\ [])
-  def by_username(usernames, opts) when is_list(usernames) do
-    DB.all(DBQueryable.query({__MODULE__, :users_query}, [:username, usernames], opts))
+  @spec by_login(binary, keyword) :: User.t | nil
+  @spec by_login([binary], keyword) :: [User.t]
+  def by_login(login, opts \\ [])
+  def by_login(logins, opts) when is_list(logins) do
+    DB.all(DBQueryable.query({__MODULE__, :users_query}, [:login, logins], opts))
   end
 
-  def by_username(username, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :user_query}, [:username, username], opts))
+  def by_login(login, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :user_query}, [:login, login], opts))
   end
 
   @doc """
@@ -82,7 +82,7 @@ defmodule GitGud.UserQuery do
   """
   @spec user_query(atom, term) :: Ecto.Query.t
   def user_query(:email = _key, val) do
-    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.email == ^val)
+    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.address == ^val)
   end
 
   def user_query(key, val) do
@@ -108,12 +108,12 @@ defmodule GitGud.UserQuery do
   Returns a query for fetching users by `key` and `vals`.
   """
   @spec users_query(atom, [binary]) :: Ecto.Query.t
-  def users_query(:username = _key, vals) when is_list(vals) do
-    from(u in User, as: :user, where: u.username in ^vals)
+  def users_query(:login = _key, vals) when is_list(vals) do
+    from(u in User, as: :user, where: u.login in ^vals)
   end
 
   def users_query(:email = _key, vals) when is_list(vals) do
-    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.email in ^vals)
+    from(u in User, as: :user, join: e in assoc(u, :emails), where: e.address in ^vals)
   end
 
   @doc """
@@ -122,7 +122,7 @@ defmodule GitGud.UserQuery do
   @spec search_query(binary) :: Ecto.Query.t
   def search_query(input) do
     term = "%#{input}%"
-    from(u in User, as: :user, where: ilike(u.username, ^term))
+    from(u in User, as: :user, where: ilike(u.login, ^term))
   end
 
   #

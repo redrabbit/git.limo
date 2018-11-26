@@ -17,7 +17,7 @@ defmodule GitGud.User do
   alias GitGud.SSHKey
 
   schema "users" do
-    field       :username,      :string
+    field       :login,         :string
     field       :name,          :string
     belongs_to  :primary_email, Email, on_replace: :update
     belongs_to  :public_email,  Email, on_replace: :update
@@ -34,7 +34,7 @@ defmodule GitGud.User do
 
   @type t :: %__MODULE__{
     id: pos_integer,
-    username: binary,
+    login: binary,
     name: binary,
     primary_email: Email.t,
     public_email: Email.t,
@@ -55,7 +55,7 @@ defmodule GitGud.User do
 
   ```elixir
   {:ok, user} = GitGud.User.create(
-    username: "redrabbit",
+    login: "redrabbit",
     name: "Mario Flach",
     emails: [
       %{email: "m.flach@almightycouch.com"}
@@ -135,10 +135,10 @@ defmodule GitGud.User do
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:username, :name, :bio, :url, :location, :password])
+    |> cast(params, [:login, :name, :bio, :url, :location, :password])
     |> cast_assoc(:emails, required: true)
-    |> validate_required([:username, :password])
-    |> validate_username()
+    |> validate_required([:login, :name, :password])
+    |> validate_login()
     |> validate_url()
     |> validate_password()
   end
@@ -178,11 +178,11 @@ defmodule GitGud.User do
   ```
   """
   @spec check_credentials(binary, binary) :: t | nil
-  def check_credentials(email_or_username, password) do
+  def check_credentials(email_or_login, password) do
     query = from u in __MODULE__,
            join: e in assoc(u, :emails),
-       or_where: u.username == ^email_or_username,
-       or_where: e.verified == true and e.email == ^email_or_username,
+       or_where: u.login == ^email_or_login,
+       or_where: e.address == ^email_or_login and e.verified == true,
         preload: [emails: e]
     case check_pass(DB.one(query), password) do
       {:ok, user} -> user
@@ -197,21 +197,17 @@ defmodule GitGud.User do
   defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
   defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
   defp update_changeset(user, field, value) when field in [:primary_email, :public_email] do
-    if __MODULE__.__schema__(:association, field) do
-      user
-      |> struct([{field, nil}])
-      |> change()
-      |> put_assoc(field, value)
-    else
-      raise ArgumentError, message: "#{__MODULE__}.update_changeset/3 takes a changeset or a field assocation name; invalid #{inspect field}."
-    end
+    user
+    |> struct([{field, nil}])
+    |> change()
+    |> put_assoc(field, value)
   end
 
-  defp validate_username(changeset) do
+  defp validate_login(changeset) do
     changeset
-    |> validate_length(:username, min: 3, max: 24)
-    |> validate_format(:username, ~r/^[a-zA-Z0-9_-]+$/)
-    |> unique_constraint(:username)
+    |> validate_length(:login, min: 3, max: 24)
+    |> validate_format(:login, ~r/^[a-zA-Z0-9_-]+$/)
+    |> unique_constraint(:login)
   end
 
   def validate_url(changeset) do

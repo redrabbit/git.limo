@@ -58,8 +58,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the URL of the given `resource`.
   """
   @spec url(map, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
-  def url(%User{username: username} = _resource, %{} = _args, _info) do
-    {:ok, Routes.user_url(GitGud.Web.Endpoint, :show, username)}
+  def url(%User{login: login} = _resource, %{} = _args, _info) do
+    {:ok, Routes.user_url(GitGud.Web.Endpoint, :show, login)}
   end
 
   def url(%Repo{} = repo, %{} = _args, _info) do
@@ -75,13 +75,13 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves an user object by username.
+  Resolves an user object by login.
   """
-  @spec user(%{}, %{username: binary}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
-  def user(%{} = _root, %{username: username} = _args, _info) do
-    if user = UserQuery.by_username(username, preload: :public_email),
+  @spec user(%{}, %{login: binary}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def user(%{} = _root, %{login: login} = _args, _info) do
+    if user = UserQuery.by_login(login, preload: :public_email),
       do: {:ok, user},
-    else: {:error, "this given username '#{username}' is not valid"}
+    else: {:error, "this given login '#{login}' is not valid"}
   end
 
   @doc """

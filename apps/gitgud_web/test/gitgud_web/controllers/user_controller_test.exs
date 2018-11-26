@@ -15,21 +15,21 @@ defmodule GitGud.Web.UserControllerTest do
   test "creates user with valid params", %{conn: conn} do
     user_params = factory(:user)
     conn = post(conn, Routes.user_path(conn, :create), user: user_params)
-    user = UserQuery.by_username(user_params.username)
+    user = UserQuery.by_login(user_params.login)
     assert get_flash(conn, :info) == "Welcome!"
     assert get_session(conn, :user_id) == user.id
     assert redirected_to(conn) == Routes.user_path(conn, :show, user)
   end
 
-  test "fails to create user with invalid username", %{conn: conn} do
+  test "fails to create user with invalid login", %{conn: conn} do
     user_params = factory(:user)
-    conn = post(conn, Routes.user_path(conn, :create), user: Map.delete(user_params, :username))
+    conn = post(conn, Routes.user_path(conn, :create), user: Map.delete(user_params, :login))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Register</h1>)
-    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :username, &(&1<>".")))
+    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :login, &(&1<>".")))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Register</h1>)
-    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :username, &binary_part(&1, 0, 2)))
+    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :login, &binary_part(&1, 0, 2)))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Register</h1>)
   end
@@ -39,7 +39,7 @@ defmodule GitGud.Web.UserControllerTest do
     conn = post(conn, Routes.user_path(conn, :create), user: Map.delete(user_params, :emails))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Register</h1>)
-    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|email: &1.email <> ".0"}) end))
+    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|address: &1.address <> ".0"}) end))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Register</h1>)
   end
@@ -51,7 +51,7 @@ defmodule GitGud.Web.UserControllerTest do
       user_repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, user)) end), 3)
       conn = get(conn, Routes.user_path(conn, :show, user))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.username}</h2>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
       for repo <- user_repos do
         assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
         File.rm_rf!(Repo.workdir(repo))

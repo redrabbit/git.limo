@@ -34,7 +34,7 @@ defmodule GitGud.Web.Router do
     get "/logout", SessionController, :delete
 
     get "/register", UserController, :new
-    post "/users", UserController, :create
+    post "/register", UserController, :create
 
     get "/settings/profile", UserController, :edit_profile
     put "/settings/profile", UserController, :update_profile
@@ -55,9 +55,9 @@ defmodule GitGud.Web.Router do
     delete "/settings/ssh", SSHKeyController, :delete
 
     get "/new", RepoController, :new
-    post "/repositories", RepoController, :create
+    post "/new", RepoController, :create
 
-    scope "/:username/:repo_name" do
+    scope "/:user_name/:repo_name" do
       get "/", CodebaseController, :show
 
       get "/branches", CodebaseController, :branches
@@ -80,10 +80,10 @@ defmodule GitGud.Web.Router do
       delete "/settings/maintainers", RepoMaintainerController, :delete
     end
 
-    get "/:username", UserController, :show
+    get "/:user_name", UserController, :show
   end
 
-  scope "/:username/:repo_name" do
+  scope "/:user_name/:repo_name" do
     forward "/", GitGud.SmartHTTPBackend
   end
 end

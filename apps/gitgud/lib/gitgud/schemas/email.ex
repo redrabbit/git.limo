@@ -23,9 +23,9 @@ defmodule GitGud.Email do
 
   import Ecto.Changeset
 
-  schema "emails" do
+  schema "users_emails" do
     belongs_to :user, User
-    field      :email, :string
+    field      :address, :string
     field      :verified, :boolean, default: false
     timestamps()
   end
@@ -34,7 +34,7 @@ defmodule GitGud.Email do
     id: pos_integer,
     user_id: pos_integer,
     user: User.t,
-    email: binary,
+    address: binary,
     verified: boolean,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
@@ -44,7 +44,7 @@ defmodule GitGud.Email do
   Creates a new email with the given `params`.
 
   ```elixir
-  {:ok, email} = GitGud.Email.create(user_id: user.id, email: "m.flach@almightycouch.com")
+  {:ok, email} = GitGud.Email.create(user_id: user.id, address: "m.flach@almightycouch.com")
   ```
 
   This function validates the given `params` using `changeset/2`.
@@ -101,10 +101,10 @@ defmodule GitGud.Email do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = email, params \\ %{}) do
     email
-    |> cast(params, [:user_id, :email])
-    |> validate_required([:email])
-    |> validate_format(:email, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
-    |> unique_constraint(:email)
-    |> foreign_key_constraint(:user_id)
+    |> cast(params, [:user_id, :address])
+    |> validate_required([:address])
+    |> validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
+    |> assoc_constraint(:user)
+    |> unique_constraint(:address)
   end
 end

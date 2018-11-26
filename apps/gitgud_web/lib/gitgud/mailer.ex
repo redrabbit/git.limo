@@ -19,7 +19,7 @@ defmodule GitGud.Mailer do
     email = DB.preload(email, :user)
     token = Phoenix.Token.sign(GitGud.Web.Endpoint, to_string(email.user.id), email.id)
     new_email(
-      to: email.email,
+      to: email.address,
       from: "postmaster@sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org",
       subject: "Verify your email",
       text_body: "Hello #{email.user.name}, please verify your email address by clicking this link: #{Routes.email_url(GitGud.Web.Endpoint, :verify, token)}"

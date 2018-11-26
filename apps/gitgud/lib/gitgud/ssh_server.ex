@@ -71,8 +71,8 @@ defmodule GitGud.SSHServer do
   def host_key(algo, opts), do: :ssh_file.host_key(algo, opts)
 
   @impl true
-  def is_auth_key(key, username, _opts) do
-    if user = UserQuery.by_username(to_string(username), preload: :ssh_keys) do
+  def is_auth_key(key, login, _opts) do
+    if user = UserQuery.by_login(to_string(login), preload: :ssh_keys) do
       fingerprint = :public_key.ssh_hostkey_fingerprint(key)
       Enum.any?(user.ssh_keys, &(&1.fingerprint == to_string(fingerprint)))
     end
@@ -85,8 +85,8 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def handle_msg({:ssh_channel_up, chan, conn}, state) do
-    [user: username] = :ssh.connection_info(conn, [:user])
-    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.by_username(to_string(username))}}
+    [user: login] = :ssh.connection_info(conn, [:user])
+    {:ok, %{state|conn: conn, chan: chan, user: UserQuery.by_login(to_string(login))}}
   end
 
   @impl true
@@ -165,7 +165,7 @@ defmodule GitGud.SSHServer do
     end
   end
 
-  defp check_credentials(username, password) do
-    !!User.check_credentials(to_string(username), to_string(password))
+  defp check_credentials(login, password) do
+    !!User.check_credentials(to_string(login), to_string(password))
   end
 end

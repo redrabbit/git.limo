@@ -154,15 +154,15 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(action), do: action
 
   @spec title(atom, map) :: binary
-  def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}"
-  def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.username}/#{repo.name}"
-  def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.username}/#{repo.name}"
-  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.username}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.description} · #{repo.owner.username}/#{repo.name}@#{Param.to_param(rev)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
-  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.username}/#{repo.name}/#{Path.join(path)}"
+  def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.login}/#{repo.name}"
+  def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
+  def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
+  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.description} · #{repo.owner.login}/#{repo.name}@#{Param.to_param(rev)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}/#{Path.join(path)}"
 
   #
   # Helpers

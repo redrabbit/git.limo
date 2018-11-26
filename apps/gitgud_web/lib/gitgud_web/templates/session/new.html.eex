@@ -8,7 +8,7 @@
   <div class="field">
     <label class="label">Login</label>
     <div class="control">
-      <%= text_input f, :email_or_username, class: "input" %>
+      <%= text_input f, :login, class: "input" %>
     </div>
   </div>
 

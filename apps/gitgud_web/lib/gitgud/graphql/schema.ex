@@ -47,7 +47,7 @@ defmodule GitGud.GraphQL.Schema do
     end
 
     field :user, :user do
-      arg :username, non_null(:string)
+      arg :login, non_null(:string)
       resolve &Resolvers.user/3
     end
 

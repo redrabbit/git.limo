@@ -18,24 +18,24 @@ defmodule GitGud.UserQueryTest do
     assert Enum.all?(UserQuery.by_id(Enum.map(users, &(&1.id)), preload: :emails), &(&1 in users))
   end
 
-  test "gets single user by username", %{users: users} do
+  test "gets single user by login", %{users: users} do
     for user <- users do
-      assert user == UserQuery.by_username(user.username, preload: :emails)
+      assert user == UserQuery.by_login(user.login, preload: :emails)
     end
   end
 
-  test "gets multiple users by username", %{users: users} do
-    assert Enum.all?(UserQuery.by_username(Enum.map(users, &(&1.username)), preload: :emails), &(&1 in users))
+  test "gets multiple users by login", %{users: users} do
+    assert Enum.all?(UserQuery.by_login(Enum.map(users, &(&1.login)), preload: :emails), &(&1 in users))
   end
 
   test "gets single user by email", %{users: users} do
     for user <- users do
-      assert user == UserQuery.by_email(hd(user.emails).email, preload: :emails)
+      assert user == UserQuery.by_email(hd(user.emails).address, preload: :emails)
     end
   end
 
   test "gets multiple users by email", %{users: users} do
-    assert Enum.all?(UserQuery.by_email(Enum.map(users, &(hd(&1.emails).email)), preload: :emails), &(&1 in users))
+    assert Enum.all?(UserQuery.by_email(Enum.map(users, &(hd(&1.emails).address)), preload: :emails), &(&1 in users))
   end
 
   #

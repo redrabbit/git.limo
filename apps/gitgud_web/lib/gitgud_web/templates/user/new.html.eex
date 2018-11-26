@@ -2,6 +2,14 @@
 
 <%= form_for @changeset, Routes.user_path(@conn, :create), [as: :user], fn f -> %>
   <div class="field">
+    <%= label f, :login, "Username", class: "label" %>
+    <div class="control">
+      <%= text_input f, :login, class: "input" %>
+    </div>
+    <%= error_tag f, :login %>
+  </div>
+
+  <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">
       <%= text_input f, :name, class: "input" %>
@@ -9,21 +17,13 @@
     <%= error_tag f, :name %>
   </div>
 
-  <div class="field">
-    <%= label f, :username, class: "label" %>
-    <div class="control">
-      <%= text_input f, :username, class: "input" %>
-    </div>
-    <%= error_tag f, :username %>
-  </div>
-
   <%= inputs_for f, :emails, fn fe -> %>
     <div class="field">
-      <%= label fe, :email, class: "label" %>
+      <%= label fe, :address, "Email", class: "label" %>
       <div class="control">
-        <%= email_input fe, :email, class: "input" %>
+        <%= email_input fe, :address, class: "input" %>
       </div>
-      <%= error_tag fe, :email %>
+      <%= error_tag fe, :address %>
     </div>
   <% end %>
 

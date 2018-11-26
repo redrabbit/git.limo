@@ -9,7 +9,7 @@
     <%= error_tag f, :name %>
   </div>
 
-  <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.email, &1.id}) do %>
+  <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
     <%= unless Enum.empty?(verified_emails) do %>
     <div class="field">
       <%= label f, :public_email_id, "Public email address", class: "label" %>

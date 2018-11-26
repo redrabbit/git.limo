@@ -60,8 +60,8 @@ defmodule GitGud.RepoQuery do
   def by_path(path, opts \\ []) do
     path = Path.relative_to(path, Repo.root_path())
     case Path.split(path) do
-      [username, name] ->
-        user_repo(username, name, opts)
+      [login, name] ->
+        user_repo(login, name, opts)
       _path ->
         nil
     end
@@ -94,8 +94,8 @@ defmodule GitGud.RepoQuery do
   @spec user_repos_query(user_param) :: Ecto.Query.t
   @spec user_repos_query([user_param]) :: Ecto.Query.t
   def user_repos_query(%User{id: user_id} = _user), do: user_repos_query(user_id)
-  def user_repos_query(username) when is_binary(username) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.username == ^username, preload: [owner: u])
+  def user_repos_query(login) when is_binary(login) do
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.login == ^login, preload: [owner: u])
   end
 
   def user_repos_query(user_id) when is_integer(user_id) do
@@ -110,7 +110,7 @@ defmodule GitGud.RepoQuery do
       Enum.all?(users, &is_integer/1) ->
         from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
       Enum.all?(users, &is_binary/1) ->
-        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.username in ^users, preload: [owner: u])
+        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.login in ^users, preload: [owner: u])
     end
   end
 

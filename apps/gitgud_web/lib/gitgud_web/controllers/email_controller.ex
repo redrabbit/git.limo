@@ -35,7 +35,7 @@ defmodule GitGud.Web.EmailController do
       {:ok, email} ->
         GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
-        |> put_flash(:info, "Email '#{email.email}' added.")
+        |> put_flash(:info, "Email '#{email.address}' added.")
         |> redirect(to: Routes.email_path(conn, :edit))
       {:error, changeset} ->
         conn
@@ -56,11 +56,11 @@ defmodule GitGud.Web.EmailController do
       if email != user.primary_email do
         User.update!(user, :primary_email, email)
         conn
-        |> put_flash(:info, "Email '#{email.email}' is now your primary email.")
+        |> put_flash(:info, "Email '#{email.address}' is now your primary email.")
         |> redirect(to: Routes.email_path(conn, :edit))
       else
         conn
-        |> put_flash(:info, "Email '#{email.email}' is already your primary email.")
+        |> put_flash(:info, "Email '#{email.address}' is already your primary email.")
         |> redirect(to: Routes.email_path(conn, :edit))
       end
     else
@@ -78,7 +78,7 @@ defmodule GitGud.Web.EmailController do
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
       email = Email.delete!(email)
       conn
-      |> put_flash(:info, "Email '#{email.email}' deleted.")
+      |> put_flash(:info, "Email '#{email.address}' deleted.")
       |> redirect(to: Routes.email_path(conn, :edit))
     else
       {:error, :bad_request}
@@ -95,7 +95,7 @@ defmodule GitGud.Web.EmailController do
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
       GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
       conn
-      |> put_flash(:info, "A verification email has been sent to '#{email.email}'.")
+      |> put_flash(:info, "A verification email has been sent to '#{email.address}'.")
       |> redirect(to: Routes.email_path(conn, :edit))
     else
       {:error, :bad_request}
@@ -117,11 +117,11 @@ defmodule GitGud.Web.EmailController do
               User.update!(user, :primary_email, email)
             end
             conn
-            |> put_flash(:info, "Email '#{email.email}' verified.")
+            |> put_flash(:info, "Email '#{email.address}' verified.")
             |> redirect(to: Routes.email_path(conn, :edit))
           else
             conn
-            |> put_flash(:info, "Email '#{email.email}' already verified.")
+            |> put_flash(:info, "Email '#{email.address}' already verified.")
             |> redirect(to: Routes.email_path(conn, :edit))
           end
         else
