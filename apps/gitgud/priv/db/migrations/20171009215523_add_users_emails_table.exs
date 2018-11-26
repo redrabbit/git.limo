@@ -6,7 +6,8 @@ defmodule GitGud.DB.Migrations.AddUsersEmailsTable do
       add :user_id,     references("users"), null: false, on_delete: :delete_all
       add :address,     :string, null: false
       add :verified,    :boolean, null: false, default: false
-      timestamps()
+      timestamps(updated_at: false)
+      add :verified_at, :naive_datetime
     end
     create unique_index("users_emails", [:address])
 

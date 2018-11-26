@@ -27,7 +27,8 @@ defmodule GitGud.Email do
     belongs_to :user, User
     field      :address, :string
     field      :verified, :boolean, default: false
-    timestamps()
+    timestamps(updated_at: false)
+    field      :verified_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
@@ -37,7 +38,7 @@ defmodule GitGud.Email do
     address: binary,
     verified: boolean,
     inserted_at: NaiveDateTime.t,
-    updated_at: NaiveDateTime.t
+    verified_at: NaiveDateTime.t
   }
 
   @doc """
@@ -69,10 +70,11 @@ defmodule GitGud.Email do
   def verify(%__MODULE__{} = email) do
     DB.transaction(fn ->
       email_user = DB.preload(email, :user)
+      email = DB.update!(change(email, %{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
       unless email_user.user.primary_email_id do
         User.update!(email_user.user, :primary_email, email)
       end
-      DB.update!(change(email, %{verified: true}))
+      email
     end)
   end
 
