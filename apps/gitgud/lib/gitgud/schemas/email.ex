@@ -67,7 +67,14 @@ defmodule GitGud.Email do
   """
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
-    DB.update(change(email, %{verified: true}))
+    DB.transaction(fn ->
+      email = DB.update!(change(email, %{verified: true}))
+      email = DB.preload(email, :user)
+      unless email.user.primary_email_id do
+        User.update!(email.user, :primary_email, email)
+      end
+      email
+    end)
   end
 
   @doc """
@@ -75,7 +82,10 @@ defmodule GitGud.Email do
   """
   @spec verify!(t) :: t
   def verify!(%__MODULE__{} = email) do
-    DB.update!(change(email, %{verified: true}))
+    case verify(email) do
+      {:ok, email} -> email
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """

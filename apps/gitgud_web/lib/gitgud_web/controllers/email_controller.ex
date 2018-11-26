@@ -113,9 +113,6 @@ defmodule GitGud.Web.EmailController do
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
             email = Email.verify!(email)
-            unless user.primary_email_id do
-              User.update!(user, :primary_email, email)
-            end
             conn
             |> put_flash(:info, "Email '#{email.address}' verified.")
             |> redirect(to: Routes.email_path(conn, :edit))
