@@ -90,7 +90,7 @@ defmodule GitGud.User do
   * `:profile` -- see `profile_changeset/2`.
   * `:password` -- see `password_changeset/2`.
 
-  This function can also be used to update associations, for example:
+  This function can also be used to update email associations, for example:
 
   ```elixir
   {:ok, user} = GitGud.User.update(user, :primary_email, email)
@@ -210,7 +210,7 @@ defmodule GitGud.User do
     |> unique_constraint(:login)
   end
 
-  def validate_url(changeset) do
+  defp validate_url(changeset) do
     if url = get_change(changeset, :url) do
       case URI.parse(url) do
         %URI{scheme: nil} ->

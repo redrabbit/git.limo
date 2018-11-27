@@ -70,10 +70,18 @@ defmodule GitGud.SSHKey do
     DB.delete!(ssh_key)
   end
 
+  @doc """
+  Updates the `:last_used_at` timestamp for the the given `ssh_key`.
+  """
+  @spec update_timestamp(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_timestamp(%__MODULE__{} = ssh_key) do
     DB.update(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
   end
 
+  @doc """
+  Similar to `update_timestamp/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_timestamp!(t) :: t
   def update_timestamp!(%__MODULE__{} = ssh_key) do
     DB.update!(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
   end

@@ -6,7 +6,7 @@ defmodule GitGud.Authorization do
   alias GitGud.User
 
   @doc """
-  Returns `true` if `user` has the permission to perform `action` on `resource`; otherwhise returns `false`.
+  Returns `true` if `user` is allowed to perform `action` on `resource`; otherwhise returns `false`.
   """
   @spec authorized?(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: boolean
   def authorized?(user, resource, action) do

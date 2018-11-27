@@ -1,4 +1,7 @@
 defmodule GitGud.Web.MaintainerController do
+  @moduledoc """
+  Module responsible for CRUD actions on `GitGud.Maintainer`.
+  """
 
   use GitGud.Web, :controller
 
