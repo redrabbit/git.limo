@@ -10,6 +10,9 @@ defmodule GitGud.Web.Gravatar do
 
   @domain "gravatar.com/avatar/"
 
+  @doc """
+  Renders a Gravatar widget for the given `email`.
+  """
   @spec gravatar(User.t|Email.t|binary, keyword) :: binary
   def gravatar(email, opts \\ [])
   def gravatar(%User{primary_email: nil}, _opts), do: []
@@ -20,6 +23,9 @@ defmodule GitGud.Web.Gravatar do
     img_tag(gravatar_url(email, opts), class: "avatar", width: size)
   end
 
+  @doc """
+  Returns the Gravatar URL for the given `email`.
+  """
   @spec gravatar_url(User.t|Email.t|binary, keyword) :: binary
   def gravatar_url(email, opts \\ [])
   def gravatar_url(%User{primary_email: email}, opts), do: gravatar_url(email, opts)
