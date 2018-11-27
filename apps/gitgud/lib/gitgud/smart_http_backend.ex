@@ -29,7 +29,6 @@ defmodule GitGud.SmartHTTPBackend do
 
   alias GitRekt.Git
   alias GitRekt.WireProtocol
-  alias GitRekt.WireProtocol.Service
 
   alias GitGud.User
   alias GitGud.Repo
@@ -162,8 +161,8 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_exec(exec, {repo, handle}, data) do
     handle
-    |> Service.new(exec, callback: {Repo, :git_push, [repo]})
-    |> Service.run(data, skip: 1)
+    |> WireProtocol.new(exec, callback: {Repo, :git_push, [repo]})
+    |> WireProtocol.run(data, skip: 1)
     |> elem(1)
   end
 end

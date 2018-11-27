@@ -35,7 +35,7 @@ defmodule GitGud.SSHServer do
   alias GitGud.SSHKey
 
   alias GitRekt.Git
-  alias GitRekt.WireProtocol.Service
+  alias GitRekt.WireProtocol
 
   alias GitGud.Authorization
 
@@ -100,10 +100,10 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service} = state) do
-    {service, output} = Service.next(service, data)
+    {service, output} = WireProtocol.next(service, data)
     :ssh_connection.send(conn, chan, output)
-    if Service.done?(service) do
-      {service, output} = Service.next(service)
+    if WireProtocol.done?(service) do
+      {service, output} = WireProtocol.next(service)
       :ssh_connection.send(conn, chan, output)
       :ssh_connection.send_eof(conn, chan)
       :ssh_connection.exit_status(conn, chan, 0)
@@ -121,7 +121,7 @@ defmodule GitGud.SSHServer do
     if authorized?(user, repo, exec) do
       case Git.repository_open(Repo.workdir(repo)) do
         {:ok, handle} ->
-          {service, output} = Service.next(Service.new(handle, exec, callback: {Repo, :git_push, [repo]}))
+          {service, output} = WireProtocol.next(WireProtocol.new(handle, exec, callback: {Repo, :git_push, [repo]}))
           :ssh_connection.send(conn, chan, output)
           {:ok, %{state|repo: repo, service: service}}
         {:error, _reason} ->

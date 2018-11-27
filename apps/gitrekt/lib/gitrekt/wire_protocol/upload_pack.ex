@@ -3,7 +3,7 @@ defmodule GitRekt.WireProtocol.UploadPack do
   Module implementing the `git-upload-pack` command.
   """
 
-  @behaviour GitRekt.WireProtocol.Service
+  @behaviour GitRekt.WireProtocol
 
   alias GitRekt.Git
 

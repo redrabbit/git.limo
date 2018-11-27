@@ -3,7 +3,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   Module implementing the `git-receive-pack` command.
   """
 
-  @behaviour GitRekt.WireProtocol.Service
+  @behaviour GitRekt.WireProtocol
 
   alias GitRekt.Git
   alias GitRekt.Packfile
