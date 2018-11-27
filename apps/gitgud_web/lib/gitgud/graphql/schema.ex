@@ -40,17 +40,27 @@ defmodule GitGud.GraphQL.Schema do
     Absinthe.Relay.Node.to_global_id(node_type, source_id, __MODULE__)
   end
 
-
+  @desc """
+  The query root of the GraphQL interface.
+  """
   query do
     node field do
       resolve &Resolvers.node/2
     end
 
+    @desc """
+    Fetches a user given its login.
+    """
     field :user, :user do
+      @desc "The user's login."
       arg :login, non_null(:string)
+
       resolve &Resolvers.user/3
     end
 
+    @desc """
+    Perform a search across resources.
+    """
     connection field :search, node_type: :search_result do
       arg :all, :string
       arg :user, :string
