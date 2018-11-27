@@ -12,6 +12,7 @@
     "@fortawesome/fontawesome-free": "^5.4.2",
     "bulma": "^0.7.2",
     "phoenix": "file:../../../deps/phoenix",
+    "phoenix_html": "file:../../../deps/phoenix_html",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
     "react-relay": "^1.6.2"

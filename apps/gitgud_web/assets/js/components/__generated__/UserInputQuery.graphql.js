@@ -1,6 +1,6 @@
 /**
  * @flow
- * @relayHash 0e9b33f64341e1d053a9d632b5df1d13
+ * @relayHash 690fe721d926a1ab3f51c48a8009285d
  */
 
 /* eslint-disable */
@@ -17,7 +17,7 @@ export type UserInputQueryResponse = {|
     +edges: ?$ReadOnlyArray<?{|
       +node: ?{|
         +id?: string,
-        +username?: string,
+        +login?: string,
         +name?: ?string,
       |}
     |}>
@@ -40,7 +40,7 @@ query UserInputQuery(
         __typename
         ... on User {
           id
-          username
+          login
           name
         }
         ... on Node {
@@ -85,7 +85,7 @@ v2 = {
 v3 = {
   "kind": "ScalarField",
   "alias": null,
-  "name": "username",
+  "name": "login",
   "args": null,
   "storageKey": null
 },
@@ -101,7 +101,7 @@ return {
   "operationKind": "query",
   "name": "UserInputQuery",
   "id": null,
-  "text": "query UserInputQuery(\n  $input: String!\n) {\n  search(user: $input, first: 10) {\n    edges {\n      node {\n        __typename\n        ... on User {\n          id\n          username\n          name\n        }\n        ... on Node {\n          id\n        }\n      }\n    }\n  }\n}\n",
+  "text": "query UserInputQuery(\n  $input: String!\n) {\n  search(user: $input, first: 10) {\n    edges {\n      node {\n        __typename\n        ... on User {\n          id\n          login\n          name\n        }\n        ... on Node {\n          id\n        }\n      }\n    }\n  }\n}\n",
   "metadata": {},
   "fragment": {
     "kind": "Fragment",
@@ -213,5 +213,5 @@ return {
 };
 })();
 // prettier-ignore
-(node/*: any*/).hash = '73ed7926f4d17541f6cea7aa5120a7a3';
+(node/*: any*/).hash = '6609bad9a47fb874fb52116b85ae35af';
 module.exports = node;

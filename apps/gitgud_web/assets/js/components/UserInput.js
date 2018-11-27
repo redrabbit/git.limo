@@ -30,7 +30,7 @@ class UserInput extends React.Component {
               <div className="input field is-grouped" ref={this.inputContainer} onFocus={this.handleFocus} onBlur={this.handleBlur}>
                 {this.state.user &&
                   <div className="control">
-                    <a className="tag">{this.state.user.username}</a>
+                    <a className="tag">{this.state.user.login}</a>
                     <input type="hidden" id={this.props.id} name={this.props.name} value={this.state.user.id} />
                   </div>
                 }
@@ -63,7 +63,7 @@ class UserInput extends React.Component {
                   node {
                     ... on User {
                       id
-                      username
+                      login
                       name
                     }
                   }
@@ -81,7 +81,7 @@ class UserInput extends React.Component {
               return (
                 <div>
                   {props.search.edges.filter(edge => !this.props.maintainers.includes(edge.node.id)).map((edge, i) =>
-                    <a key={i} className="dropdown-item" onClick={this.handleSetUser(edge.node)}>{edge.node.username} <span className="has-text-grey">{edge.node.name}</span></a>
+                    <a key={i} className="dropdown-item" onClick={this.handleSetUser(edge.node)}>{edge.node.login} <span className="has-text-grey">{edge.node.name}</span></a>
                   )}
                 </div>
               )

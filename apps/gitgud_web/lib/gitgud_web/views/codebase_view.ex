@@ -222,7 +222,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp flatten_user_emails(user) do
-    Enum.map(user.emails, &{&1.email, user})
+    Enum.map(user.emails, &{&1.address, user})
   end
 
   defp compare_timestamps(one, two) do

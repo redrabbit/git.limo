@@ -31,7 +31,7 @@ defmodule GitGud.Web.RepoController do
     case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
       {:ok, repo} ->
         conn
-        |> put_flash(:info, "Repository created.")
+        |> put_flash(:info, "Repository '#{repo.name}' created.")
         |> redirect(to: Routes.codebase_path(conn, :show, user, repo))
       {:error, changeset} ->
         conn
@@ -65,7 +65,7 @@ defmodule GitGud.Web.RepoController do
         case Repo.update(repo, repo_params) do
           {:ok, repo} ->
             conn
-            |> put_flash(:info, "Repository updated.")
+            |> put_flash(:info, "Repository '#{repo.name}' updated.")
             |> redirect(to: Routes.repo_path(conn, :edit, repo.owner, repo))
           {:error, changeset} ->
             conn
@@ -73,6 +73,22 @@ defmodule GitGud.Web.RepoController do
             |> put_status(:bad_request)
             |> render("edit.html", repo: repo, changeset: %{changeset|action: :insert})
         end
+      end || {:error, :unauthorized}
+    end   || {:error, :not_found}
+  end
+
+  @doc """
+  Updates a repository.
+  """
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: user, preload: :maintainers) do
+      if repo.owner_id == user.id do
+        repo = Repo.delete!(repo)
+        conn
+        |> put_flash(:info, "Repository '#{repo.name}' deleted.")
+        |> redirect(to: Routes.user_path(conn, :show, user))
       end || {:error, :unauthorized}
     end   || {:error, :not_found}
   end

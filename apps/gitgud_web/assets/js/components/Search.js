@@ -42,7 +42,7 @@ class Search extends React.Component {
                     __typename
                     ... on User {
                       id
-                      username
+                      login
                       name
                       url
                     }
@@ -50,7 +50,7 @@ class Search extends React.Component {
                       id
                       name
                       owner {
-                        username
+                        login
                       }
                       url
                     }
@@ -87,7 +87,7 @@ class Search extends React.Component {
             <span className="icon">
               <i className="fa fa-user"></i>
             </span>
-            {edge.node.username} <span className="has-text-grey">{edge.node.name}</span>
+            {edge.node.login} <span className="has-text-grey">{edge.node.name}</span>
           </a>
         )
       case "Repo":
@@ -96,7 +96,7 @@ class Search extends React.Component {
             <span className="icon">
               <i className="fa fa-archive"></i>
             </span>
-            <span>{edge.node.owner.username} / {edge.node.name}</span>
+            <span>{edge.node.owner.login} / {edge.node.name}</span>
           </a>
         )
     }

@@ -1,6 +1,6 @@
 /**
  * @flow
- * @relayHash c075e3ecbc8b3656206291359cd8897e
+ * @relayHash 7bb499bf780b764ec31d9f892245fea2
  */
 
 /* eslint-disable */
@@ -18,13 +18,13 @@ export type SearchQueryResponse = {|
       +node: ?({|
         +__typename: "User",
         +id: string,
-        +username: string,
+        +login: string,
         +name: ?string,
         +url: string,
       |} | {|
         +__typename: "Repo",
         +owner: {|
-          +username: string
+          +login: string
         |},
       |} | {|
         // This will never be '%other', but we need some
@@ -51,7 +51,7 @@ query SearchQuery(
         __typename
         ... on User {
           id
-          username
+          login
           name
           url
         }
@@ -59,7 +59,7 @@ query SearchQuery(
           id
           name
           owner {
-            username
+            login
             id
           }
           url
@@ -113,14 +113,14 @@ v3 = {
 v4 = {
   "kind": "ScalarField",
   "alias": null,
-  "name": "name",
+  "name": "login",
   "args": null,
   "storageKey": null
 },
 v5 = {
   "kind": "ScalarField",
   "alias": null,
-  "name": "username",
+  "name": "name",
   "args": null,
   "storageKey": null
 },
@@ -136,7 +136,7 @@ return {
   "operationKind": "query",
   "name": "SearchQuery",
   "id": null,
-  "text": "query SearchQuery(\n  $input: String!\n) {\n  search(all: $input, first: 10) {\n    edges {\n      node {\n        __typename\n        ... on User {\n          id\n          username\n          name\n          url\n        }\n        ... on Repo {\n          id\n          name\n          owner {\n            username\n            id\n          }\n          url\n        }\n        ... on Node {\n          id\n        }\n      }\n    }\n  }\n}\n",
+  "text": "query SearchQuery(\n  $input: String!\n) {\n  search(all: $input, first: 10) {\n    edges {\n      node {\n        __typename\n        ... on User {\n          id\n          login\n          name\n          url\n        }\n        ... on Repo {\n          id\n          name\n          owner {\n            login\n            id\n          }\n          url\n        }\n        ... on Node {\n          id\n        }\n      }\n    }\n  }\n}\n",
   "metadata": {},
   "fragment": {
     "kind": "Fragment",
@@ -175,10 +175,20 @@ return {
                   v2,
                   {
                     "kind": "InlineFragment",
-                    "type": "Repo",
+                    "type": "User",
                     "selections": [
                       v3,
                       v4,
+                      v5,
+                      v6
+                    ]
+                  },
+                  {
+                    "kind": "InlineFragment",
+                    "type": "Repo",
+                    "selections": [
+                      v3,
+                      v5,
                       {
                         "kind": "LinkedField",
                         "alias": null,
@@ -188,19 +198,9 @@ return {
                         "concreteType": "User",
                         "plural": false,
                         "selections": [
-                          v5
+                          v4
                         ]
                       },
-                      v6
-                    ]
-                  },
-                  {
-                    "kind": "InlineFragment",
-                    "type": "User",
-                    "selections": [
-                      v3,
-                      v5,
-                      v4,
                       v6
                     ]
                   }
@@ -248,9 +248,18 @@ return {
                   v3,
                   {
                     "kind": "InlineFragment",
-                    "type": "Repo",
+                    "type": "User",
                     "selections": [
                       v4,
+                      v5,
+                      v6
+                    ]
+                  },
+                  {
+                    "kind": "InlineFragment",
+                    "type": "Repo",
+                    "selections": [
+                      v5,
                       {
                         "kind": "LinkedField",
                         "alias": null,
@@ -260,19 +269,10 @@ return {
                         "concreteType": "User",
                         "plural": false,
                         "selections": [
-                          v5,
+                          v4,
                           v3
                         ]
                       },
-                      v6
-                    ]
-                  },
-                  {
-                    "kind": "InlineFragment",
-                    "type": "User",
-                    "selections": [
-                      v5,
-                      v4,
                       v6
                     ]
                   }
@@ -287,5 +287,5 @@ return {
 };
 })();
 // prettier-ignore
-(node/*: any*/).hash = '3d254bafa57aed92435964e218ea859a';
+(node/*: any*/).hash = '66db58b7acf71eb8df800f26f7b3708e';
 module.exports = node;

@@ -59,20 +59,17 @@ defmodule GitGud.Web.Router do
 
     scope "/:user_name/:repo_name" do
       get "/", CodebaseController, :show
-
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
-
       get "/commit/:oid", CodebaseController, :commit
-
       get "/history", CodebaseController, :history
       get "/history/:revision/*path", CodebaseController, :history
-
       get "/tree/:revision/*path", CodebaseController, :tree
       get "/blob/:revision/*path", CodebaseController, :blob
 
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update
+      delete "/settings", RepoController, :delete
 
       get "/settings/maintainers", MaintainerController, :edit
       post "/settings/maintainers", MaintainerController, :create
