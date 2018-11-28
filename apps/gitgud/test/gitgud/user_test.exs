@@ -2,8 +2,9 @@ defmodule GitGud.UserTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
-  alias GitGud.Email
+  alias GitGud.Auth
   alias GitGud.User
+  alias GitGud.Email
 
   test "creates a new user with valid params" do
     assert {:ok, user} = User.create(factory(:user))
@@ -41,13 +42,13 @@ defmodule GitGud.UserTest do
     setup :create_user
 
     test "checks credentials", %{user: user} do
-      assert User.check_credentials(user.login, "qwertz")
-      assert User.check_credentials(hd(user.emails).address, "qwertz")
+      assert Auth.check_credentials(user.login, "qwertz")
+      assert Auth.check_credentials(hd(user.emails).address, "qwertz")
     end
 
     test "fails to check credentials with invalid password", %{user: user} do
-      refute User.check_credentials(user.login, "abc")
-      refute User.check_credentials(hd(user.emails).address, "abc")
+      refute Auth.check_credentials(user.login, "abc")
+      refute Auth.check_credentials(hd(user.emails).address, "abc")
     end
 
     test "fails to create a new user with already existing login", %{user: user} do

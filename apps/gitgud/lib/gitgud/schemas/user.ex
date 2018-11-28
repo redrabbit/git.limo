@@ -6,29 +6,26 @@ defmodule GitGud.User do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
-
-  import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2]
 
   alias GitGud.DB
 
+  alias GitGud.Auth
   alias GitGud.Email
   alias GitGud.Repo
   alias GitGud.SSHKey
 
   schema "users" do
-    field       :login,         :string
-    field       :name,          :string
-    belongs_to  :primary_email, Email, on_replace: :update
-    belongs_to  :public_email,  Email, on_replace: :update
-    field       :bio,           :string
-    field       :url,           :string
-    field       :location,      :string
-    has_many    :emails,        Email, on_delete: :delete_all
-    has_many    :repos,         Repo, foreign_key: :owner_id
-    has_many    :ssh_keys,      SSHKey, on_delete: :delete_all
-    field       :password,      :string, virtual: true
-    field       :password_hash, :string
+    field :login, :string
+    field :name, :string
+    has_one :auth, Auth, on_replace: :update
+    belongs_to :primary_email, Email, on_replace: :update
+    belongs_to :public_email, Email, on_replace: :update
+    field :bio, :string
+    field :url, :string
+    field :location, :string
+    has_many :emails, Email, on_delete: :delete_all
+    has_many :repos, Repo, on_delete: :delete_all, foreign_key: :owner_id
+    has_many :ssh_keys, SSHKey, on_delete: :delete_all
     timestamps()
   end
 
@@ -36,6 +33,7 @@ defmodule GitGud.User do
     id: pos_integer,
     login: binary,
     name: binary,
+    auth: Auth.t,
     primary_email: Email.t,
     public_email: Email.t,
     bio: binary,
@@ -44,8 +42,6 @@ defmodule GitGud.User do
     emails: [Email.t],
     repos: [Repo.t],
     ssh_keys: [SSHKey.t],
-    password: binary,
-    password_hash: binary,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
   }
@@ -58,16 +54,25 @@ defmodule GitGud.User do
     login: "redrabbit",
     name: "Mario Flach",
     emails: [
-      %{email: "m.flach@almightycouch.com"}
+      %{address: "m.flach@almightycouch.com"}
     ],
-    password: "qwertz"
+    auth: %{
+      password: "qwertz"
+    }
   )
   ```
   This function validates the given `params` using `registration_changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    DB.insert(registration_changeset(%__MODULE__{}, Map.new(params)))
+    case DB.insert(registration_changeset(%__MODULE__{}, Map.new(params))) do
+      {:ok, %__MODULE__{emails: [%Email{verified: true} = email]} = user} ->
+        update(user, :primary_email, email)
+      {:ok, user} ->
+        {:ok, user}
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -75,7 +80,10 @@ defmodule GitGud.User do
   """
   @spec create!(map|keyword) :: t
   def create!(params) do
-    DB.insert!(registration_changeset(%__MODULE__{}, Map.new(params)))
+    case create(params) do
+      {:ok, user} -> user
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -135,12 +143,13 @@ defmodule GitGud.User do
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:login, :name, :bio, :url, :location, :password])
+    |> cast(params, [:login, :name, :bio, :url, :location])
+    |> cast_assoc(:auth, required: true, with: &Auth.registration_changeset/2)
     |> cast_assoc(:emails, required: true)
-    |> validate_required([:login, :name, :password])
+    |> validate_required([:login, :name])
     |> validate_login()
     |> validate_url()
-    |> validate_password()
+    |> validate_oauth_email()
   end
 
   @doc """
@@ -160,34 +169,8 @@ defmodule GitGud.User do
   @spec password_changeset(map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:password])
-    |> validate_required([:password])
-    |> validate_old_password()
-    |> validate_password()
-  end
-
-  @doc """
-  Returns the matching user for the given credentials; elsewhise returns `nil`.
-
-  ```elixir
-  if user = GitGud.User.check_credentials("redrabbit", "qwertz") do
-    IO.puts "Welcome!"
-  else
-    IO.puts "Invalid login credentials."
-  end
-  ```
-  """
-  @spec check_credentials(binary, binary) :: t | nil
-  def check_credentials(email_or_login, password) do
-    query = from u in __MODULE__,
-           join: e in assoc(u, :emails),
-       or_where: u.login == ^email_or_login,
-       or_where: e.address == ^email_or_login and e.verified == true,
-        preload: [emails: e]
-    case check_pass(DB.one(query), password) do
-      {:ok, user} -> user
-      {:error, _reason} -> nil
-    end
+    |> cast(params, [])
+    |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
   end
 
   #
@@ -207,6 +190,7 @@ defmodule GitGud.User do
     changeset
     |> validate_length(:login, min: 3, max: 24)
     |> validate_format(:login, ~r/^[a-zA-Z0-9_-]+$/)
+    |> validate_exclusion(:login, ["auth", "login", "logout", "new", "register", "settings"])
     |> unique_constraint(:login)
   end
 
@@ -223,34 +207,10 @@ defmodule GitGud.User do
     end || changeset
   end
 
-  defp validate_password(changeset) do
-    changeset
-    |> validate_length(:password, min: 6)
-    |> validate_confirmation(:password)
-    |> put_password_hash(:password)
-  end
-
-  defp validate_old_password(%{params: params} = changeset) do
-    error_param = "old_password"
-    error_field = String.to_atom(error_param)
-    errors =
-      case Map.get(params, error_param) do
-        value when is_nil(value) or value == "" ->
-          [{error_field, {"can't be blank", [validation: :required]}}]
-        value ->
-          case check_pass(changeset.data, value) do
-            {:ok, _user} -> []
-            {:error, _reason} -> [{error_field, {"does not match old password", [validation: :old_password]}}]
-          end
-      end
-    %{changeset|validations: [{:old_password, []}|changeset.validations],
-                errors: errors ++ changeset.errors,
-                valid?: changeset.valid? and errors == []}
-  end
-
-  defp put_password_hash(changeset, field) do
-    if password = changeset.valid? && get_field(changeset, field),
-      do: change(changeset, add_hash(password)),
+  defp validate_oauth_email(changeset) do
+    auth_changeset = get_change(changeset, :auth)
+    if auth_changeset && get_change(auth_changeset, :providers),
+      do: put_change(changeset, :emails, Enum.map(get_change(changeset, :emails), &put_change(&1, :verified, true))),
     else: changeset
   end
 end

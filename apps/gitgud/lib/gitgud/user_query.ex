@@ -59,8 +59,17 @@ defmodule GitGud.UserQuery do
   @doc """
   Returns a user for the given SSH key `fingerprint`.
   """
+  @spec by_ssh_key(binary, keyword) :: User.t | nil
   def by_ssh_key(fingerprint, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :user_ssh_key_query}, fingerprint, opts))
+  end
+
+  @doc """
+  Returns a user for the given authentication `provider` and `id`.
+  """
+  @spec by_oauth(binary, binary, keyword) :: User.t | nil
+  def by_oauth(provider, id, opts \\ []) do
+    DB.one(DBQueryable.query({__MODULE__, :user_oauth_query}, [provider, id], opts))
   end
 
   @doc """
@@ -90,10 +99,22 @@ defmodule GitGud.UserQuery do
   end
 
   @doc """
-  Returns a query for fetching a single user by SSH key `fingerprint`.
+  Returns a query for fetching a single user by SSH `fingerprint`.
   """
+  @spec user_ssh_key_query(binary) :: Ecto.Query.t
   def user_ssh_key_query(fingerprint) do
     from(u in User, as: :user, join: s in assoc(u, :ssh_keys), where: s.fingerprint == ^fingerprint)
+  end
+
+  @doc """
+  Returns a query for fetching a single user by authentication `token`.
+  """
+  @spec user_oauth_query(binary, binary) :: Ecto.Query.t
+  def user_oauth_query(provider, id) do
+    from(u in User, as: :user,
+      join: a in assoc(u, :auth),
+      join: p in assoc(a, :providers), where: p.provider == ^provider and p.provider_id == ^id,
+      preload: [auth: a])
   end
 
   @doc """

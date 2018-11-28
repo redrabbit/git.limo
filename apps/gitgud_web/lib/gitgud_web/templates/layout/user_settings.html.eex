@@ -13,12 +13,12 @@
       <li>
         <%= navigation_item @conn, :email, [], :a, href: Routes.email_path(@conn, :edit) do %>Emails<% end %>
       </li>
-      <li>
-        <%= navigation_item @conn, :user, [only: [:edit_password, :update_password]], :a, href: Routes.user_path(@conn, :edit_password) do %>Password<% end %>
-      </li>
     </ul>
     <p class="menu-label">Authentication</p>
     <ul class="menu-list">
+      <li>
+        <%= navigation_item @conn, :user, [only: [:edit_password, :update_password]], :a, href: Routes.user_path(@conn, :edit_password) do %>Password<% end %>
+      </li>
       <li>
         <%= navigation_item @conn, :ssh_key, [], :a, href: Routes.ssh_key_path(@conn, :index) do %>SSH keys<% end %>
       </li>

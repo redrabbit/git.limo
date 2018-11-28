@@ -6,8 +6,11 @@ defmodule GitGud.Web.UserController do
   use GitGud.Web, :controller
 
   alias GitGud.DB
-  alias GitGud.User
+
+  alias GitGud.Auth
   alias GitGud.Email
+
+  alias GitGud.User
   alias GitGud.UserQuery
 
   @settings_actions [
@@ -33,8 +36,9 @@ defmodule GitGud.Web.UserController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    changeset = User.registration_changeset(%User{emails: [Email.changeset(%Email{})]})
-    render(conn, "new.html", changeset: changeset)
+    unless authenticated?(conn),
+      do: render(conn, "new.html", changeset: User.registration_changeset(%User{auth: %Auth{}, emails: [%Email{}]})),
+    else: redirect(conn, to: Routes.user_path(conn, :show, current_user(conn)))
   end
 
   @doc """
@@ -44,7 +48,8 @@ defmodule GitGud.Web.UserController do
   def create(conn, %{"user" => user_params} = _params) do
     case User.create(user_params) do
       {:ok, user} ->
-        GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(hd(user.emails)))
+        for email <- Enum.reject(user.emails, &(&1.verified)), do:
+          GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome!")
@@ -82,7 +87,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec edit_password(Plug.Conn.t, map) :: Plug.Conn.t
   def edit_password(conn, _params) do
-    user = current_user(conn)
+    user = DB.preload(current_user(conn), :auth)
     changeset = User.password_changeset(user)
     render(conn, "edit_password.html", user: user, changeset: changeset)
   end
@@ -111,7 +116,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec update_password(Plug.Conn.t, map) :: Plug.Conn.t
   def update_password(conn, %{"password" => password_params} = _params) do
-    user = current_user(conn)
+    user = DB.preload(current_user(conn), :auth)
     case User.update(user, :password, password_params) do
       {:ok, _user} ->
         conn

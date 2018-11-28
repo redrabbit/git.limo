@@ -33,6 +33,9 @@ defmodule GitGud.Web.Router do
 
     get "/logout", SessionController, :delete
 
+    get "/auth/:provider", OAuth2Controller, :authorize, as: :oauth2
+    get "/auth/:provider/callback", OAuth2Controller, :callback, as: :oauth2
+
     get "/register", UserController, :new
     post "/register", UserController, :create
 

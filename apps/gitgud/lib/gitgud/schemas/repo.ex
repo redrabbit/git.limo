@@ -167,8 +167,8 @@ defmodule GitGud.Repo do
     |> assoc_constraint(:owner)
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
+    |> validate_exclusion(:name, ["settings"])
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
-    |> put_maintainers()
   end
 
   @doc """
@@ -484,12 +484,6 @@ defmodule GitGud.Repo do
 
   defp cleanup(_db, %{repo: repo}) do
     File.rm_rf(workdir(repo))
-  end
-
-  defp put_maintainers(changeset) do
-    if maintainers = changeset.params["maintainers"],
-      do: put_assoc(changeset, :maintainers, maintainers),
-    else: changeset
   end
 
   defp resolve_handle(%__MODULE__{__git__: handle}) when is_reference(handle), do: {:ok, handle}

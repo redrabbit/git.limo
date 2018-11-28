@@ -26,12 +26,11 @@ defmodule GitGud.SSHServer do
   See `GitGud.Authorization` for more details.
   """
 
+  alias GitGud.Auth
   alias GitGud.User
   alias GitGud.UserQuery
-
   alias GitGud.Repo
   alias GitGud.RepoQuery
-
   alias GitGud.SSHKey
 
   alias GitRekt.Git
@@ -170,6 +169,6 @@ defmodule GitGud.SSHServer do
   end
 
   defp check_credentials(login, password) do
-    !!User.check_credentials(to_string(login), to_string(password))
+    !!Auth.check_credentials(to_string(login), to_string(password))
   end
 end

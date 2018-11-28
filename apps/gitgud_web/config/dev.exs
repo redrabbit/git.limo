@@ -31,6 +31,10 @@ config :gitgud_web, GitGud.Web.Endpoint,
     ]
   ]
 
+config :gitgud_web, GitGud.OAuth2.GitHub,
+  client_id: "503f14433fb7334fdbd0",
+  client_secret: "3ba722afd4de11c4f53e248218f3bba3c4e5fba5"
+
 config :gitgud_web, GitGud.Mailer,
   adapter: Bamboo.MailgunAdapter,
   api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx",

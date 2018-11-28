@@ -21,19 +21,27 @@
     <div class="field">
       <%= label fe, :address, "Email", class: "label" %>
       <div class="control">
-        <%= email_input fe, :address, class: "input" %>
+        <%= email_input fe, :address, class: "input", readonly: readonly_email?(@changeset) %>
       </div>
       <%= error_tag fe, :address %>
     </div>
   <% end %>
 
-  <div class="field">
-    <%= label f, :password, class: "label" %>
-    <div class="control">
-      <%= password_input f, :password, class: "input" %>
+  <%= inputs_for f, :auth, fn fa -> %>
+    <div class="field">
+      <%= label fa, :password, class: "label" %>
+      <div class="control">
+        <%= password_input fa, :password, class: "input" %>
+      </div>
+      <%= error_tag fa, :password %>
     </div>
-    <%= error_tag f, :password %>
-  </div>
+
+    <%= inputs_for fa, :providers, fn fp -> %>
+      <%= hidden_input fp, :provider %>
+      <%= hidden_input fp, :provider_id %>
+      <%= hidden_input fp, :token %>
+    <% end %>
+  <% end %>
 
   <div class="field">
     <%= submit "Register", class: "button is-link" %>

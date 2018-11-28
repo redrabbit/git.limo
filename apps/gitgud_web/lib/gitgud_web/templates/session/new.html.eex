@@ -1,5 +1,18 @@
 <h1 class="title">Login</h1>
 
+<nav class="level">
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="title">
+        <a href="<%= Routes.oauth2_path(@conn, :authorize, "github") %>">
+          <span class="icon is-large"><i class="fab fa-lg fa-github"></i></span>
+        </a>
+      </p>
+      <p class="heading">GitHub</p>
+    </div>
+  </div>
+</nav>
+
 <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
   <%= if redirect_path = assigns[:redirect] do %>
     <%= hidden_input f, :redirect, value: redirect_path %>

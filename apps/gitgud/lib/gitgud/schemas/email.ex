@@ -8,7 +8,7 @@ defmodule GitGud.Email do
   Every `GitGud.User` has **at least one** email address. In order to be taken in account, an email address
   must be verified first. See `verify/1` for more details.
 
-  Once verified, an email address can be used to authenticate users (see `GitGud.User.check_credentials/2`)
+  Once verified, an email address can be used to authenticate users (see `GitGud.Auth.check_credentials/2`)
   and resolve Git commit authors.
 
   In order to associate Git commits to a specific `GitGud.User` account, every user can have has many email
@@ -69,11 +69,10 @@ defmodule GitGud.Email do
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
     DB.transaction(fn ->
-      email_user = DB.preload(email, :user)
       email = DB.update!(change(email, %{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
-      unless email_user.user.primary_email_id do
+      email_user = DB.preload(email, :user)
+      unless email_user.user.primary_email_id, do:
         User.update!(email_user.user, :primary_email, email)
-      end
       email
     end)
   end
@@ -104,7 +103,6 @@ defmodule GitGud.Email do
   def delete!(%__MODULE__{} = email) do
     DB.delete!(email)
   end
-
 
   @doc """
   Returns an email changeset for the given `params`.

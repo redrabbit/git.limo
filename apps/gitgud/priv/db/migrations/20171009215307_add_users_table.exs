@@ -10,7 +10,6 @@ defmodule GitGud.DB.Migrations.AddUsersTable do
       add :bio,              :string
       add :url,              :string
       add :location,         :string
-      add :password_hash,    :string, null: false, size: 96
       timestamps()
     end
 
