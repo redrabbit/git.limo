@@ -33,6 +33,7 @@ defmodule GitGud.Mixfile do
      {:postgrex, "~> 0.14"},
      {:plug, "~> 1.7", optional: true},
      {:phoenix_pubsub, "~> 1.1", optional: true},
+     {:jason, "~> 1.1"},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
      {:faker, "~> 0.11", only: :test},

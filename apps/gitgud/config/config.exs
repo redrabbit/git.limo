@@ -1,6 +1,8 @@
 use Mix.Config
 
-config :gitgud, ecto_repos: [GitGud.DB]
+config :gitgud,
+  namespace: GitGud,
+  ecto_repos: [GitGud.DB]
 
 config :absinthe, schema: GitGud.GraphQL.Schema
 

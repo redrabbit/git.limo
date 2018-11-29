@@ -9,6 +9,6 @@ config :gitgud, GitGud.DB,
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :gitgud,
-  ssh_port: 9898,
+  ssh_port: 9899,
   ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
   git_root: Path.absname("test/data/git", Path.dirname(__DIR__))
