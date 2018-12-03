@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.User – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.User.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.User              </h1>
+GitGud.User        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -171,6 +177,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L32" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.User{
@@ -216,6 +226,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create!(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L82" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -232,6 +246,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L67" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -239,16 +257,16 @@ GitGud.User              </h1>
   </div>
   <section class="docstring">
 <p>Creates a new user with the given <code class="inline">params</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="0628527709-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="0628527709-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="0628527709-2">(</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="7403373497-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="7403373497-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="7403373497-2">(</span><span class="w">
   </span><span class="ss">login</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redrabbit&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Mario Flach&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">emails</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0628527709-3">[</span><span class="w">
-    </span><span class="p" data-group-id="0628527709-4">%{</span><span class="ss">address</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;m.flach@almightycouch.com&quot;</span><span class="p" data-group-id="0628527709-4">}</span><span class="w">
-  </span><span class="p" data-group-id="0628527709-3">]</span><span class="p">,</span><span class="w">
-  </span><span class="ss">auth</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0628527709-5">%{</span><span class="w">
+  </span><span class="ss">emails</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7403373497-3">[</span><span class="w">
+    </span><span class="p" data-group-id="7403373497-4">%{</span><span class="ss">address</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;m.flach@almightycouch.com&quot;</span><span class="p" data-group-id="7403373497-4">}</span><span class="w">
+  </span><span class="p" data-group-id="7403373497-3">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">auth</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7403373497-5">%{</span><span class="w">
     </span><span class="ss">password</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwertz&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0628527709-5">}</span><span class="w">
-</span><span class="p" data-group-id="0628527709-2">)</span></code></pre>
+  </span><span class="p" data-group-id="7403373497-5">}</span><span class="w">
+</span><span class="p" data-group-id="7403373497-2">)</span></code></pre>
 <p>This function validates the given <code class="inline">params</code> using <a href="#registration_changeset/2"><code class="inline">registration_changeset/2</code></a>.</p>
   </section>
 </div>
@@ -259,6 +277,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete!(user)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L136" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -275,6 +297,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete(user)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L128" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -294,6 +320,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">password_changeset(user, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L170" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Returns a password changeset for the given <code class="inline">params</code>.</p>
@@ -308,6 +338,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">profile_changeset(user, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L159" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Returns a profile changeset for the given <code class="inline">params</code>.</p>
@@ -322,6 +356,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">registration_changeset(user, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L144" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>registration_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
@@ -338,6 +376,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update!(user, changeset_type, params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L118" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -356,6 +398,10 @@ GitGud.User              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update(user, changeset_type, params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/user.ex#L109" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
@@ -365,7 +411,7 @@ GitGud.User              </h1>
   </div>
   <section class="docstring">
 <p>Updates the given <code class="inline">user</code> with the given <code class="inline">changeset_type</code> and <code class="inline">params</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="6291272999-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="6291272999-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="6291272999-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:profile</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Mario Bros&quot;</span><span class="p" data-group-id="6291272999-2">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="5013697092-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="5013697092-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="5013697092-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:profile</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Mario Bros&quot;</span><span class="p" data-group-id="5013697092-2">)</span></code></pre>
 <p>Following changeset types are available:</p>
 <ul>
 <li><code class="inline">:profile</code> — see <a href="#profile_changeset/2"><code class="inline">profile_changeset/2</code></a>.
@@ -374,7 +420,7 @@ GitGud.User              </h1>
 </li>
 </ul>
 <p>This function can also be used to update email associations, for example:</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="4016775639-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="4016775639-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="4016775639-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="p" data-group-id="4016775639-2">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="1070741909-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="1070741909-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="1070741909-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="p" data-group-id="1070741909-2">)</span></code></pre>
   </section>
 </div>
         </section>

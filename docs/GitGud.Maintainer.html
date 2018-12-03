@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.Maintainer – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.Maintainer.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.Maintainer              </h1>
+GitGud.Maintainer        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -184,6 +190,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L34" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.Maintainer{
@@ -223,6 +233,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">changeset(maintainer, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L125" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
@@ -239,6 +253,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create!(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L62" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -255,6 +273,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L54" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -262,7 +284,7 @@ to change a maintainer’s permission.</p>
   </div>
   <section class="docstring">
 <p>Creates a new maintainer with the given <code class="inline">params</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="5506876914-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">maintainer</span><span class="p" data-group-id="5506876914-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Maintainer</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="5506876914-2">(</span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="ss">repo_id</span><span class="p">:</span><span class="w"> </span><span class="n">repo</span><span class="o">.</span><span class="n">id</span><span class="p" data-group-id="5506876914-2">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="0049636951-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">maintainer</span><span class="p" data-group-id="0049636951-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Maintainer</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="0049636951-2">(</span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="ss">repo_id</span><span class="p">:</span><span class="w"> </span><span class="n">repo</span><span class="o">.</span><span class="n">id</span><span class="p" data-group-id="0049636951-2">)</span></code></pre>
 <p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
   </section>
 </div>
@@ -273,6 +295,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete!(maintainer)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L117" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Similar to <a href="#delete!/1"><code class="inline">delete!/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
@@ -285,6 +311,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete(maintainer)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L109" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -302,6 +332,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_permission!(maintainer, permission)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L90" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_permission!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -318,6 +352,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_permission!(repo, user, permission)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L98" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_permission!(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -334,6 +372,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_permission(maintainer, permission)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L70" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_permission(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
@@ -351,6 +393,10 @@ to change a maintainer’s permission.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_permission(repo, user, permission)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/maintainer.ex#L78" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_permission(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::

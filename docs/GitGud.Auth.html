@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.Auth – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.Auth.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.Auth              </h1>
+GitGud.Auth        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/auth.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -129,6 +135,10 @@ GitGud.Auth              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/auth.ex#L27" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.Auth{
@@ -166,6 +176,10 @@ GitGud.Auth              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">check_credentials(email_or_login, password)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/auth.ex#L50" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>check_credentials(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="#t:t/0">t</a>() | nil</pre>
@@ -173,11 +187,11 @@ GitGud.Auth              </h1>
   </div>
   <section class="docstring">
 <p>Returns the matching user for the given credentials; elsewhise returns <code class="inline">nil</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="k">if</span><span class="w"> </span><span class="n">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Auth</span><span class="o">.</span><span class="n">check_credentials</span><span class="p" data-group-id="9065855959-1">(</span><span class="s">&quot;redrabbit&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;qwertz&quot;</span><span class="p" data-group-id="9065855959-1">)</span><span class="w"> </span><span class="k" data-group-id="9065855959-2">do</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="k">if</span><span class="w"> </span><span class="n">user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Auth</span><span class="o">.</span><span class="n">check_credentials</span><span class="p" data-group-id="4991524842-1">(</span><span class="s">&quot;redrabbit&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;qwertz&quot;</span><span class="p" data-group-id="4991524842-1">)</span><span class="w"> </span><span class="k" data-group-id="4991524842-2">do</span><span class="w">
   </span><span class="nc">IO</span><span class="o">.</span><span class="n">puts</span><span class="w"> </span><span class="s">&quot;Welcome!&quot;</span><span class="w">
-</span><span class="k" data-group-id="9065855959-2">else</span><span class="w">
+</span><span class="k" data-group-id="4991524842-2">else</span><span class="w">
   </span><span class="nc">IO</span><span class="o">.</span><span class="n">puts</span><span class="w"> </span><span class="s">&quot;Invalid login credentials.&quot;</span><span class="w">
-</span><span class="k" data-group-id="9065855959-2">end</span></code></pre>
+</span><span class="k" data-group-id="4991524842-2">end</span></code></pre>
   </section>
 </div>
 <div class="detail" id="password_changeset/2">
@@ -189,6 +203,10 @@ GitGud.Auth              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">password_changeset(auth, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/auth.ex#L78" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>password_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
@@ -207,6 +225,10 @@ GitGud.Auth              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">registration_changeset(auth, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/auth.ex#L65" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>registration_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>

@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitRekt.Packfile – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitRekt.Packfile.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitRekt.Packfile              </h1>
+GitRekt.Packfile        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -139,6 +145,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">obj()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L11" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>obj() :: {<a href="GitRekt.Git.html#t:obj_type/0">GitRekt.Git.obj_type</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:buffer, <a href="#t:obj_list/0">obj_list</a>(), <a href="#t:obj_iter/0">obj_iter</a>()}</pre>
@@ -154,6 +164,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">obj_iter()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L10" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>obj_iter() :: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}</pre>
@@ -169,6 +183,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">obj_list()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L12" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>obj_list() :: [<a href="#t:obj/0">obj</a>()]</pre>
@@ -196,6 +214,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create(repo, oids)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create(<a href="GitRekt.Git.html#t:repo/0">GitRekt.Git.repo</a>(), [<a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>() | {<a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()}]) ::
@@ -213,6 +235,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">parse(pack)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L29" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>parse(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {<a href="#t:obj_list/0">obj_list</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}</pre>
@@ -229,6 +255,10 @@ GitRekt.Packfile              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">parse(pack, iterator)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/packfile.ex#L35" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>parse(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="#t:obj_iter/0">obj_iter</a>()) :: {<a href="#t:obj_list/0">obj_list</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}</pre>

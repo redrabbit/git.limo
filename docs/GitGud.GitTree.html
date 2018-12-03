@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.GitTree – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.GitTree.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.GitTree              </h1>
+GitGud.GitTree        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -136,6 +142,10 @@ GitGud.GitTree              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L14" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.GitTree{
@@ -167,6 +177,10 @@ GitGud.GitTree              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">by_id(git_tree, oid)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L20" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>by_id(<a href="#t:t/0">t</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()) ::
@@ -184,6 +198,10 @@ GitGud.GitTree              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">by_path(git_tree, path)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L33" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>by_path(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>()) :: {:ok, <a href="GitGud.GitTreeEntry.html#t:t/0">GitGud.GitTreeEntry.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -200,6 +218,10 @@ GitGud.GitTree              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">entries(tree)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L46" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>entries(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -216,6 +238,10 @@ GitGud.GitTree              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">pathspec_match?(git_tree, pathspec)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/git/git_tree.ex#L56" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>pathspec_match?(<a href="#t:t/0">t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()]) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>

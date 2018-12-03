@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.Web.UserSocket – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.Web.UserSocket.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.Web.UserSocket              </h1>
+GitGud.Web.UserSocket        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/channels/user_socket.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -113,6 +119,10 @@ GitGud.Web.UserSocket              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">connect(params, sock)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/channels/user_socket.ex#L10" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Receives the socket params and authenticates the connection.</p>
@@ -125,7 +135,7 @@ GitGud.Web.UserSocket              </h1>
 be used to verify and authenticate a user. After
 verification, you can put default assigns into
 the socket that will be set for all channels, ie</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="8062476065-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="8062476065-2">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">:user_id</span><span class="p">,</span><span class="w"> </span><span class="n">verified_user_id</span><span class="p" data-group-id="8062476065-2">)</span><span class="p" data-group-id="8062476065-1">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="7104619237-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="7104619237-2">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">:user_id</span><span class="p">,</span><span class="w"> </span><span class="n">verified_user_id</span><span class="p" data-group-id="7104619237-2">)</span><span class="p" data-group-id="7104619237-1">}</span></code></pre>
 <p>To deny connection, return <code class="inline">:error</code>.</p>
 <p>See <a href="https://hexdocs.pm/phoenix/1.4.0/Phoenix.Token.html"><code class="inline">Phoenix.Token</code></a> documentation for examples in
 performing token verification on connect.</p>
@@ -139,14 +149,18 @@ performing token verification on connect.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">id(sock)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/channels/user_socket.ex#L16" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Identifies the socket connection.</p>
 <p>Socket IDs are topics that allow you to identify all sockets for a given user:</p>
-<pre><code class="nohighlight makeup elixir"><span class="kd">def</span><span class="w"> </span><span class="nf">id</span><span class="p" data-group-id="0444559007-1">(</span><span class="n">socket</span><span class="p" data-group-id="0444559007-1">)</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;users_socket:</span><span class="si" data-group-id="0444559007-2">#{</span><span class="n">socket</span><span class="o">.</span><span class="n">assigns</span><span class="o">.</span><span class="n">user_id</span><span class="si" data-group-id="0444559007-2">}</span><span class="s">&quot;</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="kd">def</span><span class="w"> </span><span class="nf">id</span><span class="p" data-group-id="3409120595-1">(</span><span class="n">socket</span><span class="p" data-group-id="3409120595-1">)</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;users_socket:</span><span class="si" data-group-id="3409120595-2">#{</span><span class="n">socket</span><span class="o">.</span><span class="n">assigns</span><span class="o">.</span><span class="n">user_id</span><span class="si" data-group-id="3409120595-2">}</span><span class="s">&quot;</span></code></pre>
 <p>Would allow you to broadcast a “disconnect” event and terminate
 all active sockets and channels for a given user:</p>
-<pre><code class="nohighlight makeup elixir"><span class="nc">MyApp.Endpoint</span><span class="o">.</span><span class="n">broadcast</span><span class="p" data-group-id="3311727637-1">(</span><span class="s">&quot;users_socket:&quot;</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;disconnect&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3311727637-2">%{</span><span class="p" data-group-id="3311727637-2">}</span><span class="p" data-group-id="3311727637-1">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="nc">MyApp.Endpoint</span><span class="o">.</span><span class="n">broadcast</span><span class="p" data-group-id="1519835969-1">(</span><span class="s">&quot;users_socket:&quot;</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;disconnect&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1519835969-2">%{</span><span class="p" data-group-id="1519835969-2">}</span><span class="p" data-group-id="1519835969-1">)</span></code></pre>
 <p>Returning <code class="inline">nil</code> makes this socket anonymous.</p>
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix/1.4.0/Phoenix.Socket.html#c:id/1"><code class="inline">Phoenix.Socket.id/1</code></a>.</p>
   </section>

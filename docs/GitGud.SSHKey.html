@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.SSHKey – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.SSHKey.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.SSHKey              </h1>
+GitGud.SSHKey        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -158,6 +164,10 @@ GitGud.SSHKey              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L24" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.SSHKey{
@@ -197,6 +207,10 @@ GitGud.SSHKey              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">changeset(ssh_key, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L98" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
@@ -216,6 +230,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create!(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L53" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -232,6 +250,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create(params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L45" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -239,7 +261,7 @@ and stores a fingerprint of the public key. It does not save the given <code cla
   </div>
   <section class="docstring">
 <p>Creates a new SSH key with the given <code class="inline">params</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="5048098344-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">ssh_key</span><span class="p" data-group-id="5048098344-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.SSHKey</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="5048098344-2">(</span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My SSH Key&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ssh-rsa AAAAB3NzaC1yc2...&quot;</span><span class="p" data-group-id="5048098344-2">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="2796171693-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">ssh_key</span><span class="p" data-group-id="2796171693-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.SSHKey</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="2796171693-2">(</span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My SSH Key&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ssh-rsa AAAAB3NzaC1yc2...&quot;</span><span class="p" data-group-id="2796171693-2">)</span></code></pre>
 <p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
   </section>
 </div>
@@ -250,6 +272,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete!(ssh_key)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L69" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -266,6 +292,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete(ssh_key)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L61" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -282,6 +312,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_timestamp!(ssh_key)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L85" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_timestamp!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -298,6 +332,10 @@ and stores a fingerprint of the public key. It does not save the given <code cla
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update_timestamp(ssh_key)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/ssh_key.ex#L77" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update_timestamp(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>

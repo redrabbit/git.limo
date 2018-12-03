@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.Web.ReactComponents – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.Web.ReactComponents.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.Web.ReactComponents              </h1>
+GitGud.Web.ReactComponents        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -120,12 +126,16 @@ GitGud.Web.ReactComponents              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">react_component(name)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L21" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Generates a <code class="inline">:div</code> containing the named React component with no props or attrs.</p>
 <p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.
 You can utilize this in your Phoenix views:</p>
-<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="1443058738-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p" data-group-id="1443058738-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="1591400264-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p" data-group-id="1591400264-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
 <p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
 helper to then turn into your named React component.</p>
   </section>
@@ -137,13 +147,17 @@ helper to then turn into your named React component.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">react_component(name, props)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code>.</p>
 <p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.
 Props can be passed in as a Map or a List.
 You can utilize this in your Phoenix views:</p>
-<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="5707625216-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5707625216-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="5707625216-2">}</span><span class="p" data-group-id="5707625216-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="5380311249-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5380311249-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="5380311249-2">}</span><span class="p" data-group-id="5380311249-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
 <p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
 helper to then turn into your named React component and then pass in the <code class="inline">props</code> specified.</p>
   </section>
@@ -155,16 +169,20 @@ helper to then turn into your named React component and then pass in the <code c
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">react_component(name, props, attrs)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L58" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code> and <code class="inline">attrs</code>.</p>
 <p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.</p>
 <p>You can utilize this in your Phoenix views:</p>
-<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="4018626196-1">(</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="6206530126-1">(</span><span class="w">
       </span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="p" data-group-id="4018626196-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="4018626196-2">}</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="6206530126-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="6206530126-2">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">class</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my-component&quot;</span><span class="w">
-    </span><span class="p" data-group-id="4018626196-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
+    </span><span class="p" data-group-id="6206530126-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
 <p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
 helper to then turn into your named React component and then pass in the <code class="inline">props</code> specified.</p>
   </section>

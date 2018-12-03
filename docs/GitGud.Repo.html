@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitGud.Repo – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitGud.Repo.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitGud.Repo              </h1>
+GitGud.Repo        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -302,6 +308,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">git_object()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L42" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_object() ::
@@ -321,6 +331,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">git_revision()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L43" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_revision() ::
@@ -337,6 +351,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L45" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitGud.Repo{
@@ -379,6 +397,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">changeset(repo, params \\ %{})</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L163" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
@@ -397,6 +419,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create!(params, opts \\ [])</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L89" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -415,6 +441,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">create(params, opts \\ [])</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L73" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
@@ -423,12 +453,12 @@ It also provides a set of helper functions to run Git related functions.</p>
   </div>
   <section class="docstring">
 <p>Creates a new repository.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="7102571322-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="n">git_handle</span><span class="p" data-group-id="7102571322-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="7102571322-2">(</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="5458918585-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="n">git_handle</span><span class="p" data-group-id="5458918585-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="5458918585-2">(</span><span class="w">
   </span><span class="ss">owner_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w">
   </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gitgud&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GitHub clone entirely written in Elixir.&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">public</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="w">
-</span><span class="p" data-group-id="7102571322-2">)</span></code></pre>
+</span><span class="p" data-group-id="5458918585-2">)</span></code></pre>
 <p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
   </section>
 </div>
@@ -439,6 +469,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete!(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L152" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -455,6 +489,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">delete(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L137" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
@@ -472,6 +510,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">empty?(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L222" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>empty?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
@@ -488,6 +530,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_branch(repo, branch_name)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L270" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_branch(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
@@ -505,6 +551,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_branches(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L281" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_branches(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -523,6 +573,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_diff(old_tree, new_tree, opts \\ [])</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L379" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Returns a diff with the difference between <code class="inline">old_tree</code> and <code class="inline">new_tree</code>.</p>
@@ -535,6 +589,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_head(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L231" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_head(<a href="#t:t/0">t</a>()) :: {:ok, <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -553,6 +611,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_history(revision, opts \\ [])</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L347" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
           </div>
   <section class="docstring">
 <p>Returns the commit history starting from the given <code class="inline">revision</code>.</p>
@@ -565,6 +627,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_object(repo, oid)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L314" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_object(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:ok, <a href="#t:git_object/0">git_object</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -581,6 +647,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_push(repo, receive_pack)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L397" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_push(<a href="#t:t/0">t</a>(), <a href="GitRekt.WireProtocol.ReceivePack.html#t:t/0">GitRekt.WireProtocol.ReceivePack.t</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -599,6 +669,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_reference(repo, name_or_shorthand \\ :head)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L249" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_reference(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
@@ -618,6 +692,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_references(repo, glob \\ :undefined)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L259" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_references(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :undefined) ::
@@ -635,6 +713,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_revision(repo, revision)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L325" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_revision(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
@@ -652,6 +734,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_tag(repo, tag_name)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L292" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_tag(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
@@ -669,6 +755,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_tags(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L303" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_tags(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -685,6 +775,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">git_tree(revision)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L370" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>git_tree(<a href="#t:git_revision/0">git_revision</a>()) :: {:ok, <a href="GitGud.GitTree.html#t:t/0">GitGud.GitTree.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -701,6 +795,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">maintainer(repo, user)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L190" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>maintainer(<a href="#t:t/0">t</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()) :: <a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>() | nil</pre>
@@ -717,6 +815,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">maintainers(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L178" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>maintainers(<a href="#t:t/0">t</a>()) :: [<a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>()]</pre>
@@ -733,6 +835,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">open(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L211" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>open(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -749,6 +855,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">root_path()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L389" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>root_path() :: <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>() | nil</pre>
@@ -765,6 +875,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update!(repo, params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L121" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
@@ -781,6 +895,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">update(repo, params)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L106" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>update(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
@@ -789,7 +907,7 @@ It also provides a set of helper functions to run Git related functions.</p>
   </div>
   <section class="docstring">
 <p>Updates the given <code class="inline">repo</code> with the given <code class="inline">params</code>.</p>
-<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="3333573232-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p" data-group-id="3333573232-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="3333573232-2">(</span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Host open-source project without hassle.&quot;</span><span class="p" data-group-id="3333573232-2">)</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="8461747389-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p" data-group-id="8461747389-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="8461747389-2">(</span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Host open-source project without hassle.&quot;</span><span class="p" data-group-id="8461747389-2">)</span></code></pre>
 <p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
   </section>
 </div>
@@ -800,6 +918,10 @@ It also provides a set of helper functions to run Git related functions.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">workdir(repo)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitgud/lib/gitgud/schemas/repo.ex#L201" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>workdir(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>()</pre>

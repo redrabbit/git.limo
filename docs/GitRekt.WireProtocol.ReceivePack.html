@@ -7,7 +7,8 @@
     <meta name="generator" content="ExDoc v0.19.1">
     <title>GitRekt.WireProtocol.ReceivePack – Git Gud v0.1.0</title>
     <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
-    <script src="dist/sidebar_items-c972828321.js"></script>
+      <link rel="canonical" href="https://git.limo/GitRekt.WireProtocol.ReceivePack.html" />
+    <script src="dist/sidebar_items-6d0ceac880.js"></script>
     
   </head>
   <body data-type="modules">
@@ -58,7 +59,12 @@ Git Gud      </h1>
 
       <h1>
         <small class="visible-xs">Git Gud v0.1.0</small>
-GitRekt.WireProtocol.ReceivePack              </h1>
+GitRekt.WireProtocol.ReceivePack        
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
 
 
         <section id="moduledoc">
@@ -132,6 +138,10 @@ GitRekt.WireProtocol.ReceivePack              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">callback()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>callback() :: {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">module</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]} | nil</pre>
@@ -147,6 +157,10 @@ GitRekt.WireProtocol.ReceivePack              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">cmd()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L20" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>cmd() :: {:create | :update | :delete, <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()}</pre>
@@ -162,6 +176,10 @@ GitRekt.WireProtocol.ReceivePack              </h1>
       <span class="sr-only">Link to this type</span>
     </a>
     <span class="signature">t()</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L26" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>t() :: %GitRekt.WireProtocol.ReceivePack{
@@ -197,6 +215,10 @@ GitRekt.WireProtocol.ReceivePack              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">apply_cmds(receive_pack)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L51" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>apply_cmds(<a href="#t:t/0">t</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
@@ -213,6 +235,10 @@ GitRekt.WireProtocol.ReceivePack              </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <span class="signature">apply_pack(receive_pack)</span>
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.1.0/apps/gitrekt/lib/gitrekt/wire_protocol/receive_pack.ex#L40" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
         
       <div class="specs">
           <pre>apply_pack(<a href="#t:t/0">t</a>()) :: {:ok, [<a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
