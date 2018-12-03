@@ -8,8 +8,8 @@ defmodule GitGud.UserTest do
 
   test "creates a new user with valid params" do
     assert {:ok, user} = User.create(factory(:user))
-    assert is_nil(user.password)
-    assert String.starts_with?(user.password_hash, "$argon2i$")
+    assert is_nil(user.auth.password)
+    assert String.starts_with?(user.auth.password_hash, "$argon2i$")
   end
 
   test "fails to create a new user with invalid login" do
@@ -32,10 +32,10 @@ defmodule GitGud.UserTest do
 
   test "fails to create a new user with invalid password" do
     params = factory(:user)
-    assert {:error, changeset} = User.create(Map.delete(params, :password))
-    assert "can't be blank" in errors_on(changeset).password
-    assert {:error, changeset} = User.create(%{params|password: "abc"})
-    assert "should be at least 6 character(s)" in errors_on(changeset).password
+    assert {:error, changeset} = User.create(%{params|auth: %{}})
+    assert "can't be blank" in errors_on(changeset).auth.password
+    assert {:error, changeset} = User.create(%{params|auth: %{password: "abc"}})
+    assert "should be at least 6 character(s)" in errors_on(changeset).auth.password
   end
 
   describe "when user exists" do
@@ -76,20 +76,20 @@ defmodule GitGud.UserTest do
     end
 
     test "updates password with valid params", %{user: user1} do
-      assert {:ok, user2} = User.update(user1, :password, old_password: "qwertz", password: "qwerty")
-      assert user1.password_hash != user2.password_hash
+      assert {:ok, user2} = User.update(user1, :password, auth: %{old_password: "qwertz", password: "qwerty"})
+      assert user1.auth.password_hash != user2.auth.password_hash
     end
 
     test "fails to update password with invalid old password", %{user: user} do
-      assert {:error, changeset} = User.update(user, :password, old_password: "abcdef", password: "qwerty")
-      assert "does not match old password" in errors_on(changeset).old_password
+      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "abcdef", password: "qwerty"})
+      assert "does not match old password" in errors_on(changeset).auth.old_password
     end
 
     test "fails to update password with invalid new password", %{user: user} do
-      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz")
-      assert "can't be blank" in errors_on(changeset).password
-      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz", password: "abc")
-      assert "should be at least 6 character(s)" in errors_on(changeset).password
+      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "qwertz"})
+      assert "can't be blank" in errors_on(changeset).auth.password
+      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "qwertz", password: "abc"})
+      assert "should be at least 6 character(s)" in errors_on(changeset).auth.password
     end
 
     test "updates primary email with valid email", %{user: user1} do

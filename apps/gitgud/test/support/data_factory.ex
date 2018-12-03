@@ -17,8 +17,8 @@ defmodule GitGud.DataFactory do
     %{
       name: name(),
       login: String.replace(user_name(), ~r/[^a-zA-Z0-9_-]/, "-", global: true),
-      emails: [email()],
-      password: "qwertz"
+      auth: auth(),
+      emails: [email()]
     }
   end
 
@@ -35,6 +35,10 @@ defmodule GitGud.DataFactory do
   def repo(%User{id: user_id}), do: repo(user_id)
   def repo(user_id) when is_integer(user_id) do
     Map.put(repo(), :owner_id, user_id)
+  end
+
+  def auth do
+    %{password: "qwertz"}
   end
 
   @doc """

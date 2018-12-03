@@ -17,7 +17,7 @@ defmodule GitGud.User do
   schema "users" do
     field :login, :string
     field :name, :string
-    has_one :auth, Auth, on_replace: :update
+    has_one :auth, Auth, on_replace: :update, on_delete: :delete_all
     belongs_to :primary_email, Email, on_replace: :update
     belongs_to :public_email, Email, on_replace: :update
     field :bio, :string

@@ -168,6 +168,7 @@ defmodule GitGud.Repo do
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
     |> validate_exclusion(:name, ["settings"])
+    |> validate_maintainers()
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
   end
 
@@ -449,6 +450,12 @@ defmodule GitGud.Repo do
   defp create_maintainer(db, %{repo: repo}) do
     changeset = Maintainer.changeset(%Maintainer{}, %{repo_id: repo.id, user_id: repo.owner_id, permission: "admin"})
     db.insert(changeset)
+  end
+
+  defp validate_maintainers(changeset) do
+    if maintainers = changeset.params["maintainers"],
+      do: put_assoc(changeset, :maintainers, maintainers),
+    else: changeset
   end
 
   defp update_and_rename(changeset) do
