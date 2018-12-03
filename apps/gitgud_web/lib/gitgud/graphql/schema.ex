@@ -5,6 +5,8 @@ defmodule GitGud.GraphQL.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
+  @after_compile __MODULE__
+
   alias GitGud.GraphQL.Resolvers
 
   import_types Absinthe.Type.Custom
@@ -71,5 +73,10 @@ defmodule GitGud.GraphQL.Schema do
 
   node interface do
     resolve_type &Resolvers.node_type/2
+  end
+
+  def __after_compile__(_env, _bytecode) do
+    output_path = Path.join([:code.priv_dir(:gitgud_web), "graphql", "schema.json"])
+    Mix.Tasks.Absinthe.Schema.Json.run([output_path])
   end
 end

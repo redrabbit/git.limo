@@ -4,7 +4,6 @@ defmodule GitGud.Web.AssetPipeline do
   def before_assembly(%Release{} = release, _opts) do
     info "Building assets"
     environment = [{"MIX_ENV", to_string(release.env)}]
-    with {_out, 0} <- System.cmd("mix", ["absinthe.schema.json", "priv/graphql/schema.json"], cd: "apps/gitgud_web", env: environment),
          {_out, 0} <- System.cmd("npm", ["run", "deploy"], cd: "apps/gitgud_web/assets"),
          {_out, 0} <- System.cmd("mix", ["phx.digest"], cd: "apps/gitgud_web", env: environment) do
       nil

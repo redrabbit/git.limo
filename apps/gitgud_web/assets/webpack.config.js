@@ -4,7 +4,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const RelayCompilerWebpackPlugin = require('relay-compiler-webpack-plugin')
 
 module.exports = (env, options) => ({
   optimization: {
@@ -53,11 +52,7 @@ module.exports = (env, options) => ({
     }),
     new CopyWebpackPlugin([{
       from: 'static/', to: '../'
-    }]),
-    new RelayCompilerWebpackPlugin({
-      schema: path.resolve(__dirname, '../priv/graphql/schema.json'),
-      src: path.resolve(__dirname, './js'),
-    })
+    }])
   ],
   stats: {
     assets: false,

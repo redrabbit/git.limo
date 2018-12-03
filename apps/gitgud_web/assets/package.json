@@ -4,7 +4,7 @@
   "scripts": {
     "deploy": "webpack --mode production",
     "watch": "webpack --mode development --watch-stdin",
-    "relay": "relay-compiler --src ./js --schema ../priv/graphql/schema.json"
+    "relay-compiler": "relay-compiler --src ./js --schema ../priv/graphql/schema.json"
   },
   "dependencies": {
     "@absinthe/socket": "^0.1.10",
@@ -32,7 +32,6 @@
     "node-sass": "^4.9.4",
     "optimize-css-assets-webpack-plugin": "^4.0.0",
     "relay-compiler": "^1.6.2",
-    "relay-compiler-webpack-plugin": "^0.11.0",
     "sass-loader": "^7.1.0",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "4.4.0",
