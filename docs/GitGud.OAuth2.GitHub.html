@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.19.1">
+    <title>GitGud.OAuth2.GitHub – Git Gud v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
+    <script src="dist/sidebar_items-c972828321.js"></script>
+    
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode')) document.body.className += ' night-mode'; } catch (e) { }</script>
+    <div class="main">
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Sidebar</span>
+</button>
+<button class="sidebar-button night-mode-toggle">
+  <span class="icon-theme" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Theme</span>
+</button>
+<section class="sidebar">
+
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+Git Gud      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+  </a>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <input name="q" type="text" id="search-list" class="search-input" placeholder="Search" aria-label="Search" autocomplete="off" />
+  </form>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">Git Gud v0.1.0</small>
+GitGud.OAuth2.GitHub              </h1>
+
+
+        <section id="moduledoc">
+<p>An <em>OAuth2.0</em> authentication strategy for GitHub.</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#authorize_url!/1">authorize_url!(params \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the <em>OAuth2.0</em> authorize URL</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#client/0">client()</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns an <em>OAuth2.0</em> client</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_token!/2">get_token!(params \\ [], headers \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Fetches an <em>OAuth2.0</em> access token</p>
+</div>
+</div>
+  </div>
+          
+        </section>
+
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Functions
+          </h1>
+<div class="detail" id="authorize_url!/1">
+  
+    <span id="authorize_url!/0"></span>
+  <div class="detail-header">
+    <a href="#authorize_url!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">authorize_url!(params \\ [])</span>
+        
+      <div class="specs">
+          <pre>authorize_url!(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the <em>OAuth2.0</em> authorize URL.</p>
+  </section>
+</div>
+<div class="detail" id="client/0">
+    <div class="detail-header">
+    <a href="#client/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">client()</span>
+        
+      <div class="specs">
+          <pre>client() :: <a href="https://hexdocs.pm/oauth2/0.9.4/OAuth2.Client.html#t:t/0">OAuth2.Client.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns an <em>OAuth2.0</em> client.</p>
+  </section>
+</div>
+<div class="detail" id="get_token!/2">
+  
+    <span id="get_token!/0"></span>
+
+    <span id="get_token!/1"></span>
+  <div class="detail-header">
+    <a href="#get_token!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">get_token!(params \\ [], headers \\ [])</span>
+        
+      <div class="specs">
+          <pre>get_token!(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>()) :: <a href="https://hexdocs.pm/oauth2/0.9.4/OAuth2.Client.html#t:t/0">OAuth2.Client.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Fetches an <em>OAuth2.0</em> access token.</p>
+  </section>
+</div>
+        </section>
+
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.19.1),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-a0c90688fa.js"></script>
+  
+  </body>
+</html>
+

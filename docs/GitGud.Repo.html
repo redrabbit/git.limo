@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.19.1">
+    <title>GitGud.Repo – Git Gud v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
+    <script src="dist/sidebar_items-c972828321.js"></script>
+    
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode')) document.body.className += ' night-mode'; } catch (e) { }</script>
+    <div class="main">
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Sidebar</span>
+</button>
+<button class="sidebar-button night-mode-toggle">
+  <span class="icon-theme" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Theme</span>
+</button>
+<section class="sidebar">
+
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+Git Gud      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+  </a>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <input name="q" type="text" id="search-list" class="search-input" placeholder="Search" aria-label="Search" autocomplete="off" />
+  </form>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">Git Gud v0.1.0</small>
+GitGud.Repo              </h1>
+
+
+        <section id="moduledoc">
+<p>Git repository schema and helper functions.</p>
+<p>A <a href="GitGud.Repo.html#content"><code class="inline">GitGud.Repo</code></a> is used to create, update and delete Git repositories.
+It also provides a set of helper functions to run Git related functions.</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:git_object/0">git_object()</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:git_revision/0">git_revision()</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:t/0">t()</a>
+  </div>
+</div>
+  </div>
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#changeset/2">changeset(repo, params \\ %{})</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a repository changeset for the given <code class="inline">params</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create!/2">create!(params, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Similar to <a href="#create/2"><code class="inline">create/2</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create/2">create(params, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Creates a new repository</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete!/1">delete!(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Similar to <a href="#delete!/1"><code class="inline">delete!/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete/1">delete(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Deletes the given <code class="inline">repo</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#empty?/1">empty?(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> if <code class="inline">repo</code> is empty; otherwhise returns <code class="inline">false</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_branch/2">git_branch(repo, branch_name)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a Git branch for the given <code class="inline">branch_name</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_branches/1">git_branches(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns all Git branches</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_diff/3">git_diff(old_tree, new_tree, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a diff with the difference between <code class="inline">old_tree</code> and <code class="inline">new_tree</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_head/1">git_head(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the Git reference pointed at by <em>HEAD</em></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_history/2">git_history(revision, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the commit history starting from the given <code class="inline">revision</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_object/2">git_object(repo, oid)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the Git object matching the given <code class="inline">oid</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_push/2">git_push(repo, receive_pack)</a>
+  </div>
+    <div class="summary-synopsis"><p>Applies the given <code class="inline">receive_pack</code> command to the <code class="inline">repo</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_reference/2">git_reference(repo, name_or_shorthand \\ :head)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the Git reference matching the given <code class="inline">name_or_shorthand</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_references/2">git_references(repo, glob \\ :undefined)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns all Git references matching the given <code class="inline">glob</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_revision/2">git_revision(repo, revision)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the Git object matching the given <code class="inline">revision</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_tag/2">git_tag(repo, tag_name)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a Git tag for the given <code class="inline">tag_name</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_tags/1">git_tags(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns all Git tags</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#git_tree/1">git_tree(revision)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the tree of the given <code class="inline">revision</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maintainer/2">maintainer(repo, user)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a single <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code> and <code class="inline">user</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maintainers/1">maintainers(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the list of associated <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#open/1">open(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Opens the Git repository for the given <code class="inline">repo</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#root_path/0">root_path()</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the absolute path to the Git root directory</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update!/2">update!(repo, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Similar to <a href="#update/2"><code class="inline">update/2</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update/2">update(repo, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Updates the given <code class="inline">repo</code> with the given <code class="inline">params</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#workdir/1">workdir(repo)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the absolute path to the Git workdir for the given <code class="inline">repo</code></p>
+</div>
+</div>
+  </div>
+          
+        </section>
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Types
+          </h1>
+          <div class="types-list">
+<div class="detail" id="t:git_object/0">
+    <div class="detail-header">
+    <a href="#t:git_object/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <span class="signature">git_object()</span>
+        
+      <div class="specs">
+          <pre>git_object() ::
+  <a href="GitGud.GitBlob.html#t:t/0">GitGud.GitBlob.t</a>()
+  | <a href="GitGud.GitCommit.html#t:t/0">GitGud.GitCommit.t</a>()
+  | <a href="GitGud.GitTag.html#t:t/0">GitGud.GitTag.t</a>()
+  | <a href="GitGud.GitTree.html#t:t/0">GitGud.GitTree.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+  </section>
+</div>
+<div class="detail" id="t:git_revision/0">
+    <div class="detail-header">
+    <a href="#t:git_revision/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <span class="signature">git_revision()</span>
+        
+      <div class="specs">
+          <pre>git_revision() ::
+  <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>() | <a href="GitGud.GitTag.html#t:t/0">GitGud.GitTag.t</a>() | <a href="GitGud.GitCommit.html#t:t/0">GitGud.GitCommit.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+  </section>
+</div>
+<div class="detail" id="t:t/0">
+    <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <span class="signature">t()</span>
+        
+      <div class="specs">
+          <pre>t() :: %GitGud.Repo{
+  __git__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  description: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  id: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(),
+  inserted_at: <a href="https://hexdocs.pm/elixir/NaiveDateTime.html#t:t/0">NaiveDateTime.t</a>(),
+  maintainers: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()],
+  name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  owner: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>(),
+  owner_id: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(),
+  public: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>(),
+  pushed_at: <a href="https://hexdocs.pm/elixir/NaiveDateTime.html#t:t/0">NaiveDateTime.t</a>(),
+  updated_at: <a href="https://hexdocs.pm/elixir/NaiveDateTime.html#t:t/0">NaiveDateTime.t</a>()
+}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+  </section>
+</div>
+          </div>
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Functions
+          </h1>
+<div class="detail" id="changeset/2">
+  
+    <span id="changeset/1"></span>
+  <div class="detail-header">
+    <a href="#changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">changeset(repo, params \\ %{})</span>
+        
+      <div class="specs">
+          <pre>changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a repository changeset for the given <code class="inline">params</code>.</p>
+  </section>
+</div>
+<div class="detail" id="create!/2">
+  
+    <span id="create!/1"></span>
+  <div class="detail-header">
+    <a href="#create!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">create!(params, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Similar to <a href="#create/2"><code class="inline">create/2</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</div>
+<div class="detail" id="create/2">
+  
+    <span id="create/1"></span>
+  <div class="detail-header">
+    <a href="#create/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">create(params, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Creates a new repository.</p>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="7102571322-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="n">git_handle</span><span class="p" data-group-id="7102571322-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="7102571322-2">(</span><span class="w">
+  </span><span class="ss">owner_id</span><span class="p">:</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w">
+  </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gitgud&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;GitHub clone entirely written in Elixir.&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">public</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="w">
+</span><span class="p" data-group-id="7102571322-2">)</span></code></pre>
+<p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
+  </section>
+</div>
+<div class="detail" id="delete!/1">
+    <div class="detail-header">
+    <a href="#delete!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">delete!(repo)</span>
+        
+      <div class="specs">
+          <pre>delete!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Similar to <a href="#delete!/1"><code class="inline">delete!/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</div>
+<div class="detail" id="delete/1">
+    <div class="detail-header">
+    <a href="#delete/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">delete(repo)</span>
+        
+      <div class="specs">
+          <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Deletes the given <code class="inline">repo</code>.</p>
+<p>Repository associations (maintainers, issues, etc.) and related Git data will automatically be deleted.</p>
+  </section>
+</div>
+<div class="detail" id="empty?/1">
+    <div class="detail-header">
+    <a href="#empty?/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">empty?(repo)</span>
+        
+      <div class="specs">
+          <pre>empty?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns <code class="inline">true</code> if <code class="inline">repo</code> is empty; otherwhise returns <code class="inline">false</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_branch/2">
+    <div class="detail-header">
+    <a href="#git_branch/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_branch(repo, branch_name)</span>
+        
+      <div class="specs">
+          <pre>git_branch(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a Git branch for the given <code class="inline">branch_name</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_branches/1">
+    <div class="detail-header">
+    <a href="#git_branches/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_branches(repo)</span>
+        
+      <div class="specs">
+          <pre>git_branches(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns all Git branches.</p>
+  </section>
+</div>
+<div class="detail" id="git_diff/3">
+  
+    <span id="git_diff/2"></span>
+  <div class="detail-header">
+    <a href="#git_diff/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_diff(old_tree, new_tree, opts \\ [])</span>
+          </div>
+  <section class="docstring">
+<p>Returns a diff with the difference between <code class="inline">old_tree</code> and <code class="inline">new_tree</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_head/1">
+    <div class="detail-header">
+    <a href="#git_head/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_head(repo)</span>
+        
+      <div class="specs">
+          <pre>git_head(<a href="#t:t/0">t</a>()) :: {:ok, <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the Git reference pointed at by <em>HEAD</em>.</p>
+  </section>
+</div>
+<div class="detail" id="git_history/2">
+  
+    <span id="git_history/1"></span>
+  <div class="detail-header">
+    <a href="#git_history/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_history(revision, opts \\ [])</span>
+          </div>
+  <section class="docstring">
+<p>Returns the commit history starting from the given <code class="inline">revision</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_object/2">
+    <div class="detail-header">
+    <a href="#git_object/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_object(repo, oid)</span>
+        
+      <div class="specs">
+          <pre>git_object(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:ok, <a href="#t:git_object/0">git_object</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the Git object matching the given <code class="inline">oid</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_push/2">
+    <div class="detail-header">
+    <a href="#git_push/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_push(repo, receive_pack)</span>
+        
+      <div class="specs">
+          <pre>git_push(<a href="#t:t/0">t</a>(), <a href="GitRekt.WireProtocol.ReceivePack.html#t:t/0">GitRekt.WireProtocol.ReceivePack.t</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Applies the given <code class="inline">receive_pack</code> command to the <code class="inline">repo</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_reference/2">
+  
+    <span id="git_reference/1"></span>
+  <div class="detail-header">
+    <a href="#git_reference/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_reference(repo, name_or_shorthand \\ :head)</span>
+        
+      <div class="specs">
+          <pre>git_reference(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the Git reference matching the given <code class="inline">name_or_shorthand</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_references/2">
+  
+    <span id="git_references/1"></span>
+  <div class="detail-header">
+    <a href="#git_references/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_references(repo, glob \\ :undefined)</span>
+        
+      <div class="specs">
+          <pre>git_references(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :undefined) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns all Git references matching the given <code class="inline">glob</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_revision/2">
+    <div class="detail-header">
+    <a href="#git_revision/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_revision(repo, revision)</span>
+        
+      <div class="specs">
+          <pre>git_revision(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="#t:git_object/0">git_object</a>(), <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>() | nil} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the Git object matching the given <code class="inline">revision</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_tag/2">
+    <div class="detail-header">
+    <a href="#git_tag/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_tag(repo, tag_name)</span>
+        
+      <div class="specs">
+          <pre>git_tag(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) ::
+  {:ok, <a href="GitGud.GitReference.html#t:t/0">GitGud.GitReference.t</a>() | <a href="GitGud.GitTag.html#t:t/0">GitGud.GitTag.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a Git tag for the given <code class="inline">tag_name</code>.</p>
+  </section>
+</div>
+<div class="detail" id="git_tags/1">
+    <div class="detail-header">
+    <a href="#git_tags/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_tags(repo)</span>
+        
+      <div class="specs">
+          <pre>git_tags(<a href="#t:t/0">t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Stream.html#t:t/0">Stream.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns all Git tags.</p>
+  </section>
+</div>
+<div class="detail" id="git_tree/1">
+    <div class="detail-header">
+    <a href="#git_tree/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">git_tree(revision)</span>
+        
+      <div class="specs">
+          <pre>git_tree(<a href="#t:git_revision/0">git_revision</a>()) :: {:ok, <a href="GitGud.GitTree.html#t:t/0">GitGud.GitTree.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the tree of the given <code class="inline">revision</code>.</p>
+  </section>
+</div>
+<div class="detail" id="maintainer/2">
+    <div class="detail-header">
+    <a href="#maintainer/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">maintainer(repo, user)</span>
+        
+      <div class="specs">
+          <pre>maintainer(<a href="#t:t/0">t</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()) :: <a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>() | nil</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a single <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code> and <code class="inline">user</code>.</p>
+  </section>
+</div>
+<div class="detail" id="maintainers/1">
+    <div class="detail-header">
+    <a href="#maintainers/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">maintainers(repo)</span>
+        
+      <div class="specs">
+          <pre>maintainers(<a href="#t:t/0">t</a>()) :: [<a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the list of associated <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code>.</p>
+  </section>
+</div>
+<div class="detail" id="open/1">
+    <div class="detail-header">
+    <a href="#open/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">open(repo)</span>
+        
+      <div class="specs">
+          <pre>open(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Opens the Git repository for the given <code class="inline">repo</code>.</p>
+  </section>
+</div>
+<div class="detail" id="root_path/0">
+    <div class="detail-header">
+    <a href="#root_path/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">root_path()</span>
+        
+      <div class="specs">
+          <pre>root_path() :: <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>() | nil</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the absolute path to the Git root directory.</p>
+  </section>
+</div>
+<div class="detail" id="update!/2">
+    <div class="detail-header">
+    <a href="#update!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">update!(repo, params)</span>
+        
+      <div class="specs">
+          <pre>update!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Similar to <a href="#update/2"><code class="inline">update/2</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</div>
+<div class="detail" id="update/2">
+    <div class="detail-header">
+    <a href="#update/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">update(repo, params)</span>
+        
+      <div class="specs">
+          <pre>update(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>() | <a href="http://www.erlang.org/doc/man/file.html#type-posix">:file.posix</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Updates the given <code class="inline">repo</code> with the given <code class="inline">params</code>.</p>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="3333573232-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">repo</span><span class="p" data-group-id="3333573232-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Repo</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="3333573232-2">(</span><span class="n">repo</span><span class="p">,</span><span class="w"> </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Host open-source project without hassle.&quot;</span><span class="p" data-group-id="3333573232-2">)</span></code></pre>
+<p>This function validates the given <code class="inline">params</code> using <a href="#changeset/2"><code class="inline">changeset/2</code></a>.</p>
+  </section>
+</div>
+<div class="detail" id="workdir/1">
+    <div class="detail-header">
+    <a href="#workdir/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">workdir(repo)</span>
+        
+      <div class="specs">
+          <pre>workdir(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the absolute path to the Git workdir for the given <code class="inline">repo</code>.</p>
+<p>The path is a concatenation of <a href="#root_path/0"><code class="inline">root_path/0</code></a>, <code class="inline">repo.owner.login</code> and <code class="inline">repo.name</code>.</p>
+  </section>
+</div>
+        </section>
+
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.19.1),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-a0c90688fa.js"></script>
+  
+  </body>
+</html>
+

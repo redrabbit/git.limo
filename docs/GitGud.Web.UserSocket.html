@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.19.1">
+    <title>GitGud.Web.UserSocket – Git Gud v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
+    <script src="dist/sidebar_items-c972828321.js"></script>
+    
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode')) document.body.className += ' night-mode'; } catch (e) { }</script>
+    <div class="main">
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Sidebar</span>
+</button>
+<button class="sidebar-button night-mode-toggle">
+  <span class="icon-theme" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Theme</span>
+</button>
+<section class="sidebar">
+
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+Git Gud      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+  </a>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <input name="q" type="text" id="search-list" class="search-input" placeholder="Search" aria-label="Search" autocomplete="off" />
+  </form>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">Git Gud v0.1.0</small>
+GitGud.Web.UserSocket              </h1>
+
+
+        <section id="moduledoc">
+<p>Module providing support for bidirectional communication between clients and server.</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#connect/2">connect(params, sock)</a>
+  </div>
+    <div class="summary-synopsis"><p>Receives the socket params and authenticates the connection</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#id/1">id(sock)</a>
+  </div>
+    <div class="summary-synopsis"><p>Identifies the socket connection</p>
+</div>
+</div>
+  </div>
+          
+        </section>
+
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Functions
+          </h1>
+<div class="detail" id="connect/2">
+    <div class="detail-header">
+    <a href="#connect/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">connect(params, sock)</span>
+          </div>
+  <section class="docstring">
+<p>Receives the socket params and authenticates the connection.</p>
+<h2 id="connect/2-socket-params-and-assigns" class="section-heading">
+  <a href="#connect/2-socket-params-and-assigns" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Socket params and assigns
+</h2>
+
+<p>Socket params are passed from the client and can
+be used to verify and authenticate a user. After
+verification, you can put default assigns into
+the socket that will be set for all channels, ie</p>
+<pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="8062476065-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="8062476065-2">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">:user_id</span><span class="p">,</span><span class="w"> </span><span class="n">verified_user_id</span><span class="p" data-group-id="8062476065-2">)</span><span class="p" data-group-id="8062476065-1">}</span></code></pre>
+<p>To deny connection, return <code class="inline">:error</code>.</p>
+<p>See <a href="https://hexdocs.pm/phoenix/1.4.0/Phoenix.Token.html"><code class="inline">Phoenix.Token</code></a> documentation for examples in
+performing token verification on connect.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix/1.4.0/Phoenix.Socket.html#c:connect/2"><code class="inline">Phoenix.Socket.connect/2</code></a>.</p>
+  </section>
+</div>
+<div class="detail" id="id/1">
+    <div class="detail-header">
+    <a href="#id/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">id(sock)</span>
+          </div>
+  <section class="docstring">
+<p>Identifies the socket connection.</p>
+<p>Socket IDs are topics that allow you to identify all sockets for a given user:</p>
+<pre><code class="nohighlight makeup elixir"><span class="kd">def</span><span class="w"> </span><span class="nf">id</span><span class="p" data-group-id="0444559007-1">(</span><span class="n">socket</span><span class="p" data-group-id="0444559007-1">)</span><span class="p">,</span><span class="w"> </span><span class="ss">do</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;users_socket:</span><span class="si" data-group-id="0444559007-2">#{</span><span class="n">socket</span><span class="o">.</span><span class="n">assigns</span><span class="o">.</span><span class="n">user_id</span><span class="si" data-group-id="0444559007-2">}</span><span class="s">&quot;</span></code></pre>
+<p>Would allow you to broadcast a “disconnect” event and terminate
+all active sockets and channels for a given user:</p>
+<pre><code class="nohighlight makeup elixir"><span class="nc">MyApp.Endpoint</span><span class="o">.</span><span class="n">broadcast</span><span class="p" data-group-id="3311727637-1">(</span><span class="s">&quot;users_socket:&quot;</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;disconnect&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3311727637-2">%{</span><span class="p" data-group-id="3311727637-2">}</span><span class="p" data-group-id="3311727637-1">)</span></code></pre>
+<p>Returning <code class="inline">nil</code> makes this socket anonymous.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix/1.4.0/Phoenix.Socket.html#c:id/1"><code class="inline">Phoenix.Socket.id/1</code></a>.</p>
+  </section>
+</div>
+        </section>
+
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.19.1),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-a0c90688fa.js"></script>
+  
+  </body>
+</html>
+

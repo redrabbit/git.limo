@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.19.1">
+    <title>GitGud.Web.CodebaseController – Git Gud v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
+    <script src="dist/sidebar_items-c972828321.js"></script>
+    
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode')) document.body.className += ' night-mode'; } catch (e) { }</script>
+    <div class="main">
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Sidebar</span>
+</button>
+<button class="sidebar-button night-mode-toggle">
+  <span class="icon-theme" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Theme</span>
+</button>
+<section class="sidebar">
+
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+Git Gud      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+  </a>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <input name="q" type="text" id="search-list" class="search-input" placeholder="Search" aria-label="Search" autocomplete="off" />
+  </form>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">Git Gud v0.1.0</small>
+GitGud.Web.CodebaseController              </h1>
+
+
+        <section id="moduledoc">
+<p>Module responsible for CRUD actions on <a href="GitGud.Repo.html"><code class="inline">GitGud.Repo</code></a>.</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#blob/2">blob(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders a blob for a specific revision and path</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#branches/2">branches(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders all branches of a repository</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit/2">commit(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders a single commit</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#history/2">history(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders all commits for a specific revision</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#show/2">show(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders a repository codebase overview</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tags/2">tags(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders all tags of a repository</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tree/2">tree(conn, params)</a>
+  </div>
+    <div class="summary-synopsis"><p>Renders a tree for a specific revision and path</p>
+</div>
+</div>
+  </div>
+          
+        </section>
+
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Functions
+          </h1>
+<div class="detail" id="blob/2">
+    <div class="detail-header">
+    <a href="#blob/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">blob(conn, params)</span>
+        
+      <div class="specs">
+          <pre>blob(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders a blob for a specific revision and path.</p>
+  </section>
+</div>
+<div class="detail" id="branches/2">
+    <div class="detail-header">
+    <a href="#branches/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">branches(conn, params)</span>
+        
+      <div class="specs">
+          <pre>branches(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders all branches of a repository.</p>
+  </section>
+</div>
+<div class="detail" id="commit/2">
+    <div class="detail-header">
+    <a href="#commit/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">commit(conn, params)</span>
+        
+      <div class="specs">
+          <pre>commit(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders a single commit.</p>
+  </section>
+</div>
+<div class="detail" id="history/2">
+    <div class="detail-header">
+    <a href="#history/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">history(conn, params)</span>
+        
+      <div class="specs">
+          <pre>history(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders all commits for a specific revision.</p>
+  </section>
+</div>
+<div class="detail" id="show/2">
+    <div class="detail-header">
+    <a href="#show/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">show(conn, params)</span>
+        
+      <div class="specs">
+          <pre>show(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders a repository codebase overview.</p>
+  </section>
+</div>
+<div class="detail" id="tags/2">
+    <div class="detail-header">
+    <a href="#tags/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">tags(conn, params)</span>
+        
+      <div class="specs">
+          <pre>tags(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders all tags of a repository.</p>
+  </section>
+</div>
+<div class="detail" id="tree/2">
+    <div class="detail-header">
+    <a href="#tree/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">tree(conn, params)</span>
+        
+      <div class="specs">
+          <pre>tree(<a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/plug/1.7.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Renders a tree for a specific revision and path.</p>
+  </section>
+</div>
+        </section>
+
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.19.1),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-a0c90688fa.js"></script>
+  
+  </body>
+</html>
+

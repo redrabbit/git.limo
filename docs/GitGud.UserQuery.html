@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.19.1">
+    <title>GitGud.UserQuery – Git Gud v0.1.0</title>
+    <link rel="stylesheet" href="dist/app-240d7fc7e5.css" />
+    <script src="dist/sidebar_items-c972828321.js"></script>
+    
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode')) document.body.className += ' night-mode'; } catch (e) { }</script>
+    <div class="main">
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Sidebar</span>
+</button>
+<button class="sidebar-button night-mode-toggle">
+  <span class="icon-theme" aria-hidden="true"></span>
+  <span class="sr-only">Toggle Theme</span>
+</button>
+<section class="sidebar">
+
+  <a href="api-reference.html" class="sidebar-projectLink">
+    <div class="sidebar-projectDetails">
+      <h1 class="sidebar-projectName">
+Git Gud      </h1>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+  </a>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <input name="q" type="text" id="search-list" class="search-input" placeholder="Search" aria-label="Search" autocomplete="off" />
+  </form>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+
+      <h1>
+        <small class="visible-xs">Git Gud v0.1.0</small>
+GitGud.UserQuery              </h1>
+
+
+        <section id="moduledoc">
+<p>Conveniences for <a href="GitGud.User.html"><code class="inline">GitGud.User</code></a> related queries.</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+          
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_email/2">by_email(email, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a user for the given <code class="inline">email</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_id/2">by_id(id, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a user for the given <code class="inline">id</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_login/2">by_login(login, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a user for the given <code class="inline">login</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_oauth/3">by_oauth(provider, id, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a user for the given authentication <code class="inline">provider</code> and <code class="inline">id</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_ssh_key/2">by_ssh_key(fingerprint, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a user for the given SSH key <code class="inline">fingerprint</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#search/2">search(input, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a list of users matching the given <code class="inline">input</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#search_query/1">search_query(input)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for searching users</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_oauth_query/2">user_oauth_query(provider, id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching a single user by authentication <code class="inline">token</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_query/1">user_query(id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching a single user by <code class="inline">id</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_query/2">user_query(key, val)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching a single user by <code class="inline">key</code> and <code class="inline">val</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_ssh_key_query/1">user_ssh_key_query(fingerprint)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching a single user by SSH <code class="inline">fingerprint</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#users_query/1">users_query(ids)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching users by <code class="inline">ids</code></p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#users_query/2">users_query(key, vals)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns a query for fetching users by <code class="inline">key</code> and <code class="inline">vals</code></p>
+</div>
+</div>
+  </div>
+          
+        </section>
+
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Functions
+          </h1>
+<div class="detail" id="by_email/2">
+  
+    <span id="by_email/1"></span>
+  <div class="detail-header">
+    <a href="#by_email/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">by_email(email, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>by_email(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil</pre>
+          <pre>by_email([<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a user for the given <code class="inline">email</code>.</p>
+  </section>
+</div>
+<div class="detail" id="by_id/2">
+  
+    <span id="by_id/1"></span>
+  <div class="detail-header">
+    <a href="#by_id/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">by_id(id, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>by_id(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil</pre>
+          <pre>by_id([<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a user for the given <code class="inline">id</code>.</p>
+  </section>
+</div>
+<div class="detail" id="by_login/2">
+  
+    <span id="by_login/1"></span>
+  <div class="detail-header">
+    <a href="#by_login/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">by_login(login, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>by_login(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil</pre>
+          <pre>by_login([<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a user for the given <code class="inline">login</code>.</p>
+  </section>
+</div>
+<div class="detail" id="by_oauth/3">
+  
+    <span id="by_oauth/2"></span>
+  <div class="detail-header">
+    <a href="#by_oauth/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">by_oauth(provider, id, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>by_oauth(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a user for the given authentication <code class="inline">provider</code> and <code class="inline">id</code>.</p>
+  </section>
+</div>
+<div class="detail" id="by_ssh_key/2">
+  
+    <span id="by_ssh_key/1"></span>
+  <div class="detail-header">
+    <a href="#by_ssh_key/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">by_ssh_key(fingerprint, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>by_ssh_key(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a user for the given SSH key <code class="inline">fingerprint</code>.</p>
+  </section>
+</div>
+<div class="detail" id="search/2">
+  
+    <span id="search/1"></span>
+  <div class="detail-header">
+    <a href="#search/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">search(input, opts \\ [])</span>
+        
+      <div class="specs">
+          <pre>search(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a list of users matching the given <code class="inline">input</code>.</p>
+  </section>
+</div>
+<div class="detail" id="search_query/1">
+    <div class="detail-header">
+    <a href="#search_query/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">search_query(input)</span>
+        
+      <div class="specs">
+          <pre>search_query(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for searching users.</p>
+  </section>
+</div>
+<div class="detail" id="user_oauth_query/2">
+    <div class="detail-header">
+    <a href="#user_oauth_query/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">user_oauth_query(provider, id)</span>
+        
+      <div class="specs">
+          <pre>user_oauth_query(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching a single user by authentication <code class="inline">token</code>.</p>
+  </section>
+</div>
+<div class="detail" id="user_query/1">
+    <div class="detail-header">
+    <a href="#user_query/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">user_query(id)</span>
+        
+      <div class="specs">
+          <pre>user_query(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching a single user by <code class="inline">id</code>.</p>
+  </section>
+</div>
+<div class="detail" id="user_query/2">
+    <div class="detail-header">
+    <a href="#user_query/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">user_query(key, val)</span>
+        
+      <div class="specs">
+          <pre>user_query(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching a single user by <code class="inline">key</code> and <code class="inline">val</code>.</p>
+  </section>
+</div>
+<div class="detail" id="user_ssh_key_query/1">
+    <div class="detail-header">
+    <a href="#user_ssh_key_query/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">user_ssh_key_query(fingerprint)</span>
+        
+      <div class="specs">
+          <pre>user_ssh_key_query(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching a single user by SSH <code class="inline">fingerprint</code>.</p>
+  </section>
+</div>
+<div class="detail" id="users_query/1">
+    <div class="detail-header">
+    <a href="#users_query/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">users_query(ids)</span>
+        
+      <div class="specs">
+          <pre>users_query([<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()]) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching users by <code class="inline">ids</code>.</p>
+  </section>
+</div>
+<div class="detail" id="users_query/2">
+    <div class="detail-header">
+    <a href="#users_query/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <span class="signature">users_query(key, vals)</span>
+        
+      <div class="specs">
+          <pre>users_query(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()]) :: <a href="https://hexdocs.pm/ecto/3.0.1/Ecto.Query.html#t:t/0">Ecto.Query.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns a query for fetching users by <code class="inline">key</code> and <code class="inline">vals</code>.</p>
+  </section>
+</div>
+        </section>
+
+          <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.19.1),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+            </span>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  <script src="dist/app-a0c90688fa.js"></script>
+  
+  </body>
+</html>
+
