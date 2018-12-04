@@ -154,11 +154,11 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(action), do: action
 
   @spec title(atom, map) :: binary
-  def title(:show, %{repo: repo}), do: "#{repo.description} · #{repo.owner.login}/#{repo.name}"
+  def title(:show, %{repo: repo}), do: "#{repo.owner.login}/#{repo.name}: #{repo.description}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.description} · #{repo.owner.login}/#{repo.name}@#{Param.to_param(rev)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
