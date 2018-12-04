@@ -8,6 +8,7 @@ defmodule GitGud.Umbrella.Mixfile do
      version: @version,
      name: "Git Gud",
      start_permanent: Mix.env == :prod,
+     aliases: aliases(),
      deps: deps(),
      docs: docs()]
   end
@@ -19,6 +20,12 @@ defmodule GitGud.Umbrella.Mixfile do
   defp deps do
     [{:distillery, "~> 2.0"},
      {:ex_doc, "~> 0.19", only: :dev, runtime: false}]
+  end
+
+  defp aliases do
+    ["ecto.setup": ["ecto.create", "ecto.migrate", "run priv/db/seeds.exs"],
+     "ecto.reset": ["ecto.drop", "ecto.setup"],
+     test: ["ecto.create --quiet", "ecto.migrate", "test"]]
   end
 
   defp docs do
