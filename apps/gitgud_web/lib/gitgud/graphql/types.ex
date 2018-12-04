@@ -56,7 +56,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The Git object ID."
     field :oid, non_null(:git_oid)
 
-    @desc "The Git tag name".
+    @desc "The Git tag name."
     field :name, non_null(:string)
 
     @desc "The Git object the tag points to."

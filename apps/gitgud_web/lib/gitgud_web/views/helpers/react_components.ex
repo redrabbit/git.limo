@@ -34,7 +34,7 @@ defmodule GitGud.Web.ReactComponents do
   """
   def react_component(name, props) when is_list(props), do: react_component(name, Enum.into(props, %{}))
   def react_component(name, props) when is_map(props) do
-    props = Poison.encode!(transform_case(props))
+    props = Jason.encode!(transform_case(props))
     content_tag(:div, "", [{:data, [react_class: name, react_props: props]}])
   end
 
@@ -56,7 +56,7 @@ defmodule GitGud.Web.ReactComponents do
   """
   def react_component(name, props, attrs) when is_list(props), do: react_component(name, Enum.into(props, %{}), attrs)
   def react_component(name, props, attrs) when is_map(props) do
-    props = Poison.encode!(transform_case(props))
+    props = Jason.encode!(transform_case(props))
     react_attrs = [react_class: name, react_props: props]
     content_tag(:div, "", attrs ++ [{:data, react_attrs}])
   end

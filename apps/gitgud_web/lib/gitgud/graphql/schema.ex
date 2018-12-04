@@ -77,6 +77,6 @@ defmodule GitGud.GraphQL.Schema do
 
   def __after_compile__(_env, _bytecode) do
     output_path = Path.join([:code.priv_dir(:gitgud_web), "graphql", "schema.json"])
-    Mix.Tasks.Absinthe.Schema.Json.run([output_path])
+    Mix.Tasks.Absinthe.Schema.Json.run([output_path, "--json-codec", "Jason"])
   end
 end

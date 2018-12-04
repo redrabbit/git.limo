@@ -12,7 +12,7 @@ defmodule GitGud.Web.ReactComponentsTest do
 
   test "renders react component with props" do
     component = react_component("TodoList", %{count: 1, items: ["Buy the Milk"]})
-    assert to_string(to_iodata(component)) == ~s(<div data-react-class="TodoList" data-react-props="{&quot;items&quot;:[&quot;Buy the Milk&quot;],&quot;count&quot;:1}"></div>)
+    assert to_string(to_iodata(component)) == ~s(<div data-react-class="TodoList" data-react-props="{&quot;count&quot;:1,&quot;items&quot;:[&quot;Buy the Milk&quot;]}"></div>)
   end
 
   test "renders react component with props and attrs" do
