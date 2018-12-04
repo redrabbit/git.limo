@@ -382,7 +382,7 @@ defmodule GitGud.GraphQL.Resolvers do
   #
 
   defp flatten_user_emails(user) do
-    Enum.map(user.emails, &{&1.email, user})
+    Enum.map(user.emails, &{&1.address, user})
   end
 
   defp slice_stream(stream, args) do
