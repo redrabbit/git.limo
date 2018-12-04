@@ -409,11 +409,11 @@ defmodule GitGud.Repo do
   defimpl GitGud.AuthorizationPolicies do
     alias GitGud.Repo
 
-    # Everybody can read public repos.
-    def can?(%Repo{public: true}, _user, :read), do: true
-
     # Owner can do everything
     def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
+
+    # Everybody can read public repos.
+    def can?(%Repo{public: true}, _user, :read), do: true
 
     # Maintainers can perform action if he has granted permission to do so.
     def can?(%Repo{} = repo, %User{} = user, action) do

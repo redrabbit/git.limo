@@ -92,6 +92,7 @@ defmodule GitGud.SmartHTTPBackend do
     conn
     |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
     |> send_resp(:unauthorized, "Unauthorized")
+    |> halt()
   end
 
   defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
