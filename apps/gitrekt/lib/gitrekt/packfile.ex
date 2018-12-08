@@ -7,7 +7,7 @@ defmodule GitRekt.Packfile do
 
   alias GitRekt.Git
 
-  @type obj_iter :: {pos_integer, binary}
+  @type obj_iter :: {non_neg_integer, non_neg_integer, binary}
   @type obj :: {Git.obj_type, binary} | {:buffer, obj_list, obj_iter}
   @type obj_list :: [obj]
 
@@ -32,8 +32,8 @@ defmodule GitRekt.Packfile do
   Same as `parse/1` but starts from the given `iterator`.
   """
   @spec parse(binary, obj_iter) :: {obj_list, binary}
-  def parse(pack, {max, rest} = _iterator) do
-    unpack_obj_next(0, max, rest <> pack, [])
+  def parse(pack, {i, max, rest} = _iterator) do
+    unpack_obj_next(i, max, rest <> pack, [])
   end
 
   #
@@ -64,7 +64,7 @@ defmodule GitRekt.Packfile do
       {obj_type, obj, rest} ->
         unpack_obj_next(i+1, max, rest, [{obj_type, obj}|acc])
       :need_more ->
-        {[{:buffer, Enum.reverse(acc), {max-i, rest}}], ""}
+        {[{:buffer, Enum.reverse(acc), {i, max, rest}}], ""}
     end
   end
 
@@ -79,15 +79,15 @@ defmodule GitRekt.Packfile do
     cond do
       obj_type == :delta_reference && byte_size(rest) > 20 ->
         <<base_oid::binary-20, rest::binary>> = rest
-        {delta, rest} = unpack_obj_data(rest)
-        if byte_size(delta) != inflate_size,
+        {delta, rest} = unpack_obj_data(rest, inflate_size)
+        if byte_size(delta) < inflate_size,
           do: :need_more,
         else: {obj_type, unpack_obj_delta(base_oid, delta), rest}
       obj_type == :delta_reference ->
         :need_more
       true ->
-        {obj_data, rest} = unpack_obj_data(rest)
-        if byte_size(obj_data) != inflate_size,
+        {obj_data, rest} = unpack_obj_data(rest, inflate_size)
+        if byte_size(obj_data) < inflate_size,
           do: :need_more,
         else: {obj_type, obj_data, rest}
     end
@@ -106,20 +106,19 @@ defmodule GitRekt.Packfile do
     unpack_obj_size(rest, acc + (num <<< (4+7*i)), i+1)
   end
 
-  defp unpack_obj_data(data) when byte_size(data) > 2 do
+  defp unpack_obj_data(data, inflate_size) when byte_size(data) > 2 do
     data_size = byte_size(data)
-    try do
-      {:ok, obj, deflate_size} = Git.object_zlib_inflate(data)
-      if data_size < deflate_size,
-        do: {"", data},
-      else: {IO.iodata_to_binary(obj), binary_part(data, deflate_size, data_size-deflate_size)}
-    rescue
-      ErlangError ->
+    case Git.object_zlib_inflate(data) do
+      {:ok, chunks, deflate_size} ->
+        if data_size < deflate_size,
+          do: {"", data},
+        else: {IO.iodata_to_binary(chunks), binary_part(data, deflate_size, data_size-deflate_size)}
+      {:error, _reason} ->
         {"", data}
     end
   end
 
-  defp unpack_obj_data(data), do: {"", data}
+  defp unpack_obj_data(data, _inflate_size), do: {"", data}
 
   defp unpack_obj_delta(base_oid, delta) do
     {base_obj_size, rest} = unpack_obj_delta_size(delta, 0, 0)

@@ -106,6 +106,9 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.reversesort = enif_make_atom(env, "sort_reverse");
 	atoms.iterover    = enif_make_atom(env, "iterover");
 	/* Errors */
+	atoms.zlib_need_dict = enif_make_atom(env, "zlib_need_dict");
+	atoms.zlib_data_error = enif_make_atom(env, "zlib_data_error");
+	atoms.zlib_stream_error = enif_make_atom(env, "zlib_stream_error");
 	atoms.enomem = enif_make_atom(env, "enomem");
 	atoms.eunknown = enif_make_atom(env, "eunknown");
 

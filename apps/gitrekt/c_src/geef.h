@@ -35,6 +35,9 @@ typedef struct {
 	ERL_NIF_TERM iterover;
 	ERL_NIF_TERM reflog_entry;
 
+	ERL_NIF_TERM zlib_need_dict;
+	ERL_NIF_TERM zlib_data_error;
+	ERL_NIF_TERM zlib_stream_error;
 	ERL_NIF_TERM enomem;
 	ERL_NIF_TERM eunknown;
 } geef_atoms;

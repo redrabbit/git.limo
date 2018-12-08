@@ -11,7 +11,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
   @null_oid String.duplicate("0", 40)
-  @null_iter {0, ""}
+  @null_iter {0, 0, ""}
 
   defstruct [:repo, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
 

@@ -124,7 +124,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	ErlNifBinary bin;
 	ERL_NIF_TERM chunks, data;
-    int chunk_size = 512000;
+    int chunk_size = 524288;
     char chunk[chunk_size];
     int error;
     z_stream z;
@@ -135,7 +135,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
-	if (!geef_terminate_binary(&bin)) {
+    if (!geef_terminate_binary(&bin)) {
         enif_release_binary(&bin);
         return geef_oom(env);
     }
@@ -156,9 +156,20 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
         switch (error) {
             case Z_NEED_DICT:
-                enif_raise_exception(env, enif_make_atom(env, "zlib_need_dict"));
+                inflateEnd(&z);
+                enif_release_binary(&bin);
+                geef_string_to_bin(&bin, z.msg);
+                return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_need_dict, enif_make_binary(env, &bin)));
             case Z_DATA_ERROR:
-                enif_raise_exception(env, enif_make_atom(env, "zlib_data_error"));
+                inflateEnd(&z);
+                enif_release_binary(&bin);
+                geef_string_to_bin(&bin, z.msg);
+                return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_data_error, enif_make_binary(env, &bin)));
+            case Z_STREAM_ERROR:
+                inflateEnd(&z);
+                enif_release_binary(&bin);
+                geef_string_to_bin(&bin, z.msg);
+                return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_stream_error, enif_make_binary(env, &bin)));
             case Z_MEM_ERROR:
                 inflateEnd(&z);
                 return geef_oom(env);
@@ -169,14 +180,17 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
             return geef_oom(env);
         }
 
+
         memcpy(bin.data, chunk, bin.size);
         chunks = enif_make_list_cell(env, enif_make_binary(env, &bin), chunks);
 
-    } while (z.avail_out == 0 && Z_STREAM_END);
+    } while (z.avail_out == 0);
+
+    inflateEnd(&z);
 
     if(enif_make_reverse_list(env, chunks, &data) < 0) {
         return geef_oom(env);
     }
 
-	return enif_make_tuple3(env, atoms.ok, data, enif_make_ulong(env, z.total_in));
+	return enif_make_tuple3(env, atoms.ok, chunks, enif_make_ulong(env, z.total_in));
 }
