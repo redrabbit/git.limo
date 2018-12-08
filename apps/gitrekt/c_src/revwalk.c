@@ -153,7 +153,7 @@ geef_revwalk_reset(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_revwalk_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	git_buf buf = { NULL };
+	git_buf buf = { NULL, 0, 0 };
 	geef_revwalk *walk;
     git_packbuilder* pb;
     ErlNifBinary pack;

@@ -74,7 +74,7 @@ geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_discover(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	git_buf buf = {NULL};
+	git_buf buf = { NULL, 0, 0 };
 	ErlNifBinary bin, path;
 	int error;
 
@@ -272,7 +272,7 @@ geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return geef_oom(env);
     }
 
-    data = git_odb_object_data(obj);
+    data = (char *)git_odb_object_data(obj);
     memcpy(bin.data, data, size);
 
     git_odb_object_free(obj);

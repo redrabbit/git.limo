@@ -22,7 +22,7 @@ geef_pathspec_match_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 	}
 
-	match = git_pathspec_match_tree(NULL, obj->obj, GIT_PATHSPEC_NO_MATCH_ERROR, pathspec);
+	match = git_pathspec_match_tree(NULL, (git_tree *)obj->obj, GIT_PATHSPEC_NO_MATCH_ERROR, pathspec);
 
 	git_pathspec_free(pathspec);
 

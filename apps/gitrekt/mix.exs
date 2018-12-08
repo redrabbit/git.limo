@@ -10,6 +10,7 @@ defmodule GitRekt.Mixfile do
      lockfile: "../../mix.lock",
      elixir: "~> 1.5",
      compilers: [:elixir_make] ++ Mix.compilers,
+     make_args: ["--quiet"],
      start_permanent: Mix.env == :prod,
      deps: deps()]
   end

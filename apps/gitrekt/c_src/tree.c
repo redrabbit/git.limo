@@ -42,7 +42,7 @@ geef_tree_byid(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin;
 	geef_object *obj;
     git_oid id;
-	git_tree_entry *entry;
+	const git_tree_entry *entry;
 
 	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
 		return enif_make_badarg(env);

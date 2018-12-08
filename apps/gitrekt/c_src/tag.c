@@ -4,6 +4,7 @@
 
 #include "oid.h"
 #include "geef.h"
+#include "signature.h"
 #include "tree.h"
 
 ERL_NIF_TERM
@@ -116,7 +117,7 @@ geef_tag_author(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM name, email, time, offset;
 	geef_object *obj;
-	git_signature* signature;
+	const git_signature *signature;
 
 	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
 		return enif_make_badarg(env);

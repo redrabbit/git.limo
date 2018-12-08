@@ -69,7 +69,6 @@ geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_repository *repo;
 	ErlNifBinary bin;
 	git_oid id;
-	git_otype type;
 	geef_object *obj;
 	ERL_NIF_TERM term_obj;
 
@@ -151,7 +150,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     do {
         z.avail_out = chunk_size;
-        z.next_out = chunk;
+        z.next_out = (unsigned char *)chunk;
 
         error = inflate(&z, Z_NO_FLUSH);
 

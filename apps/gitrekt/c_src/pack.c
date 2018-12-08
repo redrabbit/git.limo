@@ -88,7 +88,7 @@ geef_pack_insert_walk(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_pack_data(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	git_buf buf = { NULL };
+	git_buf buf = { NULL, 0, 0 };
     ErlNifBinary data;
 	geef_pack *pack;
 

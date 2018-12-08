@@ -42,9 +42,10 @@ static git_diff_format_t diff_format_atom2type(ERL_NIF_TERM term)
 static git_diff_options diff_opts_atom2type(ErlNifEnv *env, ERL_NIF_TERM keyword)
 {
 	ERL_NIF_TERM head, tail, key, val;
-	size_t size;
+	unsigned int size;
+    int arity;
+	size_t i;
 	const ERL_NIF_TERM *array;
-	size_t arity, i;
 	git_diff_options opts;
 
 	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
@@ -245,7 +246,7 @@ geef_diff_stats(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
 		return enif_make_badarg(env);
 
-	if (!git_diff_get_stats(&stats, diff->diff) < 0)
+	if (git_diff_get_stats(&stats, diff->diff) < 0)
 		return geef_error(env);
 
 	insertions = git_diff_stats_insertions(stats);
@@ -273,12 +274,12 @@ geef_diff_deltas(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	diff_pack pack;
 	geef_diff *diff;
-	int i, j;
+	size_t i, j;
 
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
 		return enif_make_badarg(env);
 
-	pack = (diff_pack){ env, (git_diff_delta **)malloc(sizeof(git_diff_delta *) * git_diff_num_deltas(diff->diff)), 0};
+	pack = (diff_pack){ env, (diff_delta **)malloc(sizeof(git_diff_delta *) * git_diff_num_deltas(diff->diff)), 0};
 	if (git_diff_foreach(diff->diff, diff_delta_file_cb, diff_delta_bin_cb, diff_delta_hunk_cb, diff_delta_line_cb, &pack) < 0)
 		return geef_error(env);
 
@@ -308,8 +309,7 @@ ERL_NIF_TERM
 geef_diff_format(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_diff *diff;
-	git_diff_format_t format;
-	git_buf buf = { NULL };
+	git_buf buf = { NULL, 0, 0 };
 	ErlNifBinary data;
 
 	if (!enif_get_resource(env, argv[0], geef_diff_type, (void **) &diff))
