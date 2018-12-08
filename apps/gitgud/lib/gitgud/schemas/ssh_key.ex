@@ -100,6 +100,8 @@ defmodule GitGud.SSHKey do
     |> cast(params, [:user_id, :name, :data])
     |> validate_required([:user_id, :data])
     |> put_fingerprint()
+    |> unique_constraint(:name, name: :users_ssh_keys_user_id_name_index)
+    |> unique_constraint(:data, name: :users_ssh_keys_user_id_fingerprint_index)
     |> assoc_constraint(:user)
   end
 
