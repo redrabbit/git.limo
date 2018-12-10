@@ -118,6 +118,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   # Helpers
   #
 
+  defp odb_flush(%__MODULE__{cmds: []}), do: :ok
   defp odb_flush(%__MODULE__{callback: nil} = handle) do
     case apply_pack(handle) do
       {:ok, _oids} -> apply_cmds(handle)

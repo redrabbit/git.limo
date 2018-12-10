@@ -399,7 +399,7 @@ defmodule GitGud.Repo do
     with {:ok, oids} <- ReceivePack.apply_pack(receive_pack),
           :ok <- ReceivePack.apply_cmds(receive_pack),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repos:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
+      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
   end
 
   #
