@@ -79,14 +79,14 @@ defmodule GitRekt.Packfile do
     cond do
       obj_type == :delta_reference && byte_size(rest) > 20 ->
         <<base_oid::binary-20, rest::binary>> = rest
-        {delta, rest} = unpack_obj_data(rest, inflate_size)
+        {delta, rest} = unpack_obj_data(rest)
         if byte_size(delta) < inflate_size,
           do: :need_more,
         else: {obj_type, unpack_obj_delta(base_oid, delta), rest}
       obj_type == :delta_reference ->
         :need_more
       true ->
-        {obj_data, rest} = unpack_obj_data(rest, inflate_size)
+        {obj_data, rest} = unpack_obj_data(rest)
         if byte_size(obj_data) < inflate_size,
           do: :need_more,
         else: {obj_type, obj_data, rest}
@@ -106,7 +106,7 @@ defmodule GitRekt.Packfile do
     unpack_obj_size(rest, acc + (num <<< (4+7*i)), i+1)
   end
 
-  defp unpack_obj_data(data, inflate_size) when byte_size(data) > 2 do
+  defp unpack_obj_data(data) do
     data_size = byte_size(data)
     case Git.object_zlib_inflate(data) do
       {:ok, chunks, deflate_size} ->
@@ -117,8 +117,6 @@ defmodule GitRekt.Packfile do
         {"", data}
     end
   end
-
-  defp unpack_obj_data(data, _inflate_size), do: {"", data}
 
   defp unpack_obj_delta(base_oid, delta) do
     {base_obj_size, rest} = unpack_obj_delta_size(delta, 0, 0)
