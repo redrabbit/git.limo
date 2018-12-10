@@ -154,7 +154,12 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(action), do: action
 
   @spec title(atom, map) :: binary
-  def title(:show, %{repo: repo}), do: "#{repo.owner.login}/#{repo.name}: #{repo.description}"
+  def title(:show, %{repo: repo}) do
+    if desc = repo.description,
+      do: "#{repo.owner.login}/#{repo.name}: #{desc}",
+    else: "#{repo.owner.login}/#{repo.name}"
+  end
+
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
