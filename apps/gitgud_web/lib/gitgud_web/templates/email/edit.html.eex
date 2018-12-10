@@ -6,28 +6,30 @@
   </div>
 </div>
 
-<nav class="panel">
-  <%= for email <- @user.emails do %>
-    <div class="panel-block">
-      <div class="level" style="width:100%">
-        <div class="level-left">
-          <div class="level-item"><%= email.address %></div>
-          <div class="level-item"><%= email_tags(@conn, @user, email) %></div>
-        </div>
-        <%= if email.id != @user.primary_email_id do %>
-          <div class="level-right">
-            <div class="level-item">
-              <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
-                <%= hidden_input(f, :id, value: email.id) %>
-                <button type="submit" class="delete"></button>
-              <% end %>
-            </div>
+<%= unless Enum.empty?(@user.emails) do %>
+  <nav class="panel">
+    <%= for email <- @user.emails do %>
+      <div class="panel-block">
+        <div class="level" style="width:100%">
+          <div class="level-left">
+            <div class="level-item"><%= email.address %></div>
+            <div class="level-item"><%= email_tags(@conn, @user, email) %></div>
           </div>
-        <% end %>
+          <%= if email.id != @user.primary_email_id do %>
+            <div class="level-right">
+              <div class="level-item">
+                <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
+                  <%= hidden_input(f, :id, value: email.id) %>
+                  <button type="submit" class="delete"></button>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
       </div>
-    </div>
-  <% end %>
-</nav>
+    <% end %>
+  </nav>
+<% end %>
 
 <%= form_for @changeset, Routes.email_path(@conn, :create), [as: :email], fn f -> %>
   <div class="field">

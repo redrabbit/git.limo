@@ -1,24 +1,28 @@
 <h2 class="subtitle">Tags</h2>
 
-<%= with page <- paginate(@conn, sort_by_commit_timestamp(@tags)) do %>
-  <table class="table is-fullwidth is-striped">
-    <tbody>
-      <%= for {tag, {commit, author}} <- batch_tags_commits_authors(page.slice) do %>
-        <tr>
-          <td>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
-              <%= tag %>
-            </a>
-            <%= if Map.has_key?(author, :id) do %>
-              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
-            <% else %>
-              <span class="has-text-black"><%= author.name %></span>
-            <% end %>
-            tagged this <%= datetime_format(commit_timestamp(commit), "{relative}") %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <%= pagination(page) %>
+<%= if Enum.empty?(@tags) do %>
+  Nothing to see here.
+<% else %>
+  <%= with page <- paginate(@conn, sort_by_commit_timestamp(@tags)) do %>
+    <table class="table is-fullwidth is-striped">
+      <tbody>
+        <%= for {tag, {commit, author}} <- batch_tags_commits_authors(page.slice) do %>
+          <tr>
+            <td>
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
+                <%= tag %>
+              </a>
+              <%= if Map.has_key?(author, :id) do %>
+                <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
+              <% else %>
+                <span class="has-text-black"><%= author.name %></span>
+              <% end %>
+              tagged this <%= datetime_format(commit_timestamp(commit), "{relative}") %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= pagination(page) %>
+  <% end %>
 <% end %>
