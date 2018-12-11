@@ -21,6 +21,9 @@ defmodule GitGud.Email do
   alias GitGud.DB
   alias GitGud.User
 
+  alias Ecto.Multi
+
+  import Ecto.Query, only: [from: 2]
   import Ecto.Changeset
 
   schema "users_emails" do
@@ -68,13 +71,14 @@ defmodule GitGud.Email do
   """
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
-    DB.transaction(fn ->
-      email = DB.update!(change(email, %{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
-      email_user = DB.preload(email, :user)
-      unless email_user.user.primary_email_id, do:
-        User.update!(email_user.user, :primary_email, email)
-      email
-    end)
+    changeset = change(email, %{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
+    changeset = check_constraint(changeset, :address, name: :users_emails_address_constraint, message: "already taken")
+    case DB.transaction(verify_email_multi(changeset)) do
+      {:ok, %{email: email}} ->
+        {:ok, email}
+      {:error, _operation, changeset, _changes} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -114,6 +118,26 @@ defmodule GitGud.Email do
     |> validate_required([:address])
     |> validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
     |> assoc_constraint(:user)
-    |> unique_constraint(:address)
+    |> check_constraint(:address, name: :users_emails_address_constraint, message: "already taken")
+    |> unique_constraint(:address, name: :users_emails_user_id_address_index)
+  end
+
+  #
+  # Helpers
+  #
+
+  defp verify_email_multi(changeset) do
+    email_address = get_field(changeset, :address)
+    Multi.new()
+    |> Multi.update(:email, changeset)
+    |> Multi.delete_all(:unverified_emails, from(e in __MODULE__, where: e.verified == false and e.address == ^email_address))
+    |> Multi.run(:user, &update_user_primary_email/2)
+  end
+
+  defp update_user_primary_email(db, %{email: email}) do
+      email = db.preload(email, :user)
+      if email.user.primary_email_id,
+        do: {:ok, email.user},
+      else: db.update(change(email.user, %{primary_email_id: email.id}))
   end
 end
