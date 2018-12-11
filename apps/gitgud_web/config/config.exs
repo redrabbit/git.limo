@@ -25,6 +25,12 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Use Jason for JSON parsing in OAuth2
+config :oauth2,
+  serializers: %{
+    "application/json" => Jason,
+  }
+
 # Use Jason for JSON parsing in Bamboo
 config :bamboo, :json_library, Jason
 
