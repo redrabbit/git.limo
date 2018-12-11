@@ -17,6 +17,17 @@
 
   <body>
     <nav class="navbar is-dark" role="navigation" aria-label="dropdown navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="<% Routes.landing_page_path(@conn, :index) %>">
+          <img src="<%= Routes.static_path(@conn, "/images/gitgud.svg") %>" width="28" height="28">
+        </a>
+
+        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
       <div class="navbar-menu">
         <div class="navbar-start">
           <div class="navbar-item">
