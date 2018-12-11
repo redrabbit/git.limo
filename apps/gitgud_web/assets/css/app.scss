@@ -44,6 +44,16 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
   }
 }
 
+.search {
+  input {
+    &:not(:focus) {
+      color: $white;
+      background-color: $grey;
+      border-color: $grey-darker;
+    }
+  }
+}
+
 .users-input {
   display: block;
   .dropdown-menu {
