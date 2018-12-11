@@ -23,7 +23,7 @@
       <% end %>
       <li>
         <a class="has-text-grey-light">
-          <span class="icon"><i class="fa fa-bug" aria-hidden="true"></i></span>
+          <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
           <span>Issues</span>
         </a>
       </li>
