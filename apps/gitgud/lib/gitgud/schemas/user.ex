@@ -145,7 +145,7 @@ defmodule GitGud.User do
     user
     |> cast(params, [:login, :name, :bio, :url, :location])
     |> cast_assoc(:auth, required: true, with: &Auth.registration_changeset/2)
-    |> cast_assoc(:emails, required: true)
+    |> cast_assoc(:emails, required: true, with: &Email.registration_changeset/2)
     |> validate_required([:login, :name])
     |> validate_login()
     |> validate_url()
@@ -208,9 +208,10 @@ defmodule GitGud.User do
   end
 
   defp validate_oauth_email(changeset) do
-    auth_changeset = get_change(changeset, :auth)
-    if auth_changeset && get_change(auth_changeset, :providers),
-      do: put_change(changeset, :emails, Enum.map(get_change(changeset, :emails), &put_change(&1, :verified, true))),
-    else: changeset
+    if auth_changeset = get_change(changeset, :auth) do
+      if get_change(auth_changeset, :providers) do
+        put_change(changeset, :emails, Enum.map(get_change(changeset, :emails), &merge(&1, Email.verification_changeset(&1.data))))
+      end
+    end || changeset
   end
 end

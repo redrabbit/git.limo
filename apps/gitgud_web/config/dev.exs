@@ -36,8 +36,8 @@ config :gitgud_web, GitGud.Web.Endpoint,
 
 # Configure GitHub OAuth2.0 provider
 config :gitgud_web, GitGud.OAuth2.GitHub,
-  client_id: "xxxxxxxxxxxxxxxxxxxx",
-  client_secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  client_id: "503f14433fb7334fdbd0",
+  client_secret: "3ba722afd4de11c4f53e248218f3bba3c4e5fba5"
 
 # Configure Mailgun adapter
 config :gitgud_web, GitGud.Mailer,

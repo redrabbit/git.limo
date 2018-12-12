@@ -21,7 +21,7 @@ defmodule GitGud.Web.EmailController do
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
   def edit(conn, _params) do
     user = DB.preload(current_user(conn), :emails)
-    changeset = Email.changeset(%Email{})
+    changeset = Email.registration_changeset(%Email{})
     render(conn, "edit.html", user: user, changeset: changeset)
   end
 

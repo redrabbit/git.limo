@@ -51,11 +51,11 @@ defmodule GitGud.Email do
   {:ok, email} = GitGud.Email.create(user_id: user.id, address: "m.flach@almightycouch.com")
   ```
 
-  This function validates the given `params` using `changeset/2`.
+  This function validates the given `params` using `registration_changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
+    DB.insert(registration_changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
@@ -63,7 +63,7 @@ defmodule GitGud.Email do
   """
   @spec create!(map|keyword) :: t
   def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
+    DB.insert!(registration_changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
@@ -71,9 +71,7 @@ defmodule GitGud.Email do
   """
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
-    changeset = change(email, %{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
-    changeset = check_constraint(changeset, :address, name: :users_emails_address_constraint, message: "already taken")
-    case DB.transaction(verify_email_multi(changeset)) do
+    case DB.transaction(verify_email_consistency(email)) do
       {:ok, %{email: email}} ->
         {:ok, email}
       {:error, _operation, changeset, _changes} ->
@@ -109,10 +107,10 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Returns an email changeset for the given `params`.
+  Returns an email registration changeset for the given `params`.
   """
-  @spec changeset(t, map) :: Ecto.Changeset.t
-  def changeset(%__MODULE__{} = email, params \\ %{}) do
+  @spec registration_changeset(t, map) :: Ecto.Changeset.t
+  def registration_changeset(%__MODULE__{} = email, params \\ %{}) do
     email
     |> cast(params, [:user_id, :address])
     |> validate_required([:address])
@@ -122,22 +120,31 @@ defmodule GitGud.Email do
     |> unique_constraint(:address, name: :users_emails_user_id_address_index)
   end
 
+  @doc """
+  Returns an email verification changeset for the given `params`.
+  """
+  @spec verification_changeset(t) :: Ecto.Changeset.t
+  def verification_changeset(%__MODULE__{} = email) do
+    email
+    |> change(%{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
+    |> check_constraint(:address, name: :users_emails_address_constraint, message: "already taken")
+  end
+
   #
   # Helpers
   #
 
-  defp verify_email_multi(changeset) do
-    email_address = get_field(changeset, :address)
+  defp verify_email_consistency(email) do
     Multi.new()
-    |> Multi.update(:email, changeset)
-    |> Multi.delete_all(:unverified_emails, from(e in __MODULE__, where: e.verified == false and e.address == ^email_address))
+    |> Multi.update(:email, verification_changeset(email))
+    |> Multi.delete_all(:unverified_emails, from(e in __MODULE__, where: e.verified == false and e.address == ^email.address))
     |> Multi.run(:user, &update_user_primary_email/2)
   end
 
   defp update_user_primary_email(db, %{email: email}) do
-      email = db.preload(email, :user)
-      if email.user.primary_email_id,
-        do: {:ok, email.user},
-      else: db.update(change(email.user, %{primary_email_id: email.id}))
+    email = db.preload(email, :user)
+    if email.user.primary_email_id,
+      do: {:ok, email.user},
+    else: db.update(change(email.user, %{primary_email_id: email.id}))
   end
 end
