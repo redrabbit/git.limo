@@ -43,11 +43,18 @@ defmodule GitGud.MaintainerTest do
 
   defp create_users(context) do
     users = Stream.repeatedly(fn -> User.create!(factory(:user)) end)
-    Map.put(context, :users, Enum.take(users, 2))
+    users = Enum.take(users, 2)
+    on_exit fn ->
+      File.rmdir(Path.join(Repo.root_path, hd(users).login))
+    end
+    Map.put(context, :users, users)
   end
 
   defp create_repo(context) do
     repo = Repo.create!(factory(:repo, hd(context.users)))
+    on_exit fn ->
+      File.rm_rf(Repo.workdir(repo))
+    end
     Map.put(context, :repo, repo)
   end
 

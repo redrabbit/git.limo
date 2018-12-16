@@ -48,14 +48,10 @@ defmodule GitGud.Web.UserControllerTest do
     setup :create_user
 
     test "renders user profile", %{conn: conn, user: user} do
-      user_repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, user)) end), 3)
       conn = get(conn, Routes.user_path(conn, :show, user))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
-      for repo <- user_repos do
-        assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
-        File.rm_rf!(Repo.workdir(repo))
-      end
+      assert html_response(conn, 200) =~ ~s(Nothing to see here.)
     end
 
     test "renders user edit form if authenticated", %{conn: conn, user: user} do
@@ -96,12 +92,38 @@ defmodule GitGud.Web.UserControllerTest do
     end
   end
 
+  describe "when user exists and has repositories" do
+    setup [:create_user, :create_repos]
+
+    test "renders user profile", %{conn: conn, user: user, repos: repos} do
+      conn = get(conn, Routes.user_path(conn, :show, user))
+      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
+      for repo <- repos do
+        assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
+      end
+    end
+  end
+
   #
   # Helpers
   #
 
   defp create_user(context) do
     user = User.create!(factory(:user))
+    on_exit fn ->
+      File.rmdir(Path.join(Repo.root_path, user.login))
+    end
     Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
+  end
+
+  defp create_repos(context) do
+    repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, context.user)) end), 3)
+    on_exit fn ->
+      for repo <- repos do
+        File.rm_rf(Repo.workdir(repo))
+      end
+    end
+    Map.put(context, :repos, repos)
   end
 end

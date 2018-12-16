@@ -98,13 +98,17 @@ defmodule GitGud.Web.RepoControllerTest do
   #
 
   defp create_user(context) do
-    Map.put(context, :user, User.create!(factory(:user)))
+    user = User.create!(factory(:user))
+    on_exit fn ->
+      File.rmdir(Path.join(Repo.root_path, user.login))
+    end
+    Map.put(context, :user, user)
   end
 
   defp create_repo(context) do
     repo = Repo.create!(factory(:repo, context.user))
     on_exit fn ->
-      File.rm_rf!(Repo.workdir(repo))
+      File.rm_rf(Repo.workdir(repo))
     end
     Map.put(context, :repo, repo)
   end
