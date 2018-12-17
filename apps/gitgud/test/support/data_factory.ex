@@ -60,8 +60,8 @@ defmodule GitGud.DataFactory do
   Returns a map representing `GitGud.SSHKey` params.
   """
   def ssh_key do
-    {ssh_rsa, 0} = System.cmd("sh", ["-c", "openssl genrsa 128 2>/dev/null | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
-    %{name: callsign(), data: ssh_rsa}
+    {rsa_pub, rsa_priv} = make_ssh_pair(128)
+    %{name: callsign(), data: rsa_pub, __priv__: rsa_priv}
   end
 
   @doc """
@@ -72,6 +72,22 @@ defmodule GitGud.DataFactory do
     Map.put(ssh_key(), :user_id, user_id)
   end
 
+  @doc """
+  Returns a map representing `GitGud.SSHKey` params.
+  """
+  def ssh_key_strong do
+    {rsa_pub, rsa_priv} = make_ssh_pair(2048)
+    %{name: callsign(), data: rsa_pub, __priv__: rsa_priv}
+  end
+
+  @doc """
+  Returns a map representing `GitGud.SSHKey` params.
+  """
+  def ssh_key_strong(%User{id: user_id}), do: ssh_key_strong(user_id)
+  def ssh_key_strong(user_id) when is_integer(user_id) do
+    Map.put(ssh_key_strong(), :user_id, user_id)
+  end
+
   @doc false
   defmacro __using__(_opts) do
     quote do
@@ -79,5 +95,15 @@ defmodule GitGud.DataFactory do
         apply(unquote(__MODULE__), name, List.wrap(params))
       end
     end
+  end
+
+  #
+  # Helpers
+  #
+
+  defp make_ssh_pair(bit_size) do
+    {rsa_priv, 0} = System.cmd("sh", ["-c", "openssl genrsa #{bit_size} 2>/dev/null"])
+    {rsa_pubk, 0} = System.cmd("sh", ["-c", "echo \"#{rsa_priv}\" | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
+    {rsa_pubk, rsa_priv}
   end
 end
