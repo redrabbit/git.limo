@@ -78,7 +78,7 @@ defmodule GitGud.SSHServer do
       if ssh_key = Enum.find(user.ssh_keys, &(&1.fingerprint == fingerprint)) do
         !!SSHKey.update_timestamp!(ssh_key)
       end
-    end
+    end || false
   end
 
   @impl true
