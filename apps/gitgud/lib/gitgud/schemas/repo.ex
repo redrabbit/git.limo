@@ -398,8 +398,12 @@ defmodule GitGud.Repo do
   def git_push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
     with {:ok, oids} <- ReceivePack.apply_pack(receive_pack),
           :ok <- ReceivePack.apply_cmds(receive_pack),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
+      if pid = Process.whereis(GitGud.Web.PubSub) do
+        Phoenix.PubSub.broadcast(pid, "repo:#{repo.id}", {:push, %{repo_id: repo.id, cmds: cmds, oids: oids}})
+      end
+      :ok
+    end
   end
 
   #
