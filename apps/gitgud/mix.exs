@@ -31,11 +31,12 @@ defmodule GitGud.Mixfile do
     [{:ecto, "~> 3.0"},
      {:ecto_sql, "~> 3.0"},
      {:postgrex, "~> 0.14"},
-     {:plug, "~> 1.7", optional: true},
      {:phoenix_pubsub, "~> 1.1", optional: true},
      {:jason, "~> 1.1"},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
+     {:plug, "~> 1.7", only: :test},
+     {:plug_cowboy, "~> 2.0", only: :test},
      {:faker, "~> 0.11", only: :test},
      {:gitrekt, in_umbrella: true}]
   end
