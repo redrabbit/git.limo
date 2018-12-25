@@ -39,16 +39,27 @@ defmodule GitGud.SSHServerTest do
   end
 
   describe "when repository exists" do
-    setup [:create_ssh_key, :create_repo, :create_repo_path]
+    setup [:create_ssh_key, :create_repo, :clone_from_github, :create_workdir]
 
-    test "pushes initial commit", %{user: user, id_rsa: id_rsa, repo: repo, repo_path: repo_path} do
+    test "clones repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
+      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
+      assert {:ok, ref} = Repo.git_head(repo)
+      output = GitRekt.Git.oid_fmt(ref.oid) <> "\n"
+      assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
+    end
+  end
+
+  describe "when repository is empty" do
+    setup [:create_ssh_key, :create_repo, :create_workdir]
+
+    test "pushes initial commit", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       readme_content = "##{repo.name}\r\n\r\n#{repo.description}"
-      assert {_output, 0} = System.cmd("git", ["init"], cd: repo_path)
-      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: repo_path)
-      File.write!(Path.join(repo_path, "README.md"), readme_content)
-      assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: repo_path)
-      assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: repo_path)
-      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: repo_path)
+      assert {_output, 0} = System.cmd("git", ["init"], cd: workdir)
+      File.write!(Path.join(workdir, "README.md"), readme_content)
+      assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, ref} = Repo.git_head(repo)
       assert {:ok, commit} = GitGud.GitReference.target(ref)
       assert {:ok, "Initial commit\n"} = GitGud.GitCommit.message(commit)
@@ -56,6 +67,16 @@ defmodule GitGud.SSHServerTest do
       assert {:ok, tree_entry} = GitGud.GitTree.by_path(tree, "README.md")
       assert {:ok, blob} = GitGud.GitTreeEntry.target(tree_entry)
       assert {:ok, ^readme_content} = GitGud.GitBlob.content(blob)
+    end
+
+    test "pushes repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
+      assert {_output, 0} = System.cmd("git", ["clone", "--quiet", "https://github.com/almightycouch/gitgud.git", workdir])
+      assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
+      assert {:ok, ref} = Repo.git_head(repo)
+      output = GitRekt.Git.oid_fmt(ref.oid) <> "\n"
+      assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
   end
 
@@ -91,12 +112,18 @@ defmodule GitGud.SSHServerTest do
     Map.put(context, :repo, repo)
   end
 
-  defp create_repo_path(context) do
-    repo_path = Path.join(System.tmp_dir!(), context.repo.name)
-    File.mkdir!(repo_path)
+  defp clone_from_github(context) do
+    File.rm_rf!(Repo.workdir(context.repo))
+    {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "https://github.com/almightycouch/gitgud.git", context.repo.name], cd: Path.join(Repo.root_path(), context.user.login))
+    context
+  end
+
+  defp create_workdir(context) do
+    workdir = Path.join(System.tmp_dir!(), context.repo.name)
+    File.mkdir!(workdir)
     on_exit fn ->
-      File.rm_rf(repo_path)
+      File.rm_rf(workdir)
     end
-    Map.put(context, :repo_path, repo_path)
+    Map.put(context, :workdir, workdir)
   end
 end
