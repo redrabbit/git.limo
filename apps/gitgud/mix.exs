@@ -35,7 +35,7 @@ defmodule GitGud.Mixfile do
      {:jason, "~> 1.1"},
      {:comeonin, "~> 4.1"},
      {:argon2_elixir, "~> 1.2"},
-     {:plug, "~> 1.7", only: :test},
+     {:plug, "~> 1.7", optional: true},
      {:plug_cowboy, "~> 2.0", only: :test},
      {:faker, "~> 0.11", only: :test},
      {:gitrekt, in_umbrella: true}]
