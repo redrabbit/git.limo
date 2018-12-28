@@ -36,7 +36,7 @@ In this example, each Git related function is implemented in C instead of Elixir
 These functions are compiled and linked into a dynamic loadable, shared library. They belong to a module and are called like any other Elixir functions.
 
 > As a NIF library is dynamically linked into the emulator process, this is the fastest way of calling C-code from Erlang (alongside port drivers). Calling NIFs requires no context switches. But it is also the least safe, because a crash in a NIF brings the emulator down too.
-> 
+>
 > [Erlang documentation - NIFs](http://erlang.org/doc/tutorial/nif.html)
 
 Altough in the example above we have directly called low-level Git functions to query Git related objects, most of the time `GitGud.Repo` provides a better entry-point to work with Git repositories.

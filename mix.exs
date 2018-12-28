@@ -30,7 +30,7 @@ defmodule GitGud.Umbrella.Mixfile do
 
   defp docs do
     [
-#     main: "GitGud",
+      main: "getting-started",
       source_ref: "v#{@version}",
       canonical: "https://git.limo",
       source_url: "https://github.com/almightycouch/gitgud",
