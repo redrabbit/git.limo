@@ -4,6 +4,7 @@ config :gitgud,
   namespace: GitGud,
   ecto_repos: [GitGud.DB]
 
-config :absinthe, schema: GitGud.GraphQL.Schema
+config :gitgud, GitGud.DB,
+  telemetry_prefix: [:gitgud, :db]
 
 import_config "#{Mix.env}.exs"

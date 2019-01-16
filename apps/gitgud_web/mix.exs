@@ -18,7 +18,7 @@ defmodule GitGud.Web.Mixfile do
 
   def application do
     [mod: {GitGud.Web.Application, []},
-     extra_applications: [:logger, :runtime_tools]]
+     extra_applications: [:logger, :appsignal, :runtime_tools]]
   end
 
   #

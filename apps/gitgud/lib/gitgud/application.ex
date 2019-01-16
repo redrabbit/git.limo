@@ -5,6 +5,8 @@ defmodule GitGud.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    :telemetry.attach("appsignal-ecto", [:gitgud, :db, :query], &Appsignal.Ecto.handle_event/4, nil)
+
     Supervisor.start_link([
       {GitGud.DB, []},
       {GitGud.SSHServer, []},
