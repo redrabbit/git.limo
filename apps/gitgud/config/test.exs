@@ -8,7 +8,11 @@ config :gitgud, GitGud.DB,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
+# Configure your SSH server
 config :gitgud,
   ssh_port: 9899,
   ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
   git_root: Path.absname("test/data/git", Path.dirname(__DIR__))
+
+# Print only warnings and errors during test
+config :logger, level: :warn

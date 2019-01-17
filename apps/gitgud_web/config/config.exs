@@ -30,7 +30,6 @@ config :phoenix, :template_engines,
   eex: Appsignal.Phoenix.Template.EExEngine,
   exs: Appsignal.Phoenix.Template.ExsEngine
 
-
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 

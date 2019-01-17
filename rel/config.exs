@@ -53,6 +53,9 @@ end
 
 release :gitgud do
   set version: current_version(:gitgud)
+  set config_providers: [
+    {Mix.Releases.Config.Providers.Elixir, ["${RELEASE_ROOT_DIR}/config.exs"]}
+  ]
   set applications: [
     :runtime_tools,
     gitgud: :permanent,
@@ -60,4 +63,3 @@ release :gitgud do
     gitrekt: :permanent
   ]
 end
-
