@@ -3,8 +3,6 @@ defmodule GitRekt.Git do
   Erlang NIF that exposes a subset of *libgit2*'s library functions.
   """
 
-  require Logger
-
   @type repo          :: reference
 
   @type oid           :: binary
@@ -74,7 +72,7 @@ defmodule GitRekt.Git do
   def load_nif do
     case :erlang.load_nif(@nif_path, 0) do
       :ok -> :ok
-      {:error, {:load_failed, error}} -> Logger.error error
+      {:error, {:load_failed, error}} -> raise RuntimeError, message: error
     end
   end
 
