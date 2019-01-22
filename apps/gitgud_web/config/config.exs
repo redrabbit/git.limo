@@ -10,7 +10,6 @@ config :gitgud_web, GitGud.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Orcr/BYzysTwrdJaOA7vu7miC2V5M2ivU6yMY7hW1cUnegxFej5GLalozFC+f6uA",
   render_errors: [view: GitGud.Web.ErrorView, accepts: ~w(html)],
-  instrumenters: [Appsignal.Phoenix.Instrumenter],
   pubsub: [name: GitGud.Web.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Configure generators
@@ -24,11 +23,6 @@ config :logger, :console,
 
 # Absinthe GraphQL schema
 config :absinthe, schema: GitGud.GraphQL.Schema
-
-# Instrument template rendering time with AppSignal
-config :phoenix, :template_engines,
-  eex: Appsignal.Phoenix.Template.EExEngine,
-  exs: Appsignal.Phoenix.Template.ExsEngine
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

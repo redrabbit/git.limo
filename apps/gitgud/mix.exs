@@ -17,7 +17,7 @@ defmodule GitGud.Mixfile do
 
   def application do
     [mod: {GitGud.Application, []},
-     extra_applications: [:logger, :runtime_tools, :appsignal, :ssh]]
+     extra_applications: [:logger, :runtime_tools, :ssh]]
   end
 
   #

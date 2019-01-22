@@ -19,7 +19,6 @@ defmodule GitGud.Umbrella.Mixfile do
 
   defp deps do
     [{:distillery, "~> 2.0"},
-     {:appsignal, "~> 1.0"},
      {:ex_doc, "~> 0.19", only: :dev, runtime: false}]
   end
 

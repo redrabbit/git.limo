@@ -5,8 +5,6 @@ defmodule GitGud.Web.AuthenticationPlug do
 
   @behaviour Plug
 
-  use Appsignal.Instrumentation.Decorators
-
   import Plug.Conn
   import Phoenix.Controller, only: [put_view: 2, render: 3]
   import Absinthe.Plug, only: [put_options: 2]
@@ -109,7 +107,6 @@ defmodule GitGud.Web.AuthenticationPlug do
     else: GitGud.Web.Endpoint
   end
 
-  @decorate transaction_event("authentication_plug")
   defp authenticate_user(conn, user_id) do
     if user = UserQuery.by_id(user_id, preload: :primary_email),
       do: assign_user(conn, user),
@@ -117,7 +114,6 @@ defmodule GitGud.Web.AuthenticationPlug do
   end
 
   defp assign_user(conn, user) do
-    Appsignal.Transaction.set_sample_data("tags", %{user: user.login})
     conn
     |> assign(:current_user, user)
     |> put_options(context: %{current_user: user})
