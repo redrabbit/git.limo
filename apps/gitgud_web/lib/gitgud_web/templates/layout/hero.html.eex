@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title><%= title(@conn) %></title>
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+  </head>
+
+  <body>
+    <main class="hero is-fullheight">
+      <%= if info = get_flash(@conn, :info) do %>
+        <article class="message is-primary is-small">
+          <div class="message-header">
+            <p>Info</p>
+            <button class="delete is-small" aria-label="delete"></button>
+          </div>
+          <div class="message-body"><%= info %></div>
+        </article>
+      <% end %>
+      <%= if error = get_flash(@conn, :error) do %>
+        <article class="message is-danger is-small">
+          <div class="message-header">
+            <p>Error</p>
+            <button class="delete is-small" aria-label="delete"></button>
+          </div>
+          <div class="message-body"><%= error %></div>
+        </article>
+      <% end %>
+
+      <div class="hero-body">
+        <div class="container">
+          <%= render_inner_layout(@conn, assigns) %>
+        </div>
+      </div>
+    </main>
+    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </body>
+</html>
+

@@ -18,9 +18,10 @@ defmodule GitGud.Web.Gravatar do
   def gravatar(%User{primary_email: nil}, _opts), do: []
   def gravatar(%Email{address: nil}, _opts), do: []
   def gravatar(email, opts) do
-    opts = Keyword.put_new(opts, :size, 20)
+    opts = Keyword.put_new(opts, :size, 28)
     {size, opts} = Keyword.get_and_update(opts, :size, &{&1, &1*2})
-    img_tag(gravatar_url(email, opts), class: "avatar", width: size)
+    img_class = if size < 28, do: "avatar is-small", else: "avatar"
+    img_tag(gravatar_url(email, opts), class: img_class, width: size)
   end
 
   @doc """

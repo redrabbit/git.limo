@@ -1,9 +1,27 @@
+@charset "utf-8";
+
+@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,700|Work+Sans:400,600,700');
+
 @import "~bulma/sass/utilities/_all";
+
+$family-sans-serif: "Work Sans", sans-serif;
+$family-primary: $family-sans-serif;
+$family-secondary: "Fira Sans", sans-serif;
+
+$hr-background-color: $grey-lighter;
+
+$widescreen-enabled: false;
+$fullhd-enabled: false;
+
 @import "~bulma/sass/base/_all";
 @import "~bulma/sass/elements/_all";
 @import "~bulma/sass/components/_all";
 @import "~bulma/sass/grid/_all";
 @import "~bulma/sass/layout/_all";
+
+$divider-thickness: $hr-height;
+
+@import "~bulma-divider/src/sass/index";
 
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
@@ -11,14 +29,65 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~@fortawesome/fontawesome-free/scss/brands";
 @import "~@fortawesome/fontawesome-free/scss/solid";
 
-.sha {
-  font-family: $family-monospace;
+main {
+  padding: 2rem 0.75rem;
+}
+
+nav.navbar {
+  .search {
+    input {
+      width: 18rem;
+      border: 0;
+      box-shadow: none;
+      background-color: $white-ter;
+
+      &::placeholder {
+        font-weight: $weight-semibold;
+      }
+    }
+
+    .dropdown-menu {
+      width: 18rem;
+    }
+  }
+}
+
+.title, .subtitle {
+  font-family: $family-secondary;
 }
 
 .avatar {
   margin: 0 2px;
-  border-radius: 5%;
+  border-radius: 4px;
   vertical-align: text-bottom;
+
+  &.is-small {
+    border-radius: 2px;
+  }
+}
+
+.commit {
+  font-family: $family-monospace;
+}
+
+.button {
+  &.github {
+    color: $white-bis;
+    border-color: transparent;
+    background-color: #4078c0;
+  }
+
+  &.gitlab {
+    color: $white-bis;
+    border-color: transparent;
+    background-color: #fca326;
+  }
+
+  &.bitbucket {
+    color: $white-bis;
+    border-color: transparent;
+    background-color: #205081;
+  }
 }
 
 .repo-grid {
@@ -41,16 +110,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 .dropdown.clone {
   .dropdown-menu {
     width: 300px;
-  }
-}
-
-.search {
-  input {
-    &:not(:focus) {
-      color: $white;
-      background-color: $grey;
-      border-color: $grey-darker;
-    }
   }
 }
 

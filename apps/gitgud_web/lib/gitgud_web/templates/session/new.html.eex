@@ -1,40 +1,57 @@
-<h1 class="title">Login</h1>
+<div class="columns">
+  <div class="column is-4 is-offset-4">
+    <div class="box">
+      <h1 class="title has-text-grey-lighter">Login</h1>
 
-<nav class="level">
-  <div class="level-item has-text-centered">
-    <div>
-      <p class="title">
-        <a href="<%= Routes.oauth2_path(@conn, :authorize, "github") %>">
-          <span class="icon is-large"><i class="fab fa-lg fa-github"></i></span>
+      <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
+        <%= if redirect_path = assigns[:redirect] do %>
+          <%= hidden_input f, :redirect, value: redirect_path %>
+        <% end %>
+
+        <div class="field">
+          <label class="label">Username or Email</label>
+          <div class="control">
+            <%= text_input f, :login, class: "input" %>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">Password</label>
+          <div class="control">
+            <%= password_input f, :password, class: "input" %>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="control">
+            <%= submit "Login", class: "button is-success" %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="is-divider" data-content="OR"></div>
+
+      <div class="buttons is-centered">
+        <a class="button is-small github" href="<%= Routes.oauth2_path(@conn, :authorize, "github") %>">
+          <span class="icon"><i class="fab fa-lg fa-github"></i></span>
+          <span>GitHub</span>
         </a>
+        <a class="button is-small gitlab" disabled>
+          <span class="icon"><i class="fab fa-lg fa-gitlab"></i></span>
+          <span>GitLab</span>
+        </a>
+        <a class="button is-small bitbucket" disabled>
+          <span class="icon"><i class="fab fa-lg fa-bitbucket"></i></span>
+          <span>Bitbucket</span>
+        </a>
+      </div>
+
+      <hr />
+
+      <p class="is-size-7">
+        Don't have an account? <a href="<%= Routes.user_path(@conn, :new) %>">Register</a>
       </p>
-      <p class="heading">GitHub</p>
+
     </div>
   </div>
-</nav>
-
-<%= form_for @conn, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
-  <%= if redirect_path = assigns[:redirect] do %>
-    <%= hidden_input f, :redirect, value: redirect_path %>
-  <% end %>
-
-  <div class="field">
-    <label class="label">Login</label>
-    <div class="control">
-      <%= text_input f, :login, class: "input" %>
-    </div>
-  </div>
-
-  <div class="field">
-    <label class="label">Password</label>
-    <div class="control">
-      <%= password_input f, :password, class: "input" %>
-    </div>
-  </div>
-
-  <div class="field">
-    <div class="control">
-      <%= submit "Login", class: "button is-link" %>
-    </div>
-  </div>
-<% end %>
+</div>

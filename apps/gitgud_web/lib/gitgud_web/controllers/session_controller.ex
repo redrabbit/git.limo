@@ -7,6 +7,7 @@ defmodule GitGud.Web.SessionController do
 
   alias GitGud.Auth
 
+  plug :put_layout, :hero
   plug :ensure_authenticated when action == :delete
 
   action_fallback GitGud.Web.FallbackController
@@ -33,7 +34,7 @@ defmodule GitGud.Web.SessionController do
       |> redirect(to: session_params["redirect"] || Routes.user_path(conn, :show, user))
     else
       conn
-      |> put_flash(:error, "Wrong login credentials")
+      |> put_flash(:error, "Wrong login credentials.")
       |> put_status(:unauthorized)
       |> render("new.html", redirect: session_params["redirect"])
     end

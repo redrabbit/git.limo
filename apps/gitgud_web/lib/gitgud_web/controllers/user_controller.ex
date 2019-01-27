@@ -22,6 +22,7 @@ defmodule GitGud.Web.UserController do
 
   plug :ensure_authenticated when action in @settings_actions
 
+  plug :put_layout, :hero when action in [:new, :create]
   plug :put_layout, :user_profile when action == :show
   plug :put_layout, :user_settings when action in @settings_actions
 

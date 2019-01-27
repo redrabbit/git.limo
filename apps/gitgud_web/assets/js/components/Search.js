@@ -16,9 +16,9 @@ class Search extends React.Component {
   render() {
     return (
       <div className="search dropdown" ref={this.dropdown}>
-        <div className="control has-icons-right">
+        <div className="control has-icons-left">
           <input type="text" className="input" ref={this.inputContainer} onChange={this.handleInputChange} placeholder="Search ..." />
-          <span className="icon is-small is-right">
+          <span className="icon is-small is-left">
             <i className="fa fa-search"></i>
           </span>
         </div>

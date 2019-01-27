@@ -16,68 +16,58 @@
   </head>
 
   <body>
-    <nav class="navbar is-dark" role="navigation" aria-label="dropdown navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="<% Routes.landing_page_path(@conn, :index) %>">
-          <img src="<%= Routes.static_path(@conn, "/images/gitgud.svg") %>" width="28" height="28">
-        </a>
-
-        <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-      <div class="navbar-menu">
-        <div class="navbar-start">
-          <div class="navbar-item">
-            <%= react_component("Search") %>
-          </div>
-        </div>
-
-        <div class="navbar-end">
-          <%= if authenticated?(@conn) do %>
-            <div class="navbar-item has-dropdown is-hoverable">
-              <a class="navbar-link"><%= @current_user %></a>
-              <div class="navbar-dropdown is-right">
-                <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
-                <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>
-                <hr class="navbar-divider">
-                <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
-              </div>
+    <nav class="navbar is-spaced" role="navigation" aria-label="dropdown navigation">
+      <div class="container">
+        <div class="navbar-menu">
+          <div class="navbar-start">
+            <div class="navbar-item">
+              <%= react_component("Search") %>
             </div>
-          <% else %>
-            <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
-            <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
-          <% end %>
-        </div>
+          </div>
+
+          <div class="navbar-end">
+            <%= if authenticated?(@conn) do %>
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link"><%= gravatar(@current_user, size: 28) %> <%= @current_user.login %></a>
+                <div class="navbar-dropdown is-right">
+                  <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
+                  <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>
+                  <hr class="navbar-divider">
+                  <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
+                </div>
+              </div>
+            <% else %>
+              <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
+              <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
+            <% end %>
+          </div>
+          </div>
         </div>
       </div>
     </nav>
 
-    <main class="container">
-      <div class="section">
-        <%= if info = get_flash(@conn, :info) do %>
-          <article class="message is-primary is-small">
-            <div class="message-header">
-              <p>Info</p>
-              <button class="delete is-small" aria-label="delete"></button>
-            </div>
-            <div class="message-body"><%= info %></div>
-          </article>
-        <% end %>
-        <%= if error = get_flash(@conn, :error) do %>
-          <article class="message is-danger is-small">
-            <div class="message-header">
-              <p>Error</p>
-              <button class="delete is-small" aria-label="delete"></button>
-            </div>
-            <div class="message-body"><%= error %></div>
-          </article>
-        <% end %>
 
-        <%= render_inner_layout(@conn, assigns) %>
-      </div>
+    <main class="container">
+      <%= if info = get_flash(@conn, :info) do %>
+        <article class="message is-primary is-small">
+          <div class="message-header">
+            <p>Info</p>
+            <button class="delete is-small" aria-label="delete"></button>
+          </div>
+          <div class="message-body"><%= info %></div>
+        </article>
+      <% end %>
+      <%= if error = get_flash(@conn, :error) do %>
+        <article class="message is-danger is-small">
+          <div class="message-header">
+            <p>Error</p>
+            <button class="delete is-small" aria-label="delete"></button>
+          </div>
+          <div class="message-body"><%= error %></div>
+        </article>
+      <% end %>
+
+      <%= render_inner_layout(@conn, assigns) %>
     </main>
 
     <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>

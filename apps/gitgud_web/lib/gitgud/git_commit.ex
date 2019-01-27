@@ -6,6 +6,6 @@ end
 
 defimpl Phoenix.HTML.Safe, for: GitGud.GitCommit do
   def to_iodata(commit) do
-    Phoenix.HTML.Safe.to_iodata(content_tag(:span, GitRekt.Git.oid_fmt_short(commit.oid), class: "sha"))
+    Phoenix.HTML.Safe.to_iodata(content_tag(:span, GitRekt.Git.oid_fmt_short(commit.oid), class: "commit"))
   end
 end

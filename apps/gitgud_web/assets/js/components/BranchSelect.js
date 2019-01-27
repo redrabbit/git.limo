@@ -22,7 +22,7 @@ class BranchSelect extends React.Component {
       <div className="dropdown branch-select" ref={this.dropdown}>
         <div className="dropdown-trigger">
           <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
-            <span>{this.props.type.charAt(0).toUpperCase() + this.props.type.slice(1)}: <strong>{this.props.name}</strong></span>
+            <span>{this.props.type.charAt(0).toUpperCase() + this.props.type.slice(1)}: <span className="has-text-weight-semibold">{this.props.name}</span></span>
             <span className="icon is-small">
               <i className="fa fa-angle-down" aria-hidden="true"></i>
             </span>

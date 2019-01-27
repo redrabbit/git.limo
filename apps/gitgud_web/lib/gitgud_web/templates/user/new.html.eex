@@ -1,49 +1,64 @@
-<h1 class="title">Register</h1>
+<div class="columns">
+  <div class="column is-4 is-offset-4">
+    <div class="box">
+      <h1 class="title has-text-grey-lighter">Register</h1>
 
-<%= form_for @changeset, Routes.user_path(@conn, :create), [as: :user], fn f -> %>
-  <div class="field">
-    <%= label f, :login, "Username", class: "label" %>
-    <div class="control">
-      <%= text_input f, :login, class: "input" %>
-    </div>
-    <%= error_tag f, :login %>
-  </div>
+      <%= form_for @changeset, Routes.user_path(@conn, :create), [as: :user], fn f -> %>
+        <div class="field">
+          <%= label f, :login, "Username", class: "label" %>
+          <div class="control">
+            <%= text_input f, :login, class: "input" %>
+          </div>
+          <%= error_tag f, :login %>
+        </div>
 
-  <div class="field">
-    <%= label f, :name, class: "label" %>
-    <div class="control">
-      <%= text_input f, :name, class: "input" %>
-    </div>
-    <%= error_tag f, :name %>
-  </div>
+        <div class="field">
+          <%= label f, :name, class: "label" %>
+          <div class="control">
+            <%= text_input f, :name, class: "input" %>
+          </div>
+          <%= error_tag f, :name %>
+        </div>
 
-  <%= inputs_for f, :emails, fn fe -> %>
-    <div class="field">
-      <%= label fe, :address, "Email", class: "label" %>
-      <div class="control">
-        <%= email_input fe, :address, class: "input", readonly: readonly_email?(@changeset) %>
+        <%= inputs_for f, :emails, fn fe -> %>
+          <div class="field">
+            <%= label fe, :address, "Email", class: "label" %>
+            <div class="control">
+              <%= email_input fe, :address, class: "input", readonly: readonly_email?(@changeset) %>
+            </div>
+            <%= error_tag fe, :address %>
+          </div>
+        <% end %>
+
+        <%= inputs_for f, :auth, fn fa -> %>
+          <div class="field">
+            <%= label fa, :password, class: "label" %>
+            <div class="control">
+              <%= password_input fa, :password, class: "input" %>
+            </div>
+            <%= error_tag fa, :password %>
+          </div>
+
+          <%= inputs_for fa, :providers, fn fp -> %>
+            <%= hidden_input fp, :provider %>
+            <%= hidden_input fp, :provider_id %>
+            <%= hidden_input fp, :token %>
+          <% end %>
+        <% end %>
+
+        <div class="field">
+          <div class="control">
+            <%= submit "Create an account", class: "button is-success" %>
+          </div>
+        </div>
+      <% end %>
+
+      <hr />
+
+      <div class="is-size-7">
+        Already have an account? <a href="<%= Routes.session_path(@conn, :new) %>">Login</a>
       </div>
-      <%= error_tag fe, :address %>
+
     </div>
-  <% end %>
-
-  <%= inputs_for f, :auth, fn fa -> %>
-    <div class="field">
-      <%= label fa, :password, class: "label" %>
-      <div class="control">
-        <%= password_input fa, :password, class: "input" %>
-      </div>
-      <%= error_tag fa, :password %>
-    </div>
-
-    <%= inputs_for fa, :providers, fn fp -> %>
-      <%= hidden_input fp, :provider %>
-      <%= hidden_input fp, :provider_id %>
-      <%= hidden_input fp, :token %>
-    <% end %>
-  <% end %>
-
-  <div class="field">
-    <%= submit "Register", class: "button is-link" %>
   </div>
-<% end %>
+</div>
