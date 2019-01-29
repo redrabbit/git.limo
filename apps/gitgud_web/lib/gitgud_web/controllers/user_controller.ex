@@ -22,7 +22,7 @@ defmodule GitGud.Web.UserController do
 
   plug :ensure_authenticated when action in @settings_actions
 
-  plug :put_layout, :hero when action in [:new, :create]
+  plug :put_layout, :hero when action in [:new, :create, :reset_password, :send_password_reset]
   plug :put_layout, :user_profile when action == :show
   plug :put_layout, :user_settings when action in @settings_actions
 
@@ -37,9 +37,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    unless authenticated?(conn),
-      do: render(conn, "new.html", changeset: User.registration_changeset(%User{auth: %Auth{}, emails: [%Email{}]})),
-    else: redirect(conn, to: Routes.user_path(conn, :show, current_user(conn)))
+    render(conn, "new.html", changeset: User.registration_changeset(%User{auth: %Auth{}, emails: [%Email{}]}))
   end
 
   @doc """
@@ -53,7 +51,7 @@ defmodule GitGud.Web.UserController do
           GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
         |> put_session(:user_id, user.id)
-        |> put_flash(:info, "Welcome!")
+        |> put_flash(:info, "Welcome #{user.login}.")
         |> redirect(to: Routes.user_path(conn, :show, user))
       {:error, changeset} ->
         conn
@@ -84,16 +82,6 @@ defmodule GitGud.Web.UserController do
   end
 
   @doc """
-  Renders a password edit form.
-  """
-  @spec edit_password(Plug.Conn.t, map) :: Plug.Conn.t
-  def edit_password(conn, _params) do
-    user = DB.preload(current_user(conn), :auth)
-    changeset = User.password_changeset(user)
-    render(conn, "edit_password.html", user: user, changeset: changeset)
-  end
-
-  @doc """
   Updates a profile.
   """
   @spec update_profile(Plug.Conn.t, map) :: Plug.Conn.t
@@ -113,6 +101,16 @@ defmodule GitGud.Web.UserController do
   end
 
   @doc """
+  Renders a password edit form.
+  """
+  @spec edit_password(Plug.Conn.t, map) :: Plug.Conn.t
+  def edit_password(conn, _params) do
+    user = DB.preload(current_user(conn), :auth)
+    changeset = User.password_changeset(user)
+    render(conn, "edit_password.html", user: user, changeset: changeset)
+  end
+
+  @doc """
   Updates a password.
   """
   @spec update_password(Plug.Conn.t, map) :: Plug.Conn.t
@@ -129,5 +127,68 @@ defmodule GitGud.Web.UserController do
         |> put_status(:bad_request)
         |> render("edit_password.html", user: user, changeset: %{changeset|action: :update})
     end
+  end
+
+  @spec reset_password(Plug.Conn.t, map) :: Plug.Conn.t
+  def reset_password(conn, _params) do
+    render(conn, "reset_password.html", changeset: password_reset_email_changeset())
+  end
+
+  @spec send_password_reset(Plug.Conn.t, map) :: Plug.Conn.t
+  def send_password_reset(conn, %{"email" => email_params} = _params) do
+    changeset = password_reset_email_changeset(email_params)
+    if changeset.valid? do
+      email_address = changeset.params["address"]
+      if user = UserQuery.by_email(email_address, preload: :emails) do
+        if email = Enum.find(user.emails, &(&1.verified && &1.address == email_address)) do
+          GitGud.Mailer.deliver_later(GitGud.Mailer.password_reset_email(email))
+        end
+      end
+      conn
+      |> put_flash(:info, "A password reset email has been sent to '#{email_address}'.")
+      |> redirect(to: Routes.session_path(conn, :new))
+    else
+      conn
+      |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+      |> put_status(:bad_request)
+      |> render("reset_password.html", changeset: %{changeset|action: :insert})
+    end
+  end
+
+  @spec verify_password_reset(Plug.Conn.t, map) :: Plug.Conn.t
+  def verify_password_reset(conn, %{"token" => token} = _params) do
+    case Phoenix.Token.verify(conn, "reset-password", token, max_age: 86400) do
+      {:ok, user_id} ->
+        if user = UserQuery.by_id(user_id, preload: :auth) do
+          User.reset_password!(user)
+          conn
+          |> put_session(:user_id, user_id)
+          |> put_flash(:info, "Password has been reset. Please set a new password below.")
+          |> redirect(to: Routes.user_path(conn, :edit_password))
+        else
+          conn
+          |> put_flash(:error, "Invalid password reset user.")
+          |> redirect(to: Routes.session_path(conn, :new))
+        end
+      {:error, :invalid} ->
+        conn
+        |> put_flash(:error, "Invalid password reset token.")
+        |> redirect(to: Routes.session_path(conn, :new))
+      {:error, :expired} ->
+        conn
+        |> put_flash(:error, "Password reset token expired.")
+        |> redirect(to: Routes.session_path(conn, :new))
+    end
+  end
+
+  #
+  # Helpers
+  #
+
+  defp password_reset_email_changeset(email_params \\ %{}) do
+    %Email{}
+    |> Ecto.Changeset.cast(email_params, [:address])
+    |> Ecto.Changeset.validate_required([:address])
+    |> Ecto.Changeset.validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
   end
 end

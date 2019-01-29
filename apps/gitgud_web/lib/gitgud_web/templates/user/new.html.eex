@@ -56,7 +56,7 @@
       <hr />
 
       <div class="is-size-7">
-        Already have an account? <a href="<%= Routes.session_path(@conn, :new) %>">Login</a>
+        Already have an account? <a href="<%= Routes.session_path(@conn, :new) %>">Sign in</a>
       </div>
 
     </div>

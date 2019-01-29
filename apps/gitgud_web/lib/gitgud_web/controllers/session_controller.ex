@@ -17,9 +17,7 @@ defmodule GitGud.Web.SessionController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, params) do
-    unless authenticated?(conn),
-      do: render(conn, "new.html", redirect: params["redirect_to"]),
-    else: redirect(conn, to: Routes.user_path(conn, :show, current_user(conn)))
+    render(conn, "new.html", redirect: params["redirect_to"])
   end
 
   @doc """
@@ -30,7 +28,7 @@ defmodule GitGud.Web.SessionController do
     if user = Auth.check_credentials(session_params["login"], session_params["password"]) do
       conn
       |> put_session(:user_id, user.id)
-      |> put_flash(:info, "Logged in.")
+      |> put_flash(:info, "Welcome #{user.login}.")
       |> redirect(to: session_params["redirect"] || Routes.user_path(conn, :show, user))
     else
       conn

@@ -91,24 +91,27 @@ defmodule GitGud.Auth do
   defp validate_password(changeset) do
     changeset
     |> validate_length(:password, min: 6)
-    |> validate_confirmation(:password)
     |> put_password_hash(:password)
   end
 
   defp validate_old_password(%{data: data, params: params} = changeset) do
-    error_param = "old_password"
-    error_field = String.to_atom(error_param)
-    errors =
-      case Map.get(params, error_param) do
-        value when is_nil(value) or value == "" ->
-          [{error_field, {"can't be blank", [validation: :required]}}]
-        value ->
-          case check_pass(data, value) do
-            {:ok, _user} -> []
-            {:error, _reason} -> [{error_field, {"does not match old password", [validation: :old_password]}}]
-          end
-      end
-    %{changeset|validations: [{:old_password, []}|changeset.validations], errors: errors ++ changeset.errors, valid?: changeset.valid? and errors == []}
+    unless data.password_hash do
+      changeset
+    else
+      error_param = "old_password"
+      error_field = String.to_atom(error_param)
+      errors =
+        case Map.get(params, error_param) do
+          value when is_nil(value) or value == "" ->
+            [{error_field, {"can't be blank", [validation: :required]}}]
+          value ->
+            case check_pass(data, value) do
+              {:ok, _user} -> []
+              {:error, _reason} -> [{error_field, {"does not match old password", [validation: :old_password]}}]
+            end
+        end
+      %{changeset|validations: [{:old_password, []}|changeset.validations], errors: errors ++ changeset.errors, valid?: changeset.valid? and errors == []}
+    end
   end
 
   defp put_password_hash(changeset, field) do

@@ -40,6 +40,10 @@ defmodule GitGud.Web.Router do
     get "/register", UserController, :new
     post "/register", UserController, :create
 
+    get "/password/reset", UserController, :reset_password
+    post "/password/reset", UserController, :send_password_reset
+    get "/password/reset/:token", UserController, :verify_password_reset
+
     get "/settings/profile", UserController, :edit_profile
     put "/settings/profile", UserController, :update_profile
 
@@ -50,7 +54,7 @@ defmodule GitGud.Web.Router do
     post "/settings/emails", EmailController, :create
     put "/settings/emails", EmailController, :update
     delete "/settings/emails", EmailController, :delete
-    post "/settings/emails/verify", EmailController, :resend
+    post "/settings/emails/verify", EmailController, :send_verification
     get "/settings/emails/verify/:token", EmailController, :verify
 
     get "/settings/ssh", SSHKeyController, :index

@@ -44,7 +44,7 @@ defmodule GitGud.Web.EmailView do
   end
 
   defp verified_tag(conn, %User{id: user_id}, %Email{user_id: user_id} = email) do
-    form_for(conn, Routes.email_path(conn, :resend), [as: :email], &verified_tag_fields(&1, email))
+    form_for(conn, Routes.email_path(conn, :send_verification), [as: :email], &verified_tag_fields(&1, email))
   end
 
   defp verified_tag(_conn, %User{}, %Email{}), do: nil

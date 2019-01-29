@@ -22,9 +22,12 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field is-grouped">
           <div class="control">
             <%= submit "Login", class: "button is-success" %>
+          </div>
+          <div class="control">
+            <a class="button is-text" href="<%= Routes.user_path(@conn, :reset_password) %>">Forgot password?</a>
           </div>
         </div>
       <% end %>
@@ -49,7 +52,7 @@
       <hr />
 
       <p class="is-size-7">
-        Don't have an account? <a href="<%= Routes.user_path(@conn, :new) %>">Register</a>
+        Don't have an account? <a href="<%= Routes.user_path(@conn, :new) %>">Sign up</a>
       </p>
 
     </div>

@@ -39,8 +39,8 @@ defmodule GitGud.Web.EmailController do
         |> redirect(to: Routes.email_path(conn, :edit))
       {:error, changeset} ->
         conn
-        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
+        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
     end
   end
@@ -76,7 +76,7 @@ defmodule GitGud.Web.EmailController do
     user = DB.preload(current_user(conn), :emails)
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
-      email = Email.delete!(email)
+      Email.delete!(email)
       conn
       |> put_flash(:info, "Email '#{email.address}' deleted.")
       |> redirect(to: Routes.email_path(conn, :edit))
@@ -86,10 +86,10 @@ defmodule GitGud.Web.EmailController do
   end
 
   @doc """
-  Re-sends a verification email.
+  Sends a verification email.
   """
-  @spec resend(Plug.Conn.t, map) :: Plug.Conn.t
-  def resend(conn, %{"email" => email_params} = _params) do
+  @spec send_verification(Plug.Conn.t, map) :: Plug.Conn.t
+  def send_verification(conn, %{"email" => email_params} = _params) do
     user = DB.preload(current_user(conn), :emails)
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
@@ -112,7 +112,7 @@ defmodule GitGud.Web.EmailController do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do
-            email = Email.verify!(email)
+            Email.verify!(email)
             conn
             |> put_flash(:info, "Email '#{email.address}' verified.")
             |> redirect(to: Routes.email_path(conn, :edit))
@@ -123,17 +123,20 @@ defmodule GitGud.Web.EmailController do
           end
         else
           conn
-          |> put_flash(:error, "Invalid verification token.")
-          |> redirect(to: Routes.email_path(conn, :edit))
+          |> put_status(:bad_request)
+          |> put_flash(:error, "Invalid verification email.")
+          |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
         end
       {:error, :invalid} ->
         conn
+        |> put_status(:bad_request)
         |> put_flash(:error, "Invalid verification token.")
-        |> redirect(to: Routes.email_path(conn, :edit))
+        |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
       {:error, :expired} ->
         conn
+        |> put_status(:bad_request)
         |> put_flash(:error, "Verification token expired.")
-        |> redirect(to: Routes.email_path(conn, :edit))
+        |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
     end
   end
 end

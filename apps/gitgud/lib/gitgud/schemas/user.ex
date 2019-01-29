@@ -120,6 +120,22 @@ defmodule GitGud.User do
   end
 
   @doc """
+  Resets the given `user`'s password.
+  """
+  @spec reset_password(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def reset_password(%__MODULE__{} = user) do
+    DB.update(password_reset_changeset(user))
+  end
+
+  @doc """
+  Similar to `reset_password/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec reset_password!(t) :: t
+  def reset_password!(%__MODULE__{} = user) do
+    DB.update!(password_reset_changeset(user))
+  end
+
+  @doc """
   Deletes the given `user`.
 
   User associations (emails, repositories, etc.) will automatically be deleted.
@@ -155,7 +171,7 @@ defmodule GitGud.User do
   @doc """
   Returns a profile changeset for the given `params`.
   """
-  @spec profile_changeset(map) :: Ecto.Changeset.t
+  @spec profile_changeset(t, map) :: Ecto.Changeset.t
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [:name, :public_email_id, :bio, :url, :location])
@@ -166,11 +182,16 @@ defmodule GitGud.User do
   @doc """
   Returns a password changeset for the given `params`.
   """
-  @spec password_changeset(map) :: Ecto.Changeset.t
+  @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [])
     |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
+  end
+
+  @spec password_reset_changeset(t) :: Ecto.Changeset.t
+  def password_reset_changeset(%__MODULE__{} = user) do
+    change(user, auth: change(user.auth, password_hash: nil))
   end
 
   #
