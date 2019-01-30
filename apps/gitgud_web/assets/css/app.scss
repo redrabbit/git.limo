@@ -66,6 +66,21 @@ nav.navbar {
   }
 }
 
+@keyframes slideDown {
+    0%, 100% { transform: translateY(-100px); }
+    5%, 95% { transform: translateY(0px); }
+}
+
+.message {
+  position: fixed;
+  right: 1.5rem;
+  top: 1.5rem;
+  z-index: 99;
+  min-width: 20rem;
+  transform: translateY(-100px);
+  animation: slideDown 6s 0 1 ease forwards;
+}
+
 .commit {
   font-family: $family-monospace;
 }
