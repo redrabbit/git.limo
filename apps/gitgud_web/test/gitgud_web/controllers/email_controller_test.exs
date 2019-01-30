@@ -57,7 +57,7 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.email_path(conn, :verify, "abcdefg"))
     assert get_flash(conn, :error) == "Invalid verification token."
-    assert redirected_to(conn) == Routes.email_path(conn, :edit)
+    assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
   end
 
   describe "when emails exist" do

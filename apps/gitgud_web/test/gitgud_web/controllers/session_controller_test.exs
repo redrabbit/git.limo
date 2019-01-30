@@ -7,7 +7,7 @@ defmodule GitGud.Web.SessionControllerTest do
 
   test "renders login form", %{conn: conn} do
     conn = get(conn, Routes.session_path(conn, :new))
-    assert html_response(conn, 200) =~ ~s(<h1 class="title">Login</h1>)
+    assert html_response(conn, 200) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
   end
 
   describe "when user exists" do
@@ -15,20 +15,20 @@ defmodule GitGud.Web.SessionControllerTest do
 
     test "creates session with valid credentials", %{conn: conn, user: user} do
       conn = post(conn, Routes.session_path(conn, :create), session: %{login: hd(user.emails).address, password: "qwertz"})
-      assert get_flash(conn, :info) == "Logged in."
+      assert get_flash(conn, :info) == "Welcome #{user.login}."
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
       conn = post(conn, Routes.session_path(conn, :create), session: %{login: user.login, password: "qwertz"})
-      assert get_flash(conn, :info) == "Logged in."
+      assert get_flash(conn, :info) == "Welcome #{user.login}."
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
     end
 
     test "fails to create session with invalid credentials", %{conn: conn, user: user} do
       conn = post(conn, Routes.session_path(conn, :create), session: %{login: hd(user.emails).address, password: "qwerty"})
-      assert get_flash(conn, :error) == "Wrong login credentials"
-      assert html_response(conn, 401) =~ ~s(<h1 class="title">Login</h1>)
+      assert get_flash(conn, :error) == "Wrong login credentials."
+      assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
       conn = post(conn, Routes.session_path(conn, :create), session: %{login: user.login, password: "qwerty"})
-      assert get_flash(conn, :error) == "Wrong login credentials"
-      assert html_response(conn, 401) =~ ~s(<h1 class="title">Login</h1>)
+      assert get_flash(conn, :error) == "Wrong login credentials."
+      assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
     end
 
     test "deletes session", %{conn: conn, user: user} do
