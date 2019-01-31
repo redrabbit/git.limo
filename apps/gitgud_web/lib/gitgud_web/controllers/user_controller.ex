@@ -129,11 +129,17 @@ defmodule GitGud.Web.UserController do
     end
   end
 
+  @doc """
+  Renders a password reset form.
+  """
   @spec reset_password(Plug.Conn.t, map) :: Plug.Conn.t
   def reset_password(conn, _params) do
     render(conn, "reset_password.html", changeset: password_reset_changeset())
   end
 
+  @doc """
+  Sends a password reset email.
+  """
   @spec send_password_reset(Plug.Conn.t, map) :: Plug.Conn.t
   def send_password_reset(conn, %{"email" => email_params} = _params) do
     changeset = password_reset_changeset(email_params)
@@ -155,6 +161,9 @@ defmodule GitGud.Web.UserController do
     end
   end
 
+  @doc """
+  Resets a password using a bearer token.
+  """
   @spec verify_password_reset(Plug.Conn.t, map) :: Plug.Conn.t
   def verify_password_reset(conn, %{"token" => token} = _params) do
     case Phoenix.Token.verify(conn, "reset-password", token, max_age: 86400) do

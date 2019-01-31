@@ -124,7 +124,7 @@ defmodule GitGud.User do
   """
   @spec reset_password(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def reset_password(%__MODULE__{} = user) do
-    DB.update(password_reset_changeset(user))
+    DB.update(change(user, auth: change(user.auth, password_hash: nil)))
   end
 
   @doc """
@@ -132,7 +132,7 @@ defmodule GitGud.User do
   """
   @spec reset_password!(t) :: t
   def reset_password!(%__MODULE__{} = user) do
-    DB.update!(password_reset_changeset(user))
+    DB.update!(change(user, auth: change(user.auth, password_hash: nil)))
   end
 
   @doc """
@@ -175,6 +175,7 @@ defmodule GitGud.User do
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [:name, :public_email_id, :bio, :url, :location])
+    |> validate_required([:name])
     |> assoc_constraint(:public_email)
     |> validate_url()
   end
@@ -187,11 +188,6 @@ defmodule GitGud.User do
     user
     |> cast(params, [])
     |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
-  end
-
-  @spec password_reset_changeset(t) :: Ecto.Changeset.t
-  def password_reset_changeset(%__MODULE__{} = user) do
-    change(user, auth: change(user.auth, password_hash: nil))
   end
 
   #

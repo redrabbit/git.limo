@@ -103,7 +103,7 @@ defmodule GitGud.Web.EmailController do
   end
 
   @doc """
-  Verifies an email address.
+  Verifies an email address using a bearer token.
   """
   @spec verify(Plug.Conn.t, map) :: Plug.Conn.t
   def verify(conn, %{"token" => token} = _params) do

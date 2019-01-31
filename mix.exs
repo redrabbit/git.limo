@@ -94,6 +94,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.ErrorHelpers,
           GitGud.Web.ErrorView,
           GitGud.Web.FallbackController,
+          GitGud.Web.FormValidation,
           GitGud.Web.Gettext,
           GitGud.Web.Gravatar,
           GitGud.Web.LandingPageController,
