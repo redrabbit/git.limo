@@ -30,18 +30,19 @@ defmodule GitGud.Web do
   def view do
     quote do
       use Phoenix.View, root: "lib/gitgud_web/templates", namespace: GitGud.Web
-
-      import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
-
       use Phoenix.HTML
+
+      use GitGud.Web.FormValidation
 
       alias GitGud.Web.Router.Helpers, as: Routes
 
-      import GitGud.Authorization, only: [authorized?: 3]
+      import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
 
+      import GitGud.Authorization, only: [authorized?: 3]
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, authentication_token: 1, current_user: 1]
+
       import GitGud.Web.DateTimeFormatter
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
