@@ -3,7 +3,7 @@
     <div class="box">
       <h1 class="title has-text-grey-lighter">Login</h1>
 
-      <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
+      <%= form_for @changeset, Routes.session_path(@conn, :create), [as: :session], fn f -> %>
         <%= if redirect_path = assigns[:redirect] do %>
           <%= hidden_input f, :redirect, value: redirect_path %>
         <% end %>
@@ -11,7 +11,7 @@
         <div class="field">
           <label class="label">Username or Email</label>
           <div class="control">
-            <%= text_input f, :login, class: "input" %>
+            <%= text_input f, :login_or_email, class: "input" %>
           </div>
         </div>
 

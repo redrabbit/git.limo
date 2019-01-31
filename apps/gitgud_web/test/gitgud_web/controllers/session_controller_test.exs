@@ -14,19 +14,19 @@ defmodule GitGud.Web.SessionControllerTest do
     setup :create_user
 
     test "creates session with valid credentials", %{conn: conn, user: user} do
-      conn = post(conn, Routes.session_path(conn, :create), session: %{login: hd(user.emails).address, password: "qwertz"})
+      conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: hd(user.emails).address, password: "qwertz"})
       assert get_flash(conn, :info) == "Welcome #{user.login}."
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
-      conn = post(conn, Routes.session_path(conn, :create), session: %{login: user.login, password: "qwertz"})
+      conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: user.login, password: "qwertz"})
       assert get_flash(conn, :info) == "Welcome #{user.login}."
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
     end
 
     test "fails to create session with invalid credentials", %{conn: conn, user: user} do
-      conn = post(conn, Routes.session_path(conn, :create), session: %{login: hd(user.emails).address, password: "qwerty"})
+      conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: hd(user.emails).address, password: "qwerty"})
       assert get_flash(conn, :error) == "Wrong login credentials."
       assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
-      conn = post(conn, Routes.session_path(conn, :create), session: %{login: user.login, password: "qwerty"})
+      conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: user.login, password: "qwerty"})
       assert get_flash(conn, :error) == "Wrong login credentials."
       assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
     end

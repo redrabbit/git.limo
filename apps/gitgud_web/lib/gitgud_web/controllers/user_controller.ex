@@ -131,12 +131,12 @@ defmodule GitGud.Web.UserController do
 
   @spec reset_password(Plug.Conn.t, map) :: Plug.Conn.t
   def reset_password(conn, _params) do
-    render(conn, "reset_password.html", changeset: password_reset_email_changeset())
+    render(conn, "reset_password.html", changeset: password_reset_changeset())
   end
 
   @spec send_password_reset(Plug.Conn.t, map) :: Plug.Conn.t
   def send_password_reset(conn, %{"email" => email_params} = _params) do
-    changeset = password_reset_email_changeset(email_params)
+    changeset = password_reset_changeset(email_params)
     if changeset.valid? do
       email_address = changeset.params["address"]
       if user = UserQuery.by_email(email_address, preload: :emails) do
@@ -185,9 +185,9 @@ defmodule GitGud.Web.UserController do
   # Helpers
   #
 
-  defp password_reset_email_changeset(email_params \\ %{}) do
+  defp password_reset_changeset(params \\ %{}) do
     %Email{}
-    |> Ecto.Changeset.cast(email_params, [:address])
+    |> Ecto.Changeset.cast(params, [:address])
     |> Ecto.Changeset.validate_required([:address])
     |> Ecto.Changeset.validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
   end
