@@ -61,7 +61,7 @@ defmodule GitGud.Web do
       import Plug.Conn
       import Phoenix.Controller
 
-      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2, ensure_authenticated: 2]
+      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2]
     end
   end
 
