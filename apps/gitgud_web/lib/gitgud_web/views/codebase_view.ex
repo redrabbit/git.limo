@@ -133,6 +133,18 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
+  @spec tree_entries(GitTree.t) :: binary | nil
+  def tree_readme(%GitTree{} = tree) do
+    with {:ok, entry} <- IO.inspect(GitTree.by_path(tree, "README.md")),
+         {:ok, blob} <- GitTreeEntry.target(entry),
+         {:ok, content} <- GitBlob.content(blob),
+         {:ok, html, []} <- Earmark.as_html(content) do
+      html
+    else
+      {:error, _reason} -> nil
+    end
+  end
+
   @spec diff_stats(GitDiff.t) :: map | nil
   def diff_stats(%GitDiff{} = diff) do
     case GitDiff.stats(diff) do

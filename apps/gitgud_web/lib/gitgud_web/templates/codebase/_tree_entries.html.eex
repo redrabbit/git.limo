@@ -1,4 +1,4 @@
-<table class="table is-hoverable is-fullwidth">
+<table class="table is-hoverable is-bordered is-striped is-fullwidth">
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
@@ -16,3 +16,14 @@
     <% end %>
   <tbody>
 </table>
+
+<%= if readme = tree_readme(@tree) do %>
+  <div class="card">
+    <header class="card-header">
+      <p class="card-header-title">README</p>
+    </header>
+    <div class="card-content">
+      <div class="content"><%= raw readme %></div>
+    </div>
+  </div>
+<% end %>

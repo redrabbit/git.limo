@@ -44,6 +44,7 @@ defmodule GitGud.Web.Mixfile do
      {:bamboo, github: "thoughtbot/bamboo"},
      {:gettext, "~> 0.15"},
      {:timex, "~> 3.4"},
+     {:earmark, "~> 1.3"},
      {:gitgud, in_umbrella: true}]
   end
 

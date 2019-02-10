@@ -105,13 +105,12 @@ nav.navbar {
   }
 }
 
-.content {
-  font-size: .9rem;
-}
-
 .repo-grid {
   .card {
     width: 100%;
+    .content {
+      font-size: .9rem;
+    }
   }
 }
 
