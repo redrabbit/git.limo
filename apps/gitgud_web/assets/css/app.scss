@@ -10,6 +10,8 @@ $family-secondary: "Fira Sans", sans-serif;
 
 $hr-background-color: $grey-lighter;
 
+$navbar-item-img-max-height: 3rem;
+
 $widescreen-enabled: false;
 $fullhd-enabled: false;
 
@@ -49,6 +51,12 @@ nav.navbar {
     .dropdown-menu {
       width: 18rem;
     }
+  }
+}
+
+.hero {
+  .hero-banner {
+    position: absolute;
   }
 }
 

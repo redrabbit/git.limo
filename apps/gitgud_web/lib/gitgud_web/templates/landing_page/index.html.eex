@@ -1,7 +1,28 @@
-<section class="hero">
-  <div class="hero-body">
-    <div class="container">
-      <h1 class="title">Hello</h1>
+<div class="hero is-bold">
+  <div class="container hero-body">
+    <div class="columns">
+      <div class="column vertical-center">
+        <div class="hero-text">
+          <h1 class="title is-size-1 is-spaced">
+            <span>Code collaboration</span>
+            <span>for dev teams.</span>
+          </h1>
+
+          <h2 class="subtitle">A Git source code management tool powered by Elixir with easy installation & high extensibility.</h2>
+
+          <a href="<%= Routes.session_path(@conn, :new) %>" class="button is-primary is-medium is-uppercase has-text-weight-bold">Get started</a>
+
+          <hr />
+
+          <p class="is-size-7">
+            <span class="icon has-text-danger"><i class="fa fa-heart"></i></span>
+            GitLimo is open source and available under the MIT License.
+          </p>
+        </div>
+      </div>
+      <div class="column vertical-center">
+        <img class="hero-banner" src="<%= Routes.static_path(@conn, "/images/banner-circuit-right.svg") %>" alt="hero">
+      </div>
     </div>
   </div>
-</section>
+</div>
