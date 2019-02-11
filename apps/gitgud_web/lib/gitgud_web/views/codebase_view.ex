@@ -135,7 +135,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec tree_entries(GitTree.t) :: binary | nil
   def tree_readme(%GitTree{} = tree) do
-    with {:ok, entry} <- IO.inspect(GitTree.by_path(tree, "README.md")),
+    with {:ok, entry} <- GitTree.by_path(tree, "README.md"),
          {:ok, blob} <- GitTreeEntry.target(entry),
          {:ok, content} <- GitBlob.content(blob),
          {:ok, html, []} <- Earmark.as_html(content) do
