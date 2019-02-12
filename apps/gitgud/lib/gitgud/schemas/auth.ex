@@ -14,7 +14,7 @@ defmodule GitGud.Auth do
 
   alias GitGud.Auth.Provider
 
-  import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2, checkpw: 2]
+  import Argon2, only: [add_hash: 1, check_pass: 2, verify_pass: 2]
 
   schema "authentications" do
     belongs_to :user, User
@@ -55,7 +55,7 @@ defmodule GitGud.Auth do
        or_where: e.address == ^email_or_login and e.verified == true,
         preload: [auth: a, emails: e]
     user = DB.one(query)
-    if user && checkpw(password, user.auth.password_hash), do: user
+    if user && verify_pass(password, user.auth.password_hash), do: user
   end
 
   @doc """

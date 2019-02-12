@@ -9,7 +9,7 @@ defmodule GitGud.UserTest do
   test "creates a new user with valid params" do
     assert {:ok, user} = User.create(factory(:user))
     assert is_nil(user.auth.password)
-    assert String.starts_with?(user.auth.password_hash, "$argon2i$")
+    assert String.starts_with?(user.auth.password_hash, "$argon2id$")
   end
 
   test "fails to create a new user with invalid login" do
