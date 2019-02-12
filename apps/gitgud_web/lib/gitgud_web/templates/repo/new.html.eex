@@ -30,6 +30,8 @@
     </div>
   </div>
 
+  <hr />
+
   <div class="field">
     <%= submit "Create repository", class: "button is-link" %>
   </div>

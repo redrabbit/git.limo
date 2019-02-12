@@ -7,78 +7,82 @@
 </div>
 
 <%= unless Enum.empty?(@user.emails) do %>
-  <nav class="panel">
-    <%= for email <- @user.emails do %>
-      <div class="panel-block">
-        <div class="level" style="width:100%">
-          <div class="level-left">
-            <div class="level-item"><%= email.address %></div>
-            <div class="level-item"><%= email_tags(@conn, @user, email) %></div>
-          </div>
-          <%= if email.id != @user.primary_email_id do %>
-            <div class="level-right">
-              <div class="level-item">
-                <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
-                  <%= hidden_input(f, :id, value: email.id) %>
-                  <button type="submit" class="delete"></button>
-                <% end %>
+  <table class="table is-fullwidth has-outer-border">
+    <tbody>
+      <%= for email <- @user.emails do %>
+        <tr>
+          <td>
+            <div class="field is-horizontal">
+              <div class="field-label"><%= email.address %></div>
+              <div class="field-body"><%= email_tags(@conn, @user, email) %></div>
+            </div>
+          </td>
+          <td class="is-narrow is-vcentered">
+            <%= if email.id != @user.primary_email_id do %>
+              <%= form_for @conn, Routes.email_path(@conn, :delete), [method: :delete, as: :email], fn f -> %>
+                <%= hidden_input(f, :id, value: email.id) %>
+                <button type="submit" class="delete"></button>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<div class="columns">
+  <div class="column is-half">
+    <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
+      <%= unless Enum.empty?(verified_emails) do %>
+        <%= form_for @conn, Routes.email_path(@conn, :update), [method: :put, as: :primary_email], fn f -> %>
+          <div class="field">
+            <%= label f, :id, "Primary email address", class: "label" %>
+            <div class="field is-grouped">
+              <div class="control is-expanded">
+                <div class="select is-fullwidth">
+                  <%= select f, :id, verified_emails, selected: @user.primary_email_id %>
+                </div>
+              </div>
+              <div class="control">
+                <%= submit "Save", class: "button is-link" %>
               </div>
             </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
-  </nav>
-<% end %>
-
-<%= form_for @changeset, Routes.email_path(@conn, :create), [as: :email], fn f -> %>
-  <div class="field">
-    <%= label f, :address, "Add email address", class: "label" %>
-    <div class="field is-grouped">
-      <div class="control is-expanded">
-        <%= email_input f, :address, class: "input" %>
-      </div>
-      <div class="control">
-        <%= submit "Add", class: "button is-link" %>
-      </div>
-    </div>
-    <%= error_tag f, :address %>
-  </div>
-<% end %>
-
-<hr />
-
-<%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
-  <%= unless Enum.empty?(verified_emails) do %>
-    <%= form_for @conn, Routes.email_path(@conn, :update), [method: :put, as: :primary_email], fn f -> %>
-      <div class="field">
-        <%= label f, :id, "Primary email address", class: "label" %>
-        <div class="field is-grouped">
-          <div class="control">
-            <div class="select">
-              <%= select f, :id, verified_emails, selected: @user.primary_email_id %>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="field">
+          <label class="label" for="primary_email_id">Primary email address</label>
+          <div class="field is-grouped">
+            <div class="control">
+              <div class="select">
+                <select id="primary_email_id" disabled>
+                  <option>Verify an email address first</option>
+                </select>
+              </div>
+            </div>
+            <div class="control">
+              <%= submit "Save", class: "button is-link", disabled: true %>
             </div>
           </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+  <div class="column is-half">
+    <%= form_for @changeset, Routes.email_path(@conn, :create), [as: :email], fn f -> %>
+      <div class="field">
+        <%= label f, :address, "Add email address", class: "label" %>
+        <div class="field is-grouped">
+          <div class="control is-expanded">
+            <%= email_input f, :address, class: "input" %>
+          </div>
           <div class="control">
-            <%= submit "Save", class: "button is-link" %>
+            <%= submit "Add", class: "button is-success" %>
           </div>
         </div>
+        <%= error_tag f, :address %>
       </div>
     <% end %>
-  <% else %>
-    <div class="field">
-      <label class="label" for="primary_email_id">Primary email address</label>
-      <div class="field is-grouped">
-        <div class="control">
-          <div class="select">
-            <select id="primary_email_id" disabled>
-              <option>Verify an email address first</option>
-            </select>
-          </div>
-        </div>
-        <div class="control">
-          <%= submit "Save", class: "button is-link", disabled: true %>
-        </div>
-      </div>
-  <% end %>
-<% end %>
+  </div>
+</div>

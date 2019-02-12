@@ -13,25 +13,21 @@
   <% end %>
 </div>
 
-<div class="repo-grid">
-  <%= if Enum.empty?(@user.repos) do %>
-    Nothing to see here.
-  <% else %>
-    <%= for chunk <- Enum.chunk_every(@user.repos, 2) do %>
-      <div class="columns">
-      <%= for repo <- chunk do %>
-        <div class="column is-half is-flex">
-          <div class="card">
-            <header class="card-header">
-              <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
-            </header>
-            <div class="card-content">
-              <div class="content"><%= repo.description %></div>
-            </div>
+<%= if Enum.empty?(@user.repos) do %>
+  Nothing to see here.
+<% else %>
+  <%= for repo <- @user.repos do %>
+    <div class="columns">
+      <div class="column is-full">
+        <div class="repo card">
+          <header class="card-header">
+            <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+          </header>
+          <div class="card-content">
+            <div class="content"><%= repo.description %></div>
           </div>
         </div>
-      <% end %>
       </div>
-    <% end %>
+    </div>
   <% end %>
-</div>
+<% end %>

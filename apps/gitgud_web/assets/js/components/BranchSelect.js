@@ -69,9 +69,9 @@ class BranchSelect extends React.Component {
               <nav className="panel">
                 <div className="panel-heading">
                   <p className="control has-icons-left">
-                    <input className="input is-small" value={this.state.filter} type="text" placeholder="search" onChange={this.handleSearch} />
+                    <input className="input is-small" value={this.state.filter} type="text" placeholder="Filter ..." onChange={this.handleSearch} />
                     <span className="icon is-small is-left">
-                      <i className="fa fa-search" aria-hidden="true"></i>
+                      <i className="fa fa-filter" aria-hidden="true"></i>
                     </span>
                   </p>
                 </div>
@@ -86,6 +86,9 @@ class BranchSelect extends React.Component {
                 ).map(edge =>
                   <a key={edge.node.oid} href={edge.node.url} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                 )}
+                <div className="panel-block">
+                  <a className="button is-small is-light is-fullwidth">reset all filters</a>
+                </div>
               </nav>
             )
           }

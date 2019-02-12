@@ -1,62 +1,71 @@
 <h2 class="subtitle">Profile</h2>
 
-<%= form_for @changeset, Routes.user_path(@conn, :update_profile), [as: :profile], fn f -> %>
-  <div class="field">
-    <%= label f, :name, class: "label" %>
-    <div class="control">
-      <%= text_input f, :name, class: "input" %>
-    </div>
-    <%= error_tag f, :name %>
-  </div>
-
-  <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
-    <%= unless Enum.empty?(verified_emails) do %>
-    <div class="field">
-      <%= label f, :public_email_id, "Public email address", class: "label" %>
-      <div class="control">
-        <div class="select">
-          <%= select f, :public_email_id, verified_emails, prompt: "Don't show my email address", selected: @user.public_email_id %>
-        </div>
-      </div>
-    </div>
-    <% else %>
+<div class="columns">
+  <div class="column is-two-thirds">
+    <%= form_for @changeset, Routes.user_path(@conn, :update_profile), [as: :profile], fn f -> %>
       <div class="field">
-        <label class="label" for="profile_public_email_id">Public email address</label>
-          <div class="control">
-            <div class="select">
-              <select id="profile_public_email_id" disabled>
-                <option>Verify an email address first</option>
-              </select>
-            </div>
+        <%= label f, :name, class: "label" %>
+        <div class="control">
+          <%= text_input f, :name, class: "input" %>
         </div>
+        <%= error_tag f, :name %>
+      </div>
+
+      <%= with verified_emails <- Enum.map(Enum.filter(@user.emails, &(&1.verified)), &{&1.address, &1.id}) do %>
+        <%= unless Enum.empty?(verified_emails) do %>
+        <div class="field">
+          <%= label f, :public_email_id, "Public email address", class: "label" %>
+          <div class="control is-expanded">
+            <div class="select is-fullwidth">
+              <%= select f, :public_email_id, verified_emails, prompt: "Don't show my email address", selected: @user.public_email_id %>
+            </div>
+          </div>
+        </div>
+        <% else %>
+          <div class="field">
+            <label class="label" for="profile_public_email_id">Public email address</label>
+              <div class="control is-expanded">
+                <div class="select is-fullwidth">
+                  <select id="profile_public_email_id" disabled>
+                    <option>Verify an email address first</option>
+                  </select>
+                </div>
+            </div>
+        <% end %>
+      <% end %>
+
+      <div class="field">
+        <%= label f, :bio, class: "label" %>
+        <div class="control">
+          <%= textarea f, :bio, class: "textarea" %>
+        </div>
+        <%= error_tag f, :bio %>
+      </div>
+
+      <div class="field">
+        <%= label f, :url, "Website", class: "label" %>
+        <div class="control">
+          <%= text_input f, :url, class: "input" %>
+        </div>
+        <%= error_tag f, :url %>
+      </div>
+
+      <div class="field">
+        <%= label f, :location, class: "label" %>
+        <div class="control">
+          <%= text_input f, :location, class: "input" %>
+        </div>
+        <%= error_tag f, :location %>
+      </div>
+
+      <hr />
+
+      <div class="field">
+        <%= submit "Update profile", class: "button is-link" %>
+      </div>
     <% end %>
-  <% end %>
-
-  <div class="field">
-    <%= label f, :bio, class: "label" %>
-    <div class="control">
-      <%= textarea f, :bio, class: "textarea" %>
-    </div>
-    <%= error_tag f, :bio %>
   </div>
-
-  <div class="field">
-    <%= label f, :url, "Website", class: "label" %>
-    <div class="control">
-      <%= text_input f, :url, class: "input" %>
-    </div>
-    <%= error_tag f, :url %>
+  <div class="column is-one-third">
+    <%= gravatar(@user, size: 516) %>
   </div>
-
-  <div class="field">
-    <%= label f, :location, class: "label" %>
-    <div class="control">
-      <%= text_input f, :location, class: "input" %>
-    </div>
-    <%= error_tag f, :location %>
-  </div>
-
-  <div class="field">
-    <%= submit "Update profile", class: "button is-link" %>
-  </div>
-<% end %>
+</div>

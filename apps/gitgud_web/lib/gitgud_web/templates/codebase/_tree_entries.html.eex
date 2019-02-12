@@ -1,4 +1,4 @@
-<table class="table is-hoverable is-bordered is-striped is-fullwidth">
+<table class="table is-hoverable is-striped is-fullwidth has-outer-border">
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
@@ -7,11 +7,7 @@
     <% end %>
     <%= for entry <- tree_entries(@tree) do %>
       <tr>
-        <td>
-          <a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>">
-            <%= entry %>
-          </a>
-        </td>
+        <td><a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
       </tr>
     <% end %>
   <tbody>

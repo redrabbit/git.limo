@@ -8,8 +8,6 @@ $family-sans-serif: "Work Sans", sans-serif;
 $family-primary: $family-sans-serif;
 $family-secondary: "Fira Sans", sans-serif;
 
-$hr-background-color: $grey-lighter;
-
 $navbar-item-img-max-height: 3rem;
 
 $widescreen-enabled: false;
@@ -21,6 +19,7 @@ $fullhd-enabled: false;
 @import "~bulma/sass/grid/_all";
 @import "~bulma/sass/layout/_all";
 
+$divider-background-color: $white-ter;
 $divider-thickness: $hr-height;
 
 @import "~bulma-divider/src/sass/index";
@@ -31,8 +30,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~@fortawesome/fontawesome-free/scss/brands";
 @import "~@fortawesome/fontawesome-free/scss/solid";
 
-main {
-  padding: 2rem 0.75rem;
+main.container {
+  padding: 2rem 0 2rem 4.5rem;
 }
 
 nav.navbar {
@@ -54,9 +53,22 @@ nav.navbar {
   }
 }
 
+table.table {
+  &.has-outer-border {
+    border: 1px solid $grey-lighter;
+  }
+
+  tr td.is-vcentered {
+    vertical-align: middle;
+  }
+}
+
 .hero {
-  .hero-banner {
-    position: absolute;
+  .hero-body {
+    padding: 3rem 0;
+    .hero-banner {
+      position: absolute;
+    }
   }
 }
 
@@ -86,7 +98,7 @@ nav.navbar {
   z-index: 99;
   min-width: 20rem;
   transform: translateY(-100px);
-  animation: slideDown 6s 0 1 ease forwards;
+  animation: slideDown 4s 0 1 ease forwards;
 }
 
 .commit {
@@ -113,29 +125,25 @@ nav.navbar {
   }
 }
 
-.repo-grid {
-  .card {
-    width: 100%;
-    .content {
-      font-size: .9rem;
-    }
-  }
-}
-
 .dropdown.branch-select {
   .dropdown-menu {
     .panel {
       background-color: $dropdown-content-background-color;
     }
     .panel-block {
-      font-size: 0.8rem;
+      font-size: 0.875em;
+
+      &:last-child {
+        border-bottom-left-radius: $radius;
+        border-bottom-right-radius: $radius;
+      }
     }
   }
 }
 
 .dropdown.clone {
   .dropdown-menu {
-    width: 300px;
+    width: 20rem;
   }
 }
 

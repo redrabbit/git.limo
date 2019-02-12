@@ -40,7 +40,7 @@ class UserInput extends React.Component {
               </div>
             </div>
             <div className="control">
-              <button type="submit" className="button is-link" ref={this.submitButton} disabled>Add</button>
+              <button type="submit" className="button is-success" ref={this.submitButton} disabled>Add</button>
             </div>
           </div>
         </div>

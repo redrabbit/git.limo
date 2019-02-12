@@ -10,6 +10,10 @@
 
           <h2 class="subtitle">A Git source code management tool powered by Elixir with easy installation & high extensibility.</h2>
 
+          <div class="content">
+            <p>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum.</p>
+          </div>
+
           <a href="<%= Routes.session_path(@conn, :new) %>" class="button is-primary is-medium is-uppercase has-text-weight-bold">Get started</a>
 
           <hr />

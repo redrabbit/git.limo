@@ -6,68 +6,65 @@
   </div>
 </div>
 
-<nav class="panel">
-  <%= for maintainer <- @maintainers do %>
-    <div class="panel-block">
-      <div class="level" style="width:100%">
-        <div class="level-left">
-          <div class="level-item"><%= maintainer.user.login %></div>
-        </div>
-        <div class="level-right">
-          <%= if maintainer.user_id != @repo.owner_id do %>
-            <div class="level-item">
-              <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
-                <%= hidden_input(f, :id, value: maintainer.id) %>
-                <div class="field">
-                  <div class="field is-grouped">
-                    <div class="control">
-                      <div class="select">
-                        <%= permission_select f, :permission, maintainer %>
-                        <%= error_tag f, :permission %>
-                      </div>
-                    </div>
-                    <div class="control">
-                      <%= submit "Save", class: "button is-link" %>
-                    </div>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-            <div class="level-item">
-              <%= form_for @conn, Routes.maintainer_path(@conn, :delete, @repo.owner, @repo), [method: :delete, as: :maintainer], fn f -> %>
-                <%= hidden_input(f, :id, value: maintainer.id) %>
-                <button type="submit" class="delete"></button>
-              <% end %>
-            </div>
-          <% else %>
-            <div class="level-item">
+<table class="table has-outer-border is-fullwidth">
+  <tbody>
+    <%= for maintainer <- @maintainers do %>
+      <tr>
+        <td class="is-vcentered"><%= maintainer.user.login %></td>
+        <%= if maintainer.user_id != @repo.owner_id do %>
+          <td class="is-narrow">
+            <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
+              <%= hidden_input(f, :id, value: maintainer.id) %>
               <div class="field">
                 <div class="field is-grouped">
                   <div class="control">
                     <div class="select">
-                      <select disabled="disabled">
-                        <option>admin</option>
-                      </select>
+                      <%= permission_select f, :permission, maintainer %>
+                      <%= error_tag f, :permission %>
                     </div>
                   </div>
                   <div class="control">
-                    <%= submit "Save", class: "button", disabled: true %>
+                    <%= submit "Save", class: "button is-link" %>
                   </div>
                 </div>
               </div>
+            <% end %>
+          </td>
+          <td class="is-narrow is-vcentered">
+            <%= form_for @conn, Routes.maintainer_path(@conn, :delete, @repo.owner, @repo), [method: :delete, as: :maintainer], fn f -> %>
+              <div class="field">
+                <%= hidden_input(f, :id, value: maintainer.id) %>
+                <button type="submit" class="delete"></button>
+              </div>
+            <% end %>
+          </td>
+        <% else %>
+          <td class="is-narrow">
+            <div class="field">
+              <div class="field is-grouped">
+                <div class="control">
+                  <div class="select">
+                    <select disabled="disabled">
+                      <option>admin</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="control">
+                  <%= submit "Save", class: "button", disabled: true %>
+                </div>
+              </div>
             </div>
-            <div class="level-item" style="width:20px">
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  <% end %>
-</nav>
+          </td>
+          <td class="is-narrow"></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
 
 <%= form_for @changeset, Routes.maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
   <div class="field">
-    <%= label f, :user_id, "Add a maintainer", class: "label" %>
+    <%= label f, :user_id, "Add maintainer", class: "label" %>
     <%= react_component "UserInput", id: input_id(f, :user_id), name: input_name(f, :user_id), maintainers: Enum.map(@repo.maintainers, &to_relay_id/1) %>
     <%= error_tag f, :user_id %>
   </div>

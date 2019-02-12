@@ -1,6 +1,12 @@
 <div class="columns">
   <div class="column is-4 is-offset-4">
     <div class="box">
+      <div class="is-pulled-right">
+        <a href="<%= Routes.landing_page_path(@conn, :index) %>">
+          <img src="<%= Routes.static_path(@conn, "/images/logo.svg") %>" alt="" width="72" height="72" />
+        </a>
+      </div>
+
       <h1 class="title has-text-grey-lighter">Login</h1>
 
       <%= form_for @changeset, Routes.session_path(@conn, :create), [as: :session], fn f -> %>

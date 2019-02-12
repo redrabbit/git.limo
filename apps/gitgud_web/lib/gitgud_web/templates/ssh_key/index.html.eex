@@ -15,34 +15,38 @@
   Nothing to see here.
 <% else %>
   <%= for ssh_key <- @user.ssh_keys do %>
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">
-          <%= ssh_key.name %>
-        </p>
-        <div class="card-header-icon" aria-label="more options">
-          <%= form_for @conn, Routes.ssh_key_path(@conn, :delete), [method: :delete, as: :ssh_key], fn f -> %>
-            <%= hidden_input(f, :id, value: ssh_key.id) %>
-            <button type="submit" class="delete"></button>
-          <% end %>
-        </div>
-      </header>
-      <div class="card-content">
-        <div class="content">
-          <label>Fingerprint:</label>
-          <code><%= ssh_key.fingerprint %></code>
+    <div class="columns">
+      <div class="column">
+        <div class="card">
+          <header class="card-header">
+            <p class="card-header-title">
+              <%= ssh_key.name %>
+            </p>
+            <div class="card-header-icon" aria-label="more options">
+              <%= form_for @conn, Routes.ssh_key_path(@conn, :delete), [method: :delete, as: :ssh_key], fn f -> %>
+                <%= hidden_input(f, :id, value: ssh_key.id) %>
+                <button type="submit" class="delete"></button>
+              <% end %>
+            </div>
+          </header>
+          <div class="card-content">
+            <div class="content">
+              <label>Fingerprint:</label>
+              <code><%= ssh_key.fingerprint %></code>
+            </div>
+          </div>
+          <footer class="card-footer">
+            <p class="card-footer-item">Added on <%= datetime_format(ssh_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
+            <p class="card-footer-item">
+              <%= if last_used_at = ssh_key.last_used_at do %>
+                Used <%= datetime_format(last_used_at, "{relative}") %>
+              <% else %>
+                Never used
+              <% end %>
+            </p>
+          </footer>
         </div>
       </div>
-      <footer class="card-footer">
-        <p class="card-footer-item">Added on <%= datetime_format(ssh_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
-        <p class="card-footer-item">
-          <%= if last_used_at = ssh_key.last_used_at do %>
-            Used <%= datetime_format(last_used_at, "{relative}") %>
-          <% else %>
-            Never used
-          <% end %>
-        </p>
-      </footer>
     </div>
   <% end %>
 <% end %>

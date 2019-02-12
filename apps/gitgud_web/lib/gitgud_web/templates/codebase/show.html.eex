@@ -25,7 +25,7 @@
     <li>
       <a class="has-text-grey-light">
         <span class="icon"><i class="fa fa-users" aria-hidden="true"></i></span>
-        <span>Contributors&nbsp;&nbsp;<span class="tag">0</span></span>
+        <span>Contributors&nbsp;&nbsp;<span class="tag">1</span></span>
       </a>
     </li>
   </ul>
@@ -65,7 +65,7 @@
                 <label class="label">Clone with HTTP</label>
                 <div class="field has-addons">
                   <div class="control is-expanded">
-                    <input type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" />
+                    <input type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" readonly />
                   </div>
                   <div class="control">
                     <a class="button is-small">
