@@ -53,6 +53,16 @@ defmodule GitGud.GitDiff do
   end
 
   #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(_diff, _opts) do
+      Inspect.Algebra.concat(["#GitDiff<", ">"])
+    end
+  end
+
+  #
   # Helpers
   #
 

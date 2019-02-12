@@ -43,4 +43,14 @@ defmodule GitGud.GitTag do
         {:error, reason}
     end
   end
+
+  #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(tag, _opts) do
+      Inspect.Algebra.concat(["#GitTag<", tag.name, ">"])
+    end
+  end
 end

@@ -73,6 +73,16 @@ defmodule GitGud.GitCommit do
   end
 
   #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(commit, _opts) do
+      Inspect.Algebra.concat(["#GitCommit<", Git.oid_fmt_short(commit.oid), ">"])
+    end
+  end
+
+  #
   # Helpers
   #
 

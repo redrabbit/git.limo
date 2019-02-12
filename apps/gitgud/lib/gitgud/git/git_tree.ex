@@ -64,4 +64,14 @@ defmodule GitGud.GitTree do
   defp resolve_entry({mode, type, oid, name}, {repo, tree}) do
     %GitTreeEntry{oid: oid, name: name, mode: mode, type: type, repo: repo, __git__: tree}
   end
+
+  #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(tree, _opts) do
+      Inspect.Algebra.concat(["#GitTree<", Git.oid_fmt_short(tree.oid), ">"])
+    end
+  end
 end

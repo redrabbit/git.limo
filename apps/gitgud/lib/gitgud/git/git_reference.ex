@@ -38,4 +38,14 @@ defmodule GitGud.GitReference do
   def type(%__MODULE__{prefix: "refs/heads/"} = _reference), do: {:ok, :branch}
   def type(%__MODULE__{prefix: "refs/tags/"} = _reference), do: {:ok, :tag}
   def type(%__MODULE__{} = _reference), do: {:error, :invalid_reference_type}
+
+  #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(ref, _opts) do
+      Inspect.Algebra.concat(["#GitReference<", ref.name, ">"])
+    end
+  end
 end

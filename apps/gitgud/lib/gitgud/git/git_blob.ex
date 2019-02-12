@@ -27,4 +27,14 @@ defmodule GitGud.GitBlob do
   def size(%__MODULE__{__git__: blob} = _blob) do
     Git.blob_size(blob)
   end
+
+  #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(blob, _opts) do
+      Inspect.Algebra.concat(["#GitBlob<", Git.oid_fmt_short(blob.oid), ">"])
+    end
+  end
 end

@@ -32,4 +32,14 @@ defmodule GitGud.GitTreeEntry do
 
   defp entry_module(:blob), do: GitBlob
   defp entry_module(:tree), do: GitTree
+
+  #
+  # Protocols
+  #
+
+  defimpl Inspect do
+    def inspect(tree_entry, _opts) do
+      Inspect.Algebra.concat(["#GitTreeEntry<", Git.oid_fmt_short(tree_entry.oid), ">"])
+    end
+  end
 end
