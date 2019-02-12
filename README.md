@@ -1,5 +1,7 @@
 # Git Gud
 
+![Cover image](https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/assets/static/images/logo.svg)
+
 A GitHub clone written in Elixir with almost no-dependencies.
 
 * [x] Git HTTP and SSH support.
