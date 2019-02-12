@@ -1,6 +1,6 @@
 # Git Gud
 
-![Cover image](https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/assets/static/images/logo.svg?sanitize=true)
+<img src="https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/assets/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
 
 A GitHub clone written in Elixir with almost no-dependencies.
 
