@@ -12,6 +12,8 @@ defmodule GitGud.Web.OAuth2Controller do
 
   alias GitGud.OAuth2.GitHub
 
+  plug :put_layout, :hero
+
   action_fallback GitGud.Web.FallbackController
 
   @doc """
