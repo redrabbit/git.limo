@@ -4,7 +4,7 @@ defmodule GitGud.DB.Migrations.AddAuthenticationsTable do
   def change do
     create table("authentications") do
       add :user_id, references("users"), null: false, on_delete: :delete_all
-      add :password_hash, :string, size: 96
+      add :password_hash, :string, size: 98
       timestamps()
     end
   end
