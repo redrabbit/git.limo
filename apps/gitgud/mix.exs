@@ -3,7 +3,7 @@ defmodule GitGud.Mixfile do
 
   def project do
     [app: :gitgud,
-     version: "0.1.0",
+     version: "0.2.0",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
@@ -33,7 +33,6 @@ defmodule GitGud.Mixfile do
      {:postgrex, "~> 0.14"},
      {:phoenix_pubsub, "~> 1.1", optional: true},
      {:jason, "~> 1.1"},
-     {:comeonin, "~> 5.0"},
      {:argon2_elixir, "~> 2.0"},
      {:plug, "~> 1.7", optional: true},
      {:plug_cowboy, "~> 2.0", only: :test},
