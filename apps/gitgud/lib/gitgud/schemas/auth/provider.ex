@@ -9,7 +9,7 @@ defmodule GitGud.Auth.Provider do
 
   import Ecto.Changeset
 
-  schema "users_authentications_providers" do
+  schema "authentications_providers" do
     belongs_to :auth, Auth
     field :provider, :string
     field :provider_id, :integer

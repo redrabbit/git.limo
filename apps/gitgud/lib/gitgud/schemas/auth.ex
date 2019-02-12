@@ -16,7 +16,7 @@ defmodule GitGud.Auth do
 
   import Comeonin.Argon2, only: [add_hash: 1, check_pass: 2, checkpw: 2]
 
-  schema "users_authentications" do
+  schema "authentications" do
     belongs_to :user, User
     has_many :providers, Provider
     field :password, :string, virtual: true

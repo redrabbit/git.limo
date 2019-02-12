@@ -26,7 +26,7 @@ defmodule GitGud.Email do
   import Ecto.Query, only: [from: 2]
   import Ecto.Changeset
 
-  schema "users_emails" do
+  schema "emails" do
     belongs_to :user, User
     field      :address, :string
     field      :verified, :boolean, default: false
@@ -116,8 +116,8 @@ defmodule GitGud.Email do
     |> validate_required([:address])
     |> validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
     |> assoc_constraint(:user)
-    |> check_constraint(:address, name: :users_emails_address_constraint, message: "already taken")
-    |> unique_constraint(:address, name: :users_emails_user_id_address_index)
+    |> check_constraint(:address, name: :emails_address_constraint, message: "already taken")
+    |> unique_constraint(:address, name: :emails_user_id_address_index)
   end
 
   @doc """
@@ -127,7 +127,7 @@ defmodule GitGud.Email do
   def verification_changeset(%__MODULE__{} = email) do
     email
     |> change(%{verified: true, verified_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
-    |> check_constraint(:address, name: :users_emails_address_constraint, message: "already taken")
+    |> check_constraint(:address, name: :emails_address_constraint, message: "already taken")
   end
 
   #

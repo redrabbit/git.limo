@@ -12,7 +12,7 @@ defmodule GitGud.SSHKey do
 
   import Ecto.Changeset
 
-  schema "users_ssh_keys" do
+  schema "ssh_keys" do
     belongs_to :user, User
     field      :name, :string
     field      :data, :string, virtual: true
@@ -100,8 +100,8 @@ defmodule GitGud.SSHKey do
     |> cast(params, [:user_id, :name, :data])
     |> validate_required([:user_id, :data])
     |> put_fingerprint()
-    |> unique_constraint(:name, name: :users_ssh_keys_user_id_name_index)
-    |> unique_constraint(:data, name: :users_ssh_keys_user_id_fingerprint_index)
+    |> unique_constraint(:name, name: :ssh_keys_user_id_name_index)
+    |> unique_constraint(:data, name: :ssh_keys_user_id_fingerprint_index)
     |> assoc_constraint(:user)
   end
 
