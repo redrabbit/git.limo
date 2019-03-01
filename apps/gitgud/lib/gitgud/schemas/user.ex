@@ -154,6 +154,14 @@ defmodule GitGud.User do
   end
 
   @doc """
+  Returns `true` is `user` is verified; otherwise returns `false`.
+  """
+  @spec verified?(t) :: boolean
+  def verified?(%__MODULE__{} = user) do
+    !!user.primary_email_id
+  end
+
+  @doc """
   Returns a registration changeset for the given `params`.
   """
   @spec registration_changeset(t, map) :: Ecto.Changeset.t

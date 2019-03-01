@@ -5,6 +5,7 @@ defmodule GitGud.Web.RepoController do
 
   use GitGud.Web, :controller
 
+  alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
@@ -18,8 +19,10 @@ defmodule GitGud.Web.RepoController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{} = _params) do
-    changeset = Repo.changeset(%Repo{})
-    render(conn, "new.html", changeset: changeset)
+    user = current_user(conn)
+    if User.verified?(user),
+      do: render(conn, "new.html", changeset: Repo.changeset(%Repo{})),
+    else: {:error, :unauthorized}
   end
 
   @doc """
@@ -28,17 +31,19 @@ defmodule GitGud.Web.RepoController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"repo" => repo_params} = _params) do
     user = current_user(conn)
-    case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
-      {:ok, repo} ->
-        conn
-        |> put_flash(:info, "Repository '#{repo.name}' created.")
-        |> redirect(to: Routes.codebase_path(conn, :show, user, repo))
-      {:error, changeset} ->
-        conn
-        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-        |> put_status(:bad_request)
-        |> render("new.html", changeset: %{changeset|action: :insert})
-    end
+    if User.verified?(user) do
+      case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
+        {:ok, repo} ->
+          conn
+          |> put_flash(:info, "Repository '#{repo.name}' created.")
+          |> redirect(to: Routes.codebase_path(conn, :show, user, repo))
+        {:error, changeset} ->
+          conn
+          |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+          |> put_status(:bad_request)
+          |> render("new.html", changeset: %{changeset|action: :insert})
+      end
+    end || {:error, :unauthorized}
   end
 
   @doc """
