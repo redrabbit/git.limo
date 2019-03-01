@@ -60,7 +60,7 @@ defmodule GitGud.Umbrella.Mixfile do
         "Deployment": [
           GitGud.ReleaseTasks
         ],
-        "Git helper structs": [
+        "Git helpers": [
           GitGud.GitBlob,
           GitGud.GitCommit,
           GitGud.GitDiff,
