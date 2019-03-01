@@ -5,6 +5,7 @@ defmodule GitGud.Web.RepoControllerTest do
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.Email
 
   setup :create_user
 
@@ -102,7 +103,7 @@ defmodule GitGud.Web.RepoControllerTest do
     on_exit fn ->
       File.rmdir(Path.join(Repo.root_path, user.login))
     end
-    Map.put(context, :user, user)
+    Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
   end
 
   defp create_repo(context) do
