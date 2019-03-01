@@ -13,6 +13,3 @@ config :gitgud,
   ssh_port: 8989,
   ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
   git_root: Path.absname("priv/git-data", Path.dirname(__DIR__))
-
-# Do not print debug messages in production
-config :logger, level: :info
