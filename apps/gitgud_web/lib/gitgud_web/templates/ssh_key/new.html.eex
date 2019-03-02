@@ -17,6 +17,8 @@
     <%= error_tag f, :data %>
   </div>
 
+  <hr />
+
   <div class="field">
     <%= submit "Add SSH key", class: "button is-link" %>
   </div>

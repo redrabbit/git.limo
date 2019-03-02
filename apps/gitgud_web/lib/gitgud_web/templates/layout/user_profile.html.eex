@@ -53,12 +53,6 @@
               <span>Repositories</span>
             </a>
           <% end %>
-          <li>
-            <a class="has-text-grey-light">
-              <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
-              <span>Organizations</span>
-            </a>
-          </li>
         </ul>
       </div>
 
