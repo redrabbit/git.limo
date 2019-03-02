@@ -143,7 +143,7 @@ defmodule GitGud.UserQuery do
   @spec search_query(binary) :: Ecto.Query.t
   def search_query(input) do
     term = "%#{input}%"
-    from(u in User, as: :user, where: ilike(u.login, ^term))
+    from(u in User, as: :user, where: ilike(u.login, ^term) and not is_nil(u.primary_email_id))
   end
 
   #
