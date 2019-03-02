@@ -90,7 +90,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec user_public_email(User.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def user_public_email(%User{} = user, %{} = _args, _info) do
     if email = user.public_email,
-      do: {:ok, email.email},
+      do: {:ok, email.address},
     else: {:ok, nil}
   end
 
