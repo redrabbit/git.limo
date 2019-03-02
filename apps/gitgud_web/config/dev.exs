@@ -34,11 +34,6 @@ config :gitgud_web, GitGud.Web.Endpoint,
     ]
   ]
 
-# Configure GitHub OAuth2.0 provider
-config :gitgud_web, GitGud.OAuth2.GitHub,
-  client_id: "xxxxxxxxxxxxxxxxxxxx",
-  client_secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
 # Configure Bamboo adapter
 config :gitgud_web, GitGud.Mailer,
   adapter: Bamboo.LocalAdapter,
