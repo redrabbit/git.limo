@@ -24,6 +24,10 @@ defmodule GitGud.Web.Router do
       schema: GitGud.GraphQL.Schema
   end
 
+  if Mix.env == :dev do
+    forward "/sent_emails", Bamboo.SentEmailViewerPlug
+  end
+
   scope "/", GitGud.Web do
     pipe_through :browser
 

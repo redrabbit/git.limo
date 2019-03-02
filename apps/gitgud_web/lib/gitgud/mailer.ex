@@ -3,27 +3,21 @@ defmodule GitGud.Mailer do
   Conveniences for composing and sending emails.
   """
   use Bamboo.Mailer, otp_app: :gitgud_web
+  use Bamboo.Phoenix, view: GitGud.Web.MailerView
 
-  alias GitGud.DB
   alias GitGud.Email
-
-  alias GitGud.Web.Router.Helpers, as: Routes
-
-  import Bamboo.Email
 
   @doc """
   Returns a verification mail for the given `email`.
   """
   @spec verification_email(Email.t) :: Bamboo.Email.t
   def verification_email(%Email{} = email) do
-    email = DB.preload(email, :user)
-    token = Phoenix.Token.sign(GitGud.Web.Endpoint, to_string(email.user_id), email.id)
-    new_email(
-      to: email.address,
-      from: "postmaster@sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org",
-      subject: "Verify your email",
-      text_body: "Hello #{email.user.name}, please verify your email address by clicking this link: #{Routes.email_url(GitGud.Web.Endpoint, :verify, token)}"
-    )
+    base_email()
+    |> to(email)
+    |> subject("Verify your email address")
+    |> assign(:user, email.user)
+    |> assign(:token, Phoenix.Token.sign(GitGud.Web.Endpoint, "verify-email", email.id))
+    |> render(:verify_email)
   end
 
   @doc """
@@ -31,13 +25,21 @@ defmodule GitGud.Mailer do
   """
   @spec password_reset_email(Email.t) :: Bamboo.Email.t
   def password_reset_email(%Email{} = email) do
-    email = DB.preload(email, :user)
-    token = Phoenix.Token.sign(GitGud.Web.Endpoint, "reset-password", email.user_id)
-    new_email(
-      to: email.address,
-      from: "postmaster@sandboxd6a455a9552c4d6bb65b310fe7b619e9.mailgun.org",
-      subject: "Reset your password",
-      text_body: "Hello #{email.user.name}, please reset your password by clicking this link: #{Routes.user_url(GitGud.Web.Endpoint, :verify_password_reset, token)}"
-    )
+    base_email()
+    |> to(email)
+    |> subject("Reset your password")
+    |> assign(:user, email.user)
+    |> assign(:token, Phoenix.Token.sign(GitGud.Web.Endpoint, "reset-password", email.user_id))
+    |> render(:reset_password)
+  end
+
+  #
+  # Helpers
+  #
+
+  defp base_email do
+    new_email()
+    |> from("git.limo <no-reply@git.limo>")
+    |> put_html_layout({GitGud.Web.LayoutView, "mailer.html"})
   end
 end

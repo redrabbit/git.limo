@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="<%= Routes.static_path(GitGud.Web.Endpoint, "/css/app.css") %>">
+  </head>
+
+  <body>
+    <main class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <%= render(@view_module, @view_template, assigns) %>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
+
+

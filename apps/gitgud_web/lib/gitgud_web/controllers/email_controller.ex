@@ -33,6 +33,7 @@ defmodule GitGud.Web.EmailController do
     user = DB.preload(current_user(conn), :emails)
     case Email.create(Map.put(email_params, "user_id", user.id)) do
       {:ok, email} ->
+        email = struct(email, user: user)
         GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
         |> put_flash(:info, "Email '#{email.address}' added.")
@@ -93,6 +94,7 @@ defmodule GitGud.Web.EmailController do
     user = DB.preload(current_user(conn), :emails)
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
+      email = struct(email, user: user)
       GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
       conn
       |> put_flash(:info, "A verification email has been sent to '#{email.address}'.")
@@ -108,7 +110,7 @@ defmodule GitGud.Web.EmailController do
   @spec verify(Plug.Conn.t, map) :: Plug.Conn.t
   def verify(conn, %{"token" => token} = _params) do
     user = DB.preload(current_user(conn), :emails)
-    case Phoenix.Token.verify(conn, to_string(user.id), token, max_age: 86400) do
+    case Phoenix.Token.verify(conn, "verify-email", token, max_age: 86400) do
       {:ok, email_id} ->
         if email = Enum.find(user.emails, &(&1.id == email_id)) do
           unless email.verified do

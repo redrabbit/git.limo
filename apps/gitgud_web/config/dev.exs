@@ -39,11 +39,10 @@ config :gitgud_web, GitGud.OAuth2.GitHub,
   client_id: "xxxxxxxxxxxxxxxxxxxx",
   client_secret: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-# Configure Mailgun adapter
+# Configure Bamboo adapter
 config :gitgud_web, GitGud.Mailer,
-  adapter: Bamboo.MailgunAdapter,
-  api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx",
-  domain: "example.com"
+  adapter: Bamboo.LocalAdapter,
+  open_email_in_browser_url: "http://localhost:4000/sent_emails"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

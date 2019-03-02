@@ -47,8 +47,10 @@ defmodule GitGud.Web.UserController do
   def create(conn, %{"user" => user_params} = _params) do
     case User.create(user_params) do
       {:ok, user} ->
-        for email <- Enum.reject(user.emails, &(&1.verified)), do:
+        for email <- Enum.reject(user.emails, &(&1.verified)) do
+          email = struct(email, user: user)
           GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
+        end
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome #{user.login}.")
@@ -147,6 +149,7 @@ defmodule GitGud.Web.UserController do
       email_address = changeset.params["address"]
       if user = UserQuery.by_email(email_address, preload: :emails) do
         if email = Enum.find(user.emails, &(&1.verified && &1.address == email_address)) do
+          email = struct(email, user: user)
           GitGud.Mailer.deliver_later(GitGud.Mailer.password_reset_email(email))
         end
       end

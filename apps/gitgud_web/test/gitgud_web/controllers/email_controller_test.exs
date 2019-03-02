@@ -27,7 +27,7 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
     assert get_flash(conn, :info) == "Email '#{email_params.address}' added."
     assert redirected_to(conn) == Routes.email_path(conn, :edit)
-    assert_email_delivered_with(subject: "Verify your email")
+    assert_email_delivered_with(subject: "Verify your email address")
   end
 
   test "fails to create email with invalid email address", %{conn: conn, user: user} do
@@ -40,10 +40,11 @@ defmodule GitGud.Web.EmailControllerTest do
 
   test "verifies email with valid verification token", %{conn: conn, user: user} do
     email_params = factory(:email)
+    email_address = email_params.address
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
     receive do
-      {:delivered_email, %Bamboo.Email{text_body: text, to: [nil: email_address]}} ->
+      {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
         {start_link, _} = :binary.match(text, "http://")
         conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
         assert get_flash(conn, :info) == "Email '#{email_address}' verified."

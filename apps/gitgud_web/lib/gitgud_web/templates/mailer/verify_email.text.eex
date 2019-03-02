@@ -1,0 +1,2 @@
+Click the following link to verify your email address:
+<%= Routes.email_url(GitGud.Web.Endpoint, :verify, @token) %>
