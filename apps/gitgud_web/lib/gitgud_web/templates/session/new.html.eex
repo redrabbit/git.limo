@@ -45,7 +45,7 @@
           <span class="icon"><i class="fab fa-lg fa-github"></i></span>
           <span>GitHub</span>
         </a>
-        <a class="button is-small gitlab" disabled>
+        <a class="button is-small gitlab" href="<%= Routes.oauth2_path(@conn, :authorize, "gitlab") %>">
           <span class="icon"><i class="fab fa-lg fa-gitlab"></i></span>
           <span>GitLab</span>
         </a>
