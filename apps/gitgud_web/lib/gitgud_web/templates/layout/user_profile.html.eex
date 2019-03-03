@@ -1,6 +1,6 @@
 <%= render_layout "app.html", assigns do %>
   <div class="columns">
-    <div class="column is-one-quarter">
+    <div class="user-profile column is-one-quarter">
       <%= gravatar(@user, size: 516) %>
 
       <h1 class="title"><%= @user.name %></h1>

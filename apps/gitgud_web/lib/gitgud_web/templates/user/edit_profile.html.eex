@@ -66,6 +66,6 @@
     <% end %>
   </div>
   <div class="column is-one-third">
-    <%= gravatar(@user, size: 516) %>
+    <a href="https://gravatar.com"><%= gravatar(@user, size: 516) %></a>
   </div>
 </div>

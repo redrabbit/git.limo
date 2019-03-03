@@ -31,7 +31,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~@fortawesome/fontawesome-free/scss/solid";
 
 main.container {
-  padding: 2rem 0 2rem 4.5rem;
+  padding: 2rem 0;
 }
 
 nav.navbar {
@@ -122,6 +122,17 @@ table.table {
     color: $white-bis;
     border-color: transparent;
     background-color: #205081;
+  }
+}
+
+.user-profile {
+  ul {
+    li {
+      font-size: .9rem;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
   }
 }
 
