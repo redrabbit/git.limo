@@ -234,3 +234,36 @@ geef_commit_time(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     return enif_make_tuple3(env, atoms.ok, time, offset);
 }
+
+ERL_NIF_TERM
+geef_commit_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	git_buf buf = { NULL, 0, 0 };
+	ErlNifBinary bin;
+	geef_object *obj;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+    printf("got the commit\n");
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin))
+        return geef_oom(env);
+
+	if (git_commit_header_field(&buf, (git_commit *) obj->obj, (char *) bin.data) < 0) {
+		return geef_error(env);
+	}
+
+	if (!enif_alloc_binary(buf.size, &bin)) {
+		git_buf_free(&buf);
+		return geef_oom(env);
+	}
+
+	memcpy(bin.data, buf.ptr, bin.size);
+	git_buf_free(&buf);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
+}

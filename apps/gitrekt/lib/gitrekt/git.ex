@@ -444,6 +444,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns an arbitrary header `field` of the given `commit`.
+  """
+  @spec commit_header(commit, binary) :: {:ok, binary} | {:error, term}
+  def commit_header(_commit, _field) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Retrieves a tree entry owned by the given `tree`, given its id.
   """
   @spec tree_byid(tree, oid) :: {:ok, integer, atom, binary, binary} | {:error, term}
