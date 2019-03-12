@@ -43,6 +43,8 @@ defmodule GitGud.Web.EmailControllerTest do
     email_address = email_params.address
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
+    assert get_flash(conn, :info) == "Email '#{email_address}' added."
+    assert redirected_to(conn) == Routes.email_path(conn, :edit)
     receive do
       {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
         {start_link, _} = :binary.match(text, "http://")

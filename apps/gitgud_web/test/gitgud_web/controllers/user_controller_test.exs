@@ -44,28 +44,34 @@ defmodule GitGud.Web.UserControllerTest do
     assert html_response(conn, 400) =~ ~s(<h1 class="title has-text-grey-lighter">Register</h1>)
   end
 
+  test "renders password reset form", %{conn: conn} do
+    conn = get(conn, Routes.user_path(conn, :reset_password))
+    assert html_response(conn, 200) =~ ~s(<h1 class="title has-text-grey-lighter">Reset password</h1>)
+  end
+
   describe "when user exists" do
     setup :create_user
 
-    test "renders user profile", %{conn: conn, user: user} do
+    test "renders profile", %{conn: conn, user: user} do
       conn = get(conn, Routes.user_path(conn, :show, user))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
       assert html_response(conn, 200) =~ ~s(Nothing to see here.)
     end
 
-    test "renders user edit form if authenticated", %{conn: conn, user: user} do
+    test "renders profile edit form if authenticated", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.user_path(conn, :edit_profile))
       assert html_response(conn, 200) =~ ~s(<h1 class="title">Settings</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Profile</h2>)
     end
 
-    test "fails to render user edit form if not authenticated", %{conn: conn} do
+    test "fails to render profile edit form if not authenticated", %{conn: conn} do
       conn = get(conn, Routes.user_path(conn, :edit_profile))
       assert html_response(conn, 401) =~ "Unauthorized"
     end
 
-    test "updates user profile with valid params", %{conn: conn, user: user} do
+    test "updates profile with valid params", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice", bio: "I love programming!", public_email_id: hd(user.emails).id, url: "http://www.example.com"})
       user = UserQuery.by_id(user.id, preload: :emails)
@@ -77,18 +83,70 @@ defmodule GitGud.Web.UserControllerTest do
       assert redirected_to(conn) == Routes.user_path(conn, :edit_profile)
     end
 
-    test "fails to update user profile with invalid public email", %{conn: conn, user: user} do
+    test "fails to update profile with invalid public email", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{public_email_id: 0})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
+      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Profile</h2>)
     end
 
-    test "fails to update user profile with invalid url", %{conn: conn, user: user} do
+    test "fails to update profile with invalid url", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{url: "oops"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
+      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Profile</h2>)
+    end
+
+    test "renders password edit form if authenticated", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = get(conn, Routes.user_path(conn, :edit_password))
+      assert html_response(conn, 200) =~ ~s(<h1 class="title">Settings</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Password</h2>)
+    end
+
+    test "fails to render password edit form if not authenticated", %{conn: conn} do
+      conn = get(conn, Routes.user_path(conn, :edit_password))
+      assert html_response(conn, 401) =~ "Unauthorized"
+    end
+
+    test "updates password with valid params", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = put(conn, Routes.user_path(conn, :update_password), password: %{auth: %{old_password: "qwertz", password: "qwerty"}})
+      assert get_flash(conn, :info) == "Password updated."
+      assert redirected_to(conn) == Routes.user_path(conn, :edit_password)
+    end
+
+    test "fails to update password with invalid old password", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = put(conn, Routes.user_path(conn, :update_password), password: %{auth: %{old_password: "qwerty", password: "qwerty"}})
+      assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
+      assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
+      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Password</h2>)
+    end
+
+    test "resets password with valid reset token", %{conn: conn, user: user} do
+      email_address = hd(user.emails).address
+      conn = post(conn, Routes.user_path(conn, :reset_password), email: %{address: email_address})
+      assert get_flash(conn, :info) == "A password reset email has been sent to '#{email_address}'."
+      assert redirected_to(conn) == Routes.session_path(conn, :new)
+      receive do
+        {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
+          {start_link, _} = :binary.match(text, "http://")
+          conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
+          assert get_flash(conn, :info) == "Password has been reset. Please set a new password below."
+          assert redirected_to(conn) == Routes.user_path(conn, :edit_password)
+      after
+        1_000 -> raise "email not delivered"
+      end
+    end
+
+    test "fails to reset password with invalid reset token", %{conn: conn, user: user} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      conn = get(conn, Routes.user_path(conn, :verify_password_reset, "abcdefg"))
+      assert get_flash(conn, :error) == "Invalid password reset token."
+      assert redirected_to(conn) == Routes.session_path(conn, :new)
     end
   end
 
