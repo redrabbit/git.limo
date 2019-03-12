@@ -72,6 +72,14 @@ defmodule GitGud.GitCommit do
       {:ok, struct(datetime, [])}
   end
 
+  @doc """
+  Returns the GPG signature of the given `commit`.
+  """
+  @spec gpg_signature(t) :: {:ok, binary} | {:error, term}
+  def gpg_signature(%__MODULE__{__git__: commit} = _commit) do
+    Git.commit_header(commit, "gpgsig")
+  end
+
   #
   # Protocols
   #
