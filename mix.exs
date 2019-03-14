@@ -74,7 +74,8 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.SmartHTTPBackend
         ],
         "OAuth2.0": [
-          GitGud.OAuth2.GitHub
+          GitGud.OAuth2.GitHub,
+          GitGud.OAuth2.GitLab
         ],
         "GraphQL": [
           GitGud.GraphQL.Resolvers,
