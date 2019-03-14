@@ -245,8 +245,6 @@ geef_commit_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
 		return enif_make_badarg(env);
 
-    printf("got the commit\n");
-
 	if (!enif_inspect_binary(env, argv[1], &bin))
 		return enif_make_badarg(env);
 
