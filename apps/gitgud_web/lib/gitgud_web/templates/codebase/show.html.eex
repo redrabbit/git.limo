@@ -34,7 +34,7 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= branch_select(@conn) %>
+      <%= live_render(@conn, GitGud.Web.GitReferenceView, session: %{repo: @repo, revision: @revision}) %>
     </div>
     <div class="level-item">
       <%= render "_tree_breadcrumb.html", assigns %>
