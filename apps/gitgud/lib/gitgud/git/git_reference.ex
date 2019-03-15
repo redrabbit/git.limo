@@ -9,12 +9,12 @@ defmodule GitGud.GitReference do
   alias GitGud.GitCommit
   alias GitGud.GitTag
 
-  @enforce_keys [:oid, :name, :prefix, :repo, :__git__]
-  defstruct [:oid, :name, :prefix, :repo, :__git__]
+  @enforce_keys [:oid, :name, :prefix, :repo, :type, :__git__]
+  defstruct [:oid, :name, :prefix, :repo, :type, :__git__]
 
   @type reference_type :: :branch | :tag
 
-  @type t :: %__MODULE__{oid: Git.oid, name: binary, prefix: binary, repo: Repo.t, __git__: Git.repo}
+  @type t :: %__MODULE__{oid: Git.oid, name: binary, prefix: binary, type: reference_type, repo: Repo.t, __git__: Git.repo}
 
   @doc """
   Returns the object pointed at by `reference`.
@@ -30,14 +30,6 @@ defmodule GitGud.GitReference do
         {:error, reason}
     end
   end
-
-  @doc """
-  Returns the type of the given `reference`.
-  """
-  @spec type(t) :: {:ok, reference_type} | {:error, term}
-  def type(%__MODULE__{prefix: "refs/heads/"} = _reference), do: {:ok, :branch}
-  def type(%__MODULE__{prefix: "refs/tags/"} = _reference), do: {:ok, :tag}
-  def type(%__MODULE__{} = _reference), do: {:error, :invalid_reference_type}
 
   #
   # Protocols

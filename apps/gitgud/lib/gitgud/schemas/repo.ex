@@ -521,13 +521,16 @@ defmodule GitGud.Repo do
   defp resolve_reference({name, nil, :oid, oid}, {repo, handle}) do
     prefix = Path.dirname(name) <> "/"
     shorthand = Path.basename(name)
-    %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
+    %GitReference{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix), repo: repo, __git__: handle}
   end
 
   defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
-    %GitReference{oid: oid, name: shorthand, prefix: prefix, repo: repo, __git__: handle}
+    %GitReference{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix), repo: repo, __git__: handle}
   end
+
+  defp resolve_reference_type("refs/heads/"), do: :branch
+  defp resolve_reference_type("refs/tags/"), do: :tag
 
   defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do
     case Git.reference_peel(handle, name, :tag) do
