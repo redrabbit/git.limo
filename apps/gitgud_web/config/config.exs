@@ -10,7 +10,8 @@ config :gitgud_web, GitGud.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Orcr/BYzysTwrdJaOA7vu7miC2V5M2ivU6yMY7hW1cUnegxFej5GLalozFC+f6uA",
   render_errors: [view: GitGud.Web.ErrorView, accepts: ~w(html)],
-  pubsub: [name: GitGud.Web.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: GitGud.Web.PubSub, adapter: Phoenix.PubSub.PG2],
+  live_view: [signing_salt: "j/AjfJCRfToI8TzztESE+SB5sg2vh+Xs"]
 
 # Configure generators
 config :gitgud_web, :generators,
@@ -26,6 +27,10 @@ config :absinthe, schema: GitGud.GraphQL.Schema
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Enable Phoenix LiveView templates
+config :phoenix,
+  template_engines: [leex: Phoenix.LiveView.Engine]
 
 # Use Jason for JSON parsing in OAuth2
 config :oauth2,

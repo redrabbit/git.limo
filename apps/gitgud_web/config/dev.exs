@@ -30,7 +30,8 @@ config :gitgud_web, GitGud.Web.Endpoint,
       ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
       ~r{priv/gettext/.*(po)$},
       ~r{lib/gitgud_web/views/.*(ex)$},
-      ~r{lib/gitgud_web/templates/.*(eex)$}
+      ~r{lib/gitgud_web/templates/.*(eex)$},
+      ~r{lib/gitgud_web/live/.*(ex)$}
     ]
   ]
 

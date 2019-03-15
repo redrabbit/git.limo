@@ -35,6 +35,7 @@ defmodule GitGud.Web.Mixfile do
      {:phoenix, "~> 1.4"},
      {:phoenix_html, "~> 2.12"},
      {:phoenix_pubsub, "~> 1.1"},
+     {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"},
      {:phoenix_live_reload, "~> 1.2", only: :dev},
      {:phoenix_ecto, "~> 4.0"},
      {:absinthe, "~> 1.5.0-alpha.2", override: true},
