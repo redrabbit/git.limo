@@ -11,10 +11,10 @@ class UserInput extends React.Component {
       input: ""
     }
     this.dropdown = React.createRef()
-    this.inputContainer = React.createRef()
     this.submitButton = React.createRef()
     this.renderDropdown = this.renderDropdown.bind(this)
-    this.handleSetUser = this.handleSetUser.bind(this);
+    this.handleTagUser = this.handleTagUser.bind(this);
+    this.handleReset = this.handleReset.bind(this);
     this.handleFocus = this.handleFocus.bind(this)
     this.handleBlur = this.handleBlur.bind(this)
     this.handleInputChange = this.handleInputChange.bind(this)
@@ -23,14 +23,14 @@ class UserInput extends React.Component {
 
   render() {
     return (
-      <div className="users-input dropdown" ref={this.dropdown}>
+      <div className="dropdown" ref={this.dropdown}>
         <div className="dropdown-trigger">
           <div className="field is-grouped">
             <div className="control is-expanded">
-              <div className="input field is-grouped" ref={this.inputContainer} onFocus={this.handleFocus} onBlur={this.handleBlur}>
+              <div className="input field is-grouped" onFocus={this.handleFocus} onBlur={this.handleBlur}>
                 {this.state.user &&
                   <div className="control">
-                    <a className="tag">{this.state.user.login}</a>
+                    <a className="tag is-medium is-white" onClick={this.handleReset}>{this.state.user.login}</a>
                     <input type="hidden" id={this.props.id} name={this.props.name} value={this.state.user.id} />
                   </div>
                 }
@@ -45,7 +45,7 @@ class UserInput extends React.Component {
           </div>
         </div>
         <div className="dropdown-menu">
-          {this.state.input.length && this.renderDropdown()}
+          {this.state.input.length > 0 && this.renderDropdown()}
         </div>
       </div>
     )
@@ -80,8 +80,8 @@ class UserInput extends React.Component {
             } else if(props) {
               return (
                 <div>
-                  {props.search.edges.filter(edge => !this.props.maintainers.includes(edge.node.id)).map((edge, i) =>
-                    <a key={i} className="dropdown-item" onClick={this.handleSetUser(edge.node)}>{edge.node.login} <span className="has-text-grey">{edge.node.name}</span></a>
+                  {props.search.edges.filter(edge => !this.props.reject.includes(edge.node.id)).map((edge, i) =>
+                    <a key={i} className="dropdown-item" onClick={this.handleTagUser(edge.node)}>{edge.node.login} <span className="has-text-grey">{edge.node.name}</span></a>
                   )}
                 </div>
               )
@@ -93,23 +93,25 @@ class UserInput extends React.Component {
     )
   }
 
-  handleSetUser(user) {
+  handleTagUser(user) {
     return () => {
       this.dropdown.current.classList.remove("is-active")
       this.submitButton.current.disabled = false
-      this.setState(state => ({
-        user: user,
-        input: ""
-      }))
+      this.setState({user: user, input: ""})
     }
   }
 
-  handleFocus() {
-    this.inputContainer.current.classList.add("is-focused")
+  handleReset() {
+    this.submitButton.current.disabled = true
+    this.setState({user: ""})
   }
 
-  handleBlur() {
-    this.inputContainer.current.classList.remove("is-focused")
+  handleFocus(event) {
+    event.target.classList.add("is-focused")
+  }
+
+  handleBlur(event) {
+    event.target.classList.remove("is-focused")
   }
 
   handleInputChange(event) {
@@ -126,9 +128,7 @@ class UserInput extends React.Component {
     if(this.state.user) {
       if(event.keyCode == 8) {
         this.submitButton.current.disabled = true
-        this.setState(state => ({
-          user: ""
-        }))
+        this.setState({user: ""})
       } else {
         event.preventDefault()
       }

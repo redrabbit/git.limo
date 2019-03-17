@@ -28,7 +28,7 @@
         <div class="navbar-menu">
           <div class="navbar-start">
             <div class="navbar-item">
-              <%= react_component("Search") %>
+              <%= react_component("Search", [], class: "search") %>
             </div>
           </div>
 

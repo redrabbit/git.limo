@@ -36,19 +36,21 @@ main.container {
 
 nav.navbar {
   .search {
-    input {
-      width: 18rem;
-      border: 0;
-      box-shadow: none;
-      background-color: $white-ter;
+    .dropdown {
+      input {
+        width: 18rem;
+        border: 0;
+        box-shadow: none;
+        background-color: $white-ter;
 
-      &::placeholder {
-        font-weight: $weight-semibold;
+        &::placeholder {
+          font-weight: $weight-semibold;
+        }
       }
-    }
 
-    .dropdown-menu {
-      width: 18rem;
+      .dropdown-menu {
+        width: 18rem;
+      }
     }
   }
 }
@@ -136,31 +138,46 @@ table.table {
   }
 }
 
-.dropdown.branch-select {
-  .dropdown-menu {
-    .panel {
-      background-color: $dropdown-content-background-color;
-    }
-    .panel-block {
-      font-size: 0.875em;
+.branch-select {
+  .dropdown {
+    .dropdown-menu {
+      .panel {
+        background-color: $dropdown-content-background-color;
+      }
+      .panel-block {
+        font-size: 0.875em;
 
-      &:last-child {
-        border-bottom-left-radius: $radius;
-        border-bottom-right-radius: $radius;
+        &:last-child {
+          border-bottom-left-radius: $radius;
+          border-bottom-right-radius: $radius;
+        }
       }
     }
   }
 }
 
-.dropdown.clone {
-  .dropdown-menu {
-    width: 20rem;
+.user-input {
+  .dropdown {
+    display: block;
+    .input.field {
+      .control:not(:last-child) {
+        margin-right: 0;
+      }
+      .tag {
+        padding-left: 1px;
+        padding-right: 0;
+      }
+    }
+    .dropdown-menu {
+      width: 100%;
+    }
   }
 }
 
-.users-input {
-  display: block;
-  .dropdown-menu {
-    width: 100%;
+.repo-clone {
+  .dropdown {
+    .dropdown-menu {
+      width: 20rem;
+    }
   }
 }

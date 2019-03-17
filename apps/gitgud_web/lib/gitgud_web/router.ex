@@ -6,7 +6,6 @@ defmodule GitGud.Web.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
-    plug Phoenix.LiveView.Flash
     plug :authenticate_session
     plug :protect_from_forgery
     plug :put_secure_browser_headers
@@ -17,16 +16,16 @@ defmodule GitGud.Web.Router do
     plug :authenticate
   end
 
+  if Mix.env == :dev do
+    forward "/sent_emails", Bamboo.SentEmailViewerPlug
+  end
+
   scope "/graphql" do
     pipe_through :graphql
     forward "/", Absinthe.Plug.GraphiQL,
       json_codec: Jason,
       socket: GitGud.Web.UserSocket,
       schema: GitGud.GraphQL.Schema
-  end
-
-  if Mix.env == :dev do
-    forward "/sent_emails", Bamboo.SentEmailViewerPlug
   end
 
   scope "/", GitGud.Web do
@@ -59,6 +58,7 @@ defmodule GitGud.Web.Router do
     post "/settings/emails", EmailController, :create
     put "/settings/emails", EmailController, :update
     delete "/settings/emails", EmailController, :delete
+
     post "/settings/emails/verify", EmailController, :send_verification
     get "/settings/emails/verify/:token", EmailController, :verify
 

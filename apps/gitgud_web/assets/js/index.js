@@ -2,7 +2,6 @@ import "phoenix_html"
 
 import css from "../css/app.scss"
 
-import liveView from "./live-view"
 import factory from "./react-factory"
 
 [...document.getElementsByClassName("message")].forEach(flash => {
@@ -10,7 +9,5 @@ import factory from "./react-factory"
     flash.remove()
   })
 })
-
-liveView.connect()
 
 document.addEventListener("DOMContentLoaded", factory)

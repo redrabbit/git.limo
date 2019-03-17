@@ -34,7 +34,7 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= live_render(@conn, GitGud.Web.GitReferenceView, session: %{repo: @repo, revision: @revision}) %>
+      <%= branch_select(@conn) %>
     </div>
     <div class="level-item">
       <%= render "_tree_breadcrumb.html", assigns %>
@@ -49,37 +49,7 @@
       </p>
     </div>
     <div class="level-item">
-      <div class="dropdown clone is-right is-hoverable">
-        <div class="dropdown-trigger">
-          <button class="button is-success" aria-haspopup="true">
-            <span>Clone repository</span>
-            <span class="icon is-small">
-              <i class="fas fa-angle-down" aria-hidden="true"></i>
-            </span>
-          </button>
-        </div>
-        <div class="dropdown-menu" role="menu">
-          <div class="dropdown-content">
-            <div class="dropdown-item">
-              <div class="field">
-                <label class="label">Clone with HTTP</label>
-                <div class="field has-addons">
-                  <div class="control is-expanded">
-                    <input type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" class="input is-small" readonly />
-                  </div>
-                  <div class="control">
-                    <a class="button is-small">
-                      <span class="icon is-small">
-                        <i class="fa fa-clipboard"></i>
-                      </span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <%= repo_clone(@conn) %>
     </div>
   </div>
 </nav>

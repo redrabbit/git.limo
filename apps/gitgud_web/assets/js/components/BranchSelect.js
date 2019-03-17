@@ -19,7 +19,7 @@ class BranchSelect extends React.Component {
 
   render() {
     return (
-      <div className="dropdown branch-select" ref={this.dropdown}>
+      <div className="dropdown" ref={this.dropdown}>
         <div className="dropdown-trigger">
           <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
             <span>{this.props.type.charAt(0).toUpperCase() + this.props.type.slice(1)}: <span className="has-text-weight-semibold">{this.props.name}</span></span>
@@ -98,7 +98,7 @@ class BranchSelect extends React.Component {
     )
   }
 
-  handleToggle(event) {
+  handleToggle() {
     const toggled = this.state.toggled
     if(!toggled)
       this.dropdown.current.classList.add("is-active")

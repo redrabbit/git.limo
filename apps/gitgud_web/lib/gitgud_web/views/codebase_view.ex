@@ -47,13 +47,22 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
-    assigns = Map.take(conn.assigns, [:repo, :revision])
-    react_component("BranchSelect",
-      repo: to_relay_id(assigns.repo),
-      oid: revision_oid(assigns.revision),
-      name: revision_name(assigns.revision),
-      type: to_string(revision_type(assigns.revision))
-    )
+    %{repo: repo, revision: revision} = Map.take(conn.assigns, [:repo, :revision])
+    react_component("BranchSelect", [
+      repo: to_relay_id(repo),
+      oid: revision_oid(revision),
+      name: revision_name(revision),
+      type: to_string(revision_type(revision))], class: "branch-select")
+  end
+
+  @spec repo_clone(Plug.Conn.t) :: binary
+  def repo_clone(conn) do
+    repo = Map.get(conn.assigns, :repo)
+    props = [http: Routes.codebase_url(conn, :show, repo.owner, repo)]
+    props = if user = current_user(conn),
+        do: [ssh: "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"] ++ props,
+      else: props
+    react_component("RepoClone", props, class: "repo-clone")
   end
 
   @spec blob_content(GitBlob.t) :: binary | nil

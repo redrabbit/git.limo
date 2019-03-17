@@ -65,7 +65,7 @@
 <%= form_for @changeset, Routes.maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
   <div class="field">
     <%= label f, :user_id, "Add maintainer", class: "label" %>
-    <%= react_component "UserInput", id: input_id(f, :user_id), name: input_name(f, :user_id), maintainers: Enum.map(@repo.maintainers, &to_relay_id/1) %>
+    <%= react_component "UserInput", [id: input_id(f, :user_id), name: input_name(f, :user_id), reject: Enum.map(@repo.maintainers, &to_relay_id/1)], class: "user-input" %>
     <%= error_tag f, :user_id %>
   </div>
 <% end %>

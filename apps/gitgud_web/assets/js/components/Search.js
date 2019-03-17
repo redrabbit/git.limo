@@ -15,7 +15,7 @@ class Search extends React.Component {
 
   render() {
     return (
-      <div className="search dropdown" ref={this.dropdown}>
+      <div className="dropdown" ref={this.dropdown}>
         <div className="control has-icons-left">
           <input type="text" className="input" ref={this.inputContainer} onChange={this.handleInputChange} placeholder="Search ..." />
           <span className="icon is-small is-left">
@@ -23,7 +23,7 @@ class Search extends React.Component {
           </span>
         </div>
         <div className="dropdown-menu">
-          {this.state.input.length && this.renderDropdown()}
+          {this.state.input.length > 0 && this.renderDropdown()}
         </div>
       </div>
     )
