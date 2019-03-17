@@ -9,8 +9,8 @@ defmodule GitGud.GitReference do
   alias GitGud.GitCommit
   alias GitGud.GitTag
 
-  @enforce_keys [:oid, :name, :prefix, :repo, :type, :__git__]
-  defstruct [:oid, :name, :prefix, :repo, :type, :__git__]
+  @enforce_keys [:oid, :name, :prefix, :type, :repo, :__git__]
+  defstruct [:oid, :name, :prefix, :type, :repo, :__git__]
 
   @type reference_type :: :branch | :tag
 

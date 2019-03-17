@@ -230,14 +230,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the type for the given Git `reference` object.
-  """
-  @spec git_reference_type(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.type} | {:error, term}
-  def git_reference_type(%GitReference{} = reference, %{} = _args, _info) do
-    GitReference.type(reference)
-  end
-
-  @doc """
   Resolves the commit history starting from the given Git `revision` object.
   """
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}

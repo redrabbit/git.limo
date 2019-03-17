@@ -118,12 +118,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec revision_type(Repo.git_object) :: atom
   def revision_type(%GitCommit{} = _object), do: :commit
   def revision_type(%GitTag{} = _object), do: :tag
-  def revision_type(%GitReference{} = ref) do
-    case GitReference.type(ref) do
-      {:ok, type} -> type
-      {:error, _reason} -> nil
-    end
-  end
+  def revision_type(%GitReference{} = ref), do: ref.type
 
   @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(%GitTree{} = tree) do
