@@ -29,8 +29,7 @@ config :absinthe, schema: GitGud.GraphQL.Schema
 config :phoenix, :json_library, Jason
 
 # Enable Phoenix LiveView templates
-config :phoenix,
-  template_engines: [leex: Phoenix.LiveView.Engine]
+config :phoenix, template_engines: [leex: Phoenix.LiveView.Engine]
 
 # Use Jason for JSON parsing in OAuth2
 config :oauth2,
