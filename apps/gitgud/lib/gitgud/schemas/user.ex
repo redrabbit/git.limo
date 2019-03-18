@@ -7,6 +7,8 @@ defmodule GitGud.User do
 
   import Ecto.Changeset
 
+  alias Ecto.Multi
+
   alias GitGud.DB
 
   alias GitGud.Auth
@@ -65,12 +67,12 @@ defmodule GitGud.User do
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    case DB.insert(registration_changeset(%__MODULE__{}, Map.new(params))) do
-      {:ok, %__MODULE__{emails: [%Email{verified: true} = email]} = user} ->
-        update(user, :primary_email, email)
-      {:ok, user} ->
+    case create_and_set_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
+      {:ok, %{user_with_primary_email: user}} ->
         {:ok, user}
-      {:error, changeset} ->
+      {:error, :user, changeset, _changes} ->
+        {:error, changeset}
+      {:error, :user_with_primary_email, changeset, _changes} ->
         {:error, changeset}
     end
   end
@@ -202,9 +204,26 @@ defmodule GitGud.User do
   # Helpers
   #
 
+  defp create_and_set_primary_email(changeset) do
+    Multi.new()
+    |> Multi.insert(:user, changeset)
+    |> Multi.run(:user_with_primary_email, &set_primary_email/2)
+    |> DB.transaction()
+  end
+
+  defp set_primary_email(db, %{user: user}) do
+    if email = Enum.find(user.emails, &(&1.verified)) do
+      user
+      |> update_changeset(:primary_email, email)
+      |> db.insert()
+    else
+      {:ok, user}
+    end
+  end
+
   defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
   defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
-  defp update_changeset(user, field, value) when field in [:primary_email, :public_email] do
+  defp update_changeset(user, field, %Email{verified: true} = value) when field in [:primary_email, :public_email] do
     user
     |> struct([{field, nil}])
     |> change()

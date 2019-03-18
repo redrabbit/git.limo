@@ -138,13 +138,6 @@ defmodule GitGud.Email do
     Multi.new()
     |> Multi.update(:email, verification_changeset(email))
     |> Multi.delete_all(:unverified_emails, from(e in __MODULE__, where: e.verified == false and e.address == ^email.address))
-    |> Multi.run(:user, &update_user_primary_email/2)
-  end
-
-  defp update_user_primary_email(db, %{email: email}) do
-    email = db.preload(email, :user)
-    if email.user.primary_email_id,
-      do: {:ok, email.user},
-    else: db.update(change(email.user, %{primary_email_id: email.id}))
+    |> Multi.update_all(:user, from(u in User, where: u.id == ^email.user_id and is_nil(u.primary_email_id)), set: [primary_email_id: email.id])
   end
 end
