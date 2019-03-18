@@ -14,11 +14,11 @@ defmodule GitGud.SSHKey do
 
   schema "ssh_keys" do
     belongs_to :user, User
-    field      :name, :string
-    field      :data, :string, virtual: true
-    field      :fingerprint, :string
+    field :name, :string
+    field :data, :string, virtual: true
+    field :fingerprint, :string
     timestamps(updated_at: false)
-    field      :last_used_at, :naive_datetime
+    field :used_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
@@ -29,7 +29,7 @@ defmodule GitGud.SSHKey do
     data: binary,
     fingerprint: binary,
     inserted_at: NaiveDateTime.t,
-    last_used_at: NaiveDateTime.t
+    used_at: NaiveDateTime.t
   }
 
   @doc """
@@ -71,11 +71,11 @@ defmodule GitGud.SSHKey do
   end
 
   @doc """
-  Updates the `:last_used_at` timestamp for the the given `ssh_key`.
+  Updates the `:used_at` timestamp for the the given `ssh_key`.
   """
   @spec update_timestamp(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_timestamp(%__MODULE__{} = ssh_key) do
-    DB.update(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
+    DB.update(change(ssh_key, %{used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
   end
 
   @doc """
@@ -83,7 +83,7 @@ defmodule GitGud.SSHKey do
   """
   @spec update_timestamp!(t) :: t
   def update_timestamp!(%__MODULE__{} = ssh_key) do
-    DB.update!(change(ssh_key, %{last_used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
+    DB.update!(change(ssh_key, %{used_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)}))
   end
 
   @doc """

@@ -29,14 +29,14 @@ defmodule GitGud.Repo do
   import Ecto.Query, only: [from: 2]
 
   schema "repositories" do
-    belongs_to    :owner,       User
-    field         :name,        :string
-    field         :public,      :boolean, default: true
-    field         :description, :string
-    field         :__git__,     :any, virtual: true
-    many_to_many  :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
+    belongs_to :owner,       User
+    field :name, :string
+    field :public, :boolean, default: true
+    field :description, :string
+    field :__git__, :any, virtual: true
+    many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
-    field         :pushed_at,   :naive_datetime
+    field :pushed_at, :naive_datetime
   end
 
   @type git_object :: GitBlob.t | GitCommit.t | GitTag.t | GitTree.t

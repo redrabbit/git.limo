@@ -9,7 +9,7 @@ defmodule GitGud.Auth.Provider do
 
   import Ecto.Changeset
 
-  schema "authentications_providers" do
+  schema "authentication_providers" do
     belongs_to :auth, Auth
     field :provider, :string
     field :provider_id, :integer
@@ -39,4 +39,3 @@ defmodule GitGud.Auth.Provider do
     |> assoc_constraint(:auth)
   end
 end
-

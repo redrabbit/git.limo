@@ -28,10 +28,10 @@ defmodule GitGud.Email do
 
   schema "emails" do
     belongs_to :user, User
-    field      :address, :string
-    field      :verified, :boolean, default: false
+    field :address, :string
+    field :verified, :boolean, default: false
     timestamps(updated_at: false)
-    field      :verified_at, :naive_datetime
+    field :verified_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
