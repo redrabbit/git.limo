@@ -37,6 +37,7 @@ defmodule GitGud.CommentThread do
   def changeset(%__MODULE__{} = comment_thread, params \\ %{}) do
     comment_thread
     |> cast(params, [:user_id, :locked])
+    |> cast_assoc(:comments, required: true, with: &Comment.changeset/2)
     |> validate_required([:user_id])
     |> assoc_constraint(:user)
   end

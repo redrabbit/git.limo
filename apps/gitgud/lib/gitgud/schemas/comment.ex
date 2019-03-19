@@ -43,7 +43,7 @@ defmodule GitGud.Comment do
   def changeset(%__MODULE__{} = comment, params \\ %{}) do
     comment
     |> cast(params, [:thread_id, :parent_id, :user_id, :body])
-    |> validate_required([:thread_id, :user_id, :body])
+    |> validate_required([:user_id, :body])
     |> assoc_constraint(:thread)
     |> assoc_constraint(:parent)
     |> assoc_constraint(:user)
