@@ -137,7 +137,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_entries(GitTree.t) :: binary | nil
+  @spec tree_readme(GitTree.t) :: binary | nil
   def tree_readme(%GitTree{} = tree) do
     with {:ok, entry} <- GitTree.by_path(tree, "README.md"),
          {:ok, blob} <- GitTreeEntry.target(entry),
@@ -163,6 +163,19 @@ defmodule GitGud.Web.CodebaseView do
       {:ok, deltas} -> deltas
       {:error, _reason} -> nil
     end
+  end
+
+  @spec diff_deltas_with_comments(GitCommit.t, GitDiff.t) :: [map] | nil
+  def diff_deltas_with_comments(commit, diff) do
+    commit_reviews = GitCommit.reviews(commit)
+    Enum.map(diff_deltas(diff), fn delta ->
+      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      Enum.reduce(reviews, delta, fn review, delta ->
+        update_in(delta.hunks, fn hunks ->
+          List.update_at(hunks, review.hunk, &attach_comments_to_delta_line(&1, review.line, review.comments))
+        end)
+      end)
+    end)
   end
 
   @spec breadcrump_action(atom) :: atom
@@ -252,6 +265,12 @@ defmodule GitGud.Web.CodebaseView do
       :eq -> false
       :lt -> false
     end
+  end
+
+  defp attach_comments_to_delta_line(hunk, line, comments) do
+    update_in(hunk.lines, fn lines ->
+      List.update_at(lines, line, &Map.put(&1, :comments, comments))
+    end)
   end
 
   defp zip_author({parent, author}, users) do

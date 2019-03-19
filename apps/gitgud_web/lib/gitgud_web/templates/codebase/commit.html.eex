@@ -34,7 +34,7 @@
 
 <hr />
 
-<%= for delta <- diff_deltas(@diff) do %>
+<%= for delta <- diff_deltas_with_comments(@commit, @diff) do %>
   <div class="card">
     <header class="card-header">
       <p class="card-header-title"><%= delta.new_file.path %></p>

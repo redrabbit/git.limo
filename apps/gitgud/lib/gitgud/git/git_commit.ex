@@ -83,14 +83,17 @@ defmodule GitGud.GitCommit do
     Git.commit_header(commit, "gpgsig")
   end
 
-  @spec comments(t) :: [__MODULE__.Comment.t]
-  def comments(%__MODULE__{oid: oid, repo: repo} = _commit) do
-    query = from c1 in __MODULE__.Comment,
-          where: c1.repo_id == ^repo.id and c1.oid == ^oid,
-           join: t in assoc(c1, :thread),
-           join: c2 in assoc(t, :comments),
-        preload: [thread: {t, comments: c2}]
-    DB.all(query)
+  @doc """
+  Returns all reviews for the given `commit`.
+  """
+  @spec reviews(t) :: [__MODULE__.Review.t]
+  def reviews(%__MODULE__{repo: repo, oid: oid} = _commit) do
+    DB.all(
+      from d in __MODULE__.Review,
+    where: d.repo_id == ^repo.id and d.oid == ^oid,
+     join: c in assoc(d, :comments),
+  preload: [comments: c]
+    )
   end
 
   #
