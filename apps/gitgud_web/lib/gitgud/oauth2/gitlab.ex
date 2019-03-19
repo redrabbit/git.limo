@@ -4,8 +4,6 @@ defmodule GitGud.OAuth2.GitLab do
   """
   use OAuth2.Strategy
 
-  @behaviour OAuth2.Strategy
-
   @doc """
   Returns an *OAuth2.0* client.
   """
