@@ -42,25 +42,25 @@ defmodule GitGud.SmartHTTPBackend do
   plug :dispatch
 
   get "/info/refs" do
-    if repo = RepoQuery.user_repo(conn.params["user_name"], conn.params["repo_name"]),
+    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
   get "/HEAD" do
-    if repo = RepoQuery.user_repo(conn.params["user_name"], conn.params["repo_name"]),
+    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_head_ref(conn, repo) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
   post "/git-receive-pack" do
-    if repo = RepoQuery.user_repo(conn.params["user_name"], conn.params["repo_name"]),
+    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
   post "/git-upload-pack" do
-    if repo = RepoQuery.user_repo(conn.params["user_name"], conn.params["repo_name"]),
+    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end

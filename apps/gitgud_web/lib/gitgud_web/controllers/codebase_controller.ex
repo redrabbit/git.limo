@@ -19,8 +19,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders a repository codebase overview.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       if Repo.empty?(repo),
         do: render(conn, "initialize.html", repo: repo),
@@ -34,8 +34,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders all branches of a repository.
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
-  def branches(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def branches(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, head} <- Repo.git_head(repo),
            {:ok, branches} <- Repo.git_branches(repo), do:
@@ -47,8 +47,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders all tags of a repository.
   """
   @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
-  def tags(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def tags(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, tags} <- Repo.git_tags(repo), do:
         render(conn, "tag_list.html", repo: repo, tags: tags)
@@ -59,8 +59,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders a single commit.
   """
   @spec commit(Plug.Conn.t, map) :: Plug.Conn.t
-  def commit(conn, %{"user_name" => user_name, "repo_name" => repo_name, "oid" => oid} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def commit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "oid" => oid} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, commit} <- Repo.git_object(repo, oid),
            {:ok, new_tree} <- Repo.git_tree(commit),
@@ -75,8 +75,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders all commits for a specific revision.
   """
   @spec history(Plug.Conn.t, map) :: Plug.Conn.t
-  def history(conn, %{"user_name" => user_name, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, history} <- Repo.git_history(object), do:
@@ -84,8 +84,8 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
-  def history(conn, %{"user_name" => user_name, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, history} <- Repo.git_history(object, pathspec: Path.join(tree_path)), do:
@@ -93,8 +93,8 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
-  def history(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, reference} <- Repo.git_head(repo),
            {:ok, history} <- Repo.git_history(reference), do:
@@ -106,8 +106,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders a tree for a specific revision and path.
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
-  def tree(conn, %{"user_name" => user_name, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, tree} <- Repo.git_tree(object), do:
@@ -115,8 +115,8 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
-  def tree(conn, %{"user_name" => user_name, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, tree} <- Repo.git_tree(object),
@@ -130,8 +130,8 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob for a specific revision and path.
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
-  def blob(conn, %{"user_name" => user_name, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn)) do
+  def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       repo = Repo.load(repo)
       with {:ok, object, reference} <- Repo.git_revision(repo, revision),
            {:ok, tree} <- Repo.git_tree(object),

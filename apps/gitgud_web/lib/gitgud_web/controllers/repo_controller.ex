@@ -50,8 +50,8 @@ defmodule GitGud.Web.RepoController do
   Renders a repository edit form.
   """
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
-  def edit(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn), preload: :maintainers) do
+  def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         changeset = Repo.changeset(repo)
         render(conn, "edit.html", repo: repo, changeset: changeset)
@@ -63,9 +63,9 @@ defmodule GitGud.Web.RepoController do
   Updates a repository.
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
-  def update(conn, %{"user_name" => user_name, "repo_name" => repo_name, "repo" => repo_params} = _params) do
+  def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "repo" => repo_params} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: user, preload: :maintainers) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :maintainers) do
       if authorized?(user, repo, :admin) do
         case Repo.update(repo, repo_params) do
           {:ok, repo} ->
@@ -86,9 +86,9 @@ defmodule GitGud.Web.RepoController do
   Updates a repository.
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
-  def delete(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
+  def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: user, preload: :maintainers) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :maintainers) do
       if repo.owner_id == user.id do
         repo = Repo.delete!(repo)
         conn

@@ -70,7 +70,7 @@ defmodule GitGud.Web.Router do
     get "/new", RepoController, :new
     post "/new", RepoController, :create
 
-    scope "/:user_name/:repo_name" do
+    scope "/:user_login/:repo_name" do
       get "/", CodebaseController, :show
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
@@ -90,10 +90,10 @@ defmodule GitGud.Web.Router do
       delete "/settings/maintainers", MaintainerController, :delete
     end
 
-    get "/:user_name", UserController, :show
+    get "/:user_login", UserController, :show
   end
 
-  scope "/:user_name/:repo_name" do
+  scope "/:user_login/:repo_name" do
     forward "/", GitGud.SmartHTTPBackend
   end
 end

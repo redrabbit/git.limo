@@ -5,5 +5,5 @@ defmodule GitGud.SmartHTTPBackendRouter do
   plug :fetch_query_params
   plug :dispatch
 
-  forward "/:user_name/:repo_name", to: GitGud.SmartHTTPBackend
+  forward "/:user_login/:repo_name", to: GitGud.SmartHTTPBackend
 end

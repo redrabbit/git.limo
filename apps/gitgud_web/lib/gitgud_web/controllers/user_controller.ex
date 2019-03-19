@@ -67,8 +67,8 @@ defmodule GitGud.Web.UserController do
   Renders a user.
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user_name" => user_name} = _params) do
-    if user = UserQuery.by_login(user_name, preload: [:primary_email, :public_email, :repos], viewer: current_user(conn)),
+  def show(conn, %{"user_login" => user_login} = _params) do
+    if user = UserQuery.by_login(user_login, preload: [:primary_email, :public_email, :repos], viewer: current_user(conn)),
       do: render(conn, "show.html", user: user),
     else: {:error, :not_found}
   end

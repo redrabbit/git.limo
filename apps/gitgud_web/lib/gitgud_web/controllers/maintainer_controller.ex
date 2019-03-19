@@ -21,8 +21,8 @@ defmodule GitGud.Web.MaintainerController do
   Renders maintainers.
   """
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
-  def edit(conn, %{"user_name" => user_name, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn), preload: :maintainers) do
+  def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         changeset = Maintainer.changeset(%Maintainer{})
         render(conn, "edit.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: changeset)
@@ -34,8 +34,8 @@ defmodule GitGud.Web.MaintainerController do
   Creates a new maintainer.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
-  def create(conn, %{"user_name" => user_name, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn), preload: :maintainers) do
+  def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         maintainer_params = Map.update(maintainer_params, "user_id", "", &parse_id/1)
         case Maintainer.create(Map.put(maintainer_params, "repo_id", repo.id)) do
@@ -43,7 +43,7 @@ defmodule GitGud.Web.MaintainerController do
             user = UserQuery.by_id(maintainer.user_id)
             conn
             |> put_flash(:info, "Maintainer '#{user.login}' added.")
-            |> redirect(to: Routes.maintainer_path(conn, :edit, user_name, repo_name))
+            |> redirect(to: Routes.maintainer_path(conn, :edit, user_login, repo_name))
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
@@ -58,8 +58,8 @@ defmodule GitGud.Web.MaintainerController do
   Updates a maintainer's permissions.
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
-  def update(conn, %{"user_name" => user_name, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn), preload: :maintainers) do
+  def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
@@ -67,11 +67,11 @@ defmodule GitGud.Web.MaintainerController do
             maintainer = Maintainer.update_permission!(maintainer, maintainer_params["permission"])
             conn
             |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.maintainer_path(conn, :edit, user_name, repo_name))
+            |> redirect(to: Routes.maintainer_path(conn, :edit, user_login, repo_name))
           else
             conn
             |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission already set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.maintainer_path(conn, :edit, user_name, repo_name))
+            |> redirect(to: Routes.maintainer_path(conn, :edit, user_login, repo_name))
           end
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
@@ -82,15 +82,15 @@ defmodule GitGud.Web.MaintainerController do
   Deletes a maintainer.
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
-  def delete(conn, %{"user_name" => user_name, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
-    if repo = RepoQuery.user_repo(user_name, repo_name, viewer: current_user(conn), preload: :maintainers) do
+  def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(current_user(conn), repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
           maintainer = Maintainer.delete!(maintainer)
           conn
           |> put_flash(:info, "Maintainer '#{maintainer.user.login}' deleted.")
-          |> redirect(to: Routes.maintainer_path(conn, :edit, user_name, repo_name))
+          |> redirect(to: Routes.maintainer_path(conn, :edit, user_login, repo_name))
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
     end || {:error, :not_found}
