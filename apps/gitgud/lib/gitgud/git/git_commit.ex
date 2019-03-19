@@ -5,7 +5,10 @@ defmodule GitGud.GitCommit do
 
   alias GitRekt.Git
 
+  alias GitGud.DB
   alias GitGud.Repo
+
+  import Ecto.Query, only: [from: 2]
 
   @enforce_keys [:oid, :repo, :__git__]
   defstruct [:oid, :repo, :__git__]
@@ -78,6 +81,16 @@ defmodule GitGud.GitCommit do
   @spec gpg_signature(t) :: {:ok, binary} | {:error, term}
   def gpg_signature(%__MODULE__{__git__: commit} = _commit) do
     Git.commit_header(commit, "gpgsig")
+  end
+
+  @spec comments(t) :: [__MODULE__.Comment.t]
+  def comments(%__MODULE__{oid: oid, repo: repo} = _commit) do
+    query = from c1 in __MODULE__.Comment,
+          where: c1.repo_id == ^repo.id and c1.oid == ^oid,
+           join: t in assoc(c1, :thread),
+           join: c2 in assoc(t, :comments),
+        preload: [thread: {t, comments: c2}]
+    DB.all(query)
   end
 
   #
