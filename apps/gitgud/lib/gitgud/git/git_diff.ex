@@ -57,8 +57,8 @@ defmodule GitGud.GitDiff do
   #
 
   defimpl Inspect do
-    def inspect(_diff, _opts) do
-      Inspect.Algebra.concat(["#GitDiff<", ">"])
+    def inspect(diff, _opts) do
+      Inspect.Algebra.concat(["#GitDiff<", diff.repo.owner.login, "/", diff.repo.name, ">"])
     end
   end
 

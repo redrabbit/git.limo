@@ -71,7 +71,7 @@ defmodule GitGud.GitTree do
 
   defimpl Inspect do
     def inspect(tree, _opts) do
-      Inspect.Algebra.concat(["#GitTree<", Git.oid_fmt_short(tree.oid), ">"])
+      Inspect.Algebra.concat(["#GitTree<", tree.repo.owner.login, "/", tree.repo.name, ":", Git.oid_fmt_short(tree.oid), ">"])
     end
   end
 end

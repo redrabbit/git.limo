@@ -34,7 +34,7 @@ defmodule GitGud.GitBlob do
 
   defimpl Inspect do
     def inspect(blob, _opts) do
-      Inspect.Algebra.concat(["#GitBlob<", Git.oid_fmt_short(blob.oid), ">"])
+      Inspect.Algebra.concat(["#GitBlob<", blob.repo.owner.login, "/", blob.repo.name, ":", Git.oid_fmt_short(blob.oid), ">"])
     end
   end
 end

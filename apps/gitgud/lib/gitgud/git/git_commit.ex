@@ -86,7 +86,7 @@ defmodule GitGud.GitCommit do
 
   defimpl Inspect do
     def inspect(commit, _opts) do
-      Inspect.Algebra.concat(["#GitCommit<", Git.oid_fmt_short(commit.oid), ">"])
+      Inspect.Algebra.concat(["#GitCommit<", commit.repo.owner.login, "/", commit.repo.name, ":", Git.oid_fmt_short(commit.oid), ">"])
     end
   end
 

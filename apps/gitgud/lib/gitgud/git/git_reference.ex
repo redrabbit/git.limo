@@ -37,7 +37,7 @@ defmodule GitGud.GitReference do
 
   defimpl Inspect do
     def inspect(ref, _opts) do
-      Inspect.Algebra.concat(["#GitReference<", ref.name, ">"])
+      Inspect.Algebra.concat(["#GitReference<", ref.repo.owner.login, "/", ref.repo.name, ":", ref.name, ">"])
     end
   end
 end

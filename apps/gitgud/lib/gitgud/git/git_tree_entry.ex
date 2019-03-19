@@ -39,7 +39,7 @@ defmodule GitGud.GitTreeEntry do
 
   defimpl Inspect do
     def inspect(tree_entry, _opts) do
-      Inspect.Algebra.concat(["#GitTreeEntry<", Git.oid_fmt_short(tree_entry.oid), ">"])
+      Inspect.Algebra.concat(["#GitTreeEntry<", tree_entry.repo.owner.login, "/", tree_entry.repo.name, ":", Git.oid_fmt_short(tree_entry.oid), ">"])
     end
   end
 end

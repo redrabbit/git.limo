@@ -50,7 +50,7 @@ defmodule GitGud.GitTag do
 
   defimpl Inspect do
     def inspect(tag, _opts) do
-      Inspect.Algebra.concat(["#GitTag<", tag.name, ">"])
+      Inspect.Algebra.concat(["#GitTag<", tag.repo.owner.login, "/", tag.repo.name, ":", tag.name, ">"])
     end
   end
 end
