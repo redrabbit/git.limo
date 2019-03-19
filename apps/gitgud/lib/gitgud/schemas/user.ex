@@ -196,7 +196,7 @@ defmodule GitGud.User do
   @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [])
+    |> cast(%{auth: params}, [])
     |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
   end
 

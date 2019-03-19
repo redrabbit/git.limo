@@ -28,7 +28,7 @@ defmodule GitGud.Web.UserController do
 
   plug :scrub_params, "user" when action == :create
   plug :scrub_params, "profile" when action == :update_profile
-  plug :scrub_params, "password" when action == :update_password
+  plug :scrub_params, "auth" when action == :update_password
 
   action_fallback GitGud.Web.FallbackController
 
@@ -108,7 +108,7 @@ defmodule GitGud.Web.UserController do
   @spec edit_password(Plug.Conn.t, map) :: Plug.Conn.t
   def edit_password(conn, _params) do
     user = DB.preload(current_user(conn), :auth)
-    changeset = User.password_changeset(user)
+    changeset = Auth.password_changeset(user.auth)
     render(conn, "edit_password.html", user: user, changeset: changeset)
   end
 
@@ -116,9 +116,9 @@ defmodule GitGud.Web.UserController do
   Updates a password.
   """
   @spec update_password(Plug.Conn.t, map) :: Plug.Conn.t
-  def update_password(conn, %{"password" => password_params} = _params) do
+  def update_password(conn, %{"auth" => auth_params} = _params) do
     user = DB.preload(current_user(conn), :auth)
-    case User.update(user, :password, password_params) do
+    case User.update(user, :password, auth_params) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Password updated.")
@@ -127,7 +127,7 @@ defmodule GitGud.Web.UserController do
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
-        |> render("edit_password.html", user: user, changeset: %{changeset|action: :update})
+        |> render("edit_password.html", user: user, changeset: %{changeset.changes.auth|action: :update})
     end
   end
 
