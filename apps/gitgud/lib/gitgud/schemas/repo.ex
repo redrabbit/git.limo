@@ -205,15 +205,16 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Opens the Git repository for the given `repo`.
+  Loads the Git repository for the given `repo`.
   """
-  @spec open(t) :: t
-  def open(%__MODULE__{__git__: handle} = repo) when is_reference(handle), do: repo
-  def open(%__MODULE__{__git__: nil} = repo) do
-    case Git.repository_open(workdir(repo)) do
-      {:ok, handle} -> struct(repo, __git__: handle)
-      {:error, reason} -> raise reason
-    end
+  @spec load(t, keyword) :: t
+  def load(%__MODULE__{__git__: handle} = repo, opts \\ []) do
+    if is_nil(handle) || Keyword.get(opts, :force, false) do
+      case Git.repository_open(workdir(repo)) do
+        {:ok, handle} -> struct(repo, __git__: handle)
+        {:error, reason} -> raise reason
+      end
+    end || repo
   end
 
   @doc """
@@ -221,8 +222,10 @@ defmodule GitGud.Repo do
   """
   @spec empty?(t) :: boolean
   def empty?(%__MODULE__{} = repo) do
-    with {:ok, handle} <- resolve_handle(repo), do:
-      Git.repository_empty?(handle)
+    case resolve_handle(repo) do
+      {:ok, handle} -> Git.repository_empty?(handle)
+      {:error, reason} -> raise ArgumentError, message: reason
+    end
   end
 
   @doc """
