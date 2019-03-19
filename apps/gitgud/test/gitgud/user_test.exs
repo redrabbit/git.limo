@@ -76,19 +76,19 @@ defmodule GitGud.UserTest do
     end
 
     test "updates password with valid params", %{user: user1} do
-      assert {:ok, user2} = User.update(user1, :password, auth: %{old_password: "qwertz", password: "qwerty"})
+      assert {:ok, user2} = User.update(user1, :password, old_password: "qwertz", password: "qwerty")
       assert user1.auth.password_hash != user2.auth.password_hash
     end
 
     test "fails to update password with invalid old password", %{user: user} do
-      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "abcdef", password: "qwerty"})
+      assert {:error, changeset} = User.update(user, :password, old_password: "abcdef", password: "qwerty")
       assert "does not match old password" in errors_on(changeset).auth.old_password
     end
 
     test "fails to update password with invalid new password", %{user: user} do
-      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "qwertz"})
+      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz")
       assert "can't be blank" in errors_on(changeset).auth.password
-      assert {:error, changeset} = User.update(user, :password, auth: %{old_password: "qwertz", password: "abc"})
+      assert {:error, changeset} = User.update(user, :password, old_password: "qwertz", password: "abc")
       assert "should be at least 6 character(s)" in errors_on(changeset).auth.password
     end
 
