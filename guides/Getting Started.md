@@ -12,7 +12,7 @@ In the following sections, we will provide an overview of those components and h
 
 ## Working with Git
 
-`GitRekt.Git` exposes a subset of [libgit2](https://libgit2.org) functions and offers a fast API for manipulating Git objects.
+`GitRekt.Git` exposes functions and offers a fast API for manipulating Git objects.
 
 Let's see a brief example:
 
@@ -23,7 +23,7 @@ alias GitRekt.Git
 {:ok, repo} = Git.repository_open("/tmp/my-repo")
 
 # show last commit of branch "master"
-{:ok, :commit, oid, commit} = Git.reference_peel(repo, "refs/heads/master")
+{:ok, :commit, _oid, commit} = Git.reference_peel(repo, "refs/heads/master")
 {:ok, name, email, time, _offset} = Git.commit_author(commit)
 {:ok, message} = Git.commit_message(commit)
 
@@ -31,28 +31,26 @@ IO.puts "Last commit by #{name} <#{email}>:"
 IO.puts message
 ```
 
-In this example, each Git related function is implemented in C instead of Elixir.
-
-These functions are compiled and linked into a dynamic loadable, shared library. They belong to a module and are called like any other Elixir functions.
+Functions available in `GitRekt.Git` are implemented in C for performance reasons.
+These functions are compiled into a dynamic loadable, shared library. They are called like any other Elixir functions.
 
 > As a NIF library is dynamically linked into the emulator process, this is the fastest way of calling C-code from Erlang (alongside port drivers). Calling NIFs requires no context switches. But it is also the least safe, because a crash in a NIF brings the emulator down too.
 >
 > [Erlang documentation - NIFs](http://erlang.org/doc/tutorial/nif.html)
 
-Altough in the example above we have directly called low-level Git functions to query Git related objects, most of the time `GitGud.Repo` provides a better entry-point to work with Git repositories.
+Altough in the previous example we have directly called low-level Git functions, most of the time `GitGud.Repo` provides a better entry-point to work with Git objects.
 
-Let's rewrite the last example using the higher-level `GitGud.Repo` API.
+Let's rewrite the last example using high-level Git helper modules:
 
 ```elixir
-alias GitGud.{Repo, RepoQuery, GitReference, GitCommit}
+alias GitGud.{Repo, RepoQuery, GitCommit}
 
 # load repository
 repo = RepoQuery.user_repo("redrabbit", "gitgud")
-repo = Repo.open(repo)
+repo = Repo.load(repo)
 
 # show last commit of branch "master"
-{:ok, head} = Repo.git_branch(repo, "master")
-{:ok, commit} = GitReference.target(head)
+{:ok, commit, _ref} = Repo.git_revision(repo, "master")
 {:ok, author} = GitCommit.author(commit)
 {:ok, message} = GitCommit.message(commit)
 
@@ -67,12 +65,12 @@ alias GitGud.{Repo, RepoQuery, GitCommit}
 
 # load repository
 repo = RepoQuery.user_repo("redrabbit", "gitgud")
-repo = Repo.open(repo)
+repo = Repo.load(repo)
 
 # show last 10 commits
 {:ok, head} = Repo.git_head(repo)
-{:ok, stream} = Repo.git_history(head)
-for commit <- Enum.take(stream, 10) do
+{:ok, hist} = Repo.git_history(head)
+for commit <- Enum.take(hist, 10) do
 	{:ok, author} = GitCommit.author(commit)
 	{:ok, message} = GitCommit.message(commit)
 	IO.puts "Commit by #{author.name} <#{author.email}>:"

@@ -11,7 +11,7 @@ defmodule GitGud.Maintainer do
   * `:write` -- can read, clone and push to the repository.
   * `:admin` -- can read, clone, push and administrate the repository.
 
-  By default, a newly created repository maintainer has the `:read` permission. Use `update_permission/2`
+  By default, a newly created repository maintainer has `:read` permission. Use `update_permission/2`
   to change a maintainer's permission.
   """
 

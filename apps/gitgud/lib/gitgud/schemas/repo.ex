@@ -29,7 +29,7 @@ defmodule GitGud.Repo do
   import Ecto.Query, only: [from: 2]
 
   schema "repositories" do
-    belongs_to :owner,       User
+    belongs_to :owner, User
     field :name, :string
     field :public, :boolean, default: true
     field :description, :string
@@ -52,7 +52,8 @@ defmodule GitGud.Repo do
     maintainers: [User.t],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
-    pushed_at: NaiveDateTime.t
+    pushed_at: NaiveDateTime.t,
+    __git__: Git.repo | nil
   }
 
   @doc """
