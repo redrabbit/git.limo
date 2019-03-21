@@ -16,7 +16,7 @@
 <% else %>
   <%= for ssh_key <- @user.ssh_keys do %>
     <div class="columns">
-      <div class="column">
+      <div class="column is-12">
         <div class="card">
           <header class="card-header">
             <p class="card-header-title">

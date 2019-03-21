@@ -181,3 +181,107 @@ table.table {
     }
   }
 }
+
+.card.blob {
+  .card-content {
+    padding: 0;
+    border-top: 1px solid $grey-lighter;
+    overflow-x: scroll;
+  }
+}
+
+table.blob-table {
+  border-collapse: separate;
+  width: 100%;
+  margin: 1rem 0;
+
+  tbody {
+    tr {
+      td {
+        font-size: .9rem;
+        font-family: $family-monospace;
+        -moz-osx-font-smoothing: auto;
+        -webkit-font-smoothing: auto;
+
+        &.line-no {
+          width: 1%;
+          min-width: 50px;
+          padding-left: 10px;
+          padding-right: 10px;
+          text-align: right;
+          vertical-align: top;
+          white-space: nowrap;
+          color: rgba(27,31,35,.3);
+        }
+
+        &.blob {
+          padding-left: 10px;
+          padding-right: 10px;
+          vertical-align: top;
+
+          .code-inner {
+            overflow: visible;
+            white-space: pre;
+            word-wrap: normal;
+          }
+        }
+      }
+    }
+  }
+}
+
+table.diff-table {
+  margin-top: 0;
+
+  tbody {
+    tr {
+      &.hunk {
+        td {
+          &.line-no {
+            vertical-align: middle;
+            background-color: $white-ter;
+          }
+
+          &.blob {
+            color: rgba(27,31,35,.7);
+            background-color: $white-bis;
+            border-width: 1px 0;
+            padding-bottom: 4px;
+            padding-top: 4px;
+          }
+
+        }
+      }
+
+      &.diff-addition {
+        td {
+          background-color: #cdffd8;
+          border-color: #bef5cb;
+
+          &.blob {
+            background-color: #e6ffed;
+          }
+        }
+      }
+
+      &.diff-deletion {
+        td {
+          background-color: #ffdce0;
+          border-color: #fdaeb7;
+
+          &.blob {
+            background-color: #ffeef0;
+          }
+        }
+      }
+
+      td {
+        &.blob {
+          &.origin {
+            width: 1em;
+          }
+        }
+      }
+    }
+  }
+}

@@ -42,11 +42,7 @@
   </div>
   <div class="level-right">
     <div class="level-item">
-      <p class="buttons has-addons">
-        <a class="button" disabled>Create new file</a>
-        <a class="button" disabled>Upload files</a>
-        <a class="button" disabled>Find file</a>
-      </p>
+      <p class="buttons has-addons"></p>
     </div>
     <div class="level-item">
       <%= repo_clone(@conn) %>

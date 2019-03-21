@@ -10,16 +10,17 @@
   <div class="level-right">
     <div class="level-item">
       <p class="buttons has-addons">
-        <a class="button" disabled>Raw</a>
-        <a class="button" disabled>Blame</a>
-        <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
+        <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @revision, @tree_path) %>" class="button">History</a>
       </p>
     </div>
   </div>
 </nav>
 
-<pre>
-  <code>
-    <%= blob_content(@blob) %>
-  </code>
-</pre>
+<div class="card blob">
+  <header class="card-header">
+    <p class="card-header-title"><%= Path.join(@tree_path) %></p>
+  </header>
+  <div class="card-content">
+    <%= blob_table(@blob) %>
+  </div>
+</div>

@@ -15,6 +15,9 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
+  import Phoenix.HTML.Link
+  import Phoenix.HTML.Tag
+
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   @spec batch_branches_commits_authors(Enumerable.t) :: [{GitReference.t, {GitCommit.t, User.t | map}}]
@@ -79,6 +82,22 @@ defmodule GitGud.Web.CodebaseView do
       {:ok, size} -> size
       {:error, _reason} -> nil
     end
+  end
+
+  @spec blob_table(GitBlob.t) :: binary
+  def blob_table(blob) do
+    content_tag(:table, [class: "blob-table"], do: [
+      content_tag(:tbody, do:
+        for {line_content, line_no} <- Enum.with_index(String.split(blob_content(blob), "\n"), 1) do
+          content_tag(:tr, do: [
+            content_tag(:td, line_no, class: "line-no", colspan: 2),
+            content_tag(:td, [class: "blob"], do: [
+              content_tag(:div, line_content, class: "code-inner")
+            ])
+          ])
+        end
+      )
+    ])
   end
 
   @spec commit_author(GitCommit.t) :: map | nil
@@ -169,6 +188,7 @@ defmodule GitGud.Web.CodebaseView do
   def diff_deltas_with_comments(commit, diff) do
     commit_reviews = GitCommit.reviews(commit)
     Enum.map(diff_deltas(diff), fn delta ->
+      IO.inspect delta
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
@@ -176,6 +196,44 @@ defmodule GitGud.Web.CodebaseView do
         end)
       end)
     end)
+  end
+
+  @spec diff_table([map]) :: binary
+  def diff_table(delta) do
+    content_tag(:table, [class: "blob-table diff-table"], do: [
+      content_tag(:tbody, do:
+        for hunk <- delta.hunks do
+          [
+            content_tag(:tr, [class: "hunk"], do: [
+              content_tag(:td, "", class: "line-no", colspan: 2),
+              content_tag(:td, [class: "blob", colspan: 2], do: [
+                content_tag(:div, hunk.header, class: "code-inner")
+              ])
+            ]),
+            for line <- hunk.lines do
+              line_class =
+                cond do
+                  line.origin == "+" -> "diff-deletion"
+                  line.origin == "-" -> "diff-addition"
+                  true -> ""
+                end
+              content_tag(:tr, [class: line_class], do: [
+                (if line.old_line_no != -1,
+                  do: content_tag(:td, line.old_line_no, class: "line-no"),
+                else: content_tag(:td, "", class: "line-no")),
+                (if line.new_line_no != -1,
+                  do: content_tag(:td, line.new_line_no, class: "line-no"),
+                else: content_tag(:td, "", class: "line-no")),
+                content_tag(:td, line.origin, class: "blob origin"),
+                content_tag(:td, [class: "blob"], do: [
+                  content_tag(:div, line.content, class: "code-inner")
+                ])
+              ])
+            end
+          ]
+        end
+      )
+    ])
   end
 
   @spec breadcrump_action(atom) :: atom
