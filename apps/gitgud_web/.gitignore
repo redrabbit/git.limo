@@ -13,6 +13,9 @@ npm-debug.log
 # Static artifacts
 /assets/node_modules
 
+# GraphQL artifacts
+/assets/js/components/__generated__
+
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment
 # this depending on your deployment strategy.
