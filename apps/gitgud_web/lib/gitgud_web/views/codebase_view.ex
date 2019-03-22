@@ -15,10 +15,11 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
-  import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
+
+  @external_resource highlight_languages = Path.join(:code.priv_dir(:gitgud_web), "highlight-languages.txt")
 
   @spec batch_branches_commits_authors(Enumerable.t) :: [{GitReference.t, {GitCommit.t, User.t | map}}]
   def batch_branches_commits_authors(references_commits) do
@@ -84,15 +85,16 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec blob_table(GitBlob.t) :: binary
-  def blob_table(blob) do
+  @spec blob_table(binary, GitBlob.t) :: binary
+  def blob_table(file_path, blob) do
+    highlight_lang = highlight_language_from_path(file_path)
     content_tag(:table, [class: "blob-table"], do: [
       content_tag(:tbody, do:
         for {line_content, line_no} <- Enum.with_index(String.split(blob_content(blob), "\n"), 1) do
           content_tag(:tr, do: [
             content_tag(:td, line_no, class: "line-no", colspan: 2),
-            content_tag(:td, [class: "blob"], do: [
-              content_tag(:div, line_content, class: "code-inner")
+            content_tag(:td, [class: "code"], do: [
+              content_tag(:div, line_content, class: Enum.join(["code-inner", highlight_lang], " "))
             ])
           ])
         end
@@ -188,7 +190,6 @@ defmodule GitGud.Web.CodebaseView do
   def diff_deltas_with_comments(commit, diff) do
     commit_reviews = GitCommit.reviews(commit)
     Enum.map(diff_deltas(diff), fn delta ->
-      IO.inspect delta
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
@@ -198,16 +199,17 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec diff_table([map]) :: binary
-  def diff_table(delta) do
+  @spec diff_table(binary, [map]) :: binary
+  def diff_table(file_path, delta) do
+    highlight_lang = highlight_language_from_path(file_path)
     content_tag(:table, [class: "blob-table diff-table"], do: [
       content_tag(:tbody, do:
         for hunk <- delta.hunks do
           [
             content_tag(:tr, [class: "hunk"], do: [
               content_tag(:td, "", class: "line-no", colspan: 2),
-              content_tag(:td, [class: "blob", colspan: 2], do: [
-                content_tag(:div, hunk.header, class: "code-inner")
+              content_tag(:td, [class: "code", colspan: 2], do: [
+                content_tag(:div, hunk.header, class: "code-inner nohighlight")
               ])
             ]),
             for line <- hunk.lines do
@@ -224,9 +226,9 @@ defmodule GitGud.Web.CodebaseView do
                 (if line.new_line_no != -1,
                   do: content_tag(:td, line.new_line_no, class: "line-no"),
                 else: content_tag(:td, "", class: "line-no")),
-                content_tag(:td, line.origin, class: "blob origin"),
-                content_tag(:td, [class: "blob"], do: [
-                  content_tag(:div, line.content, class: "code-inner")
+                content_tag(:td, line.origin, class: "code origin"),
+                content_tag(:td, [class: "code"], do: [
+                  content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
                 ])
               ])
             end
@@ -316,6 +318,19 @@ defmodule GitGud.Web.CodebaseView do
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})
   end
+
+  defp highlight_language_from_path(path) do
+    highlight_language(Path.extname(path))
+  end
+
+  for line <- File.stream!(highlight_languages) do
+    [language|extensions] = String.split(String.trim(line), ~r/\s/, trim: true)
+    for extension <- extensions do
+      defp highlight_language("." <> unquote(extension)), do: unquote(language)
+    end
+  end
+
+  defp highlight_language(_extension), do: "nohighlight"
 
   defp compare_timestamps(one, two) do
     case DateTime.compare(one, two) do

@@ -214,7 +214,7 @@ table.blob-table {
           color: rgba(27,31,35,.3);
         }
 
-        &.blob {
+        &.code {
           padding-left: 10px;
           padding-right: 10px;
           vertical-align: top;
@@ -223,6 +223,11 @@ table.blob-table {
             overflow: visible;
             white-space: pre;
             word-wrap: normal;
+
+            &.hljs {
+              padding: 0;
+              background-color: transparent;
+            }
           }
         }
       }
@@ -242,7 +247,7 @@ table.diff-table {
             background-color: $white-ter;
           }
 
-          &.blob {
+          &.code {
             color: rgba(27,31,35,.7);
             background-color: $white-bis;
             border-width: 1px 0;
@@ -258,7 +263,7 @@ table.diff-table {
           background-color: #cdffd8;
           border-color: #bef5cb;
 
-          &.blob {
+          &.code {
             background-color: #e6ffed;
           }
         }
@@ -269,14 +274,14 @@ table.diff-table {
           background-color: #ffdce0;
           border-color: #fdaeb7;
 
-          &.blob {
+          &.code {
             background-color: #ffeef0;
           }
         }
       }
 
       td {
-        &.blob {
+        &.code {
           &.origin {
             width: 1em;
           }

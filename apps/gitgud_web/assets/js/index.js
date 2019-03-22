@@ -1,8 +1,12 @@
 import "phoenix_html"
 
-import css from "../css/app.scss"
+import hljs from "highlight.js"
+import "highlight.js/styles/github-gist.css"
 
 import factory from "./react-factory"
+
+import css from "../css/app.scss"
+
 
 [...document.getElementsByClassName("message")].forEach(flash => {
   flash.querySelector("button.delete").addEventListener("click", event => {
@@ -11,3 +15,4 @@ import factory from "./react-factory"
 })
 
 document.addEventListener("DOMContentLoaded", factory)
+document.querySelectorAll(".code .code-inner").forEach(block => hljs.highlightBlock(block))
