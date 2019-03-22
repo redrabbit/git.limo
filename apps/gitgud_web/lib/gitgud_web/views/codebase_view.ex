@@ -15,6 +15,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
+  import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
@@ -219,7 +220,7 @@ defmodule GitGud.Web.CodebaseView do
                   line.origin == "-" -> "diff-addition"
                   true -> ""
                 end
-              content_tag(:tr, [class: line_class], do: [
+              line_html = content_tag(:tr, [class: line_class], do: [
                 (if line.old_line_no != -1,
                   do: content_tag(:td, line.old_line_no, class: "line-no"),
                 else: content_tag(:td, "", class: "line-no")),
@@ -231,6 +232,27 @@ defmodule GitGud.Web.CodebaseView do
                   content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
                 ])
               ])
+              if comments = Map.get(line, :comments) do
+                [
+                  line_html,
+                  content_tag(:tr, [class: "inline-comments"], do: [
+                    content_tag(:td, [colspan: 4], do:
+                      for comment <- comments do
+                        content_tag(:div, [class: "box"], do: [
+                          link(comment.user, to: Routes.user_path(GitGud.Web.Endpoint, :show, comment.user), class: "has-text-black"),
+                          "\n",
+                          datetime_format(comment.inserted_at, "{relative}"),
+                          content_tag(:div, [class: "content"], do: [
+                            content_tag(:p, comment.body)
+                          ])
+                        ])
+                      end
+                    )
+                  ])
+                ]
+              else
+                line_html
+              end
             end
           ]
         end

@@ -198,12 +198,11 @@ table.blob-table {
   tbody {
     tr {
       td {
-        font-size: .9rem;
-        font-family: $family-monospace;
-        -moz-osx-font-smoothing: auto;
-        -webkit-font-smoothing: auto;
-
         &.line-no {
+          font-size: .9rem;
+          font-family: $family-monospace;
+          -moz-osx-font-smoothing: auto;
+          -webkit-font-smoothing: auto;
           width: 1%;
           min-width: 50px;
           padding-left: 10px;
@@ -215,6 +214,10 @@ table.blob-table {
         }
 
         &.code {
+          font-size: .9rem;
+          font-family: $family-monospace;
+          -moz-osx-font-smoothing: auto;
+          -webkit-font-smoothing: auto;
           padding-left: 10px;
           padding-right: 10px;
           vertical-align: top;
@@ -255,6 +258,19 @@ table.diff-table {
             padding-top: 4px;
           }
 
+        }
+      }
+
+      &.inline-comments {
+        td {
+          border-top: 1px solid $grey-lighter;
+          border-bottom: 1px solid $grey-lighter;
+          background-color: $white-bis;
+
+          .box {
+            max-width: 780px;
+            margin: 1rem;
+          }
         }
       }
 

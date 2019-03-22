@@ -92,7 +92,9 @@ defmodule GitGud.GitCommit do
       from d in __MODULE__.Review,
     where: d.repo_id == ^repo.id and d.oid == ^oid,
      join: c in assoc(d, :comments),
-  preload: [comments: c]
+     join: u in assoc(c, :user),
+     join: e in assoc(u, :primary_email),
+  preload: [comments: {c, [user: {u, [primary_email: e]}]}]
     )
   end
 
