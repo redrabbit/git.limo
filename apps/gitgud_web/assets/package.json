@@ -18,7 +18,7 @@
     "phoenix_live_view": "file:../../../deps/phoenix_live_view",
     "react": "^16.8.4",
     "react-dom": "^16.8.4",
-    "react-relay": "^3.0.0"
+    "react-relay": "^1.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
@@ -34,7 +34,7 @@
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
-    "relay-compiler": "^3.0.0",
+    "relay-compiler": "^1.7.0",
     "sass-loader": "^7.1.0",
     "uglifyjs-webpack-plugin": "^2.1.2",
     "webpack": "^4.29.6",
