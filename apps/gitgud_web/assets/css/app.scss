@@ -299,7 +299,33 @@ table.diff-table {
       td {
         &.code {
           &.origin {
+            position: relative;
             width: 1em;
+
+            button {
+              position: absolute;
+              margin: -3px 0 0 -24px;
+              float: left;
+              border-radius: 50%;
+              opacity: 0;
+              transform: scale(.7);
+              transition: transform .1s ease-in-out;
+              z-index: 5;
+
+              .icon i {
+                margin-top: 2px;
+              }
+            }
+
+            &.is-active {
+              button {
+                opacity: 1;
+
+                &:hover {
+                  transform: scale(1);
+                }
+              }
+            }
           }
         }
       }

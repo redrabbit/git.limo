@@ -2,6 +2,8 @@ defmodule GitGud.Web.CodebaseView do
   @moduledoc false
   use GitGud.Web, :view
 
+  alias GitRekt.Git
+
   alias GitGud.User
   alias GitGud.UserQuery
 
@@ -200,12 +202,14 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec diff_table(binary, [map]) :: binary
-  def diff_table(file_path, delta) do
+  @spec diff_table(Plug.Conn.t, binary, [map]) :: binary
+  def diff_table(conn, file_path, delta) do
     highlight_lang = highlight_language_from_path(file_path)
-    content_tag(:table, [class: "blob-table diff-table"], do: [
+    commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
+    blob_oid = Git.oid_fmt(delta.new_file.oid)
+    content_tag(:table, [class: "blob-table diff-table", data_commit: commit_oid, data_blob: blob_oid], do: [
       content_tag(:tbody, do:
-        for hunk <- delta.hunks do
+        for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do
           [
             content_tag(:tr, [class: "hunk"], do: [
               content_tag(:td, "", class: "line-no", colspan: 2),
@@ -213,11 +217,11 @@ defmodule GitGud.Web.CodebaseView do
                 content_tag(:div, hunk.header, class: "code-inner nohighlight")
               ])
             ]),
-            for line <- hunk.lines do
+            for {line, line_index} <- Enum.with_index(hunk.lines) do
               line_class =
                 cond do
-                  line.origin == "+" -> "diff-deletion"
-                  line.origin == "-" -> "diff-addition"
+                  line.origin == "+" -> "diff-addition"
+                  line.origin == "-" -> "diff-deletion"
                   true -> ""
                 end
               line_html = content_tag(:tr, [class: line_class], do: [
@@ -227,7 +231,14 @@ defmodule GitGud.Web.CodebaseView do
                 (if line.new_line_no != -1,
                   do: content_tag(:td, line.new_line_no, class: "line-no"),
                 else: content_tag(:td, "", class: "line-no")),
-                content_tag(:td, line.origin, class: "code origin"),
+                  content_tag(:td, [class: "code origin"], do: [
+                    content_tag(:button, [class: "button is-link is-small", data_hunk: hunk_index, data_line: line_index], do: [
+                      content_tag(:span, [class: "icon"], do: [
+                        content_tag(:i, "", [class: "fa fa-comment-alt"])
+                      ])
+                    ]),
+                    line.origin
+                  ]),
                 content_tag(:td, [class: "code"], do: [
                   content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
                 ])
@@ -236,23 +247,22 @@ defmodule GitGud.Web.CodebaseView do
                 [
                   line_html,
                   content_tag(:tr, [class: "inline-comments"], do: [
-                    content_tag(:td, [colspan: 4], do:
+                    content_tag(:td, [colspan: 4], do: [
                       for comment <- comments do
                         content_tag(:div, [class: "box"], do: [
-                          link(comment.user, to: Routes.user_path(GitGud.Web.Endpoint, :show, comment.user), class: "has-text-black"),
+                          link(comment.user, to: Routes.user_path(conn, :show, comment.user), class: "has-text-black"),
                           "\n",
                           datetime_format(comment.inserted_at, "{relative}"),
                           content_tag(:div, [class: "content"], do: [
                             content_tag(:p, comment.body)
                           ])
                         ])
-                      end
-                    )
+                      end,
+                      react_component("InlineCommentForm", [commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form")
+                    ])
                   ])
                 ]
-              else
-                line_html
-              end
+              end || line_html
             end
           ]
         end

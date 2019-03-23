@@ -53,7 +53,7 @@
           </p>
         </header>
         <div class="card-content">
-          <%= diff_table(delta.new_file.path, delta) %>
+          <%= diff_table(@conn, delta.new_file.path, delta) %>
         </div>
       </div>
     </div>

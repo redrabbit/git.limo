@@ -1,4 +1,5 @@
 export BranchSelect from "./BranchSelect"
+export InlineCommentForm from "./InlineCommentForm"
 export RepoClone from "./RepoClone"
 export Search from "./Search"
 export UserInput from "./UserInput"
