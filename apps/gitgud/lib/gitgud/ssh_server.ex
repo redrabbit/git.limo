@@ -116,7 +116,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
-    [repo|_args] = parse_args(args)
+    [repo|_args] = parse_args(user, args)
     if authorized?(user, repo, exec) do
       case Git.repository_open(Repo.workdir(repo)) do
         {:ok, handle} ->
@@ -161,10 +161,10 @@ defmodule GitGud.SSHServer do
      system_dir: to_charlist(system_dir)]
   end
 
-  defp parse_args(args) do
+  defp parse_args(user, args) do
     if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
       {path, args} = List.pop_at(args, idx)
-      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'")))|args]
+      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'")), viewer: user)|args]
     end
   end
 
