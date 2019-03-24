@@ -32,7 +32,7 @@ defmodule GitGud.GraphQL.Types do
   @desc "Represents an actor in a Git commit (ie. an author or committer)."
   interface :git_actor do
     @desc "The name of the Git actor."
-    field :name, :string
+    field :name, non_null(:string)
 
     @desc "The email of the Git actor."
     field :email, :string
@@ -84,7 +84,7 @@ defmodule GitGud.GraphQL.Types do
     field :login, non_null(:string)
 
     @desc "The full name of the user."
-    field :name, :string
+    field :name, non_null(:string)
 
     @desc "The public email of the user."
     field :email, :string, resolve: &Resolvers.user_public_email/3
@@ -108,7 +108,7 @@ defmodule GitGud.GraphQL.Types do
 
   object :unknown_user do
     interface :git_actor
-    field :name, :string
+    field :name, non_null(:string)
     field :email, :string
   end
 
@@ -212,6 +212,11 @@ defmodule GitGud.GraphQL.Types do
     @desc "The linear commit history starting from this commit."
     connection field :history, node_type: :git_commit do
       resolve &Resolvers.git_history/2
+    end
+
+    @desc "The parents of this commit."
+    connection field :parents, node_type: :git_commit do
+      resolve &Resolvers.git_commit_parents/2
     end
 
     @desc "The root tree of this commit."

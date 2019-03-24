@@ -51,16 +51,6 @@ defmodule GitGud.GraphQL.Schema do
     end
 
     @desc """
-    Fetches a user given its login.
-    """
-    field :user, :user do
-      @desc "The user's login."
-      arg :login, non_null(:string)
-
-      resolve &Resolvers.user/3
-    end
-
-    @desc """
     Perform a search across resources.
     """
     connection field :search, node_type: :search_result do
@@ -68,6 +58,26 @@ defmodule GitGud.GraphQL.Schema do
       arg :user, :string
       arg :repo, :string
       resolve &Resolvers.search/2
+    end
+
+    @desc """
+    Fetches a user given its login.
+    """
+    field :user, :user do
+      @desc "The login of the user."
+      arg :login, non_null(:string)
+      resolve &Resolvers.user/3
+    end
+
+    @desc """
+    Fetches a repository given its owner and name.
+    """
+    field :repo, :repo do
+      @desc "The login of the user."
+      arg :owner, non_null(:string)
+      @desc "The name of the repository."
+      arg :name, non_null(:string)
+      resolve &Resolvers.repo/2
     end
   end
 

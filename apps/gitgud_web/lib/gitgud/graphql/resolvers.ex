@@ -137,6 +137,12 @@ defmodule GitGud.GraphQL.Resolvers do
     Connection.from_query(query, &DB.all/1, args)
   end
 
+  def repo(%{owner: owner, name: name}, %Absinthe.Resolution{context: ctx} = _info) do
+    if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
+      do: {:ok, repo},
+    else: {:error, "this given repository '#{owner}/#{name}' is not valid"}
+  end
+
   @doc """
   Resolves the owner for a given `repo`.
   """
@@ -235,6 +241,20 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_history(args, %Absinthe.Resolution{source: revision} = _source) do
     case Repo.git_history(revision) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Resolves the parents for a given Git `commit` object.
+  """
+  @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_commit_parents(args,  %Absinthe.Resolution{source: commit} = _source) do
+    case GitCommit.parents(commit) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
         Connection.from_slice(slice, offset, opts)
