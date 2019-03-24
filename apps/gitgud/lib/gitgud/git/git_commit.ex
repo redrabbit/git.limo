@@ -7,6 +7,7 @@ defmodule GitGud.GitCommit do
 
   alias GitGud.DB
   alias GitGud.Repo
+  alias GitGud.CommitLineReview
 
   import Ecto.Query, only: [from: 2]
 
@@ -86,15 +87,15 @@ defmodule GitGud.GitCommit do
   @doc """
   Returns all reviews for the given `commit`.
   """
-  @spec reviews(t) :: [__MODULE__.Review.t]
+  @spec reviews(t) :: [CommitLineReview.t]
   def reviews(%__MODULE__{repo: repo, oid: oid} = _commit) do
     DB.all(
-      from d in __MODULE__.Review,
-    where: d.repo_id == ^repo.id and d.oid == ^oid,
-     join: c in assoc(d, :comments),
-     join: u in assoc(c, :user),
+      from r in CommitLineReview,
+    where: r.repo_id == ^repo.id and r.oid == ^oid,
+     join: c in assoc(r, :comments),
+     join: u in assoc(c, :author),
      join: e in assoc(u, :primary_email),
-  preload: [comments: {c, [user: {u, [primary_email: e]}]}]
+  preload: [comments: {c, [author: {u, [primary_email: e]}]}]
     )
   end
 

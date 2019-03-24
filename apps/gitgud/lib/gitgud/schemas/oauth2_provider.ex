@@ -1,4 +1,4 @@
-defmodule GitGud.Auth.Provider do
+defmodule GitGud.OAuth2.Provider do
   @moduledoc """
   Authentication provider schema and helper functions.
   """

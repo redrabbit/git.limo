@@ -45,7 +45,7 @@
             <%= error_tag fa, :password %>
           </div>
 
-          <%= inputs_for fa, :providers, fn fp -> %>
+          <%= inputs_for fa, :oauth2_providers, fn fp -> %>
             <%= hidden_input fp, :provider %>
             <%= hidden_input fp, :provider_id %>
             <%= hidden_input fp, :token %>

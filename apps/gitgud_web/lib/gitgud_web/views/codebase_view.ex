@@ -250,7 +250,7 @@ defmodule GitGud.Web.CodebaseView do
                     content_tag(:td, [colspan: 4], do: [
                       for comment <- comments do
                         content_tag(:div, [class: "box"], do: [
-                          link(comment.user, to: Routes.user_path(conn, :show, comment.user), class: "has-text-black"),
+                          link(comment.author, to: Routes.user_path(conn, :show, comment.author), class: "has-text-black"),
                           "\n",
                           datetime_format(comment.inserted_at, "{relative}"),
                           content_tag(:div, [class: "content"], do: [

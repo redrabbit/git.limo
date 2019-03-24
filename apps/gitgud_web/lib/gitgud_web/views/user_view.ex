@@ -9,9 +9,9 @@ defmodule GitGud.Web.UserView do
   @spec readonly_email?(Ecto.Changeset.t) :: boolean
   def readonly_email?(changeset) do
     case fetch_field(changeset, :auth) do
-      {:changes, %Auth{providers: providers}} ->
+      {:changes, %Auth{oauth2_providers: providers}} ->
         is_list(providers) && !Enum.empty?(providers)
-      {:data, %Auth{providers: providers}} ->
+      {:data, %Auth{oauth2_providers: providers}} ->
         is_list(providers) && !Enum.empty?(providers)
       :error ->
         false

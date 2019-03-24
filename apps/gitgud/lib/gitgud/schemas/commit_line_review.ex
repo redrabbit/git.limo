@@ -1,4 +1,4 @@
-defmodule GitGud.GitCommit.Review do
+defmodule GitGud.CommitLineReview do
   @moduledoc """
   Git commit review schema and helper functions.
   """
@@ -10,9 +10,9 @@ defmodule GitGud.GitCommit.Review do
   alias GitGud.Comment
   alias GitGud.Repo
 
-  schema "git_commit_reviews" do
+  schema "commit_line_reviews" do
     belongs_to :repo, Repo
-    many_to_many :comments, Comment, join_through: "git_commit_reviews_comments", join_keys: [review_id: :id, comment_id: :id]
+    many_to_many :comments, Comment, join_through: "commit_line_reviews_comments", join_keys: [review_id: :id, comment_id: :id]
     field :oid, :binary
     field :blob_oid, :binary
     field :hunk, :integer

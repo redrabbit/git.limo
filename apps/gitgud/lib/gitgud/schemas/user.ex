@@ -253,7 +253,7 @@ defmodule GitGud.User do
 
   defp validate_oauth_email(changeset) do
     if auth_changeset = get_change(changeset, :auth) do
-      if get_change(auth_changeset, :providers) do
+      if get_change(auth_changeset, :oauth2_providers) do
         put_change(changeset, :emails, Enum.map(get_change(changeset, :emails), &merge(&1, Email.verification_changeset(&1.data))))
       end
     end || changeset

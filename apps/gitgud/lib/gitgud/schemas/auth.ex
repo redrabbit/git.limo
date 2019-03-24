@@ -11,14 +11,13 @@ defmodule GitGud.Auth do
   alias GitGud.DB
 
   alias GitGud.User
-
-  alias GitGud.Auth.Provider
+  alias GitGud.OAuth2
 
   import Argon2, only: [add_hash: 1, check_pass: 2, verify_pass: 2]
 
   schema "authentications" do
     belongs_to :user, User
-    has_many :providers, Provider
+    has_many :oauth2_providers, OAuth2.Provider
     field :password, :string, virtual: true
     field :password_hash, :string
     timestamps()
@@ -28,7 +27,7 @@ defmodule GitGud.Auth do
     id: pos_integer,
     user_id: pos_integer,
     user: User.t,
-    providers: [Provider.t],
+    oauth2_providers: [OAuth2.Provider.t],
     password: binary,
     password_hash: binary,
     inserted_at: NaiveDateTime.t,
@@ -65,7 +64,7 @@ defmodule GitGud.Auth do
   def registration_changeset(%__MODULE__{} = auth, params \\ %{}) do
     auth
     |> cast(params, [:user_id, :password])
-    |> cast_assoc(:providers)
+    |> cast_assoc(:oauth2_providers)
     |> validate_required([:password])
     |> validate_password()
     |> assoc_constraint(:user)

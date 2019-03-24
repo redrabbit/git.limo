@@ -10,8 +10,7 @@ defmodule GitGud.Web.OAuth2Controller do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  alias GitGud.OAuth2.GitHub
-  alias GitGud.OAuth2.GitLab
+  alias GitGud.OAuth2.{GitHub, GitLab, Provider}
 
   plug :put_layout, :hero
 
@@ -43,7 +42,7 @@ defmodule GitGud.Web.OAuth2Controller do
         login: user_info.login,
         name: user_info.name,
         auth: %Auth{
-          providers: [%Auth.Provider{
+          oauth2_providers: [%Provider{
             provider: provider,
             provider_id: user_info.id,
             token: token

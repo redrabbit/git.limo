@@ -48,10 +48,10 @@ defmodule GitGud.Umbrella.Mixfile do
         ],
         "Schemas": [
           GitGud.Auth,
-          GitGud.Auth.Provider,
+          GitGud.OAuth2.Provider,
           GitGud.Comment,
           GitGud.Email,
-          GitGud.GitCommit.Review,
+          GitGud.CommitLineReview,
           GitGud.Maintainer,
           GitGud.Repo,
           GitGud.RepoQuery,
