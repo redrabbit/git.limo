@@ -32,7 +32,7 @@ defmodule GitGud.Web do
       use Phoenix.View, root: "lib/gitgud_web/templates", namespace: GitGud.Web
       use Phoenix.HTML
 
-      use GitGud.Web.FormValidation
+      use GitGud.Web.FormHelpers
 
       alias GitGud.Web.Router.Helpers, as: Routes
 

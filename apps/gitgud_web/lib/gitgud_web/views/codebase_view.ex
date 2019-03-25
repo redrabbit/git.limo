@@ -55,7 +55,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
     %{repo: repo, revision: revision} = Map.take(conn.assigns, [:repo, :revision])
-    react_component("BranchSelect", [
+    react_component("branch-select", [
       repo: to_relay_id(repo),
       oid: revision_oid(revision),
       name: revision_name(revision),
@@ -69,7 +69,7 @@ defmodule GitGud.Web.CodebaseView do
     props = if user = current_user(conn),
         do: [ssh: "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"] ++ props,
       else: props
-    react_component("RepoClone", props, class: "repo-clone")
+    react_component("repo-clone", props, class: "repo-clone")
   end
 
   @spec blob_content(GitBlob.t) :: binary | nil
@@ -205,6 +205,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec diff_table(Plug.Conn.t, binary, [map]) :: binary
   def diff_table(conn, file_path, delta) do
     highlight_lang = highlight_language_from_path(file_path)
+    repo_id = to_relay_id(conn.assigns.repo)
     commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
     blob_oid = Git.oid_fmt(delta.new_file.oid)
     content_tag(:table, [class: "blob-table diff-table", data_commit: commit_oid, data_blob: blob_oid], do: [
@@ -259,7 +260,7 @@ defmodule GitGud.Web.CodebaseView do
                         ])
                       end,
                       (if authenticated?(conn),
-                        do: react_component("InlineCommentForm", [commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form"),
+                        do: react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form"),
                       else: [])
                     ])
                   ])

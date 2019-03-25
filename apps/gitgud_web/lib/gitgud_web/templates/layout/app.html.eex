@@ -2,13 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-
     <%= if authenticated?(@conn) do %>
-      <%= tag :meta, charset: "UTF-8", name: "token", content: authentication_token(@conn) %>
+      <%= tag :meta, name: "token", content: authentication_token(@conn) %>
     <% end %>
-
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
 
     <title><%= title(@conn) %></title>
 
@@ -16,7 +14,7 @@
   </head>
 
   <body>
-    <nav class="navbar is-spaced" role="navigation" aria-label="dropdown navigation">
+    <nav class="navbar is-spaced" aria-label="dropdown navigation">
       <div class="container">
 
         <div class="navbar-brand">
@@ -28,7 +26,7 @@
         <div class="navbar-menu">
           <div class="navbar-start">
             <div class="navbar-item">
-              <%= react_component("Search", [], class: "search") %>
+              <%= global_search() %>
             </div>
           </div>
 
@@ -47,7 +45,6 @@
               <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
               <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
             <% end %>
-          </div>
           </div>
         </div>
       </div>

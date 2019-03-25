@@ -1,7 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
-import {camelCase} from "lodash"
+import {camelCase, upperFirst} from "lodash"
 
 import hljs from "highlight.js"
 import "highlight.js/styles/github-gist.css"
@@ -21,8 +21,8 @@ export default () => {
   document.querySelectorAll("[data-react-class]").forEach(e => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
     const targetDiv = targetId ? targetId : e
-    const reactProps = e.dataset.reactProps ? e.dataset.reactProps : "{}"
-    const reactElement = React.createElement(factory[e.dataset.reactClass], JSON.parse(reactProps))
+    const reactProps = e.dataset.reactProps ? atob(e.dataset.reactProps) : "{}"
+    const reactElement = React.createElement(factory[upperFirst(camelCase(e.dataset.reactClass))], JSON.parse(reactProps))
     ReactDOM.render(reactElement, targetDiv)
   })
 
@@ -40,7 +40,7 @@ export default () => {
               column.colSpan = 4
               let container = column.appendChild(document.createElement("div"))
               container.classList.add("inline-comment-form")
-              ReactDOM.render(React.createElement(InlineCommentForm, {...diffTable.dataset, ...event.currentTarget.dataset}), container);
+              ReactDOM.render(React.createElement(factory["InlineCommentForm"], {...diffTable.dataset, ...event.currentTarget.dataset}), container);
               row.appendChild(column)
             }
             tr.nextSibling.querySelector("[name='comment[body]']").focus()

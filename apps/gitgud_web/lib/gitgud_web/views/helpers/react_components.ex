@@ -32,11 +32,8 @@ defmodule GitGud.Web.ReactComponents do
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component and then pass in the `props` specified.
   """
-  def react_component(name, props) when is_list(props), do: react_component(name, Enum.into(props, %{}))
-  def react_component(name, props) when is_map(props) do
-    props = Jason.encode!(transform_case(props))
-    content_tag(:div, "", [{:data, [react_class: name, react_props: props]}])
-  end
+  def react_component(name, props) when is_list(props), do: react_component(name, Enum.into(props, %{}), [])
+  def react_component(name, props) when is_map(props), do: react_component(name, props, [])
 
   @doc """
   Generates a `:div` containing the named React component with the given `props` and `attrs`.
@@ -56,9 +53,9 @@ defmodule GitGud.Web.ReactComponents do
   """
   def react_component(name, props, attrs) when is_list(props), do: react_component(name, Enum.into(props, %{}), attrs)
   def react_component(name, props, attrs) when is_map(props) do
-    props = Jason.encode!(transform_case(props))
-    react_attrs = [react_class: name, react_props: props]
-    content_tag(:div, "", attrs ++ [{:data, react_attrs}])
+    react_attrs = [react_class: name]
+    react_attrs = unless Enum.empty?(props), do: Keyword.put(react_attrs, :react_props, Base.encode64(Jason.encode!(transform_case(props)), padding: false)), else: react_attrs
+    content_tag(:div, "", [{:data, react_attrs}|attrs])
   end
 
   #

@@ -22,6 +22,9 @@ defmodule GitGud.Web.LayoutView do
     end
   end
 
+  @spec global_search() :: binary
+  def global_search(), do: react_component("search", [], class: "search")
+
   @spec title(Plug.Conn.t, binary) :: binary
   def title(conn, default \\ "") do
     try do
