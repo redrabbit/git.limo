@@ -10,6 +10,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.CommitLineReview
 
   alias GitGud.GitBlob
   alias GitGud.GitCommit
@@ -24,6 +25,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
+  import GitGud.GraphQL.Schema, only: [from_relay_id: 1]
   import GitRekt.Git, only: [oid_fmt: 1]
 
   @doc """
@@ -368,6 +370,10 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_blob_size(GitBlob.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def git_blob_size(%GitBlob{} = blob, %{} = _args, _info) do
     GitBlob.size(blob)
+  end
+
+  def create_git_commit_comment(_parent, %{repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
+    CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
   end
 
   @doc false

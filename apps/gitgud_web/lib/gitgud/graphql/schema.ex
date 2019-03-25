@@ -81,6 +81,20 @@ defmodule GitGud.GraphQL.Schema do
     end
   end
 
+  mutation do
+    @desc "Create a comment"
+    field :add_git_commit_comment, type: :comment do
+      arg :repo, non_null(:id)
+      arg :commit, non_null(:git_oid)
+      arg :blob, non_null(:git_oid)
+      arg :hunk, non_null(:integer)
+      arg :line, non_null(:integer)
+      arg :body, non_null(:string)
+      resolve &Resolvers.create_git_commit_comment/3
+    end
+  end
+
+
   node interface do
     resolve_type &Resolvers.node_type/2
   end

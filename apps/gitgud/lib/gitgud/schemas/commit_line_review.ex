@@ -5,10 +5,15 @@ defmodule GitGud.CommitLineReview do
 
   use Ecto.Schema
 
-  import Ecto.Changeset
+  alias Ecto.Multi
 
-  alias GitGud.Comment
+  alias GitRekt.Git
+
+  alias GitGud.DB
   alias GitGud.Repo
+  alias GitGud.Comment
+
+  import Ecto.Changeset
 
   schema "commit_line_reviews" do
     belongs_to :repo, Repo
@@ -33,6 +38,20 @@ defmodule GitGud.CommitLineReview do
     updated_at: NaiveDateTime.t
   }
 
+
+  @doc """
+  Adds a new comment.
+  """
+  @spec add_comment(pos_integer, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary) :: {:ok, Comment.t} | {:error, term}
+  def add_comment(repo_id, oid, blob_oid, hunk, line, author, body) do
+    case DB.transaction(insert_review_comment(repo_id, oid, blob_oid, hunk, line, author, body)) do
+      {:ok, %{comment: comment}} ->
+        {:ok, struct(comment, author: author)}
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
   @doc """
   Returns a commit review changeset for the given `params`.
   """
@@ -40,9 +59,25 @@ defmodule GitGud.CommitLineReview do
   def changeset(%__MODULE__{} = commit_comment, params \\ %{}) do
     commit_comment
     |> cast(params, [:repo_id, :oid, :blob_oid, :hunk, :line])
-    |> cast_assoc(:comments, required: true, with: &Comment.changeset/2)
+    |> cast_assoc(:comments, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :oid, :blob_oid, :hunk, :line])
     |> assoc_constraint(:repo)
     |> unique_constraint(:line, name: :commit_line_reviews_repo_id_oid_blob_oid_hunk_line_index)
+  end
+
+  #
+  # Helpers
+  #
+
+  defp insert_review_comment(repo_id, oid, blob_oid, hunk, line, author, body) do
+    review_opts = [on_conflict: {:replace, [:updated_at]}, conflict_target: [:repo_id, :oid, :blob_oid, :hunk, :line]]
+    Multi.new()
+    |> Multi.insert(:review, changeset(%__MODULE__{}, %{repo_id: repo_id, oid: oid, blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
+    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{author_id: author.id, body: body}))
+    |> Multi.run(:line_review_comment, fn db, %{review: review, comment: comment} ->
+      case db.insert_all("commit_line_reviews_comments", [%{review_id: review.id, comment_id: comment.id}]) do
+        {1, val} -> {:ok, val}
+      end
+    end)
   end
 end

@@ -11,8 +11,8 @@ defmodule GitGud.GraphQL.Types do
 
   @desc "The `GitObjectID` scalar type represents a Git object SHA hash identifier."
   scalar :git_oid, name: "GitObjectID" do
+    parse &{:ok, Git.oid_parse(&1.value)}
     serialize &Git.oid_fmt/1
-    parse &Git.oid_parse/1
   end
 
   @desc "The `GitReferenceType` enum represents the type of a Git reference."
@@ -307,5 +307,12 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The repository the blob belongs to."
     field :repo, non_null(:repo)
+  end
+
+  object :comment do
+    field :author, non_null(:user)
+    field :body, non_null(:string)
+    field :inserted_at, non_null(:naive_datetime)
+    field :updated_at, non_null(:naive_datetime)
   end
 end

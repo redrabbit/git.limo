@@ -6,8 +6,9 @@ defmodule GitGud.GitCommit do
   alias GitRekt.Git
 
   alias GitGud.DB
-  alias GitGud.Repo
+  alias GitGud.Comment
   alias GitGud.CommitLineReview
+  alias GitGud.Repo
 
   import Ecto.Query, only: [from: 2]
 
@@ -82,6 +83,14 @@ defmodule GitGud.GitCommit do
   @spec gpg_signature(t) :: {:ok, binary} | {:error, term}
   def gpg_signature(%__MODULE__{__git__: commit} = _commit) do
     Git.commit_header(commit, "gpgsig")
+  end
+
+  @doc """
+  Adds a new comment to the given `commit`.
+  """
+  @spec add_comment(t, Git.oid, non_neg_integer, non_neg_integer, User.t, binary) :: {:ok, Comment.t} | {:error, term}
+  def add_comment(%__MODULE__{repo: repo} = commit, blob_oid, hunk, line, user, body) do
+    CommitLineReview.add_comment(repo.id, commit.oid, blob_oid, hunk, line, user, body)
   end
 
   @doc """

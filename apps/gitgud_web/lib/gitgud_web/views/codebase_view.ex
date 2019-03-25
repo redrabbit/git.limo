@@ -208,7 +208,7 @@ defmodule GitGud.Web.CodebaseView do
     repo_id = to_relay_id(conn.assigns.repo)
     commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
     blob_oid = Git.oid_fmt(delta.new_file.oid)
-    content_tag(:table, [class: "blob-table diff-table", data_commit: commit_oid, data_blob: blob_oid], do: [
+    content_tag(:table, [class: "blob-table diff-table", data_repo: repo_id, data_commit: commit_oid, data_blob: blob_oid], do: [
       content_tag(:tbody, do:
         for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do
           [
