@@ -1,14 +1,11 @@
-import {Socket} from "phoenix"
 import {Environment, Network, Store, RecordSource} from "relay-runtime"
 import * as AbsintheSocket from "@absinthe/socket"
 import {createFetcher, createSubscriber} from "@absinthe/socket-relay/compat/cjs"
 
-const token = (() => {
-  let meta = document.getElementsByName("token")
-  if(meta.length > 0) return meta[0].getAttribute("content")
-})()
+import socket from "./socket"
 
-const transport = AbsintheSocket.create(new Socket("/socket", {params: (() => token ? {token: token} : {})()}))
+
+const transport = AbsintheSocket.create(socket)
 
 function fetchQuery(operation, variables) {
   return fetch("/graphql", {

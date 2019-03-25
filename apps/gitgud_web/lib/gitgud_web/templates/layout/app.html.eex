@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+
+    <%= if authenticated?(@conn) do %>
+      <%= tag :meta, charset: "UTF-8", name: "token", content: authentication_token(@conn) %>
+    <% end %>
+
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <%= if authenticated?(@conn) do %>
-      <%= tag :meta, name: "token", content: authentication_token(@conn) %>
-    <% end %>
-    <meta name="description" content="">
-    <meta name="author" content="">
 
     <title><%= title(@conn) %></title>
 

@@ -258,7 +258,9 @@ defmodule GitGud.Web.CodebaseView do
                           ])
                         ])
                       end,
-                      react_component("InlineCommentForm", [commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form")
+                      (if authenticated?(conn),
+                        do: react_component("InlineCommentForm", [commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form"),
+                      else: [])
                     ])
                   ])
                 ]

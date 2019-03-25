@@ -308,6 +308,7 @@ table.diff-table {
               float: left;
               border-radius: 50%;
               opacity: 0;
+              display: none;
               transform: scale(.7);
               transition: transform .1s ease-in-out;
               z-index: 5;
@@ -320,6 +321,7 @@ table.diff-table {
             &.is-active {
               button {
                 opacity: 1;
+                display: block;
 
                 &:hover {
                   transform: scale(1);
