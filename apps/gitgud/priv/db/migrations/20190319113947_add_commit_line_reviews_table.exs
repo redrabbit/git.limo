@@ -11,6 +11,8 @@ defmodule GitGud.DB.Migrations.AddCommitLineReviewsTable do
       timestamps()
     end
 
+    create unique_index("commit_line_reviews", [:repo_id, :oid, :blob_oid, :hunk, :line])
+
     create table("commit_line_reviews_comments", primary_key: false) do
       add :review_id, references("commit_line_reviews"), null: false, on_delete: :delete_all
       add :comment_id, references("comments"), null: false, on_delete: :delete_all

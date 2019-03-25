@@ -43,5 +43,6 @@ defmodule GitGud.CommitLineReview do
     |> cast_assoc(:comments, required: true, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :oid, :blob_oid, :hunk, :line])
     |> assoc_constraint(:repo)
+    |> unique_constraint(:line, name: :commit_line_reviews_repo_id_oid_blob_oid_hunk_line_index)
   end
 end
