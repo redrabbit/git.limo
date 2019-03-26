@@ -43,9 +43,9 @@
       </div>
 
       <div class="field">
-        <%= label f, :url, "Website", class: "label" %>
+        <%= label f, :website_url, "Website", class: "label" %>
         <div class="control">
-          <%= text_input f, :url, class: "input" %>
+          <%= text_input f, :website_url, class: "input" %>
         </div>
         <%= error_tag f, :url %>
       </div>
