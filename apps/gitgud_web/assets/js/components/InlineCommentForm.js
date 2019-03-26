@@ -51,7 +51,7 @@ class InlineCommentForm extends React.Component {
         return (
           <div className="box" key={index}>
             <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment(comment.insertedAt).fromNow()}
-            <p>{comment.body}</p>
+            <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
           </div>
         )
       }), this.commentsContainer)
@@ -107,7 +107,7 @@ class InlineCommentForm extends React.Component {
             avatarUrl
             url
           }
-          body
+          bodyHtml
           insertedAt
         }
       }

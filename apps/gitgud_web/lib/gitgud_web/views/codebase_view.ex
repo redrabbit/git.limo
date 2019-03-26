@@ -17,6 +17,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
+  import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
@@ -213,7 +214,7 @@ defmodule GitGud.Web.CodebaseView do
          {:ok, blob} <- GitTreeEntry.target(entry),
          {:ok, content} <- GitBlob.content(blob),
          {:ok, html, []} <- Earmark.as_html(content) do
-      html
+      raw(html)
     else
       {:error, _reason} -> nil
     end
@@ -301,9 +302,7 @@ defmodule GitGud.Web.CodebaseView do
                             link(comment.author, to: Routes.user_path(conn, :show, comment.author), class: "has-text-black"),
                             "\n",
                             datetime_format(comment.inserted_at, "{relative}"),
-                            content_tag(:div, [class: "content"], do: [
-                              content_tag(:p, comment.body)
-                            ])
+                            content_tag(:div, markdown(comment.body), class: "content")
                           ])
                         end
                       ),

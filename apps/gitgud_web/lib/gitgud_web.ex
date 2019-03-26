@@ -47,6 +47,7 @@ defmodule GitGud.Web do
       import GitGud.Web.ErrorHelpers
       import GitGud.Web.Gettext
       import GitGud.Web.Gravatar
+      import GitGud.Web.Markdown
       import GitGud.Web.NavigationHelpers
       import GitGud.Web.PaginationHelpers
       import GitGud.Web.ReactComponents

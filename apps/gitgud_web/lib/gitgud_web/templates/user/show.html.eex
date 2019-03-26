@@ -28,7 +28,7 @@
             <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
           </header>
           <div class="card-content">
-            <div class="content"><%= repo.description %></div>
+            <div class="content"><%= markdown(repo.description) %></div>
           </div>
         </div>
       </div>

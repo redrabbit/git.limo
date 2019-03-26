@@ -19,7 +19,7 @@
       <p class="card-header-title">README.md</p>
     </header>
     <div class="card-content">
-      <div class="content"><%= raw readme %></div>
+      <div class="content"><%= readme %></div>
     </div>
   </div>
 <% end %>

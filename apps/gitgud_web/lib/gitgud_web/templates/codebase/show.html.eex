@@ -1,5 +1,5 @@
 <div class="content">
-  <p><%= @repo.description %></p>
+  <%= markdown(@repo.description) %>
 </div>
 
 <div class="tabs is-toggle is-fullwidth">

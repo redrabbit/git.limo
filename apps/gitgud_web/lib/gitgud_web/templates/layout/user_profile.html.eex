@@ -6,7 +6,9 @@
       <h1 class="title"><%= @user.name %></h1>
       <h2 class="subtitle"><%= @user.login %></h2>
 
-      <p class="has-text-grey"><%= @user.bio %></p>
+      <div class="content has-text-grey">
+        <%= markdown(@user.bio) %>
+      </div>
 
       <hr />
 
