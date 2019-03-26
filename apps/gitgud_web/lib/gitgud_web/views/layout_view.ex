@@ -23,7 +23,16 @@ defmodule GitGud.Web.LayoutView do
   end
 
   @spec global_search() :: binary
-  def global_search(), do: react_component("search", [], class: "search")
+  def global_search() do
+    react_component("search", [], [class: "search"], do: [
+      content_tag(:div, [class: "control has-icons-left"], do: [
+        tag(:input, class: "input", type: "text", placeholder: "Search ...", readonly: true),
+        content_tag(:span, [class: "icon is-small is-left"], do: [
+         content_tag(:i, "", class: "fa fa-search")
+        ])
+      ])
+    ])
+  end
 
   @spec title(Plug.Conn.t, binary) :: binary
   def title(conn, default \\ "") do

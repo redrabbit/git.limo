@@ -5,7 +5,7 @@ import {commitMutation, graphql} from "react-relay";
 
 import environment from "../relay-environment"
 
-class CommentForm extends React.Component {
+class InlineCommentForm extends React.Component {
   constructor(props) {
     super(props)
     this.handleSubmit = this.handleSubmit.bind(this)
@@ -97,4 +97,4 @@ class CommentForm extends React.Component {
   }
 }
 
-export default CommentForm
+export default InlineCommentForm

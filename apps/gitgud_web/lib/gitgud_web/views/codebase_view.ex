@@ -55,21 +55,55 @@ defmodule GitGud.Web.CodebaseView do
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
     %{repo: repo, revision: revision} = Map.take(conn.assigns, [:repo, :revision])
-    react_component("branch-select", [
-      repo: to_relay_id(repo),
-      oid: revision_oid(revision),
-      name: revision_name(revision),
-      type: to_string(revision_type(revision))], class: "branch-select")
+    revision_oid = revision_oid(revision)
+    revision_name = revision_name(revision)
+    revision_type = revision_type(revision)
+    revision_href = revision_href(conn, revision)
+    react_component("branch-select", [repo: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type], [class: "branch-select"], do: [
+      content_tag(:a, [class: "button", href: revision_href], do: [
+        content_tag(:span, [], do: [
+          "#{String.capitalize(to_string(revision_type))}: ",
+          content_tag(:span, revision_name, class: "has-text-weight-semibold")
+        ]),
+        content_tag(:span, [class: "icon is-small"], do: [
+          content_tag(:i, "", class: "fas fa-angle-down")
+        ])
+      ])
+    ])
   end
 
   @spec repo_clone(Plug.Conn.t) :: binary
   def repo_clone(conn) do
     repo = Map.get(conn.assigns, :repo)
-    props = [http: Routes.codebase_url(conn, :show, repo.owner, repo)]
-    props = if user = current_user(conn),
-        do: [ssh: "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"] ++ props,
+    props = %{http: Routes.codebase_url(conn, :show, repo.owner, repo)}
+    props =
+      if user = current_user(conn),
+        do: Map.put(props, :ssh, "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"),
       else: props
-    react_component("repo-clone", props, class: "repo-clone")
+    react_component("repo-clone", props, [class: "repo-clone"], do: [
+      content_tag(:div, [class: "dropdown is-right is-hoverable"], do: [
+        content_tag(:div, [class: "dropdown-trigger"], do: [
+          content_tag(:button, [class: "button is-success"], do: [
+            content_tag(:span, "Clone repository"),
+            content_tag(:span, [class: "icon is-small"], do: [
+              content_tag(:i, "", class: "fas fa-angle-down")
+            ])
+          ])
+        ]),
+        content_tag(:div, [class: "dropdown-menu"], do: [
+          content_tag(:div, [class: "dropdown-content"], do: [
+            content_tag(:div, [class: "dropdown-item"], do: [
+              content_tag(:div, [class: "field"], do: [
+                content_tag(:label, "Clone with HTTP", class: "label"),
+                content_tag(:div, [class: "control is-expanded"], do: [
+                  tag(:input, class: "input is-small", type: "text", readonly: true, value: props.http)
+                ])
+              ])
+            ])
+          ])
+        ])
+      ])
+    ])
   end
 
   @spec blob_content(GitBlob.t) :: binary | nil
@@ -152,6 +186,18 @@ defmodule GitGud.Web.CodebaseView do
   def revision_type(%GitCommit{} = _object), do: :commit
   def revision_type(%GitTag{} = _object), do: :tag
   def revision_type(%GitReference{} = ref), do: ref.type
+
+  def revision_href(conn, revision) do
+    repo = conn.assigns.repo
+    case revision_type(revision) do
+      :branch ->
+        Routes.codebase_path(conn, :branches, repo.owner, repo)
+      :tag ->
+        Routes.codebase_path(conn, :tags, repo.owner, repo)
+      :commit ->
+        Routes.codebase_path(conn, :history, repo.owner, repo, revision, [])
+    end
+  end
 
   @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(%GitTree{} = tree) do
@@ -259,9 +305,17 @@ defmodule GitGud.Web.CodebaseView do
                           ])
                         ])
                       end,
-                      (if authenticated?(conn),
-                        do: react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], class: "inline-comment-form"),
-                      else: [])
+                      (if authenticated?(conn) do
+                        react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], [class: "inline-comment-form"], do: [
+                          content_tag(:div, [class: "box"], do: [
+                            content_tag(:div, [class: "field"], do: [
+                              content_tag(:div, [class: "control"], do: [
+                                tag(:input, class: "input", type: "text", name: "comment[body]", placeholder: "Leave a comment", readonly: true)
+                              ])
+                            ])
+                          ])
+                        ])
+                       end || [])
                     ])
                   ])
                 ]

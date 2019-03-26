@@ -36,18 +36,18 @@ main.container {
 
 nav.navbar {
   .search {
-    .dropdown {
-      input {
-        width: 18rem;
-        border: 0;
-        box-shadow: none;
-        background-color: $white-ter;
+    input {
+      width: 18rem;
+      border: 0;
+      box-shadow: none;
+      background-color: $white-ter;
 
-        &::placeholder {
-          font-weight: $weight-semibold;
-        }
+      &::placeholder {
+        font-weight: $weight-semibold;
       }
+    }
 
+    .dropdown {
       .dropdown-menu {
         width: 18rem;
       }
