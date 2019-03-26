@@ -6,10 +6,6 @@ import environment from "../relay-environment"
 class UserInput extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      user: "",
-      input: ""
-    }
     this.dropdown = React.createRef()
     this.submitButton = React.createRef()
     this.renderDropdown = this.renderDropdown.bind(this)
@@ -19,6 +15,7 @@ class UserInput extends React.Component {
     this.handleBlur = this.handleBlur.bind(this)
     this.handleInputChange = this.handleInputChange.bind(this)
     this.handleInputKeyDown = this.handleInputKeyDown.bind(this)
+    this.state = {user: "", input: ""}
   }
 
   render() {

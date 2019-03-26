@@ -45,7 +45,7 @@
       <p class="buttons has-addons"></p>
     </div>
     <div class="level-item">
-      <%= repo_clone(@conn) %>
+      <%= clone_dropdown(@conn) %>
     </div>
   </div>
 </nav>

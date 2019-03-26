@@ -40,10 +40,10 @@ export default () => {
               column.colSpan = 4
               let container = column.appendChild(document.createElement("div"))
               container.classList.add("inline-comment-form")
-              ReactDOM.render(React.createElement(factory["InlineCommentForm"], {...diffTable.dataset, ...event.currentTarget.dataset}), container);
+              ReactDOM.render(React.createElement(factory["CommitLineReview"], {...diffTable.dataset, ...event.currentTarget.dataset}), container);
               row.appendChild(column)
             }
-            tr.nextSibling.querySelector("[name='comment[body]']").focus()
+            tr.nextSibling.querySelector("form [name='comment[body]']").focus()
           })
           origin = td
         } else {

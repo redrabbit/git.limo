@@ -73,15 +73,15 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec repo_clone(Plug.Conn.t) :: binary
-  def repo_clone(conn) do
+  @spec clone_dropdown(Plug.Conn.t) :: binary
+  def clone_dropdown(conn) do
     repo = Map.get(conn.assigns, :repo)
     props = %{http: Routes.codebase_url(conn, :show, repo.owner, repo)}
     props =
       if user = current_user(conn),
         do: Map.put(props, :ssh, "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"),
       else: props
-    react_component("repo-clone", props, [class: "repo-clone"], do: [
+    react_component("clone-dropdown", props, [class: "clone-dropdown"], do: [
       content_tag(:div, [class: "dropdown is-right is-hoverable"], do: [
         content_tag(:div, [class: "dropdown-trigger"], do: [
           content_tag(:button, [class: "button is-success"], do: [
@@ -307,7 +307,7 @@ defmodule GitGud.Web.CodebaseView do
                         end
                       ),
                       (if authenticated?(conn) do
-                        react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, draft: true], [class: "inline-comment-form"], do: [
+                        react_component("commit-line-review", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], [class: "inline-comment-form"], do: [
                           content_tag(:div, [class: "box"], do: [
                             content_tag(:div, [class: "field"], do: [
                               content_tag(:div, [class: "control"], do: [

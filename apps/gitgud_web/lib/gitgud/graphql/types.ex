@@ -330,7 +330,7 @@ defmodule GitGud.GraphQL.Types do
     field :repo, non_null(:repo)
   end
 
-  object :comment do
+  node object :comment do
     field :author, non_null(:user)
     field :body, non_null(:string)
     field :body_html, non_null(:string), resolve: &Resolvers.comment_html/3

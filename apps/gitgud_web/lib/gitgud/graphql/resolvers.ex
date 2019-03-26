@@ -36,6 +36,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec node_type(map, Absinthe.Resolution.t) :: atom | nil
   def node_type(%User{} = _node, _info), do: :user
   def node_type(%Repo{} = _node, _info), do: :repo
+  def node_type(%Comment{} = _node, _info), do: :comment
   def node_type(_struct, _info), do: nil
 
   @doc """

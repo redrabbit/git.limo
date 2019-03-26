@@ -6,15 +6,11 @@ import environment from "../relay-environment"
 class BranchSelect extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      toggled: false,
-      filter: "",
-      type: "BRANCH"
-    }
     this.dropdown = React.createRef()
     this.renderDropdown = this.renderDropdown.bind(this)
     this.handleToggle = this.handleToggle.bind(this)
     this.handleSearch = this.handleSearch.bind(this)
+    this.state = {toggled: false, filter: "", type: "BRANCH"}
   }
 
   render() {

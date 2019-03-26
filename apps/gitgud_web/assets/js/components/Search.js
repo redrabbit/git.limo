@@ -6,11 +6,11 @@ import environment from "../relay-environment"
 class Search extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {input: ""}
     this.dropdown = React.createRef()
     this.inputContainer = React.createRef()
     this.handleInputChange = this.handleInputChange.bind(this)
     this.renderSearchResult = this.renderSearchResult.bind(this)
+    this.state = {input: ""}
   }
 
   render() {

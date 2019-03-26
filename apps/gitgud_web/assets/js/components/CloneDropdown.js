@@ -1,18 +1,15 @@
 import React from "react"
 
-class RepoClone extends React.Component {
+class CloneDropdown extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      toggled: false,
-      protocol: "http"
-    }
     this.dropdown = React.createRef()
     this.input = React.createRef()
     this.renderDropdown = this.renderDropdown.bind(this)
     this.handleToggle = this.handleToggle.bind(this)
     this.handleProtocol = this.handleProtocol.bind(this)
     this.handleCopyToClipboard = this.handleCopyToClipboard.bind(this)
+    this.state = {toggled: false, protocol: "http"}
   }
 
   render() {
@@ -105,4 +102,4 @@ class RepoClone extends React.Component {
   }
 }
 
-export default RepoClone
+export default CloneDropdown
