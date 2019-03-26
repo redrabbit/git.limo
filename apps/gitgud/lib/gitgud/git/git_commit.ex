@@ -103,8 +103,7 @@ defmodule GitGud.GitCommit do
     where: r.repo_id == ^repo.id and r.oid == ^oid,
      join: c in assoc(r, :comments),
      join: u in assoc(c, :author),
-     join: e in assoc(u, :primary_email),
-  preload: [comments: {c, [author: {u, [primary_email: e]}]}]
+  preload: [comments: {c, [author: u]}]
     )
   end
 

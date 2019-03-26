@@ -108,7 +108,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   end
 
   defp authenticate_user(conn, user_id) do
-    if user = UserQuery.by_id(user_id, preload: :primary_email),
+    if user = UserQuery.by_id(user_id),
       do: assign_user(conn, user),
     else: conn
   end

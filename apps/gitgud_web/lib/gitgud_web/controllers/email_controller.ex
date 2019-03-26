@@ -51,10 +51,10 @@ defmodule GitGud.Web.EmailController do
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"primary_email" => email_params} = _params) do
-    user = DB.preload(current_user(conn), [:primary_email, :emails])
+    user = DB.preload(current_user(conn), [:emails])
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
-      if email != user.primary_email do
+      if email_id != user.primary_email_id do
         User.update!(user, :primary_email, email)
         conn
         |> put_flash(:info, "Email '#{email.address}' is now your primary email.")

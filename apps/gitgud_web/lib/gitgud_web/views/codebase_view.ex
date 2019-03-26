@@ -143,7 +143,7 @@ defmodule GitGud.Web.CodebaseView do
   def commit_author(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
       {:ok, author} ->
-        if user = UserQuery.by_email(author.email, preload: :primary_email),
+        if user = UserQuery.by_email(author.email),
           do: user,
         else: author
       {:error, _reason} -> nil
@@ -401,7 +401,7 @@ defmodule GitGud.Web.CodebaseView do
     authors
     |> Enum.map(&(&1.email))
     |> Enum.uniq()
-    |> UserQuery.by_email(preload: [:primary_email, :emails])
+    |> UserQuery.by_email(preload: :emails)
     |> Enum.flat_map(&flatten_user_emails/1)
     |> Map.new()
   end
