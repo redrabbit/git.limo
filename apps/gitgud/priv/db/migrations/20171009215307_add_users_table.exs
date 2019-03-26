@@ -8,8 +8,9 @@ defmodule GitGud.DB.Migrations.AddUsersTable do
       add :primary_email_id, :bigint
       add :public_email_id,  :bigint
       add :bio, :string
-      add :url, :string
       add :location, :string
+      add :website_url, :string
+      add :avatar_url, :string
       timestamps()
     end
 

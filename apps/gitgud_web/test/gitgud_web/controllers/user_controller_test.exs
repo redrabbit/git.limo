@@ -78,7 +78,7 @@ defmodule GitGud.Web.UserControllerTest do
       assert user.name == "Alice"
       assert user.bio == "I love programming!"
       assert user.public_email_id == hd(user.emails).id
-      assert user.url == "http://www.example.com"
+      assert user.website_url == "http://www.example.com"
       assert get_flash(conn, :info) == "Profile updated."
       assert redirected_to(conn) == Routes.user_path(conn, :edit_profile)
     end

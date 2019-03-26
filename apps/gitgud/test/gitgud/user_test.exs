@@ -62,7 +62,7 @@ defmodule GitGud.UserTest do
       assert user2.name == "Alice"
       assert user2.bio == "I love programming!"
       assert user2.public_email_id == hd(user1.emails).id
-      assert user2.url == "http://www.example.com"
+      assert user2.website_url == "http://www.example.com"
     end
 
     test "fails to update profile with invalid public email", %{user: user} do
@@ -70,9 +70,9 @@ defmodule GitGud.UserTest do
       assert "does not exist" in errors_on(changeset).public_email
     end
 
-    test "fails to update profile with invalid url", %{user: user} do
+    test "fails to update profile with invalid website url", %{user: user} do
       assert {:error, changeset} = User.update(user, :profile, url: "oops")
-      assert "invalid" in errors_on(changeset).url
+      assert "invalid" in errors_on(changeset).website_url
     end
 
     test "updates password with valid params", %{user: user1} do

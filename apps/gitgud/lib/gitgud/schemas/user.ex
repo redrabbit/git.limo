@@ -22,11 +22,12 @@ defmodule GitGud.User do
     has_one :auth, Auth, on_replace: :update, on_delete: :delete_all
     belongs_to :primary_email, Email, on_replace: :update
     belongs_to :public_email, Email, on_replace: :update
-    field :bio, :string
-    field :url, :string
-    field :location, :string
     has_many :emails, Email, on_delete: :delete_all
     has_many :repos, Repo, on_delete: :delete_all, foreign_key: :owner_id
+    field :bio, :string
+    field :location, :string
+    field :website_url, :string
+    field :avatar_url, :string
     has_many :ssh_keys, SSHKey, on_delete: :delete_all
     timestamps()
   end
@@ -38,11 +39,12 @@ defmodule GitGud.User do
     auth: Auth.t,
     primary_email: Email.t,
     public_email: Email.t,
-    bio: binary,
-    url: binary,
-    location: binary,
     emails: [Email.t],
     repos: [Repo.t],
+    bio: binary,
+    location: binary,
+    website_url: binary,
+    avatar_url: binary,
     ssh_keys: [SSHKey.t],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
@@ -67,7 +69,7 @@ defmodule GitGud.User do
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    case create_and_set_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
+    case create_with_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
       {:ok, %{user_with_primary_email: user}} ->
         {:ok, user}
       {:error, :user, changeset, _changes} ->
@@ -169,13 +171,14 @@ defmodule GitGud.User do
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:login, :name, :bio, :url, :location])
+    |> cast(params, [:login, :name, :bio, :website_url, :location])
     |> cast_assoc(:auth, required: true, with: &Auth.registration_changeset/2)
     |> cast_assoc(:emails, required: true, with: &Email.registration_changeset/2)
     |> validate_required([:login, :name])
     |> validate_login()
-    |> validate_url()
     |> validate_oauth_email()
+    |> validate_url(:website_url)
+    |> validate_url(:avatar_url)
   end
 
   @doc """
@@ -184,10 +187,29 @@ defmodule GitGud.User do
   @spec profile_changeset(t, map) :: Ecto.Changeset.t
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(params, [:name, :public_email_id, :bio, :url, :location])
+    |> cast(params, [:name, :public_email_id, :bio, :location, :website_url, :avatar_url])
     |> validate_required([:name])
     |> assoc_constraint(:public_email)
-    |> validate_url()
+    |> validate_url(:website_url)
+    |> validate_url(:avatar_url)
+  end
+
+  @doc """
+  Returns an email changeset for the given `email`.
+  """
+  @spec email_changeset(t, :primary_email | :public_email, Email.t) :: Ecto.Changeset.t
+  def email_changeset(%__MODULE__{} = user, :primary_email, email) do
+    user
+    |> struct(primary_email: nil)
+    |> change(avatar_url: gravatar_url(email))
+    |> put_assoc(:primary_email, email)
+  end
+
+  def email_changeset(%__MODULE__{} = user, :public_email, email) do
+    user
+    |> struct(public_email: nil)
+    |> change()
+    |> put_assoc(:public_email, email)
   end
 
   @doc """
@@ -204,31 +226,22 @@ defmodule GitGud.User do
   # Helpers
   #
 
-  defp create_and_set_primary_email(changeset) do
+  defp create_with_primary_email(changeset) do
     Multi.new()
     |> Multi.insert(:user, changeset)
-    |> Multi.run(:user_with_primary_email, &set_primary_email/2)
+    |> Multi.run(:user_with_primary_email, &set_verified_primary_email/2)
     |> DB.transaction()
   end
 
-  defp set_primary_email(db, %{user: user}) do
-    if email = Enum.find(user.emails, &(&1.verified)) do
-      user
-      |> update_changeset(:primary_email, email)
-      |> db.insert()
-    else
-      {:ok, user}
-    end
+  defp set_verified_primary_email(db, %{user: user}) do
+    if email = Enum.find(user.emails, &(&1.verified)),
+      do: db.insert(update_changeset(user, :primary_email, email)),
+    else: {:ok, user}
   end
 
   defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
   defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
-  defp update_changeset(user, field, %Email{verified: true} = value) when field in [:primary_email, :public_email] do
-    user
-    |> struct([{field, nil}])
-    |> change()
-    |> put_assoc(field, value)
-  end
+  defp update_changeset(user, email_field, %Email{verified: true} = email), do: email_changeset(user, email_field, email)
 
   defp validate_login(changeset) do
     changeset
@@ -238,13 +251,13 @@ defmodule GitGud.User do
     |> unique_constraint(:login)
   end
 
-  defp validate_url(changeset) do
-    if url = get_change(changeset, :url) do
+  defp validate_url(changeset, field) do
+    if url = get_change(changeset, field) do
       case URI.parse(url) do
         %URI{scheme: nil} ->
-          add_error(changeset, :url, "invalid")
+          add_error(changeset, field, "invalid")
         %URI{host: nil} ->
-          add_error(changeset, :url, "invalid")
+          add_error(changeset, field, "invalid")
         %URI{} ->
           changeset
       end
@@ -258,4 +271,14 @@ defmodule GitGud.User do
       end
     end || changeset
   end
+
+  defp gravatar_url(email) do
+    %URI{}
+    |> gravatar_base_url()
+    |> gravatar_email(email)
+    |> to_string()
+  end
+
+  defp gravatar_base_url(uri), do: %URI{uri|scheme: "https", host: "secure.gravatar.com", path: "/avatar"}
+  defp gravatar_email(uri, email), do: %URI{uri|path: Path.join(uri.path, Base.encode16(:crypto.hash(:md5, String.downcase(email.address)), case: :lower))}
 end

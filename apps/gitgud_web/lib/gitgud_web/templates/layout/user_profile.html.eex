@@ -27,12 +27,12 @@
             <a href="mailto:<%= @user.public_email.address %>"><%= @user.public_email.address %></a>
           </li>
         <% end %>
-        <%= if @user.url do %>
+        <%= if @user.website_url do %>
           <li>
             <span class="icon has-text-grey">
               <i class="fa fa-link"></i>
             </span>
-            <a href="<%= @user.url %>"><%= @user.url %></a>
+            <a href="<%= @user.website_url %>"><%= @user.website_url %></a>
           </li>
         <% end %>
       </ul>
