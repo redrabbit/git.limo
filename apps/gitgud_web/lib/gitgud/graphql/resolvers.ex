@@ -10,6 +10,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.Comment
   alias GitGud.CommitLineReview
 
   alias GitGud.GitBlob
@@ -25,8 +26,9 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
-  import GitGud.GraphQL.Schema, only: [from_relay_id: 1]
+
   import GitRekt.Git, only: [oid_fmt: 1]
+  import GitGud.GraphQL.Schema, only: [from_relay_id: 1]
 
   @doc """
   Resolves a node object type.
@@ -97,6 +99,19 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the HTML content of a given `comment`.
+  """
+  @spec user_bio_html(User.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def user_bio_html(user, %{} = _args, _info) do
+    case Earmark.as_html(user.bio || "") do
+      {:ok, html, []} ->
+        {:ok, html}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Resolves a list of users for a given search term.
   """
   @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
@@ -151,6 +166,19 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec repo_owner(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
   def repo_owner(%Repo{} = repo, %{} = _args, _info) do
     {:ok, repo.owner}
+  end
+
+  @doc """
+  Resolves the HTML content of a given `comment`.
+  """
+  @spec repo_description_html(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def repo_description_html(repo, %{} = _args, _info) do
+    case Earmark.as_html(repo.description || "") do
+      {:ok, html, []} ->
+        {:ok, html}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -374,6 +402,19 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def create_git_commit_comment(_parent, %{repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
     CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
+  end
+
+  @doc """
+  Resolves the HTML content of a given `comment`.
+  """
+  @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def comment_html(comment, %{} = _args, _info) do
+    case Earmark.as_html(comment.body) do
+      {:ok, html, []} ->
+        {:ok, html}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc false

@@ -89,6 +89,21 @@ defmodule GitGud.GraphQL.Types do
     @desc "The public email of the user."
     field :email, :string, resolve: &Resolvers.user_public_email/3
 
+    @desc "The bio email of the user."
+    field :bio, :string
+
+    @desc "The bio email of the user."
+    field :bio, :string
+
+    @desc "The bio email of the user."
+    field :bio_html, :string, resolve: &Resolvers.user_bio_html/3
+
+    @desc "The location of the user."
+    field :location, :string
+
+    @desc "The website URL of the user."
+    field :website_url, :string
+
     @desc "The URL of the user's avatar."
     field :avatar_url, :string
 
@@ -122,6 +137,9 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The description of the repository."
     field :description, :string
+
+    @desc "The description of the repository."
+    field :description_html, :string, resolve: &Resolvers.repo_description_html/3
 
     @desc "The owner of the repository."
     field :owner, non_null(:user), resolve: &Resolvers.repo_owner/3
@@ -315,6 +333,7 @@ defmodule GitGud.GraphQL.Types do
   object :comment do
     field :author, non_null(:user)
     field :body, non_null(:string)
+    field :body_html, non_null(:string), resolve: &Resolvers.comment_html/3
     field :inserted_at, non_null(:naive_datetime)
     field :updated_at, non_null(:naive_datetime)
   end
