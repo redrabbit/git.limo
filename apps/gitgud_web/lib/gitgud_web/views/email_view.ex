@@ -44,17 +44,17 @@ defmodule GitGud.Web.EmailView do
   end
 
   defp verified_tag(conn, %User{id: user_id}, %Email{user_id: user_id} = email) do
-    form_for(conn, Routes.email_path(conn, :send_verification), [as: :email], &verified_tag_fields(&1, email))
+    form_for(conn, Routes.email_path(conn, :send_verification), [as: :email], &unverified_tag_fields(&1, email))
   end
 
   defp verified_tag(_conn, %User{}, %Email{}), do: nil
 
-  defp verified_tag_fields(form, email) do
+  defp unverified_tag_fields(form, email) do
     [
       hidden_input(form, :id, value: email.id),
       content_tag(:div, [class: "tags has-addons"], do: [
         content_tag(:span, [class: "tag is-danger"], do: "Unverified"),
-        submit("resend", class: "button tag is-dark", style: "line-height:1rem")
+        submit("resend", class: "button tag is-light", style: "line-height:1rem")
       ])
     ]
   end
