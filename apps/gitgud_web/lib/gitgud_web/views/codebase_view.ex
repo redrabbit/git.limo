@@ -295,18 +295,20 @@ defmodule GitGud.Web.CodebaseView do
                   line_html,
                   content_tag(:tr, [class: "inline-comments"], do: [
                     content_tag(:td, [colspan: 4], do: [
-                      for comment <- comments do
-                        content_tag(:div, [class: "box"], do: [
-                          link(comment.author, to: Routes.user_path(conn, :show, comment.author), class: "has-text-black"),
-                          "\n",
-                          datetime_format(comment.inserted_at, "{relative}"),
-                          content_tag(:div, [class: "content"], do: [
-                            content_tag(:p, comment.body)
+                      content_tag(:div, [class: "comments"], do:
+                        for comment <- comments do
+                          content_tag(:div, [class: "box"], do: [
+                            link(comment.author, to: Routes.user_path(conn, :show, comment.author), class: "has-text-black"),
+                            "\n",
+                            datetime_format(comment.inserted_at, "{relative}"),
+                            content_tag(:div, [class: "content"], do: [
+                              content_tag(:p, comment.body)
+                            ])
                           ])
-                        ])
-                      end,
+                        end
+                      ),
                       (if authenticated?(conn) do
-                        react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], [class: "inline-comment-form"], do: [
+                        react_component("inline-comment-form", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, draft: true], [class: "inline-comment-form"], do: [
                           content_tag(:div, [class: "box"], do: [
                             content_tag(:div, [class: "field"], do: [
                               content_tag(:div, [class: "control"], do: [

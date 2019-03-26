@@ -1,6 +1,8 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
+import moment from "moment"
+
 import {commitMutation, graphql} from "react-relay";
 
 import environment from "../relay-environment"
@@ -8,10 +10,19 @@ import environment from "../relay-environment"
 class InlineCommentForm extends React.Component {
   constructor(props) {
     super(props)
+    this.renderForm = this.renderForm.bind(this)
+    this.renderComments = this.renderComments.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.bodyInput = React.createRef()
-    this.state = {folded: !!props.reply, submitEnabled: false}
+    this.commentsContainer = document.createElement("div")
+    this.commentsContainer.classList.add("comments")
+    this.state = {folded: !!props.draft, draft: !!!props.draft, submitEnabled: false, comments: []}
+  }
+
+  componentDidMount() {
+    let root = ReactDOM.findDOMNode(this).parentNode
+    root.parentNode.insertBefore(this.commentsContainer, root)
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -20,20 +31,46 @@ class InlineCommentForm extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    let root = ReactDOM.findDOMNode(this).parentNode
+    root.parentNode.removeChild(this.commentsContainer)
+  }
+
   render() {
+    return (
+      <div className="box">
+        {this.renderForm()}
+        {this.renderComments()}
+      </div>
+    )
+  }
+
+  renderComments() {
+    return ReactDOM.createPortal(
+      this.state.comments.map((comment, index) => {
+        return (
+          <div className="box" key={index}>
+            <a className="has-text-black" href={comment.author.url}>{comment.author.login}</a> {moment(comment.insertedAt).fromNow()}
+            <p>{comment.body}</p>
+          </div>
+        )
+      }), this.commentsContainer)
+  }
+
+  renderForm() {
     if(this.state.folded) {
       return (
-        <div className="box">
+        <form>
           <div className="field">
             <div className="control">
               <input name="comment[body]" className="input" placeholder="Leave a comment" ref={this.bodyInput} onFocus={() => this.setState({folded: false})} />
             </div>
           </div>
-        </div>
+        </form>
       )
     } else {
       return (
-        <div className="box">
+        <form>
           <div className="field">
             <div className="control">
               <textarea name="comment[body]"className="textarea" placeholder="Leave a comment" ref={this.bodyInput} onChange={(event) => this.setState({submitEnabled: !!event.target.value})} />
@@ -44,15 +81,15 @@ class InlineCommentForm extends React.Component {
               <button className="button" onClick={this.handleCancel}>Cancel</button>
             </div>
             <div className="control">
-              <button className="button is-success" disabled={!this.state.submitEnabled} onClick={this.handleSubmit}>Add comment</button>
+              <button className="button is-success" type="submit" disabled={!this.state.submitEnabled} onClick={this.handleSubmit}>Add comment</button>
             </div>
           </div>
-        </div>
+        </form>
       )
     }
   }
 
-  handleSubmit() {
+  handleSubmit(event) {
     const variables = {
       repo: this.props.repo,
       commit: this.props.commit,
@@ -67,32 +104,35 @@ class InlineCommentForm extends React.Component {
         addGitCommitComment(repo: $repo, commit: $commit, blob: $blob, hunk: $hunk, line: $line, body: $body) {
           author {
             login
+            url
           }
           body
           insertedAt
         }
       }
-    `;
+    `
 
+    event.preventDefault()
     commitMutation(environment, {
       mutation,
       variables,
       onCompleted: (response, errors) => {
-        console.log(response)
+        let comment = <div className="box" key={12}>hello</div>
+        this.setState(state => ({draft: false, comments: [...state.comments, response.addGitCommitComment]}))
         this.bodyInput.current.value = ""
       },
-      onError: err => console.error(err),
+      onError: err => console.error(err)
     })
   }
 
   handleCancel() {
-    if(this.props.reply) {
-      this.setState({folded: true})
-    } else {
+    if(this.state.draft) {
       let node = ReactDOM.findDOMNode(this)
-      let tr = node.closest("tr")
+      let container = node.closest(".inline-comments")
       ReactDOM.unmountComponentAtNode(node.parentNode)
-      tr.parentNode.removeChild(tr)
+      container.parentNode.removeChild(container)
+    } else {
+      this.setState({folded: true})
     }
   }
 }
