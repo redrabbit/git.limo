@@ -89,6 +89,9 @@ defmodule GitGud.GraphQL.Types do
     @desc "The public email of the user."
     field :email, :string, resolve: &Resolvers.user_public_email/3
 
+    @desc "The URL of the user's avatar."
+    field :avatar_url, :string
+
     @desc "A list of repositories that the user owns."
     connection field :repos, node_type: :repo do
       resolve &Resolvers.user_repos/2

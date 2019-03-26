@@ -50,7 +50,7 @@ class InlineCommentForm extends React.Component {
       this.state.comments.map((comment, index) => {
         return (
           <div className="box" key={index}>
-            <a className="has-text-black" href={comment.author.url}>{comment.author.login}</a> {moment(comment.insertedAt).fromNow()}
+            <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment(comment.insertedAt).fromNow()}
             <p>{comment.body}</p>
           </div>
         )
@@ -104,6 +104,7 @@ class InlineCommentForm extends React.Component {
         addGitCommitComment(repo: $repo, commit: $commit, blob: $blob, hunk: $hunk, line: $line, body: $body) {
           author {
             login
+            avatarUrl
             url
           }
           body
