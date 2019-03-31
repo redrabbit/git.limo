@@ -50,4 +50,4 @@
   </div>
 </nav>
 
-<%= render "_tree_entries.html", assigns %>
+<%= render "_tree_table.html", assigns %>

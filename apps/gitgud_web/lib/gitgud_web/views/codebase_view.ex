@@ -123,23 +123,6 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec blob_table(binary, GitBlob.t) :: binary
-  def blob_table(file_path, blob) do
-    highlight_lang = highlight_language_from_path(file_path)
-    content_tag(:table, [class: "blob-table"], do: [
-      content_tag(:tbody, do:
-        for {line_content, line_no} <- Enum.with_index(String.split(blob_content(blob), "\n"), 1) do
-          content_tag(:tr, do: [
-            content_tag(:td, line_no, class: "line-no", colspan: 2),
-            content_tag(:td, [class: "code"], do: [
-              content_tag(:div, line_content, class: Enum.join(["code-inner", highlight_lang], " "))
-            ])
-          ])
-        end
-      )
-    ])
-  end
-
   @spec commit_author(GitCommit.t) :: map | nil
   def commit_author(%GitCommit{} = commit) do
     case GitCommit.author(commit) do
@@ -249,9 +232,9 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec diff_table(Plug.Conn.t, binary, [map]) :: binary
-  def diff_table(conn, file_path, delta) do
-    highlight_lang = highlight_language_from_path(file_path)
+  @spec diff_table(Plug.Conn.t, Path.t, [map]) :: binary
+  def diff_table(conn, tree_path, delta) do
+    highlight_lang = highlight_language_from_path(tree_path)
     repo_id = to_relay_id(conn.assigns.repo)
     commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
     blob_oid = Git.oid_fmt(delta.new_file.oid)
@@ -332,6 +315,11 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(:blob), do: :tree
   def breadcrump_action(action), do: action
 
+  @spec highlight_language_from_path(binary) :: binary
+  def highlight_language_from_path(path) do
+    highlight_language(Path.extname(path))
+  end
+
   @spec title(atom, map) :: binary
   def title(:show, %{repo: repo}) do
     if desc = repo.description,
@@ -407,10 +395,6 @@ defmodule GitGud.Web.CodebaseView do
 
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})
-  end
-
-  defp highlight_language_from_path(path) do
-    highlight_language(Path.extname(path))
   end
 
   for line <- File.stream!(highlight_languages) do

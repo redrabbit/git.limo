@@ -21,6 +21,6 @@
     <p class="card-header-title"><%= Path.join(@tree_path) %></p>
   </header>
   <div class="card-content">
-    <%= blob_table(Path.join(@tree_path), @blob) %>
+    <%= render "_blob_table.html", assigns %>
   </div>
 </div>
