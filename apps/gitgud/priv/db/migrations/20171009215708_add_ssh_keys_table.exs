@@ -3,7 +3,7 @@ defmodule GitGud.DB.Migrations.AddSSHKeysTable do
 
   def change do
     create table("ssh_keys") do
-      add :user_id, references("users"), null: false, on_delete: :delete_all
+      add :user_id, references("users", on_delete: :delete_all), null: false
       add :name, :string, size: 80
       add :fingerprint, :string, null: false, size: 47
       timestamps(updated_at: false)

@@ -3,7 +3,7 @@ defmodule GitGud.DB.Migrations.AddAuthenticationProvidersTable do
 
   def change do
     create table("authentication_providers") do
-      add :auth_id, references("authentications"), null: false, on_delete: :delete_all
+      add :auth_id, references("authentications", on_delete: :delete_all), null: false
       add :provider, :string
       add :provider_id, :bigint
       add :token, :string
