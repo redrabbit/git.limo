@@ -238,6 +238,14 @@ table.blob-table {
   }
 }
 
+.inline-comments {
+  .comments .comment, .box {
+    @extend .box;
+    max-width: 780px;
+    margin: 1rem;
+  }
+}
+
 table.diff-table {
   margin-top: 0;
 
@@ -266,11 +274,6 @@ table.diff-table {
           border-top: 1px solid $grey-lighter;
           border-bottom: 1px solid $grey-lighter;
           background-color: $white-bis;
-
-          .box {
-            max-width: 780px;
-            margin: 1rem;
-          }
         }
       }
 

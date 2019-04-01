@@ -75,6 +75,7 @@ defmodule GitGud.Web.Router do
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
       get "/commit/:oid", CodebaseController, :commit
+      delete "/commit/:oid/comments/:id", CodebaseController, :delete_commit_comment
       get "/history", CodebaseController, :history
       get "/history/:revision/*path", CodebaseController, :history
       get "/tree/:revision/*path", CodebaseController, :tree

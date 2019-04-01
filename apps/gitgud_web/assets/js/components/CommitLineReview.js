@@ -17,6 +17,7 @@ class CommitLineReview extends React.Component {
     this.renderForm = this.renderForm.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
+    this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {folded: !!props.reply, draft: !!!props.reply, submitEnabled: false, comments: []}
   }
 
@@ -41,7 +42,9 @@ class CommitLineReview extends React.Component {
 
   renderComments() {
     return ReactDOM.createPortal(
-      this.state.comments.map((comment, index) => <Comment key={index} comment={comment} />), this.commentsContainer)
+      this.state.comments.map((comment, index) =>
+        <Comment key={index} comment={comment} onDeleteClick={this.handleCommentDelete} />
+      ), this.commentsContainer)
   }
 
   renderForm() {
@@ -88,7 +91,7 @@ class CommitLineReview extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: (response, errors) => {
+      onCompleted: response => {
         this.setState(state => ({draft: false, comments: [...state.comments, response.addGitCommitComment]}))
       },
       onError: err => console.error(err)
@@ -104,6 +107,12 @@ class CommitLineReview extends React.Component {
     } else {
       this.setState({folded: true})
     }
+  }
+
+  handleCommentDelete(comment) {
+    Comment.deleteComment(comment.id, response => {
+      this.setState(state => ({comments: state.comments.filter(comment => comment.id !== response.deleteComment.id)}))
+    })
   }
 }
 

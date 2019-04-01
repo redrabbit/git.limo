@@ -17,8 +17,9 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
+  alias GitGud.Web.CommentView
+
   import Phoenix.HTML, only: [raw: 1]
-  import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
@@ -238,7 +239,7 @@ defmodule GitGud.Web.CodebaseView do
     repo_id = to_relay_id(conn.assigns.repo)
     commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
     blob_oid = Git.oid_fmt(delta.new_file.oid)
-    content_tag(:table, [class: "blob-table diff-table", data_repo: repo_id, data_commit: commit_oid, data_blob: blob_oid], do: [
+    content_tag(:table, [class: "blob-table diff-table", data: [repo: repo_id, commit: commit_oid, blob: blob_oid]], do: [
       content_tag(:tbody, do:
         for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do
           [
@@ -263,7 +264,7 @@ defmodule GitGud.Web.CodebaseView do
                   do: content_tag(:td, line.new_line_no, class: "line-no"),
                 else: content_tag(:td, "", class: "line-no")),
                   content_tag(:td, [class: "code origin"], do: [
-                    content_tag(:button, [class: "button is-link is-small", data_hunk: hunk_index, data_line: line_index], do: [
+                    content_tag(:button, [class: "button is-link is-small", data: [hunk: hunk_index, line: line_index]], do: [
                       content_tag(:span, [class: "icon"], do: [
                         content_tag(:i, "", [class: "fa fa-comment-alt"])
                       ])
@@ -280,14 +281,7 @@ defmodule GitGud.Web.CodebaseView do
                   content_tag(:tr, [class: "inline-comments"], do: [
                     content_tag(:td, [colspan: 4], do: [
                       content_tag(:div, [class: "comments"], do:
-                        for comment <- comments do
-                          content_tag(:div, [class: "box"], do: [
-                            link(comment.author, to: Routes.user_path(conn, :show, comment.author), class: "has-text-black"),
-                            "\n",
-                            datetime_format(comment.inserted_at, "{relative}"),
-                            content_tag(:div, markdown(comment.body), class: "content")
-                          ])
-                        end
+                        Enum.map(comments, &render(CommentView, "comment.html", conn: conn, comment: &1))
                       ),
                       (if authenticated?(conn) do
                         react_component("commit-line-review", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], [class: "inline-comment-form"], do: [

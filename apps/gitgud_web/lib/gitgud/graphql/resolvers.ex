@@ -405,6 +405,16 @@ defmodule GitGud.GraphQL.Resolvers do
     CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
   end
 
+  def delete_comment(_parent, %{comment: comment_id}, %Absinthe.Resolution{context: ctx}) do
+    if user = ctx[:current_user] do
+      if comment = DB.get(Comment, from_relay_id(comment_id)) do
+        if comment.author_id == user.id do
+          Comment.delete(comment)
+        end
+      end
+    end
+  end
+
   @doc """
   Resolves the HTML content of a given `comment`.
   """

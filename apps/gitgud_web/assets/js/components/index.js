@@ -1,4 +1,5 @@
 export BranchSelect from "./BranchSelect"
+export Comment from "./Comment"
 export CommentForm from "./CommentForm"
 export CommitLineReview from "./CommitLineReview"
 export CloneDropdown from "./CloneDropdown"

@@ -92,6 +92,12 @@ defmodule GitGud.GraphQL.Schema do
       arg :body, non_null(:string)
       resolve &Resolvers.create_git_commit_comment/3
     end
+
+    @desc "Delete a comment"
+    field :delete_comment, type: :comment do
+      arg :comment, non_null(:id)
+      resolve &Resolvers.delete_comment/3
+    end
   end
 
 
