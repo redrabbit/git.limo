@@ -7,6 +7,7 @@ defmodule GitGud.Comment do
 
   import Ecto.Changeset
 
+  alias GitGud.DB
   alias GitGud.User
 
   schema "comments" do
@@ -28,6 +29,23 @@ defmodule GitGud.Comment do
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
   }
+
+  @doc """
+  Deletes the given `comment`.
+  """
+  @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def delete(%__MODULE__{} = comment) do
+    DB.delete(comment)
+  end
+
+  @doc """
+  Similar to `delete!/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec delete!(t) :: t
+  def delete!(%__MODULE__{} = comment) do
+    DB.delete!(comment)
+  end
+
 
   @doc """
   Returns a comment changeset for the given `params`.
