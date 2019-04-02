@@ -58,7 +58,7 @@ defmodule GitGud.UserTest do
     end
 
     test "updates profile with valid params", %{user: user1} do
-      assert {:ok, user2} = User.update(user1, :profile, name: "Alice", bio: "I love programming!", public_email_id: hd(user1.emails).id, url: "http://www.example.com")
+      assert {:ok, user2} = User.update(user1, :profile, name: "Alice", bio: "I love programming!", public_email_id: hd(user1.emails).id, website_url: "http://www.example.com")
       assert user2.name == "Alice"
       assert user2.bio == "I love programming!"
       assert user2.public_email_id == hd(user1.emails).id
@@ -71,7 +71,7 @@ defmodule GitGud.UserTest do
     end
 
     test "fails to update profile with invalid website url", %{user: user} do
-      assert {:error, changeset} = User.update(user, :profile, url: "oops")
+      assert {:error, changeset} = User.update(user, :profile, website_url: "http:example.com")
       assert "invalid" in errors_on(changeset).website_url
     end
 
