@@ -94,10 +94,10 @@ defmodule GitGud.GitCommit do
   end
 
   @doc """
-  Returns a single review for the given `commit`.
+  Returns a single line-review for the given `commit`.
   """
-  @spec review(t, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
-  def review(%__MODULE__{repo: repo, oid: oid} = _commit, blob_oid, hunk, line, opts \\ []) do
+  @spec line_review(t, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
+  def line_review(%__MODULE__{repo: repo, oid: oid} = _commit, blob_oid, hunk, line, opts \\ []) do
     query = commit_line_reviews_query(repo.id, oid, blob_oid, hunk, line)
     query = commit_line_reviews_with_comments_query(query, Keyword.get(opts, :preload_comments, false))
     DB.one(query)
@@ -106,8 +106,8 @@ defmodule GitGud.GitCommit do
   @doc """
   Returns all reviews for the given `commit`.
   """
-  @spec reviews(t, keyword) :: [CommitLineReview.t]
-  def reviews(%__MODULE__{repo: repo, oid: oid} = _commit, opts \\ []) do
+  @spec line_reviews(t, keyword) :: [CommitLineReview.t]
+  def line_reviews(%__MODULE__{repo: repo, oid: oid} = _commit, opts \\ []) do
     query = commit_line_reviews_query(repo.id, oid)
     query = commit_line_reviews_with_comments_query(query, Keyword.get(opts, :preload_comments, false))
     DB.all(query)

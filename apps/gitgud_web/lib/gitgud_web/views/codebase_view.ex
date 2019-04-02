@@ -220,7 +220,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec diff_deltas_with_reviews(GitCommit.t, GitDiff.t) :: [map] | nil
   def diff_deltas_with_reviews(commit, diff) do
-    commit_reviews = GitCommit.reviews(commit)
+    commit_reviews = GitCommit.line_reviews(commit)
     Enum.map(diff_deltas(diff), fn delta ->
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
@@ -233,7 +233,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec diff_deltas_with_comments(GitCommit.t, GitDiff.t) :: [map] | nil
   def diff_deltas_with_comments(commit, diff) do
-    commit_reviews = GitCommit.reviews(commit, preload_comments: true)
+    commit_reviews = GitCommit.line_reviews(commit, preload_comments: true)
     Enum.map(diff_deltas(diff), fn delta ->
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
