@@ -59,7 +59,7 @@ defmodule GitGud.Web.CodebaseView do
     revision_name = revision_name(revision)
     revision_type = revision_type(revision)
     revision_href = revision_href(conn, revision)
-    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type], [class: "branch-select"], do: [
+    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, branch_href: revision_href(conn, :branches), tag_href: revision_href(conn, :tags)], [class: "branch-select"], do: [
       content_tag(:a, [class: "button", href: revision_href], do: [
         content_tag(:span, [], do: [
           "#{String.capitalize(to_string(revision_type))}: ",
@@ -169,6 +169,10 @@ defmodule GitGud.Web.CodebaseView do
   def revision_type(%GitCommit{} = _object), do: :commit
   def revision_type(%GitTag{} = _object), do: :tag
   def revision_type(%GitReference{} = ref), do: ref.type
+
+  def revision_href(conn, revision_type) when is_atom(revision_type) do
+    Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
+  end
 
   def revision_href(conn, revision) do
     repo = conn.assigns.repo

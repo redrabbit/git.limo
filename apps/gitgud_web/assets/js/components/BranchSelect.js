@@ -83,7 +83,14 @@ class BranchSelect extends React.Component {
                   <a key={edge.node.oid} href={edge.node.url} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                 )}
                 <div className="panel-block">
-                  <a className="button is-small is-light is-fullwidth">reset all filters</a>
+                  {(() => {
+                    switch(this.state.type) {
+                      case "BRANCH":
+                        return <a className="button is-small is-light is-fullwidth" href={this.props.branchHref}>all branches</a>
+                      case "TAG":
+                        return <a className="button is-small is-light is-fullwidth" href={this.props.tagHref}>all tags</a>
+                    }
+                  })()}
                 </div>
               </nav>
             )
