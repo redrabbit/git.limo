@@ -9,7 +9,7 @@ import "highlight.js/styles/github-gist.css"
 import {token} from "./auth"
 
 import * as factory from "./components"
-import {CommitLineReview, CommentForm, Comment} from "./components"
+import {CommitLineReview} from "./components"
 
 export default () => {
   document.querySelectorAll("article.message").forEach(flash => {
@@ -38,14 +38,9 @@ export default () => {
             if(!tr.nextSibling || !tr.nextSibling.classList.contains("inline-comments")) {
               let row = table.insertRow(tr.rowIndex+1);
               row.classList.add("inline-comments")
-              let column = document.createElement("td")
-              column.colSpan = 4
-              let container = column.appendChild(document.createElement("div"))
-              container.classList.add("inline-comment-form")
-              ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), container);
-              row.appendChild(column)
+              ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), row);
             }
-            tr.nextSibling.querySelector("form [name='comment[body]']").focus()
+            tr.nextSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
           })
           origin = td
         } else {
@@ -53,29 +48,6 @@ export default () => {
         }
         td.addEventListener("mouseover", () => origin.classList.add("is-active"))
         td.addEventListener("mouseout", () => origin.classList.remove("is-active"))
-      })
-    })
-
-    document.querySelectorAll(".comment").forEach(comment => {
-      comment.querySelector("button[data-action=update]").addEventListener("click", event => {
-        let container = comment.parentNode.appendChild(document.createElement("div"))
-        container.id = comment.id
-        container.classList.add("comment-form")
-        ReactDOM.render(React.createElement(CommentForm, {
-          id: comment.id,
-          onSubmit: (body) => {
-            Comment.updateComment(comment.id, body, response => {
-              ReactDOM.render(React.createElement(Comment, {comment: response.updateComment}), container)
-            })
-          },
-          onCancel: () => {
-            container.parentNode.replaceChild(comment, container)
-          }
-        }), container);
-        comment.parentNode.replaceChild(container, comment)
-      })
-      comment.querySelector("button[data-action=delete]").addEventListener("click", event => {
-        Comment.deleteComment(comment.id, response => comment.parentNode.removeChild(comment))
       })
     })
   }

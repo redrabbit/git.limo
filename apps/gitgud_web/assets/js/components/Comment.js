@@ -4,80 +4,87 @@ import {commitMutation, graphql} from "react-relay"
 
 import environment from "../relay-environment"
 
+import CommentForm from "./CommentForm"
+
 import moment from "moment"
 
 class Comment extends React.Component {
-  render() {
-    const {comment} = this.props
-    console.log(comment)
-    return (
-      <div className="comment">
-        <div className="buttons is-pulled-right">
-          <button className="button is-small">
-            <span className="icon is-small">
-              <i className="fa fa-pen"></i>
-            </span>
-          </button>
-          <button className="button is-small" onClick={() => this.props.onDeleteClick(this.props.comment)}>
-            <span className="icon is-small">
-              <i className="fa fa-trash"></i>
-            </span>
-          </button>
-        </div>
-        <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
-        <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
-      </div>
-    )
+  constructor(props) {
+    super(props)
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleCancel = this.handleCancel.bind(this)
+    this.handleUpdateClick = this.handleUpdateClick.bind(this)
+    this.handleDeleteClick = this.handleDeleteClick.bind(this)
+    this.state = {edit: false}
   }
 
-  static updateComment(commentId, body, onComplete, onError) {
-    const variables = {
-      comment: commentId,
-      body: body
+  render() {
+    const {comment} = this.props
+    if(this.state.edit) {
+      return <CommentForm body={comment.body} onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
+    } else {
+      return (
+        <div className="comment">
+          <div className="buttons is-pulled-right">
+            <button className="button is-small" onClick={this.handleUpdateClick}>
+              <span className="icon is-small">
+                <i className="fa fa-pen"></i>
+              </span>
+            </button>
+            <button className="button is-small" onClick={this.handleDeleteClick}>
+              <span className="icon is-small">
+                <i className="fa fa-trash"></i>
+              </span>
+            </button>
+          </div>
+          <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
+          <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
+        </div>
+      )
     }
+  }
 
+  handleSubmit(body) {
+    const variables = {id: this.props.comment.id, body: body}
     const mutation = graphql`
-      mutation CommentUpdateCommentMutation($comment: ID!, $body: String!) {
-        updateComment(comment: $comment, body: $body) {
+      mutation CommentUpdateCommentMutation($id: ID!, $body: String!) {
+        updateComment(id: $id, body: $body) {
           id
           author {
             login
             avatarUrl
             url
           }
+          body
           bodyHtml
           insertedAt
         }
       }
     `
-
-    commitMutation(environment, {
-      mutation,
-      variables,
-      onCompleted: onComplete,
-      onError: onError
-    })
+    commitMutation(environment, {mutation, variables, onCompleted: response => {
+      this.props.onUpdate(response.updateComment)
+      this.setState({edit: false})
+    }})
   }
 
-  static deleteComment(commentId, onComplete, onError) {
-    const variables = {
-      comment: commentId
-    }
+  handleCancel() {
+    this.setState({edit: false})
+  }
 
+  handleUpdateClick() {
+    this.setState(state => ({edit: !state.edit}))
+  }
+
+  handleDeleteClick() {
+    const variables = {id: this.props.comment.id}
     const mutation = graphql`
-      mutation CommentDeleteCommentMutation($comment: ID!) {
-        deleteComment(comment: $comment) {
+      mutation CommentDeleteCommentMutation($id: ID!) {
+        deleteComment(id: $id) {
           id
         }
       }
     `
-
-    commitMutation(environment, {
-      mutation,
-      variables,
-      onCompleted: onComplete,
-      onError: onError
-    })
+    commitMutation(environment, {mutation, variables, onCompleted: response => this.props.onDelete(response.deleteComment)})
   }
 }
 

@@ -84,9 +84,9 @@ defmodule GitGud.GraphQL.Schema do
   mutation do
     @desc "Create a comment"
     field :add_git_commit_comment, type: :comment do
-      arg :repo, non_null(:id)
-      arg :commit, non_null(:git_oid)
-      arg :blob, non_null(:git_oid)
+      arg :repo_id, non_null(:id)
+      arg :commit_oid, non_null(:git_oid)
+      arg :blob_oid, non_null(:git_oid)
       arg :hunk, non_null(:integer)
       arg :line, non_null(:integer)
       arg :body, non_null(:string)
@@ -95,14 +95,14 @@ defmodule GitGud.GraphQL.Schema do
 
     @desc "Update a comment"
     field :update_comment, type: :comment do
-      arg :comment, non_null(:id)
+      arg :id, non_null(:id)
       arg :body, non_null(:string)
       resolve &Resolvers.update_comment/3
     end
 
     @desc "Delete a comment"
     field :delete_comment, type: :comment do
-      arg :comment, non_null(:id)
+      arg :id, non_null(:id)
       resolve &Resolvers.delete_comment/3
     end
   end

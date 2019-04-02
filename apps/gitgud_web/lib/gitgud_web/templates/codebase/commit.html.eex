@@ -38,7 +38,7 @@
   </div>
 </div>
 
-<%= for delta <- diff_deltas_with_comments(@commit, @diff) do %>
+<%= for delta <- diff_deltas_with_reviews(@commit, @diff) do %>
   <div class="columns">
     <div class="column is-12">
       <div class="card blob">

@@ -94,17 +94,23 @@ defmodule GitGud.GitCommit do
   end
 
   @doc """
+  Returns a single review for the given `commit`.
+  """
+  @spec review(t, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
+  def review(%__MODULE__{repo: repo, oid: oid} = _commit, blob_oid, hunk, line, opts \\ []) do
+    query = commit_line_reviews_query(repo.id, oid, blob_oid, hunk, line)
+    query = commit_line_reviews_with_comments_query(query, Keyword.get(opts, :preload_comments, false))
+    DB.one(query)
+  end
+
+  @doc """
   Returns all reviews for the given `commit`.
   """
-  @spec reviews(t) :: [CommitLineReview.t]
-  def reviews(%__MODULE__{repo: repo, oid: oid} = _commit) do
-    DB.all(
-      from r in CommitLineReview,
-    where: r.repo_id == ^repo.id and r.oid == ^oid,
-     join: c in assoc(r, :comments),
-     join: u in assoc(c, :author),
-  preload: [comments: {c, [author: u]}]
-    )
+  @spec reviews(t, keyword) :: [CommitLineReview.t]
+  def reviews(%__MODULE__{repo: repo, oid: oid} = _commit, opts \\ []) do
+    query = commit_line_reviews_query(repo.id, oid)
+    query = commit_line_reviews_with_comments_query(query, Keyword.get(opts, :preload_comments, false))
+    DB.all(query)
   end
 
   #
@@ -132,5 +138,18 @@ defmodule GitGud.GitCommit do
     |> Enum.to_list()
     |> List.first()
     |> resolve_parent(repo)
+  end
+
+  defp commit_line_reviews_query(repo_id, commit_oid, blob_oid, hunk, line) do
+    from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid and r.blob_oid == ^blob_oid and r.hunk == ^hunk and r.line == ^line
+  end
+
+  defp commit_line_reviews_query(repo_id, commit_oid) do
+    from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid
+  end
+
+  defp commit_line_reviews_with_comments_query(query, false), do: query
+  defp commit_line_reviews_with_comments_query(query, true) do
+    from r in query, join: c in assoc(r, :comments), join: u in assoc(c, :author), preload: [comments: {c, [author: u]}]
   end
 end

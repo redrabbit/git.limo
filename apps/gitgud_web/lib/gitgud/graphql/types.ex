@@ -243,11 +243,27 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
+    field :line_commit, non_null(:git_commit_line_review) do
+      arg :blob_oid, non_null(:git_oid)
+      arg :hunk, non_null(:integer)
+      arg :line, non_null(:integer)
+      resolve &Resolvers.git_commit_line_review/3
+    end
+
     @desc "The repository this commit belongs to."
     field :repo, non_null(:repo)
 
     @desc "The HTTP URL for this commit."
     field :url, non_null(:string), resolve: &Resolvers.url/3
+  end
+
+  node object :git_commit_line_review do
+    field :repo, non_null(:repo)
+    field :commit_oid, non_null(:git_oid)
+    field :blob_oid, non_null(:git_oid)
+    field :hunk, non_null(:integer)
+    field :line, non_null(:integer)
+    field :comments, list_of(:comment)
   end
 
   @desc "Represents a Git annotated tag."

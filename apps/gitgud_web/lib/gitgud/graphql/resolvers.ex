@@ -37,6 +37,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%User{} = _node, _info), do: :user
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
+  def node_type(%CommitLineReview{} = _node, _info), do: :git_commit_line_review
   def node_type(_struct, _info), do: nil
 
   @doc """
@@ -58,6 +59,12 @@ defmodule GitGud.GraphQL.Resolvers do
   def node(%{id: id, type: :comment} = _node_type, info) do
     if comment = DB.get(Comment, to_integer(id)),
       do: {:ok, DB.preload(comment, [:author])},
+    else: node(%{id: id}, info)
+  end
+
+  def node(%{id: id, type: :git_commit_line_review} = _node_type, info) do
+    if review = DB.get(CommitLineReview, to_integer(id)),
+      do: {:ok, DB.preload(review, [:repo, comments: :author])},
     else: node(%{id: id}, info)
   end
 
@@ -332,6 +339,16 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the line-review for a given Git `commit` object.
+  """
+  @spec git_commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
+  def git_commit_line_review(%GitCommit{} = commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  _info) do
+    if review = GitCommit.review(commit, blob_oid, hunk, line),
+      do: {:ok, review},
+    else: {:error, "there is no line-review for the given args"}
+  end
+
+  @doc """
   Resolves the author for a given Git `tag` object.
   """
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
@@ -407,11 +424,11 @@ defmodule GitGud.GraphQL.Resolvers do
     GitBlob.size(blob)
   end
 
-  def create_git_commit_line_comment(_parent, %{repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
+  def create_git_commit_line_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
     CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
   end
 
-  def update_comment(_parent, %{comment: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
+  def update_comment(_parent, %{id: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
     if user = ctx[:current_user] do
       if comment = DB.get(Comment, from_relay_id(comment_id)) do
         if comment.author_id == user.id do
@@ -422,7 +439,7 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
-  def delete_comment(_parent, %{comment: comment_id}, %Absinthe.Resolution{context: ctx}) do
+  def delete_comment(_parent, %{id: comment_id}, %Absinthe.Resolution{context: ctx}) do
     if user = ctx[:current_user] do
       if comment = DB.get(Comment, from_relay_id(comment_id)) do
         if comment.author_id == user.id do

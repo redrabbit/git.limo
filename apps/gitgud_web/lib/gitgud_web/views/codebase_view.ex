@@ -17,8 +17,6 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
-  alias GitGud.Web.CommentView
-
   import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Tag
 
@@ -220,14 +218,27 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_deltas_with_comments(GitCommit.t, GitDiff.t) :: [map] | nil
-  def diff_deltas_with_comments(commit, diff) do
+  @spec diff_deltas_with_reviews(GitCommit.t, GitDiff.t) :: [map] | nil
+  def diff_deltas_with_reviews(commit, diff) do
     commit_reviews = GitCommit.reviews(commit)
     Enum.map(diff_deltas(diff), fn delta ->
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_comments_to_delta_line(&1, review.line, review.comments))
+          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
+        end)
+      end)
+    end)
+  end
+
+  @spec diff_deltas_with_comments(GitCommit.t, GitDiff.t) :: [map] | nil
+  def diff_deltas_with_comments(commit, diff) do
+    commit_reviews = GitCommit.reviews(commit, preload_comments: true)
+    Enum.map(diff_deltas(diff), fn delta ->
+      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      Enum.reduce(reviews, delta, fn review, delta ->
+        update_in(delta.hunks, fn hunks ->
+          List.update_at(hunks, review.hunk, &attach_review_comments_to_delta_line(&1, review.line, review.comments))
         end)
       end)
     end)
@@ -239,7 +250,7 @@ defmodule GitGud.Web.CodebaseView do
     repo_id = to_relay_id(conn.assigns.repo)
     commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
     blob_oid = Git.oid_fmt(delta.new_file.oid)
-    content_tag(:table, [class: "blob-table diff-table", data: [repo: repo_id, commit: commit_oid, blob: blob_oid]], do: [
+    content_tag(:table, [class: "blob-table diff-table", data: [repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid]], do: [
       content_tag(:tbody, do:
         for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do
           [
@@ -256,48 +267,31 @@ defmodule GitGud.Web.CodebaseView do
                   line.origin == "-" -> "diff-deletion"
                   true -> ""
                 end
-              line_html = content_tag(:tr, [class: line_class], do: [
-                (if line.old_line_no != -1,
-                  do: content_tag(:td, line.old_line_no, class: "line-no"),
-                else: content_tag(:td, "", class: "line-no")),
-                (if line.new_line_no != -1,
-                  do: content_tag(:td, line.new_line_no, class: "line-no"),
-                else: content_tag(:td, "", class: "line-no")),
-                  content_tag(:td, [class: "code origin"], do: [
-                    content_tag(:button, [class: "button is-link is-small", data: [hunk: hunk_index, line: line_index]], do: [
-                      content_tag(:span, [class: "icon"], do: [
-                        content_tag(:i, "", [class: "fa fa-comment-alt"])
-                      ])
-                    ]),
-                    line.origin
-                  ]),
-                content_tag(:td, [class: "code"], do: [
-                  content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
-                ])
-              ])
-              if comments = Map.get(line, :comments) do
-                [
-                  line_html,
-                  content_tag(:tr, [class: "inline-comments"], do: [
-                    content_tag(:td, [colspan: 4], do: [
-                      content_tag(:div, [class: "comments"], do:
-                        Enum.map(comments, &render(CommentView, "comment.html", conn: conn, comment: &1))
-                      ),
-                      (if authenticated?(conn) do
-                        react_component("commit-line-review", [repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk_index, line: line_index, reply: true], [class: "inline-comment-form"], do: [
-                          content_tag(:div, [class: "box"], do: [
-                            content_tag(:div, [class: "field"], do: [
-                              content_tag(:div, [class: "control"], do: [
-                                tag(:input, class: "input", type: "text", name: "comment[body]", placeholder: "Leave a comment", readonly: true)
-                              ])
-                            ])
-                          ])
+              [
+                content_tag(:tr, [class: line_class], do: [
+                  (if line.old_line_no != -1,
+                    do: content_tag(:td, line.old_line_no, class: "line-no"),
+                  else: content_tag(:td, "", class: "line-no")),
+                  (if line.new_line_no != -1,
+                    do: content_tag(:td, line.new_line_no, class: "line-no"),
+                  else: content_tag(:td, "", class: "line-no")),
+                    content_tag(:td, [class: "code origin"], do: [
+                      content_tag(:button, [class: "button is-link is-small", data: [hunk: hunk_index, line: line_index]], do: [
+                        content_tag(:span, [class: "icon"], do: [
+                          content_tag(:i, "", [class: "fa fa-comment-alt"])
                         ])
-                       end || [])
-                    ])
+                      ]),
+                      line.origin
+                    ]),
+                  content_tag(:td, [class: "code"], do: [
+                    content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
                   ])
-                ]
-              end || line_html
+                ]),
+                (if review = Map.get(line, :review),
+                  do: react_component("commit-line-review", [review_id: to_relay_id(review)], [tag: :tr, class: "inline-comments"]),
+                else: []
+                )
+              ]
             end
           ]
         end
@@ -408,7 +402,14 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  defp attach_comments_to_delta_line(hunk, line, comments) do
+  defp attach_review_to_delta_line(hunk, line, review) do
+    update_in(hunk.lines, fn lines ->
+      List.update_at(lines, line, &Map.put(&1, :review, review))
+    end)
+  end
+
+
+  defp attach_review_comments_to_delta_line(hunk, line, comments) do
     update_in(hunk.lines, fn lines ->
       List.update_at(lines, line, &Map.put(&1, :comments, comments))
     end)

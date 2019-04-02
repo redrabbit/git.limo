@@ -239,7 +239,7 @@ table.blob-table {
 }
 
 .inline-comments {
-  .comment, .comment-form, .box {
+  .comment, .comment-form {
     @extend .box;
     max-width: 780px;
     margin: 1rem;

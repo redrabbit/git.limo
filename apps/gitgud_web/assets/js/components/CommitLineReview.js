@@ -1,7 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
-import {commitMutation, graphql} from "react-relay";
+import {fetchQuery,commitMutation, graphql} from "react-relay";
 
 import environment from "../relay-environment"
 
@@ -11,77 +11,127 @@ import CommentForm from "./CommentForm"
 class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
-    this.commentsContainer = document.createElement("div")
-    this.commentsContainer.classList.add("comments")
+    this.fetchReview = this.fetchReview.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-    this.handleCancel = this.handleCancel.bind(this)
+    this.handleFormSubmit = this.handleFormSubmit.bind(this)
+    this.handleFormCancel = this.handleFormCancel.bind(this)
+    this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
-    this.state = {folded: !!props.reply, draft: !!!props.reply, submitEnabled: false, comments: []}
+    this.state = {
+      folded: !!props.reviewId,
+      draft: !!!props.reviewId,
+      repoId: this.props.repoId,
+      commitOid: this.props.commitOid,
+      blobOid: this.props.blobOid,
+      hunk: Number(this.props.hunk),
+      line: Number(this.props.line),
+      comments: []
+    }
   }
 
   componentDidMount() {
-    let root = ReactDOM.findDOMNode(this).parentNode
-    root.parentNode.insertBefore(this.commentsContainer, root)
+    this.fetchReview()
   }
 
-  componentWillUnmount() {
-    let root = ReactDOM.findDOMNode(this).parentNode
-    root.parentNode.removeChild(this.commentsContainer)
+  fetchReview() {
+    const {reviewId} = this.props
+    if(reviewId) {
+      const query = graphql`
+        query CommitLineReviewCommentsQuery($id: ID!) {
+          node(id: $id) {
+            ... on GitCommitLineReview {
+              repo {
+                id
+              }
+              commitOid
+              blobOid
+              hunk
+              line
+              comments {
+                id
+                author {
+                  login
+                  avatarUrl
+                  url
+                }
+                body
+                bodyHtml
+                insertedAt
+              }
+            }
+          }
+        }
+      `
+      const variables = {
+        id: reviewId
+      }
+
+      fetchQuery(environment, query, variables)
+        .then(response => this.setState({
+          repoId: response.node.repo.id,
+          commitOid: response.node.commitOid,
+          blobOid: response.node.blobOid,
+          hunk: response.node.hunk,
+          line: response.node.line,
+          comments: response.node.comments
+        }))
+    }
   }
 
   render() {
     return (
-      <div className="box">
+      <td colSpan={4}>
         {this.renderComments()}
         {this.renderForm()}
-      </div>
+      </td>
     )
   }
 
   renderComments() {
-    return ReactDOM.createPortal(
-      this.state.comments.map((comment, index) =>
-        <Comment key={index} comment={comment} onDeleteClick={this.handleCommentDelete} />
-      ), this.commentsContainer)
+    return this.state.comments.map((comment, index) =>
+      <Comment key={index} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+    )
   }
 
   renderForm() {
     if(this.state.folded) {
       return (
-        <form>
-          <div className="field">
-            <div className="control">
-              <input name="comment[body]" className="input" placeholder="Leave a comment" onFocus={() => this.setState({folded: false})} />
+        <div className="comment-form">
+          <form>
+            <div className="field">
+              <div className="control">
+                <input name="comment[body]" className="input" placeholder="Leave a comment" onFocus={() => this.setState({folded: false})} />
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       )
     } else {
-      return <CommentForm onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
+      return <CommentForm onSubmit={this.handleFormSubmit} onCancel={this.handleFormCancel} />
     }
   }
 
-  handleSubmit(body) {
+  handleFormSubmit(body) {
     const variables = {
-      repo: this.props.repo,
-      commit: this.props.commit,
-      blob: this.props.blob,
-      hunk: Number(this.props.hunk),
-      line: Number(this.props.line),
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid,
+      blobOid: this.state.blobOid,
+      hunk: this.state.hunk,
+      line: this.state.line,
       body: body
     }
 
     const mutation = graphql`
-      mutation CommitLineReviewAddCommentMutation($repo: ID!, $commit: GitObjectID!, $blob: GitObjectID!, $hunk: Int!, $line: Int!, $body: String!) {
-        addGitCommitComment(repo: $repo, commit: $commit, blob: $blob, hunk: $hunk, line: $line, body: $body) {
+      mutation CommitLineReviewAddCommentMutation($repoId: ID!, $commitOid: GitObjectID!, $blobOid: GitObjectID!, $hunk: Int!, $line: Int!, $body: String!) {
+        addGitCommitComment(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line, body: $body) {
           id
           author {
             login
             avatarUrl
             url
           }
+          body
           bodyHtml
           insertedAt
         }
@@ -91,14 +141,13 @@ class CommitLineReview extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: response => {
+      onCompleted: (response, errors) => {
         this.setState(state => ({draft: false, comments: [...state.comments, response.addGitCommitComment]}))
-      },
-      onError: err => console.error(err)
+      }
     })
   }
 
-  handleCancel() {
+  handleFormCancel() {
     if(this.state.draft) {
       let node = ReactDOM.findDOMNode(this)
       let container = node.closest(".inline-comments")
@@ -109,10 +158,11 @@ class CommitLineReview extends React.Component {
     }
   }
 
+  handleCommentUpdate(comment) {
+    this.setState(state => ({comments: state.comments.map(oldComment => oldComment.id === comment.id ? comment : oldComment)}))
+  }
   handleCommentDelete(comment) {
-    Comment.deleteComment(comment.id, response => {
-      this.setState(state => ({comments: state.comments.filter(comment => comment.id !== response.deleteComment.id)}))
-    })
+    this.setState(state => ({comments: state.comments.filter(oldComment => oldComment.id !== comment.id)}))
   }
 }
 

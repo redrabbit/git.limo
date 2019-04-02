@@ -56,9 +56,10 @@ defmodule GitGud.Web.ReactComponents do
 
   def react_component(name, props, attrs, do: block) when is_list(props), do: react_component(name, Map.new(props), attrs, do: block)
   def react_component(name, props, attrs, do: block) do
+    {tag, attrs} = Keyword.pop(attrs, :tag, :div)
     react_attrs = [react_class: name]
     react_attrs = unless Enum.empty?(props), do: Keyword.put(react_attrs, :react_props, Base.encode64(Jason.encode!(transform_case(props)), padding: false)), else: react_attrs
-    content_tag(:div, block, [{:data, react_attrs}|attrs])
+    content_tag(tag, block, [{:data, react_attrs}|attrs])
   end
 
   #
