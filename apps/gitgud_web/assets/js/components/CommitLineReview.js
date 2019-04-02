@@ -12,6 +12,7 @@ class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
+    this.destroyComponent = this.destroyComponent.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
@@ -20,7 +21,6 @@ class CommitLineReview extends React.Component {
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
       folded: !!props.reviewId,
-      draft: !!!props.reviewId,
       repoId: this.props.repoId,
       commitOid: this.props.commitOid,
       blobOid: this.props.blobOid,
@@ -76,6 +76,18 @@ class CommitLineReview extends React.Component {
           line: response.node.line,
           comments: response.node.comments
         }))
+    }
+  }
+
+  destroyComponent() {
+    if(this.state.comments.length === 0) {
+      let node = ReactDOM.findDOMNode(this)
+      let container = node.closest(".inline-comments")
+      ReactDOM.unmountComponentAtNode(node.parentNode)
+      container.parentNode.removeChild(container)
+      return true
+    } else {
+      return false
     }
   }
 
@@ -142,18 +154,13 @@ class CommitLineReview extends React.Component {
       mutation,
       variables,
       onCompleted: (response, errors) => {
-        this.setState(state => ({draft: false, comments: [...state.comments, response.addGitCommitComment]}))
+        this.setState(state => ({folded: true, comments: [...state.comments, response.addGitCommitComment]}))
       }
     })
   }
 
   handleFormCancel() {
-    if(this.state.draft) {
-      let node = ReactDOM.findDOMNode(this)
-      let container = node.closest(".inline-comments")
-      ReactDOM.unmountComponentAtNode(node.parentNode)
-      container.parentNode.removeChild(container)
-    } else {
+    if(!this.destroyComponent()) {
       this.setState({folded: true})
     }
   }
@@ -163,6 +170,7 @@ class CommitLineReview extends React.Component {
   }
   handleCommentDelete(comment) {
     this.setState(state => ({comments: state.comments.filter(oldComment => oldComment.id !== comment.id)}))
+    this.destroyComponent()
   }
 }
 
