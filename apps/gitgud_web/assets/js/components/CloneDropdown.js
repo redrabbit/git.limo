@@ -36,12 +36,12 @@ class CloneDropdown extends React.Component {
         return (
           <div className="dropdown-content">
             <div className="dropdown-item">
-              {this.props.ssh && <a className="is-pulled-right" onClick={this.handleProtocol("ssh")}>with SSH</a>}
+              {this.props.sshUrl && <a className="is-pulled-right" onClick={this.handleProtocol("ssh")}>with SSH</a>}
               <div className="field">
                 <label className="label">Clone with HTTP</label>
                 <div className="field has-addons">
                   <div className="control is-expanded">
-                    <input className="input is-small" type="text" value={this.props.http} readOnly={true} ref={this.input} />
+                    <input className="input is-small" type="text" value={this.props.httpUrl} readOnly={true} ref={this.input} />
                   </div>
                   <div className="control">
                     <a className="button is-small" onClick={this.handleCopyToClipboard}>
@@ -59,12 +59,12 @@ class CloneDropdown extends React.Component {
         return (
           <div className="dropdown-content">
             <div className="dropdown-item">
-              {this.props.http && <a className="is-pulled-right" onClick={this.handleProtocol("http")}>with HTTP</a>}
+              {this.props.httpUrl && <a className="is-pulled-right" onClick={this.handleProtocol("http")}>with HTTP</a>}
               <div className="field">
                 <label className="label">Clone with SSH</label>
                 <div className="field has-addons">
                   <div className="control is-expanded">
-                    <input className="input is-small" type="text" value={this.props.ssh} readOnly={true} ref={this.input} />
+                    <input className="input is-small" type="text" value={this.props.sshUrl} readOnly={true} ref={this.input} />
                   </div>
                   <div className="control">
                     <a className="button is-small" onClick={this.handleCopyToClipboard}>

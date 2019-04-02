@@ -75,10 +75,10 @@ defmodule GitGud.Web.CodebaseView do
   @spec clone_dropdown(Plug.Conn.t) :: binary
   def clone_dropdown(conn) do
     repo = Map.get(conn.assigns, :repo)
-    props = %{http: Routes.codebase_url(conn, :show, repo.owner, repo)}
+    props = %{http_url: Routes.codebase_url(conn, :show, repo.owner, repo)}
     props =
       if user = current_user(conn),
-        do: Map.put(props, :ssh, "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"),
+        do: Map.put(props, :ssh_url, "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"),
       else: props
     react_component("clone-dropdown", props, [class: "clone-dropdown"], do: [
       content_tag(:div, [class: "dropdown is-right is-hoverable"], do: [
@@ -96,7 +96,7 @@ defmodule GitGud.Web.CodebaseView do
               content_tag(:div, [class: "field"], do: [
                 content_tag(:label, "Clone with HTTP", class: "label"),
                 content_tag(:div, [class: "control is-expanded"], do: [
-                  tag(:input, class: "input is-small", type: "text", readonly: true, value: props.http)
+                  tag(:input, class: "input is-small", type: "text", readonly: true, value: props.http_url)
                 ])
               ])
             ])
