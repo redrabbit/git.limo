@@ -37,7 +37,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%User{} = _node, _info), do: :user
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
-  def node_type(%CommitLineReview{} = _node, _info), do: :git_commit_line_review
+  def node_type(%CommitLineReview{} = _node, _info), do: :commit_line_review
   def node_type(_struct, _info), do: nil
 
   @doc """
@@ -62,7 +62,7 @@ defmodule GitGud.GraphQL.Resolvers do
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :git_commit_line_review} = _node_type, info) do
+  def node(%{id: id, type: :commit_line_review} = _node_type, info) do
     if review = DB.get(CommitLineReview, to_integer(id)),
       do: {:ok, DB.preload(review, [:repo, comments: :author])},
     else: node(%{id: id}, info)
@@ -117,12 +117,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_bio_html(User.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def user_bio_html(user, %{} = _args, _info) do
-    case Earmark.as_html(user.bio || "") do
-      {:ok, html, []} ->
-        {:ok, html}
-      {:error, reason} ->
-        {:error, reason}
-    end
+    markdown(user.bio)
   end
 
   @doc """
@@ -187,12 +182,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_description_html(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_description_html(repo, %{} = _args, _info) do
-    case Earmark.as_html(repo.description || "") do
-      {:ok, html, []} ->
-        {:ok, html}
-      {:error, reason} ->
-        {:error, reason}
-    end
+    markdown(repo.description)
   end
 
   @doc """
@@ -341,8 +331,8 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the line-review for a given Git `commit` object.
   """
-  @spec git_commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
-  def git_commit_line_review(%GitCommit{} = commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  _info) do
+  @spec commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
+  def commit_line_review(%GitCommit{} = commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  _info) do
     if review = GitCommit.review(commit, blob_oid, hunk, line),
       do: {:ok, review},
     else: {:error, "there is no line-review for the given args"}
@@ -424,10 +414,26 @@ defmodule GitGud.GraphQL.Resolvers do
     GitBlob.size(blob)
   end
 
+  @doc """
+  Resolves the HTML content of a given `comment`.
+  """
+  @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def comment_html(comment, %{} = _args, _info) do
+    markdown(comment.body)
+  end
+
+  @doc """
+  Creates a Git commit line review.
+  """
+  @spec create_git_commit_line_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_git_commit_line_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
     CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
   end
 
+  @doc """
+  Updates a comment.
+  """
+  @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
     if user = ctx[:current_user] do
       if comment = DB.get(Comment, from_relay_id(comment_id)) do
@@ -439,6 +445,11 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
+
+  @doc """
+  Updates a comment.
+  """
+  @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: comment_id}, %Absinthe.Resolution{context: ctx}) do
     if user = ctx[:current_user] do
       if comment = DB.get(Comment, from_relay_id(comment_id)) do
@@ -446,19 +457,6 @@ defmodule GitGud.GraphQL.Resolvers do
           Comment.delete(comment)
         end
       end
-    end
-  end
-
-  @doc """
-  Resolves the HTML content of a given `comment`.
-  """
-  @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def comment_html(comment, %{} = _args, _info) do
-    case Earmark.as_html(comment.body) do
-      {:ok, html, []} ->
-        {:ok, html}
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
@@ -487,6 +485,15 @@ defmodule GitGud.GraphQL.Resolvers do
 
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})
+  end
+
+  defp markdown(content) do
+    case Earmark.as_html(content || "") do
+      {:ok, html, []} ->
+        {:ok, html}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp slice_stream(stream, args) do

@@ -43,7 +43,7 @@ defmodule GitGud.GraphQL.Schema do
   end
 
   @desc """
-  The query root of the GraphQL interface.
+  The root query of the GraphQL interface.
   """
   query do
     node field do
@@ -54,9 +54,9 @@ defmodule GitGud.GraphQL.Schema do
     Perform a search across resources.
     """
     connection field :search, node_type: :search_result do
-      arg :all, :string
-      arg :user, :string
-      arg :repo, :string
+      arg :all, :string, description: "A search term matching user logins and repository names."
+      arg :user, :string, description: "A search term matching user logins."
+      arg :repo, :string, description: "A search term matching repository names."
       resolve &Resolvers.search/2
     end
 
@@ -64,8 +64,7 @@ defmodule GitGud.GraphQL.Schema do
     Fetches a user given its login.
     """
     field :user, :user do
-      @desc "The login of the user."
-      arg :login, non_null(:string)
+      arg :login, non_null(:string), description: "The login of the user."
       resolve &Resolvers.user/3
     end
 
@@ -73,36 +72,37 @@ defmodule GitGud.GraphQL.Schema do
     Fetches a repository given its owner and name.
     """
     field :repo, :repo do
-      @desc "The login of the user."
-      arg :owner, non_null(:string)
-      @desc "The name of the repository."
-      arg :name, non_null(:string)
+      arg :owner, non_null(:string), description: "The login of the user."
+      arg :name, non_null(:string), description: "The name of the repository."
       resolve &Resolvers.repo/2
     end
   end
 
+  @desc """
+  The root query for implementing GraphQL mutations.
+  """
   mutation do
     @desc "Create a comment"
     field :add_git_commit_comment, type: :comment do
-      arg :repo_id, non_null(:id)
-      arg :commit_oid, non_null(:git_oid)
-      arg :blob_oid, non_null(:git_oid)
-      arg :hunk, non_null(:integer)
-      arg :line, non_null(:integer)
-      arg :body, non_null(:string)
+      arg :repo_id, non_null(:id), description: "The repository ID."
+      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
+      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
+      arg :hunk, non_null(:integer), description: "The delta hunk index."
+      arg :line, non_null(:integer), description: "The delta line index."
+      arg :body, non_null(:string), description: "The body of the comment."
       resolve &Resolvers.create_git_commit_line_comment/3
     end
 
     @desc "Update a comment"
     field :update_comment, type: :comment do
-      arg :id, non_null(:id)
-      arg :body, non_null(:string)
+      arg :id, non_null(:id), description: "The ID of the comment."
+      arg :body, non_null(:string), description: "The body of the comment."
       resolve &Resolvers.update_comment/3
     end
 
     @desc "Delete a comment"
     field :delete_comment, type: :comment do
-      arg :id, non_null(:id)
+      arg :id, non_null(:id), description: "The ID of the comment."
       resolve &Resolvers.delete_comment/3
     end
   end

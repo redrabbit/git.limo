@@ -2,11 +2,11 @@ import React from "react"
 
 import {commitMutation, graphql} from "react-relay"
 
+import moment from "moment"
+
 import environment from "../relay-environment"
 
 import CommentForm from "./CommentForm"
-
-import moment from "moment"
 
 class Comment extends React.Component {
   constructor(props) {
@@ -47,7 +47,7 @@ class Comment extends React.Component {
   handleSubmit(body) {
     const variables = {id: this.props.comment.id, body: body}
     const mutation = graphql`
-      mutation CommentUpdateCommentMutation($id: ID!, $body: String!) {
+      mutation CommentUpdateMutation($id: ID!, $body: String!) {
         updateComment(id: $id, body: $body) {
           id
           author {
@@ -78,7 +78,7 @@ class Comment extends React.Component {
   handleDeleteClick() {
     const variables = {id: this.props.comment.id}
     const mutation = graphql`
-      mutation CommentDeleteCommentMutation($id: ID!) {
+      mutation CommentDeleteMutation($id: ID!) {
         deleteComment(id: $id) {
           id
         }

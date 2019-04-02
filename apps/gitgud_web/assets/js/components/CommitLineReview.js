@@ -38,9 +38,9 @@ class CommitLineReview extends React.Component {
     const {reviewId} = this.props
     if(reviewId) {
       const query = graphql`
-        query CommitLineReviewCommentsQuery($id: ID!) {
+        query CommitLineReviewQuery($id: ID!) {
           node(id: $id) {
-            ... on GitCommitLineReview {
+            ... on CommitLineReview {
               repo {
                 id
               }

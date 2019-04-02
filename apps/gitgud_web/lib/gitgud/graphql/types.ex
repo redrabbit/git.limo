@@ -95,7 +95,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The bio email of the user."
     field :bio, :string
 
-    @desc "The bio email of the user."
+    @desc "The HTML formatted bio email of the user."
     field :bio_html, :string, resolve: &Resolvers.user_bio_html/3
 
     @desc "The location of the user."
@@ -114,9 +114,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Fetches a user's repository by its name."
     field :repo, :repo do
-      @desc "The name of the repository."
-      arg :name, non_null(:string)
-
+      arg :name, non_null(:string), description: "The name of the repository."
       resolve &Resolvers.user_repo/3
     end
 
@@ -138,7 +136,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The description of the repository."
     field :description, :string
 
-    @desc "The description of the repository."
+    @desc "The HTML formatted description of the repository."
     field :description_html, :string, resolve: &Resolvers.repo_description_html/3
 
     @desc "The owner of the repository."
@@ -149,17 +147,13 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "A list of Git references for this repository."
     connection field :refs, node_type: :git_reference do
-      @desc "Wildcard pattern for reference matching."
-      arg :glob, :string
-
+      arg :glob, :string, description: "Wildcard pattern for reference matching."
       resolve &Resolvers.repo_refs/2
     end
 
     @desc "Fetches a single Git reference by its name."
     field :ref, :git_reference do
-      @desc "The name of the reference."
-      arg :name, :string
-
+      arg :name, :string, description: "The name of the reference."
       resolve &Resolvers.repo_ref/3
     end
 
@@ -170,9 +164,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Fetches a single Git tag by its name."
     field :tag, :git_tag do
-      @desc "The name of the tag."
-      arg :name, :string
-
+      arg :name, :string, description: "The name of the tag."
       resolve &Resolvers.repo_tag/3
     end
 
@@ -243,11 +235,12 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
-    field :line_commit, non_null(:git_commit_line_review) do
-      arg :blob_oid, non_null(:git_oid)
-      arg :hunk, non_null(:integer)
-      arg :line, non_null(:integer)
-      resolve &Resolvers.git_commit_line_review/3
+    @desc "A single line commit review."
+    field :line_review, non_null(:commit_line_review) do
+      arg :blob_oid, non_null(:git_oid), description: "The OID of the blob."
+      arg :hunk, non_null(:integer), description:  "The delta hunk index."
+      arg :line, non_null(:integer), description: "The delta line index."
+      resolve &Resolvers.commit_line_review/3
     end
 
     @desc "The repository this commit belongs to."
@@ -257,13 +250,25 @@ defmodule GitGud.GraphQL.Types do
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end
 
-  node object :git_commit_line_review do
-    field :repo, non_null(:repo)
+  @doc "Represents a Git commit line review."
+  node object :commit_line_review do
+    @desc "The OID of the commit."
     field :commit_oid, non_null(:git_oid)
+
+    @desc "The OID of the blob."
     field :blob_oid, non_null(:git_oid)
+
+    @desc "The delta hunk index."
     field :hunk, non_null(:integer)
+
+    @desc "The delta line index."
     field :line, non_null(:integer)
+
+    @desc "A list of comments for this review."
     field :comments, list_of(:comment)
+
+    @desc "The repository this commit belongs to."
+    field :repo, non_null(:repo)
   end
 
   @desc "Represents a Git annotated tag."
@@ -346,10 +351,17 @@ defmodule GitGud.GraphQL.Types do
     field :repo, non_null(:repo)
   end
 
+  @desc "Represents a comment."
   node object :comment do
+    @desc "The author of the comment."
     field :author, non_null(:user)
+
+    @desc "The body of the comment."
     field :body, non_null(:string)
+
+    @desc "The HTML formatted body of the comment."
     field :body_html, non_null(:string), resolve: &Resolvers.comment_html/3
+
     field :inserted_at, non_null(:naive_datetime)
     field :updated_at, non_null(:naive_datetime)
   end
