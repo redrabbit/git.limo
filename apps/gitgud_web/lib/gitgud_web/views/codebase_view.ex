@@ -59,7 +59,7 @@ defmodule GitGud.Web.CodebaseView do
     revision_name = revision_name(revision)
     revision_type = revision_type(revision)
     revision_href = revision_href(conn, revision)
-    react_component("branch-select", [repo: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type], [class: "branch-select"], do: [
+    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type], [class: "branch-select"], do: [
       content_tag(:a, [class: "button", href: revision_href], do: [
         content_tag(:span, [], do: [
           "#{String.capitalize(to_string(revision_type))}: ",

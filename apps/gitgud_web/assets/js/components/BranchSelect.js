@@ -36,8 +36,8 @@ class BranchSelect extends React.Component {
       <QueryRenderer
         environment={environment}
         query={graphql`
-          query BranchSelectQuery($repoID: ID!) {
-            node(id: $repoID) {
+          query BranchSelectQuery($repoId: ID!) {
+            node(id: $repoId) {
               ... on Repo {
                 refs(first: 100) {
                   edges {
@@ -54,7 +54,7 @@ class BranchSelect extends React.Component {
           }
         `}
         variables={{
-          repoID: this.props.repo
+          repoId: this.props.repoId
         }}
         render={({error, props}) => {
           if(error) {
