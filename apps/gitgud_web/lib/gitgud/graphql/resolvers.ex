@@ -55,6 +55,12 @@ defmodule GitGud.GraphQL.Resolvers do
     else: node(%{id: id}, info)
   end
 
+  def node(%{id: id, type: :comment} = _node_type, info) do
+    if comment = DB.get(Comment, to_integer(id)),
+      do: {:ok, DB.preload(comment, [:author])},
+    else: node(%{id: id}, info)
+  end
+
   def node(%{} = _node_type, _info) do
     {:error, "this given node id is not valid"}
   end
@@ -401,8 +407,19 @@ defmodule GitGud.GraphQL.Resolvers do
     GitBlob.size(blob)
   end
 
-  def create_git_commit_comment(_parent, %{repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
+  def create_git_commit_line_comment(_parent, %{repo: repo_id, commit: commit_oid, blob: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
     CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
+  end
+
+  def update_comment(_parent, %{comment: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
+    if user = ctx[:current_user] do
+      if comment = DB.get(Comment, from_relay_id(comment_id)) do
+        if comment.author_id == user.id do
+          {:ok, comment} = Comment.update(comment, body: body)
+          {:ok, DB.preload(comment, :author)}
+        end
+      end
+    end
   end
 
   def delete_comment(_parent, %{comment: comment_id}, %Absinthe.Resolution{context: ctx}) do

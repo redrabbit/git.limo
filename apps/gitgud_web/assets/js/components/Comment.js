@@ -1,6 +1,6 @@
 import React from "react"
 
-import {commitMutation, graphql} from "react-relay";
+import {commitMutation, graphql} from "react-relay"
 
 import environment from "../relay-environment"
 
@@ -9,6 +9,7 @@ import moment from "moment"
 class Comment extends React.Component {
   render() {
     const {comment} = this.props
+    console.log(comment)
     return (
       <div className="comment">
         <div className="buttons is-pulled-right">
@@ -27,6 +28,35 @@ class Comment extends React.Component {
         <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
       </div>
     )
+  }
+
+  static updateComment(commentId, body, onComplete, onError) {
+    const variables = {
+      comment: commentId,
+      body: body
+    }
+
+    const mutation = graphql`
+      mutation CommentUpdateCommentMutation($comment: ID!, $body: String!) {
+        updateComment(comment: $comment, body: $body) {
+          id
+          author {
+            login
+            avatarUrl
+            url
+          }
+          bodyHtml
+          insertedAt
+        }
+      }
+    `
+
+    commitMutation(environment, {
+      mutation,
+      variables,
+      onCompleted: onComplete,
+      onError: onError
+    })
   }
 
   static deleteComment(commentId, onComplete, onError) {

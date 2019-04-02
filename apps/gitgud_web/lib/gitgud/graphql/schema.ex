@@ -90,7 +90,14 @@ defmodule GitGud.GraphQL.Schema do
       arg :hunk, non_null(:integer)
       arg :line, non_null(:integer)
       arg :body, non_null(:string)
-      resolve &Resolvers.create_git_commit_comment/3
+      resolve &Resolvers.create_git_commit_line_comment/3
+    end
+
+    @desc "Update a comment"
+    field :update_comment, type: :comment do
+      arg :comment, non_null(:id)
+      arg :body, non_null(:string)
+      resolve &Resolvers.update_comment/3
     end
 
     @desc "Delete a comment"

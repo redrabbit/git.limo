@@ -9,7 +9,7 @@ import "highlight.js/styles/github-gist.css"
 import {token} from "./auth"
 
 import * as factory from "./components"
-import {CommitLineReview, Comment} from "./components"
+import {CommitLineReview, CommentForm, Comment} from "./components"
 
 export default () => {
   document.querySelectorAll("article.message").forEach(flash => {
@@ -57,6 +57,23 @@ export default () => {
     })
 
     document.querySelectorAll(".comment").forEach(comment => {
+      comment.querySelector("button[data-action=update]").addEventListener("click", event => {
+        let container = comment.parentNode.appendChild(document.createElement("div"))
+        container.id = comment.id
+        container.classList.add("comment-form")
+        ReactDOM.render(React.createElement(CommentForm, {
+          id: comment.id,
+          onSubmit: (body) => {
+            Comment.updateComment(comment.id, body, response => {
+              ReactDOM.render(React.createElement(Comment, {comment: response.updateComment}), container)
+            })
+          },
+          onCancel: () => {
+            container.parentNode.replaceChild(comment, container)
+          }
+        }), container);
+        comment.parentNode.replaceChild(container, comment)
+      })
       comment.querySelector("button[data-action=delete]").addEventListener("click", event => {
         Comment.deleteComment(comment.id, response => comment.parentNode.removeChild(comment))
       })
