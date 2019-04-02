@@ -31,6 +31,28 @@ defmodule GitGud.Comment do
   }
 
   @doc """
+  Updates the given `repo` with the given `params`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Comment.update(comment, body: "This is the **new** comment message.")
+  ```
+
+  This function validates the given `params` using `changeset/2`.
+  """
+  @spec update(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | :file.posix}
+  def update(%__MODULE__{} = comment, params) do
+    DB.update(changeset(comment, Map.new(params)))
+  end
+
+  @doc """
+  Similar to `update/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update!(t, map|keyword) :: t
+  def update!(%__MODULE__{} = comment, params) do
+    DB.update!(changeset(comment, Map.new(params)))
+  end
+
+  @doc """
   Deletes the given `comment`.
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
