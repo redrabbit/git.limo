@@ -25,18 +25,20 @@ class Comment extends React.Component {
     } else {
       return (
         <div className="comment">
-          <div className="buttons is-pulled-right">
-            <button className="button is-small" onClick={this.handleUpdateClick}>
-              <span className="icon is-small">
-                <i className="fa fa-pen"></i>
-              </span>
-            </button>
-            <button className="button is-small" onClick={this.handleDeleteClick}>
-              <span className="icon is-small">
-                <i className="fa fa-trash"></i>
-              </span>
-            </button>
-          </div>
+          {comment.editable &&
+            <div className="buttons is-pulled-right">
+              <button className="button is-small" onClick={this.handleUpdateClick}>
+                <span className="icon is-small">
+                  <i className="fa fa-pen"></i>
+                </span>
+              </button>
+              <button className="button is-small" onClick={this.handleDeleteClick}>
+                <span className="icon is-small">
+                  <i className="fa fa-trash"></i>
+                </span>
+              </button>
+            </div>
+          }
           <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
         </div>
@@ -55,6 +57,7 @@ class Comment extends React.Component {
             avatarUrl
             url
           }
+          editable
           body
           bodyHtml
           insertedAt
@@ -89,4 +92,3 @@ class Comment extends React.Component {
 }
 
 export default Comment
-

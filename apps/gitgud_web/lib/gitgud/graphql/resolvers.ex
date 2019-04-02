@@ -6,6 +6,8 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.Authorization
+
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
@@ -415,6 +417,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Returns `true` if the viewer can edit a given `comment`; otherwise, returns `false`.
+  """
+  @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
+  def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx}) do
+     {:ok, Authorization.authorized?(ctx[:current_user], comment, :admin)}
+  end
+
+  @doc """
   Resolves the HTML content of a given `comment`.
   """
   @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
@@ -435,12 +445,10 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
-    if user = ctx[:current_user] do
-      if comment = DB.get(Comment, from_relay_id(comment_id)) do
-        if comment.author_id == user.id do
-          {:ok, comment} = Comment.update(comment, body: body)
-          {:ok, DB.preload(comment, :author)}
-        end
+    if comment = DB.get(Comment, from_relay_id(comment_id)) do
+      if Authorization.authorized?(ctx[:current_user], comment, :admin) do
+        {:ok, comment} = Comment.update(comment, body: body)
+        {:ok, DB.preload(comment, :author)}
       end
     end
   end
@@ -451,11 +459,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: comment_id}, %Absinthe.Resolution{context: ctx}) do
-    if user = ctx[:current_user] do
-      if comment = DB.get(Comment, from_relay_id(comment_id)) do
-        if comment.author_id == user.id do
-          Comment.delete(comment)
-        end
+    if comment = DB.get(Comment, from_relay_id(comment_id)) do
+      if Authorization.authorized?(ctx[:current_user], comment, :admin) do
+        Comment.delete(comment)
       end
     end
   end

@@ -362,7 +362,13 @@ defmodule GitGud.GraphQL.Types do
     @desc "The HTML formatted body of the comment."
     field :body_html, non_null(:string), resolve: &Resolvers.comment_html/3
 
+    @desc "The creation timestamp of the comment."
     field :inserted_at, non_null(:naive_datetime)
+
+    @desc "The last update timestamp of the comment."
     field :updated_at, non_null(:naive_datetime)
+
+    @desc "Returns `true` if the current viewer can edit the comment; otherwise, returns `false`."
+    field :editable, non_null(:boolean), resolve: &Resolvers.comment_editable/3
   end
 end

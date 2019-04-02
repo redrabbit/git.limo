@@ -73,7 +73,7 @@ defmodule GitGud.CommitLineReview do
     review_opts = [on_conflict: {:replace, [:updated_at]}, conflict_target: [:repo_id, :commit_oid, :blob_oid, :hunk, :line]]
     Multi.new()
     |> Multi.insert(:review, changeset(%__MODULE__{}, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
-    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{author_id: author.id, body: body}))
+    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{author_id: author && author.id, body: body}))
     |> Multi.run(:line_review_comment, fn db, %{review: review, comment: comment} ->
       case db.insert_all("commit_line_reviews_comments", [%{review_id: review.id, comment_id: comment.id}]) do
         {1, val} -> {:ok, val}

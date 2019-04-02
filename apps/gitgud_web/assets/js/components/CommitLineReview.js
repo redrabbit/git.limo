@@ -8,6 +8,8 @@ import environment from "../relay-environment"
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
 
+import {token} from "../auth"
+
 class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
@@ -55,6 +57,7 @@ class CommitLineReview extends React.Component {
                   avatarUrl
                   url
                 }
+                editable
                 body
                 bodyHtml
                 insertedAt
@@ -95,7 +98,7 @@ class CommitLineReview extends React.Component {
     return (
       <td colSpan={4}>
         {this.renderComments()}
-        {this.renderForm()}
+        {token && this.renderForm()}
       </td>
     )
   }
@@ -143,6 +146,7 @@ class CommitLineReview extends React.Component {
             avatarUrl
             url
           }
+          editable
           body
           bodyHtml
           insertedAt

@@ -80,4 +80,21 @@ defmodule GitGud.Comment do
     |> assoc_constraint(:parent)
     |> assoc_constraint(:author)
   end
+
+  #
+  # Protocols
+  #
+
+  defimpl GitGud.AuthorizationPolicies do
+    alias GitGud.Comment
+
+    # Owner can do everything
+    def can?(%Comment{author_id: user_id}, %User{id: user_id}, _action), do: true
+
+    # Everybody can read comments.
+    def can?(%Comment{}, _user, :read), do: true
+
+    # Everything-else is forbidden.
+    def can?(%Comment{}, _user, _actions), do: false
+  end
 end
