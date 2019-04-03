@@ -6,8 +6,9 @@ defmodule GitGud.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :gitgud_web
   use Absinthe.Phoenix.Endpoint
 
-  socket "/socket", GitGud.Web.UserSocket,
-    websocket: true
+  socket "/socket", GitGud.Web.UserSocket, websocket: true
+
+  socket "/live", Phoenix.LiveView.Socket
 
   plug Plug.Static,
     at: "/", from: :gitgud_web, gzip: false,

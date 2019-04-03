@@ -30,6 +30,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~@fortawesome/fontawesome-free/scss/brands";
 @import "~@fortawesome/fontawesome-free/scss/solid";
 
+@import "../../../../deps/phoenix_live_view/assets/css/live_view.css";
+
 main.container {
   padding: 2rem 0;
 }

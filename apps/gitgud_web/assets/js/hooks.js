@@ -6,6 +6,8 @@ import {camelCase, upperFirst} from "lodash"
 import hljs from "highlight.js"
 import "highlight.js/styles/github-gist.css"
 
+import LiveSocket from "phoenix_live_view"
+
 import {token} from "./auth"
 
 import * as factory from "./components"
@@ -27,6 +29,11 @@ export default () => {
     const reactElement = React.createElement(factory[upperFirst(camelCase(e.dataset.reactClass))], JSON.parse(reactProps))
     ReactDOM.render(reactElement, targetDiv)
   })
+
+  if(document.querySelector("[data-phx-view]")) {
+    let liveSocket = new LiveSocket("/live")
+    liveSocket.connect()
+  }
 
   if(token) {
     document.querySelectorAll("table.diff-table").forEach(table => {
