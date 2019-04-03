@@ -190,6 +190,14 @@ table.table {
   }
 }
 
+.log-message {
+  font-size: .9rem;
+  font-family: $family-monospace;
+  color: $grey;
+  -moz-osx-font-smoothing: auto;
+  -webkit-font-smoothing: auto;
+}
+
 table.blob-table {
   border-collapse: separate;
   width: 100%;

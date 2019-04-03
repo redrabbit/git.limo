@@ -152,7 +152,27 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_message_title(GitCommit.t) :: binary | nil
   def commit_message_title(%GitCommit{} = commit) do
     case GitCommit.message(commit) do
-      {:ok, message} -> hd(String.split(message, "\n", parts: 2))
+      {:ok, message} -> List.first(String.split(message, "\n", trim: true, parts: 2))
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message_body(GitCommit.t) :: binary | nil
+  def commit_message_body(%GitCommit{} = commit) do
+    case GitCommit.message(commit) do
+      {:ok, message} -> List.last(String.split(message, "\n", trim: true, parts: 2))
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message_format(GitCommit.t, keyword) :: {binary, binary | nil} | nil
+  def commit_message_format(%GitCommit{} = commit, opts \\ []) do
+    case GitCommit.message(commit) do
+      {:ok, message} ->
+        parts = String.split(message, "\n", trim: true, parts: 2)
+        if length(parts) == 2,
+          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :br))},
+        else: {List.first(parts), nil}
       {:error, _reason} -> nil
     end
   end
@@ -397,6 +417,36 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp highlight_language(_extension), do: "nohighlight"
+
+  defp wrap_message(content, :br) do
+    content
+    |> String.split("\n\n", trim: true)
+    |> Enum.map(&content_tag(:p, wrap_paragraph(&1)))
+  end
+
+  defp wrap_message(content, max_line_length) do
+    content
+    |> String.split("\n\n", trim: true)
+    |> Enum.map(&content_tag(:p, wrap_paragraph(&1, max_line_length)))
+  end
+
+  defp wrap_paragraph(content) do
+    content
+    |> String.split("\n", trim: true)
+    |> Enum.intersperse(tag(:br))
+  end
+
+  defp wrap_paragraph(content, max_line_length) do
+    [word|rest] = String.split(content, ~r/\s+/, trim: true)
+    Enum.intersperse(lines_assemble(rest, max_line_length, String.length(word), word, []), tag(:br))
+  end
+
+  defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
+  defp lines_assemble([word|rest], max, line_length, line, acc) do
+    if line_length + 1 + String.length(word) > max,
+      do: lines_assemble(rest, max, String.length(word), word, [line|acc]),
+    else: lines_assemble(rest, max, line_length + 1 + String.length(word), line <> " " <> word, acc)
+  end
 
   defp compare_timestamps(one, two) do
     case DateTime.compare(one, two) do
