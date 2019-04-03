@@ -10,6 +10,7 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
+  alias GitRekt.GitAgent
   alias GitRekt.Git
   alias GitRekt.WireProtocol.ReceivePack
 
@@ -17,13 +18,6 @@ defmodule GitGud.Repo do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Maintainer
-
-  alias GitGud.GitBlob
-  alias GitGud.GitCommit
-  alias GitGud.GitDiff
-  alias GitGud.GitReference
-  alias GitGud.GitTag
-  alias GitGud.GitTree
 
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
@@ -33,14 +27,11 @@ defmodule GitGud.Repo do
     field :name, :string
     field :public, :boolean, default: true
     field :description, :string
-    field :__git__, :any, virtual: true
+    field :__agent__, :any, virtual: true
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
     field :pushed_at, :naive_datetime
   end
-
-  @type git_object :: GitBlob.t | GitCommit.t | GitTag.t | GitTree.t
-  @type git_revision :: GitReference.t | GitTag.t | GitCommit.t
 
   @type t :: %__MODULE__{
     id: pos_integer,
@@ -53,7 +44,7 @@ defmodule GitGud.Repo do
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
-    __git__: Git.repo | nil
+    __agent__: GitAgent.agent | nil
   }
 
   @doc """
@@ -75,7 +66,7 @@ defmodule GitGud.Repo do
     case create_and_init(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
       {:ok, %{repo: repo, init: handle}} ->
         owner = UserQuery.by_id(repo.owner_id)
-        {:ok, struct(repo, owner: owner, maintainers: [owner], __git__: handle)}
+        {:ok, struct(repo, owner: owner, maintainers: [owner], __agent__: handle)}
       {:error, :repo, changeset, _changes} ->
         {:error, changeset}
       {:error, :init, reason, _changes} ->
@@ -158,6 +149,21 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Loads the Git agent for the given `repo`.
+  """
+  @spec load_agent(t) :: {:ok, t} | {:error, term}
+  def load_agent(%__MODULE__{__agent__: nil} = repo) do
+    case GitAgent.open(workdir(repo)) do
+      {:ok, agent} ->
+        {:ok, struct(repo, __agent__: agent)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def load_agent(%__MODULE__{} = repo), do: repo
+
+  @doc """
   Returns a repository changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
@@ -206,193 +212,21 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Loads the Git repository for the given `repo`.
-  """
-  @spec load(t, keyword) :: t
-  def load(%__MODULE__{__git__: handle} = repo, opts \\ []) do
-    if is_nil(handle) || Keyword.get(opts, :force, false) do
-      case Git.repository_open(workdir(repo)) do
-        {:ok, handle} -> struct(repo, __git__: handle)
-        {:error, reason} -> raise reason
-      end
-    end || repo
-  end
-
-  @doc """
-  Returns `true` if `repo` is empty; otherwhise returns `false`.
-  """
-  @spec empty?(t) :: boolean
-  def empty?(%__MODULE__{} = repo) do
-    case resolve_handle(repo) do
-      {:ok, handle} -> Git.repository_empty?(handle)
-      {:error, reason} -> raise ArgumentError, message: reason
-    end
-  end
-
-  @doc """
-  Returns the Git reference pointed at by *HEAD*.
-  """
-  @spec git_head(t) :: {:ok, GitReference.t} | {:error, term}
-  def git_head(%__MODULE__{} = repo) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, name, shorthand, oid} <- Git.reference_resolve(handle, "HEAD"), do:
-      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns the Git reference matching the given `name_or_shorthand`.
-  """
-  @spec git_reference(t, binary) :: {:ok, GitReference.t} | {:error, term}
-  def git_reference(repo, name_or_shorthand \\ :head)
-  def git_reference(%__MODULE__{} = repo, :head), do: git_head(repo)
-  def git_reference(%__MODULE__{} = repo, "/refs/" <> _suffix = name) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
-  end
-
-  def git_reference(%__MODULE__{} = repo, shorthand) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand), do:
-      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns all Git references matching the given `glob`.
-  """
-  @spec git_references(t, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
-  def git_references(%__MODULE__{} = repo, glob \\ :undefined) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, stream} <- Git.reference_stream(handle, glob),
-         {:ok, stream} <- Git.enumerate(stream), do:
-      {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
-  end
-
-  @doc """
-  Returns a Git branch for the given `branch_name`.
-  """
-  @spec git_branch(t, binary) :: {:ok, GitReference.t} | {:error, term}
-  def git_branch(%__MODULE__{} = repo, branch_name) do
-    name = "refs/heads/" <> branch_name
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, resolve_reference({name, shorthand, :oid, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns all Git branches.
-  """
-  @spec git_branches(t) :: {:ok, Stream.t} | {:error, term}
-  def git_branches(%__MODULE__{} = repo) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/heads/*"),
-         {:ok, stream} <- Git.enumerate(stream), do:
-      {:ok, Stream.map(stream, &resolve_reference(&1, {repo, handle}))}
-  end
-
-  @doc """
-  Returns a Git tag for the given `tag_name`.
-  """
-  @spec git_tag(t, binary) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
-  def git_tag(%__MODULE__{} = repo, tag_name) do
-    name = "refs/tags/" <> tag_name
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name), do:
-      {:ok, resolve_tag({name, shorthand, :oid, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns all Git tags.
-  """
-  @spec git_tags(t) :: {:ok, Stream.t} | {:error, term}
-  def git_tags(%__MODULE__{} = repo) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, stream} <- Git.reference_stream(handle, "refs/tags/*"),
-         {:ok, stream} <- Git.enumerate(stream), do:
-      {:ok, Stream.map(stream, &resolve_tag(&1, {repo, handle}))}
-  end
-
-  @doc """
-  Returns the Git object matching the given `oid`.
-  """
-  @spec git_object(t, binary) :: {:ok, git_object} | {:error, term}
-  def git_object(%__MODULE__{} = repo, oid) do
-    oid = Git.oid_parse(oid)
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, obj_type, obj} <- Git.object_lookup(handle, oid), do:
-      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns the Git object matching the given `revision`.
-  """
-  @spec git_revision(t, binary) :: {:ok, git_object, GitReference.t | nil} | {:error, term}
-  def git_revision(%__MODULE__{} = repo, revision) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, obj, obj_type, oid, name} <- Git.revparse_ext(handle, revision), do:
-      {:ok, resolve_object({obj, obj_type, oid}, {repo, handle}), resolve_reference({name, nil, :oid, oid}, {repo, handle})}
-  end
-
-  @doc """
-  Returns the commit history starting from the given `revision`.
-  """
-  @spec git_history(git_revision) :: {:ok, Stream.t} | {:error, term}
-  def git_history(revision, opts \\ [])
-  def git_history(%GitReference{oid: oid, repo: repo, __git__: handle} = _revision, opts) do
-    resolve_history(oid, {repo, handle}, opts)
-  end
-
-  def git_history(%GitTag{oid: oid, repo: repo, __git__: tag} = _revision, opts) do
-    case Git.object_repository(tag) do
-      {:ok, handle} -> resolve_history(oid, {repo, handle}, opts)
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  def git_history(%GitCommit{oid: oid, repo: repo, __git__: commit} = _revision, opts) do
-    case Git.object_repository(commit) do
-      {:ok, handle} -> resolve_history(oid, {repo, handle}, opts)
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @doc """
-  Returns the tree of the given `revision`.
-  """
-  @spec git_tree(git_revision) :: {:ok, GitTree.t} | {:error, term}
-  def git_tree(%GitReference{name: name, prefix: prefix, repo: repo, __git__: handle} = _revision) do
-    with {:ok, :commit, _oid, commit} <- Git.reference_peel(handle, prefix <> name, :commit),
-         {:ok, oid, tree} <- Git.commit_tree(commit), do:
-      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
-  end
-
-  def git_tree(%GitTag{repo: repo, __git__: tag} = _revision) do
-    with {:ok, :commit, _oid, commit} <- Git.tag_peel(tag),
-         {:ok, oid, tree} <- Git.commit_tree(commit), do:
-      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
-  end
-
-  def git_tree(%GitCommit{repo: repo, __git__: commit} = _revision) do
-    with {:ok, oid, tree} <- Git.commit_tree(commit), do:
-      {:ok, %GitTree{oid: oid, repo: repo, __git__: tree}}
-  end
-
-
-  @doc """
-  Returns a diff with the difference between `old_tree` and `new_tree`.
-  """
-  def git_diff(%GitTree{repo: repo, __git__: old_tree} = _old_tree, %GitTree{repo: repo, __git__: new_tree} = _new_tree, opts \\ []) do
-    with {:ok, handle} <- resolve_handle(repo),
-         {:ok, diff} <- Git.diff_tree(handle, old_tree, new_tree, opts), do:
-      {:ok, %GitDiff{repo: repo, __git__: diff}}
-  end
-
-  @doc """
   Returns the absolute path to the Git root directory.
   """
   @spec root_path() :: Path.t | nil
   def root_path() do
     Application.fetch_env!(:gitgud, :git_root)
+  end
+
+  @doc """
+  Returns the Git agent attached to the `repo` or create a new one.
+  """
+  @spec git_agent(t) :: {:ok, GitAgent.t} | {:error, term}
+  def git_agent(%__MODULE__{} = repo) do
+    if agent = repo.__agent__,
+      do: {:ok, agent},
+    else: {:error, :not_loaded}
   end
 
   @doc """
@@ -499,94 +333,5 @@ defmodule GitGud.Repo do
 
   defp cleanup(_db, %{repo: repo}) do
     File.rm_rf(workdir(repo))
-  end
-
-  defp resolve_handle(%__MODULE__{__git__: handle}) when is_reference(handle), do: {:ok, handle}
-  defp resolve_handle(%__MODULE__{__git__: handle}), do: {:error, "invalid Git repository handle #{inspect handle}"}
-
-  defp resolve_history(oid, {repo, handle}, opts) when is_binary(oid) do
-    {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
-    with {:ok, walk} <- Git.revwalk_new(handle),
-          :ok <- Git.revwalk_sorting(walk, sorting),
-          :ok <- Git.revwalk_push(walk, oid),
-         {:ok, stream} <- Git.revwalk_stream(walk),
-         {:ok, stream} <- Git.enumerate(stream), do:
-      resolve_history(stream, {repo, handle}, opts)
-  end
-
-  defp resolve_history(stream, {repo, handle}, opts) do
-    stream = Stream.map(stream, &resolve_object(&1, {repo, handle}))
-    if pathspec = Keyword.get(opts, :pathspec),
-      do: {:ok, Stream.filter(stream, &pathspec_match_commit(handle, &1, List.wrap(pathspec)))},
-    else: {:ok, stream}
-  end
-
-  defp resolve_reference({nil, nil, :oid, _oid}, {_repo, _handle}), do: nil
-  defp resolve_reference({name, nil, :oid, oid}, {repo, handle}) do
-    prefix = Path.dirname(name) <> "/"
-    shorthand = Path.basename(name)
-    %GitReference{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix), repo: repo, __git__: handle}
-  end
-
-  defp resolve_reference({name, shorthand, :oid, oid}, {repo, handle}) do
-    prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
-    %GitReference{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix), repo: repo, __git__: handle}
-  end
-
-  defp resolve_reference_type("refs/heads/"), do: :branch
-  defp resolve_reference_type("refs/tags/"), do: :tag
-
-  defp resolve_tag({name, shorthand, :oid, oid}, {repo, handle}) do
-    case Git.reference_peel(handle, name, :tag) do
-      {:ok, :tag, oid, tag} ->
-        %GitTag{oid: oid, name: shorthand, repo: repo, __git__: tag}
-      {:error, _reason} ->
-        resolve_reference({name, shorthand, :oid, oid}, {repo, handle})
-    end
-  end
-
-  defp resolve_object({blob, :blob, oid}, {repo, _handle}), do: %GitBlob{oid: oid, repo: repo, __git__: blob}
-  defp resolve_object({commit, :commit, oid}, {repo, _handle}), do: %GitCommit{oid: oid, repo: repo, __git__: commit}
-  defp resolve_object({tree, :tree, oid}, {repo, _handle}), do: %GitTree{oid: oid, repo: repo, __git__: tree}
-  defp resolve_object({tag, :tag, oid}, {repo, _handle}) do
-    case Git.tag_name(tag) do
-      {:ok, name} -> %GitTag{oid: oid, name: name, repo: repo, __git__: tag}
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp resolve_object(oid, {repo, handle}) do
-    case Git.object_lookup(handle, oid) do
-      {:ok, obj_type, obj} ->
-        resolve_object({obj, obj_type, oid}, {repo, handle})
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp pathspec_match_commit(handle, commit, pathspec) do
-    with {:ok, tree} <- git_tree(commit),
-         {:ok, match?} <- GitTree.pathspec_match?(tree, pathspec) do
-      match? && pathspec_match_commit_tree(handle, commit, tree, pathspec)
-    else
-      {:error, _reason} -> false
-    end
-  end
-
-  defp pathspec_match_commit_tree(handle, commit, tree, pathspec) do
-    with {:ok, parent} <- GitCommit.first_parent(commit),
-         {:ok, parent_tree} <- git_tree(parent),
-         {:ok, delta_count} <- pathspec_match_commit_diff(handle, parent_tree, tree, pathspec) do
-      delta_count > 0
-    else
-      {:error, _reason} -> false
-    end
-  end
-
-  defp pathspec_match_commit_diff(_handle, %GitTree{repo: repo, __git__: old_tree}, %GitTree{__git__: new_tree}, pathspec) do
-    {:ok, handle} = resolve_handle(repo) # TODO
-    case Git.diff_tree(handle, old_tree, new_tree, pathspec: pathspec) do
-      {:ok, diff} -> Git.diff_delta_count(diff)
-      {:error, reason} -> {:error, reason}
-    end
   end
 end

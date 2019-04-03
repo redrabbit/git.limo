@@ -5,15 +5,15 @@
         <th><a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, Enum.drop(@tree_path, -1)) %>">..</a></th>
       </tr>
     <% end %>
-    <%= for entry <- tree_entries(@tree) do %>
+    <%= for entry <- tree_entries(@repo, @tree) do %>
       <tr>
-        <td><a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
+        <td><a href="<%= Routes.codebase_path(@conn, entry.subtype, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
       </tr>
     <% end %>
   <tbody>
 </table>
 
-<%= if readme = tree_readme(@tree) do %>
+<%= if readme = tree_readme(@repo, @tree) do %>
   <div class="card">
     <header class="card-header">
       <p class="card-header-title">README.md</p>

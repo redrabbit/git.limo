@@ -3,10 +3,10 @@
 <%= if Enum.empty?(@tags) do %>
   Nothing to see here.
 <% else %>
-  <%= with page <- paginate(@conn, sort_by_commit_timestamp(@tags)) do %>
+  <%= with page <- paginate(@conn, sort_by_commit_timestamp(@repo, @tags)) do %>
     <table class="table is-fullwidth is-striped">
       <tbody>
-        <%= for {tag, {commit, author}} <- batch_tags_commits_authors(page.slice) do %>
+        <%= for {tag, {commit, author}} <- batch_tags_commits_authors(@repo, page.slice) do %>
           <tr>
             <td>
               <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
@@ -17,7 +17,7 @@
               <% else %>
                 <span class="has-text-black"><%= author.name %></span>
               <% end %>
-              tagged this <%= datetime_format(commit_timestamp(commit), "{relative}") %>
+              tagged this <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %>
             </td>
           </tr>
         <% end %>

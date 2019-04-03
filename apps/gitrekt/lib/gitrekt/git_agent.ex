@@ -19,7 +19,6 @@ defmodule GitRekt.GitAgent do
   @type git_revision :: git_commit | git_reference | git_tag
   @type git_object :: git_revision | git_blob | git_tree
 
-
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
@@ -541,5 +540,31 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp pathspec_match_commit(_commit, _pathspec, _handle), do: true
+  defp pathspec_match_commit(%{type: :commit, commit: commit}, pathspec, handle) do
+    with {:ok, _oid, tree} <- Git.commit_tree(commit),
+         {:ok, match?} <- Git.pathspec_match_tree(tree, pathspec) do
+      match? && pathspec_match_commit_tree(commit, tree, pathspec, handle)
+    else
+      {:error, _reason} -> false
+    end
+  end
+
+  defp pathspec_match_commit_tree(commit, tree, pathspec, handle) do
+    with {:ok, stream} <- Git.commit_parents(commit),
+         {_oid, parent} <- Enum.at(stream, 0, :initial_commit),
+         {:ok, _oid, parent_tree} <- Git.commit_tree(parent),
+         {:ok, delta_count} <- pathspec_match_commit_diff(parent_tree, tree, pathspec, handle) do
+      delta_count > 0
+    else
+      :initial_commit -> false
+      {:error, _reason} -> false
+    end
+  end
+
+  defp pathspec_match_commit_diff(old_tree, new_tree, pathspec, handle) do
+    case Git.diff_tree(handle, old_tree, new_tree, pathspec: pathspec) do
+      {:ok, diff} -> Git.diff_delta_count(diff)
+      {:error, reason} -> {:error, reason}
+    end
+  end
 end

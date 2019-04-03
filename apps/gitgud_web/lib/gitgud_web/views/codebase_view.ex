@@ -3,17 +3,10 @@ defmodule GitGud.Web.CodebaseView do
   use GitGud.Web, :view
 
   alias GitRekt.Git
+  alias GitRekt.GitAgent
 
   alias GitGud.User
   alias GitGud.UserQuery
-
-  alias GitGud.GitBlob
-  alias GitGud.GitCommit
-  alias GitGud.GitDiff
-  alias GitGud.GitReference
-  alias GitGud.GitTag
-  alias GitGud.GitTree
-  alias GitGud.GitTreeEntry
 
   alias Phoenix.Param
 
@@ -23,34 +16,6 @@ defmodule GitGud.Web.CodebaseView do
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   @external_resource highlight_languages = Path.join(:code.priv_dir(:gitgud_web), "highlight-languages.txt")
-
-  @spec batch_branches_commits_authors(Enumerable.t) :: [{GitReference.t, {GitCommit.t, User.t | map}}]
-  def batch_branches_commits_authors(references_commits) do
-    {references, commits} = Enum.unzip(references_commits)
-    commits_authors = batch_commits_authors(commits)
-    Enum.zip(references, commits_authors)
-  end
-
-  @spec batch_tags_commits_authors(Enumerable.t) :: [{GitReference.t | GitTag.t, {GitCommit.t, User.t | map}}]
-  def batch_tags_commits_authors(tags_commits) do
-    {tags, commits} = Enum.unzip(tags_commits)
-    authors = Enum.map(tags_commits, &fetch_author/1)
-    users = query_users(authors)
-    Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
-  end
-
-  @spec batch_commits_authors(Enumerable.t) :: [{GitCommit.t, User.t | map}]
-  def batch_commits_authors(commits) do
-    authors = Enum.map(commits, &fetch_author/1)
-    users = query_users(authors)
-    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
-  end
-
-  @spec sort_by_commit_timestamp(Enumerable.t) :: [{GitReference.t | GitTag.t, GitCommit.t}]
-  def sort_by_commit_timestamp(references_or_tags) do
-    commits = Enum.map(references_or_tags, &fetch_commit/1)
-    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(elem(&1, 1)), &compare_timestamps/2)
-  end
 
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
@@ -104,168 +69,6 @@ defmodule GitGud.Web.CodebaseView do
         ])
       ])
     ])
-  end
-
-  @spec blob_content(GitBlob.t) :: binary | nil
-  def blob_content(%GitBlob{} = blob) do
-    case GitBlob.content(blob) do
-      {:ok, content} -> content
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec blob_size(GitBlob.t) :: non_neg_integer | nil
-  def blob_size(%GitBlob{} = blob) do
-    case GitBlob.size(blob) do
-      {:ok, size} -> size
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_author(GitCommit.t) :: map | nil
-  def commit_author(%GitCommit{} = commit) do
-    case GitCommit.author(commit) do
-      {:ok, author} ->
-        if user = UserQuery.by_email(author.email),
-          do: user,
-        else: author
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_timestamp(GitCommit.t) :: DateTime.t | nil
-  def commit_timestamp(%GitCommit{} = commit) do
-    case GitCommit.timestamp(commit) do
-      {:ok, timestamp} -> timestamp
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_message(GitCommit.t) :: binary | nil
-  def commit_message(%GitCommit{} = commit) do
-    case GitCommit.message(commit) do
-      {:ok, message} -> message
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_message_title(GitCommit.t) :: binary | nil
-  def commit_message_title(%GitCommit{} = commit) do
-    case GitCommit.message(commit) do
-      {:ok, message} -> List.first(String.split(message, "\n", trim: true, parts: 2))
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_message_body(GitCommit.t) :: binary | nil
-  def commit_message_body(%GitCommit{} = commit) do
-    case GitCommit.message(commit) do
-      {:ok, message} -> List.last(String.split(message, "\n", trim: true, parts: 2))
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec commit_message_format(GitCommit.t, keyword) :: {binary, binary | nil} | nil
-  def commit_message_format(%GitCommit{} = commit, opts \\ []) do
-    case GitCommit.message(commit) do
-      {:ok, message} ->
-        parts = String.split(message, "\n", trim: true, parts: 2)
-        if length(parts) == 2,
-          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :br))},
-        else: {List.first(parts), nil}
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec revision_oid(Repo.git_object) :: binary
-  def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
-
-  @spec revision_name(Repo.git_object) :: binary
-  def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
-  def revision_name(%GitTag{name: name} = _object), do: name
-  def revision_name(%GitReference{name: name} = _object), do: name
-
-  @spec revision_type(Repo.git_object) :: atom
-  def revision_type(%GitCommit{} = _object), do: :commit
-  def revision_type(%GitTag{} = _object), do: :tag
-  def revision_type(%GitReference{} = ref), do: ref.type
-
-  def revision_href(conn, revision_type) when is_atom(revision_type) do
-    Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
-  end
-
-  def revision_href(conn, revision) do
-    repo = conn.assigns.repo
-    case revision_type(revision) do
-      :branch ->
-        Routes.codebase_path(conn, :branches, repo.owner, repo)
-      :tag ->
-        Routes.codebase_path(conn, :tags, repo.owner, repo)
-      :commit ->
-        Routes.codebase_path(conn, :history, repo.owner, repo, revision, [])
-    end
-  end
-
-  @spec tree_entries(GitTree.t) :: [GitTreeEntry.t]
-  def tree_entries(%GitTree{} = tree) do
-    case GitTree.entries(tree) do
-      {:ok, entries} -> entries
-      {:error, _reason} -> []
-    end
-  end
-
-  @spec tree_readme(GitTree.t) :: binary | nil
-  def tree_readme(%GitTree{} = tree) do
-    with {:ok, entry} <- GitTree.by_path(tree, "README.md"),
-         {:ok, blob} <- GitTreeEntry.target(entry),
-         {:ok, content} <- GitBlob.content(blob),
-         {:ok, html, []} <- Earmark.as_html(content) do
-      raw(html)
-    else
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec diff_stats(GitDiff.t) :: map | nil
-  def diff_stats(%GitDiff{} = diff) do
-    case GitDiff.stats(diff) do
-      {:ok, stats} -> stats
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec diff_deltas(GitDiff.t) :: [map] | nil
-  def diff_deltas(%GitDiff{} = diff) do
-    case GitDiff.deltas(diff) do
-      {:ok, deltas} -> deltas
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec diff_deltas_with_reviews(GitCommit.t, GitDiff.t) :: [map] | nil
-  def diff_deltas_with_reviews(commit, diff) do
-    commit_reviews = GitCommit.line_reviews(commit)
-    Enum.map(diff_deltas(diff), fn delta ->
-      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
-      Enum.reduce(reviews, delta, fn review, delta ->
-        update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
-        end)
-      end)
-    end)
-  end
-
-  @spec diff_deltas_with_comments(GitCommit.t, GitDiff.t) :: [map] | nil
-  def diff_deltas_with_comments(commit, diff) do
-    commit_reviews = GitCommit.line_reviews(commit, preload_comments: true)
-    Enum.map(diff_deltas(diff), fn delta ->
-      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
-      Enum.reduce(reviews, delta, fn review, delta ->
-        update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_review_comments_to_delta_line(&1, review.line, review.comments))
-        end)
-      end)
-    end)
   end
 
   @spec diff_table(Plug.Conn.t, Path.t, [map]) :: binary
@@ -323,6 +126,196 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
+  @spec batch_branches_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
+  def batch_branches_commits_authors(repo, references_commits) do
+    {references, commits} = Enum.unzip(references_commits)
+    commits_authors = batch_commits_authors(repo, commits)
+    Enum.zip(references, commits_authors)
+  end
+
+  @spec batch_tags_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
+  def batch_tags_commits_authors(repo, tags_commits) do
+    {tags, commits} = Enum.unzip(tags_commits)
+    authors = Enum.map(tags_commits, &fetch_author(repo, &1))
+    users = query_users(authors)
+    Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
+  end
+
+  @spec batch_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map}]
+  def batch_commits_authors(repo, commits) do
+    authors = Enum.map(commits, &fetch_author(repo, &1))
+    users = query_users(authors)
+    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
+  end
+
+  @spec sort_by_commit_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
+  def sort_by_commit_timestamp(repo, references_or_tags) do
+    commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
+    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
+  end
+
+  @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
+  def blob_content(repo, blob) do
+    case GitAgent.blob_content(repo.__agent__, blob) do
+      {:ok, content} -> content
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec blob_size(Repo.t, GitAgent.git_blob) :: non_neg_integer | nil
+  def blob_size(repo, blob) do
+    case GitAgent.blob_size(repo.__agent__, blob) do
+      {:ok, size} -> size
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_author(Repo.t, GitAgent.git_commit) :: map | nil
+  def commit_author(repo, commit) do
+    case GitAgent.commit_author(repo.__agent__, commit) do
+      {:ok, author} ->
+        if user = UserQuery.by_email(author.email),
+          do: user,
+        else: author
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_timestamp(Repo.t, GitAgent.git_commit) :: DateTime.t | nil
+  def commit_timestamp(repo, commit) do
+    case GitAgent.commit_timestamp(repo.__agent__, commit) do
+      {:ok, timestamp} -> timestamp
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message(Repo.t, GitAgent.git_commit) :: binary | nil
+  def commit_message(repo, commit) do
+    case GitAgent.commit_message(repo.__agent__, commit) do
+      {:ok, message} -> message
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message_title(Repo.t, GitAgent.git_commit) :: binary | nil
+  def commit_message_title(repo, commit) do
+    case GitAgent.commit_message(repo.__agent__, commit) do
+      {:ok, message} -> List.first(String.split(message, "\n", trim: true, parts: 2))
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message_body(Repo.t, GitAgent.git_commit) :: binary | nil
+  def commit_message_body(repo, commit) do
+    case GitAgent.commit_message(repo.__agent__, commit) do
+      {:ok, message} -> List.last(String.split(message, "\n", trim: true, parts: 2))
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec commit_message_format(Repo.t, GitAgent.git_commit, keyword) :: {binary, binary | nil} | nil
+  def commit_message_format(repo, commit, opts \\ []) do
+    case GitAgent.commit_message(repo.__agent__, commit) do
+      {:ok, message} ->
+        parts = String.split(message, "\n", trim: true, parts: 2)
+        if length(parts) == 2,
+          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :br))},
+        else: {List.first(parts), nil}
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec revision_oid(GitAgent.git_object) :: binary
+  def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
+
+  @spec revision_name(Repo.git_object) :: binary
+  def revision_name(%{oid: oid, type: :commit} = _object = _object), do: oid_fmt_short(oid)
+  def revision_name(%{name: name, type: :reference} = _object), do: name
+  def revision_name(%{name: name, type: :tag} = _object), do: name
+
+  @spec revision_type(GitAgent.git_object) :: atom
+  def revision_type(%{type: :commit} = _object), do: :commit
+  def revision_type(%{type: :tag} = _object), do: :tag
+  def revision_type(%{type: :reference, subtype: type} = _object), do: type
+
+  def revision_href(conn, revision_type) when is_atom(revision_type) do
+    Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
+  end
+
+  def revision_href(conn, revision) do
+    repo = conn.assigns.repo
+    case revision_type(revision) do
+      :branch ->
+        Routes.codebase_path(conn, :branches, repo.owner, repo)
+      :tag ->
+        Routes.codebase_path(conn, :tags, repo.owner, repo)
+      :commit ->
+        Routes.codebase_path(conn, :history, repo.owner, repo, revision, [])
+    end
+  end
+
+  @spec tree_entries(Repo.t, GitAgent.git_tree) :: [GitAgent.git_tree_entry]
+  def tree_entries(repo, tree) do
+    case GitAgent.tree_entries(repo.__agent__, tree) do
+      {:ok, entries} -> entries
+      {:error, _reason} -> []
+    end
+  end
+
+  @spec tree_readme(Repo.t, GitAgent.git_tree) :: binary | nil
+  def tree_readme(repo, tree) do
+    with {:ok, entry} <- GitAgent.tree_entry_by_path(repo.__agent__, tree, "README.md"),
+         {:ok, blob} <- GitAgent.tree_entry_target(repo.__agent__, entry),
+         {:ok, content} <- GitAgent.blob_content(repo.__agent__, blob),
+         {:ok, html, []} <- Earmark.as_html(content) do
+      raw(html)
+    else
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec diff_stats(Repo.t, GitAgent.git_diff) :: map | nil
+  def diff_stats(repo, diff) do
+    case GitAgent.diff_stats(repo.__agent__, diff) do
+      {:ok, stats} -> stats
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec diff_deltas(Repo.t, GitAgent.git_diff) :: [map] | nil
+  def diff_deltas(repo, diff) do
+    case GitAgent.diff_deltas(repo.__agent__, diff) do
+      {:ok, deltas} -> deltas
+      {:error, _reason} -> nil
+    end
+  end
+
+  @spec diff_deltas_with_reviews(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
+  def diff_deltas_with_reviews(repo, _commit, diff) do
+    commit_reviews = []
+    Enum.map(diff_deltas(repo, diff), fn delta ->
+      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      Enum.reduce(reviews, delta, fn review, delta ->
+        update_in(delta.hunks, fn hunks ->
+          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
+        end)
+      end)
+    end)
+  end
+
+  @spec diff_deltas_with_comments(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
+  def diff_deltas_with_comments(repo, _commit, diff) do
+    commit_reviews = []
+    Enum.map(diff_deltas(repo, diff), fn delta ->
+      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      Enum.reduce(reviews, delta, fn review, delta ->
+        update_in(delta.hunks, fn hunks ->
+          List.update_at(hunks, review.hunk, &attach_review_comments_to_delta_line(&1, review.line, review.comments))
+        end)
+      end)
+    end)
+  end
+
   @spec breadcrump_action(atom) :: atom
   def breadcrump_action(:blob), do: :tree
   def breadcrump_action(action), do: action
@@ -341,7 +334,7 @@ defmodule GitGud.Web.CodebaseView do
 
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
-  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
+  def title(:commit, %{repo: repo, commit: commit}), do: "#{commit_message_title(repo, commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
@@ -352,48 +345,41 @@ defmodule GitGud.Web.CodebaseView do
   # Helpers
   #
 
-  defp fetch_commit(%GitReference{} = reference) do
-    case GitReference.target(reference, :commit) do
+  defp fetch_commit(repo, reference) do
+    case GitAgent.peel(repo.__agent__, reference) do
       {:ok, commit} -> commit
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_commit(%GitTag{} = tag) do
-    case GitTag.target(tag) do
-      {:ok, commit} -> commit
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_author(%GitReference{} = reference) do
-    case GitReference.target(reference, :commit) do
+  defp fetch_author(repo, %{type: :reference} = reference) do
+    case GitAgent.peel(repo.__agent__, reference) do
       {:ok, commit} ->
-        fetch_author(commit)
+        fetch_author(repo, commit)
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_author(%GitCommit{} = commit) do
-    case GitCommit.author(commit) do
+  defp fetch_author(repo, %{type: :commit} = commit) do
+    case GitAgent.commit_author(repo.__agent__, commit) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_author(%GitTag{} = tag) do
-    case GitTag.author(tag) do
+  defp fetch_author(repo, %{type: :tag} = tag) do
+    case GitAgent.tag_author(repo.__agent__, tag) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_author({%GitReference{} = _reference, %GitCommit{} = commit}) do
-    fetch_author(commit)
+  defp fetch_author(repo, {%{type: :reference} = _reference, commit}) do
+    fetch_author(repo, commit)
   end
 
-  defp fetch_author({%GitTag{} = tag, %GitCommit{} = _commit}) do
-    fetch_author(tag)
+  defp fetch_author(repo, {%{type: :tag} = tag, _commit}) do
+    fetch_author(repo, tag)
   end
 
   defp query_users(authors) do

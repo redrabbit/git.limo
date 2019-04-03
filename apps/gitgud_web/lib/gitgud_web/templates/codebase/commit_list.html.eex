@@ -11,21 +11,21 @@
   </div>
 </nav>
 
-<%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1) == &2), &oid_fmt(&1.oid)) do %>
+<%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
   <table class="table is-fullwidth is-striped">
     <tbody>
-      <%= for {commit, author} <- batch_commits_authors(page.slice) do %>
+      <%= for {commit, author} <- batch_commits_authors(@repo, page.slice) do %>
         <tr>
           <td>
             <p class="has-text-weight-bold">
-              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit) %></a>
+              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@repo, commit) %></a>
             </p>
             <%= if Map.has_key?(author, :id) do %>
               <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
             <% else %>
               <span class="has-text-black"><%= author.name %></span>
             <% end %>
-            committed <%= datetime_format(commit_timestamp(commit), "{relative}") %>
+            committed <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %>
           </td>
           <td class="has-text-right">
             <p class="buttons is-pulled-right">

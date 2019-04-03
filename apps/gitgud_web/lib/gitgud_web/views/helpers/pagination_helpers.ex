@@ -25,12 +25,12 @@ defmodule GitGud.Web.PaginationHelpers do
     {slice, previous?, next?} =
       cond do
         cursor = conn.params["before"] ->
-          stream = struct(stream, enum: Enum.reverse(Enum.take_while(stream.enum, &!filter_fn.(&1, cursor))))
+          stream = Enum.reverse(Stream.take_while(stream, &!filter_fn.(&1, cursor)))
           stream = Stream.take(stream, limit+1)
           slice = Enum.to_list(stream)
           {Enum.reverse(Enum.take(slice, limit)), Enum.count(slice) > limit, true}
         cursor = conn.params["after"] ->
-          stream = struct(stream, enum: Enum.drop(Enum.drop_while(stream.enum, &!filter_fn.(&1, cursor)), 1))
+          stream = Stream.drop(Stream.drop_while(stream, &!filter_fn.(&1, cursor)), 1)
           stream = Stream.take(stream, limit+1)
           slice = Enum.to_list(stream)
           {Enum.take(slice, limit), true, Enum.count(slice) > limit}
