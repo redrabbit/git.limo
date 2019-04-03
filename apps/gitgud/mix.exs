@@ -28,15 +28,15 @@ defmodule GitGud.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:ecto, "~> 3.0"},
-     {:ecto_sql, "~> 3.0"},
+    [{:ecto, "~> 3.1"},
+     {:ecto_sql, "~> 3.1"},
      {:postgrex, "~> 0.14"},
      {:phoenix_pubsub, "~> 1.1", optional: true},
      {:jason, "~> 1.1"},
      {:argon2_elixir, "~> 2.0"},
-     {:plug, "~> 1.7", optional: true},
+     {:plug, "~> 1.8", optional: true},
      {:plug_cowboy, "~> 2.0", only: :test},
-     {:faker, "~> 0.11", only: :test},
+     {:faker, "~> 0.12", only: :test},
      {:gitrekt, in_umbrella: true}]
   end
 

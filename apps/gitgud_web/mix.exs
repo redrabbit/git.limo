@@ -29,11 +29,11 @@ defmodule GitGud.Web.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:ecto, "~> 3.0", override: true},
-     {:plug, "~> 1.7"},
+    [{:ecto, "~> 3.1", override: true},
+     {:plug, "~> 1.8"},
      {:plug_cowboy, "~> 2.0"},
      {:phoenix, "~> 1.4"},
-     {:phoenix_html, "~> 2.12"},
+     {:phoenix_html, "~> 2.13"},
      {:phoenix_pubsub, "~> 1.1"},
      {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"},
      {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -44,7 +44,7 @@ defmodule GitGud.Web.Mixfile do
      {:oauth2, "~> 1.0"},
      {:bamboo, "~> 1.2"},
      {:gettext, "~> 0.15"},
-     {:timex, "~> 3.4"},
+     {:timex, "~> 3.5"},
      {:earmark, "~> 1.3"},
      {:gitgud, in_umbrella: true}]
   end
