@@ -291,7 +291,7 @@ defmodule GitRekt.GitAgent do
   defp call({:diff_deltas, %{type: :diff, diff: diff}}, _handle) do
     case Git.diff_deltas(diff) do
       {:ok, deltas} ->
-        {:ok, Enum.map(deltas, &resolve_diff_delta/1)}
+        {:ok, Stream.map(deltas, &resolve_diff_delta/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -322,7 +322,7 @@ defmodule GitRekt.GitAgent do
   defp call({:commit_parents, %{type: :commit, commit: commit}}, _handle) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
-        {:ok, Enum.map(stream, &resolve_commit_parent/1)}
+        {:ok, Stream.map(stream, &resolve_commit_parent/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -359,7 +359,7 @@ defmodule GitRekt.GitAgent do
   defp resolve_reference_type("refs/tags/"), do: :tag
 
   defp resolve_reference_stream(stream) do
-    Enum.map(stream, &resolve_reference/1)
+    Stream.map(stream, &resolve_reference/1)
   end
 
   defp resolve_object({blob, :blob, oid}), do: %{oid: oid, type: :blob, blob: blob}
@@ -379,7 +379,7 @@ defmodule GitRekt.GitAgent do
   defp resolve_tree_entry({mode, type, oid, name}), do: %{oid: oid, name: name, mode: mode, type: :tree_entry, subtype: type}
 
   defp resolve_diff_delta({{old_file, new_file, count, similarity}, hunks}) do
-    %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Enum.map(hunks, &resolve_diff_hunk/1)}
+    %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Stream.map(hunks, &resolve_diff_hunk/1)}
   end
 
   defp resolve_diff_file({oid, path, size, mode}) do
@@ -387,7 +387,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp resolve_diff_hunk({{header, old_start, old_lines, new_start, new_lines}, lines}) do
-    %{header: header, old_start: old_start, old_lines: old_lines, new_start: new_start, new_lines: new_lines, lines: Enum.map(lines, &resolve_diff_line/1)}
+    %{header: header, old_start: old_start, old_lines: old_lines, new_start: new_start, new_lines: new_lines, lines: Stream.map(lines, &resolve_diff_line/1)}
   end
 
   defp resolve_diff_line({origin, old_line_no, new_line_no, num_lines, content_offset, content}) do
@@ -464,7 +464,7 @@ defmodule GitRekt.GitAgent do
   defp fetch_tree_entries(%{type: :tree, tree: tree}, _handle) do
     case Git.tree_entries(tree) do
       {:ok, stream} ->
-        {:ok, Enum.map(stream, &resolve_tree_entry/1)}
+        {:ok, Stream.map(stream, &resolve_tree_entry/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -535,8 +535,8 @@ defmodule GitRekt.GitAgent do
          {:ok, stream} <- Git.revwalk_stream(walk) do
       stream = Stream.map(stream, &lookup_object!(&1, handle))
       if pathspec = Keyword.get(opts, :pathspec),
-        do: {:ok, Enum.filter(stream, &pathspec_match_commit(&1, List.wrap(pathspec), handle))},
-      else: {:ok, Enum.to_list(stream)}
+        do: {:ok, Stream.filter(stream, &pathspec_match_commit(&1, List.wrap(pathspec), handle))},
+      else: {:ok, stream}
     end
   end
 
