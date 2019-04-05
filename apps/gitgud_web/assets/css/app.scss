@@ -132,7 +132,7 @@ table.table {
 .user-profile {
   ul {
     li {
-      font-size: .9rem;
+      font-size: 0.875em;
       text-overflow: ellipsis;
       overflow: hidden;
       white-space: nowrap;
@@ -192,12 +192,10 @@ table.table {
   }
 }
 
-.log-message {
-  font-size: .9rem;
-  font-family: $family-monospace;
+.log-message pre {
+  padding: 0;
   color: $grey;
-  -moz-osx-font-smoothing: auto;
-  -webkit-font-smoothing: auto;
+  background-color: $white;
 }
 
 table.blob-table {
@@ -209,7 +207,7 @@ table.blob-table {
     tr {
       td {
         &.line-no {
-          font-size: .9rem;
+          font-size: 0.875em;
           font-family: $family-monospace;
           -moz-osx-font-smoothing: auto;
           -webkit-font-smoothing: auto;
@@ -224,7 +222,7 @@ table.blob-table {
         }
 
         &.code {
-          font-size: .9rem;
+          font-size: 0.875em;
           font-family: $family-monospace;
           -moz-osx-font-smoothing: auto;
           -webkit-font-smoothing: auto;

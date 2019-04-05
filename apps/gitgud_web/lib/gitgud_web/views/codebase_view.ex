@@ -219,7 +219,7 @@ defmodule GitGud.Web.CodebaseView do
       {:ok, message} ->
         parts = String.split(message, "\n", trim: true, parts: 2)
         if length(parts) == 2,
-          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :br))},
+          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :pre))},
         else: {List.first(parts), nil}
       {:error, _reason} -> nil
     end
@@ -403,6 +403,10 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp highlight_language(_extension), do: "nohighlight"
+
+  defp wrap_message(content, :pre) do
+    content_tag(:pre, String.trim(content))
+  end
 
   defp wrap_message(content, :br) do
     content
