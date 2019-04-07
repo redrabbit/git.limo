@@ -22,6 +22,8 @@ defmodule GitGud.GraphQL.Resolvers do
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
 
+  import Ecto.Query, only: [from: 2]
+
   import GitRekt.Git, only: [oid_fmt: 1]
 
   import GitGud.Authorization, only: [authorized?: 3]
@@ -54,13 +56,13 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :comment} = _node_type, info) do
-    if comment = DB.get(Comment, to_integer(id)),
+    if comment = DB.get(Comment, to_integer(id)), # TODO
       do: {:ok, DB.preload(comment, [:author])},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :commit_line_review} = _node_type, info) do
-    if review = DB.get(CommitLineReview, to_integer(id)),
+    if review = DB.get(CommitLineReview, to_integer(id)), # TODO
       do: {:ok, DB.preload(review, [:repo, comments: :author])},
     else: node(%{id: id}, info)
   end
@@ -344,10 +346,12 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the line-review for a given Git `commit` object.
   """
   @spec commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
-  def commit_line_review(_commit, %{blob_oid: _blob_oid, hunk: _hunk, line: _line} = _args,  _info) do
-  # if review = GitCommit.line_review(commit, blob_oid, hunk, line),
-  #   do: {:ok, review},
-  # else: {:error, "there is no line-review for the given args"}
+  def commit_line_review(commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
+    query = from r in CommitLineReview, where: r.repo_id == ^ctx.repo.id and r.commit_oid == ^commit.oid and r.blob_oid == ^blob_oid and r.hunk == ^hunk and r.line == ^line
+    query = from r in query, join: c in assoc(r, :comments), join: u in assoc(c, :author), preload: [comments: {c, [author: u]}]
+    if line_review = DB.one(query),
+      do: {:ok, line_review},
+    else: {:error, "there is no line-review for the given args"}
   end
 
   @doc """

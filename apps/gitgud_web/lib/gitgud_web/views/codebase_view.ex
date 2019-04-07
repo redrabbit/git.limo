@@ -5,10 +5,15 @@ defmodule GitGud.Web.CodebaseView do
   alias GitRekt.Git
   alias GitRekt.GitAgent
 
+  alias GitGud.DB
+
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.CommitLineReview
 
   alias Phoenix.Param
+
+  import Ecto.Query, only: [from: 2]
 
   import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Tag
@@ -291,8 +296,9 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec diff_deltas_with_reviews(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
-  def diff_deltas_with_reviews(repo, _commit, diff) do
-    commit_reviews = []
+  def diff_deltas_with_reviews(repo, commit, diff) do
+    query = from r in CommitLineReview, where: r.repo_id == ^repo.id and r.commit_oid == ^commit.oid
+    commit_reviews = DB.all(query) # TODO
     Enum.map(diff_deltas(repo, diff), fn delta ->
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
@@ -304,8 +310,10 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec diff_deltas_with_comments(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
-  def diff_deltas_with_comments(repo, _commit, diff) do
-    commit_reviews = []
+  def diff_deltas_with_comments(repo, commit, diff) do
+    query = from r in CommitLineReview, where: r.repo_id == ^repo.id and r.commit_oid == ^commit.oid
+    query = from r in query, join: c in assoc(r, :comments), join: u in assoc(c, :author), preload: [comments: {c, [author: u]}]
+    commit_reviews = DB.all(query) # TODO
     Enum.map(diff_deltas(repo, diff), fn delta ->
       reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
