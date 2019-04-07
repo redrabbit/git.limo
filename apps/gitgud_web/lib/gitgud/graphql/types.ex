@@ -186,7 +186,7 @@ defmodule GitGud.GraphQL.Types do
     field :name, non_null(:string)
 
     @desc "The type of the reference."
-    field :type, non_null(:git_reference_type)
+    field :type, non_null(:git_reference_type), resolve: &Resolvers.git_reference_type/3
 
     @desc "The object the reference points to."
     field :target, non_null(:git_object), resolve: &Resolvers.git_reference_target/3

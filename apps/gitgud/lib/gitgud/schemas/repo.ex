@@ -164,6 +164,17 @@ defmodule GitGud.Repo do
   def load_agent(%__MODULE__{} = repo), do: repo
 
   @doc """
+  Similar to `load_agent/1`, but raises an exception if an error occurs.
+  """
+  @spec load_agent!(t) :: t
+  def load_agent!(%__MODULE__{} = repo) do
+    case load_agent(repo) do
+      {:ok, repo} -> repo
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   Returns a repository changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
