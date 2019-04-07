@@ -220,8 +220,40 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
+  def handle_call({:references, _glob} = op, _from, handle) do
+    {:reply, call_stream(op, handle), handle}
+  end
+
+  @impl true
+  def handle_call({:commit_list, _commit} = op, _from, handle) do
+    {:reply, call_stream(op, handle), handle}
+  end
+
+  @impl true
+  def handle_call({:tree_entries, _tree} = op, _from, handle) do
+    {:reply, call_stream(op, handle), handle}
+  end
+
+  @impl true
+  def handle_call({:history, _obj, _opts} = op, from, handle) do
+    case call_stream(op, handle) do
+      {:ok, stream} ->
+        {:noreply, handle, {:continue, {:history, stream, from}}}
+      {:error, reason} ->
+        {:reply, {:error, reason}, handle}
+    end
+  end
+
+  @impl true
   def handle_call(op, _from, handle) do
     {:reply, call(op, handle), handle}
+  end
+
+  @impl true
+  def handle_continue({:history, stream, from}, handle) do
+    IO.inspect stream
+    :ok = GenServer.reply(from, {:ok, Enum.to_list(stream)})
+    {:noreply, handle}
   end
 
   #
@@ -261,7 +293,7 @@ defmodule GitRekt.GitAgent do
   defp call({:references, glob}, handle) do
     case Git.reference_stream(handle, glob) do
       {:ok, stream} ->
-        {:ok, resolve_reference_stream(stream)}
+        {:ok, Stream.map(stream, &resolve_reference/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -291,7 +323,7 @@ defmodule GitRekt.GitAgent do
   defp call({:diff_deltas, %{type: :diff, diff: diff}}, _handle) do
     case Git.diff_deltas(diff) do
       {:ok, deltas} ->
-        {:ok, Stream.map(deltas, &resolve_diff_delta/1)}
+        {:ok, Enum.map(deltas, &resolve_diff_delta/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -343,6 +375,15 @@ defmodule GitRekt.GitAgent do
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj}, handle), do: fetch_target(obj, handle)
 
+  defp call_stream(op, handle) do
+    case call(op, handle) do
+      {:ok, stream} ->
+        {:ok, enumerate_stream(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp resolve_reference({nil, nil, :oid, _oid}), do: nil
   defp resolve_reference({name, nil, :oid, oid}) do
     prefix = Path.dirname(name) <> "/"
@@ -357,10 +398,6 @@ defmodule GitRekt.GitAgent do
 
   defp resolve_reference_type("refs/heads/"), do: :branch
   defp resolve_reference_type("refs/tags/"), do: :tag
-
-  defp resolve_reference_stream(stream) do
-    Stream.map(stream, &resolve_reference/1)
-  end
 
   defp resolve_object({blob, :blob, oid}), do: %{oid: oid, type: :blob, blob: blob}
   defp resolve_object({commit, :commit, oid}), do: %{oid: oid, type: :commit, commit: commit}
@@ -379,7 +416,7 @@ defmodule GitRekt.GitAgent do
   defp resolve_tree_entry({mode, type, oid, name}), do: %{oid: oid, name: name, mode: mode, type: :tree_entry, subtype: type}
 
   defp resolve_diff_delta({{old_file, new_file, count, similarity}, hunks}) do
-    %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Stream.map(hunks, &resolve_diff_hunk/1)}
+    %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Enum.map(hunks, &resolve_diff_hunk/1)}
   end
 
   defp resolve_diff_file({oid, path, size, mode}) do
@@ -387,7 +424,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp resolve_diff_hunk({{header, old_start, old_lines, new_start, new_lines}, lines}) do
-    %{header: header, old_start: old_start, old_lines: old_lines, new_start: new_start, new_lines: new_lines, lines: Stream.map(lines, &resolve_diff_line/1)}
+    %{header: header, old_start: old_start, old_lines: old_lines, new_start: new_start, new_lines: new_lines, lines: Enum.map(lines, &resolve_diff_line/1)}
   end
 
   defp resolve_diff_line({origin, old_line_no, new_line_no, num_lines, content_offset, content}) do
@@ -567,4 +604,7 @@ defmodule GitRekt.GitAgent do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp enumerate_stream(stream) when is_function(stream), do: %Stream{enum: Enum.to_list(stream)}
+  defp enumerate_stream(%Stream{} = stream), do: Map.update!(stream, :enum, &Enum.to_list/1)
 end
