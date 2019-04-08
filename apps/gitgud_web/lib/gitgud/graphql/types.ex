@@ -45,9 +45,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "The Git object ID."
     field :oid, non_null(:git_oid)
 
-    @desc "The Repository the Git object belongs to."
-    field :repo, non_null(:repo)
-
     resolve_type &Resolvers.git_object_type/2
   end
 
@@ -61,9 +58,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The Git object the tag points to."
     field :target, non_null(:git_object), resolve: &Resolvers.git_tag_target/3
-
-    @desc "The Repository the Git tag belongs to."
-    field :repo, non_null(:repo)
 
     resolve_type &Resolvers.git_tag_type/2
   end
@@ -199,9 +193,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this reference."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
-    @desc "The repository this reference belongs to."
-    field :repo, non_null(:repo)
-
     @desc "The HTTP URL for this reference."
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end
@@ -242,9 +233,6 @@ defmodule GitGud.GraphQL.Types do
       arg :line, non_null(:integer), description: "The delta line index."
       resolve &Resolvers.commit_line_review/3
     end
-
-    @desc "The repository this commit belongs to."
-    field :repo, non_null(:repo)
 
     @desc "The HTTP URL for this commit."
     field :url, non_null(:string), resolve: &Resolvers.url/3
@@ -298,9 +286,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The root tree of this tag."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
-
-    @desc "The repository this tag belongs to."
-    field :repo, non_null(:repo)
   end
 
   @desc "Represents a Git tree."
@@ -314,9 +299,6 @@ defmodule GitGud.GraphQL.Types do
     connection field :entries, node_type: :git_tree_entry do
       resolve &Resolvers.git_tree_entries/2
     end
-
-    @desc "The repository this tree belongs to."
-    field :repo, non_null(:repo)
   end
 
   @desc "Represents a Git tree entry."
@@ -332,9 +314,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The object the entry points to."
     field :target, non_null(:git_object), resolve: &Resolvers.git_tree_entry_target/3
-
-    @desc "The repository the entry belongs to."
-    field :repo, non_null(:repo)
   end
 
   @desc "Represents a Git blob."
@@ -346,9 +325,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The size in bytes of the blob."
     field :size, non_null(:integer), resolve: &Resolvers.git_blob_size/3
-
-    @desc "The repository the blob belongs to."
-    field :repo, non_null(:repo)
   end
 
   @desc "Represents a comment."
