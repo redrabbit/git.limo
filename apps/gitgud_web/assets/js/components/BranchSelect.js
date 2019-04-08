@@ -10,7 +10,7 @@ class BranchSelect extends React.Component {
     this.renderDropdown = this.renderDropdown.bind(this)
     this.handleToggle = this.handleToggle.bind(this)
     this.handleSearch = this.handleSearch.bind(this)
-    this.state = {toggled: false, filter: "", type: "BRANCH"}
+    this.state = {toggled: false, filter: "", type: this.referenceType(props)}
   }
 
   render() {
@@ -112,6 +112,17 @@ class BranchSelect extends React.Component {
 
   handleSearch(event) {
     this.setState({filter: event.target.value})
+  }
+
+  referenceType(props) {
+    switch(props.type) {
+      case "branch":
+        return "BRANCH"
+      case "tag":
+        return "TAG"
+      default:
+        return "BRANCH"
+    }
   }
 }
 
