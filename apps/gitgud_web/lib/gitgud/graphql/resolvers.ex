@@ -13,7 +13,9 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.Repo
   alias GitGud.RepoQuery
   alias GitGud.Comment
+  alias GitGud.CommentQuery
   alias GitGud.CommitLineReview
+  alias GitGud.ReviewQuery
 
   alias Absinthe.Relay.Connection
 
@@ -21,8 +23,6 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import String, only: [to_integer: 1]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
-
-  import Ecto.Query, only: [from: 2]
 
   import GitRekt.Git, only: [oid_fmt: 1]
 
@@ -55,15 +55,15 @@ defmodule GitGud.GraphQL.Resolvers do
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :comment} = _node_type, info) do
-    if comment = DB.get(Comment, to_integer(id)), # TODO
-      do: {:ok, DB.preload(comment, [:author])},
+  def node(%{id: id, type: :comment} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+    if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: :author),
+      do: {:ok, comment},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :commit_line_review} = _node_type, info) do
-    if review = DB.get(CommitLineReview, to_integer(id)), # TODO
-      do: {:ok, DB.preload(review, [:repo, comments: :author])},
+  def node(%{id: id, type: :commit_line_review} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
+      do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
@@ -347,9 +347,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
   def commit_line_review(commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
-    query = from r in CommitLineReview, where: r.repo_id == ^ctx.repo.id and r.commit_oid == ^commit.oid and r.blob_oid == ^blob_oid and r.hunk == ^hunk and r.line == ^line
-    query = from r in query, join: c in assoc(r, :comments), join: u in assoc(c, :author), preload: [comments: {c, [author: u]}]
-    if line_review = DB.one(query),
+    if line_review = ReviewQuery.commit_line_review(ctx.repo, commit, blob_oid, hunk, line, viewer: ctx[:current_user], preload: [comments: :author]),
       do: {:ok, line_review},
     else: {:error, "there is no line-review for the given args"}
   end
@@ -476,12 +474,11 @@ defmodule GitGud.GraphQL.Resolvers do
   Updates a comment.
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def update_comment(_parent, %{id: comment_id, body: body}, %Absinthe.Resolution{context: ctx}) do
-    if comment = DB.get(Comment, from_relay_id(comment_id)) do
-      if authorized?(ctx[:current_user], comment, :admin) do
-        {:ok, comment} = Comment.update(comment, body: body)
-        {:ok, DB.preload(comment, :author)}
-      end
+  def update_comment(_parent, %{id: id, body: body}, %Absinthe.Resolution{context: ctx}) do
+    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+      if authorized?(ctx[:current_user], comment, :admin),
+        do: Comment.update(comment, body: body),
+      else: {:error, "Unauthorized"}
     end
   end
 
@@ -490,11 +487,11 @@ defmodule GitGud.GraphQL.Resolvers do
   Updates a comment.
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def delete_comment(_parent, %{id: comment_id}, %Absinthe.Resolution{context: ctx}) do
-    if comment = DB.get(Comment, from_relay_id(comment_id)) do
-      if authorized?(ctx[:current_user], comment, :admin) do
-        Comment.delete(comment)
-      end
+  def delete_comment(_parent, %{id: id}, %Absinthe.Resolution{context: ctx}) do
+    if comment = CommentQuery.by_id(from_relay_id(id)) do
+      if authorized?(ctx[:current_user], comment, :admin),
+        do: Comment.delete(comment),
+      else: {:error, "Unauthorized"}
     end
   end
 
