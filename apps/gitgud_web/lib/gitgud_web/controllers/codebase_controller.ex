@@ -23,10 +23,9 @@ defmodule GitGud.Web.CodebaseController do
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, head} <- GitAgent.head(agent),
-           {:ok, tree} <- GitAgent.tree(agent, head), do:
-        render(conn, "show.html", repo: repo, revision: head, tree: tree, tree_path: [], stats: stats(agent, head))
+           {:ok, head} <- GitAgent.head(repo),
+           {:ok, tree} <- GitAgent.tree(repo, head), do:
+        render(conn, "show.html", repo: repo, revision: head, tree: tree, tree_path: [], stats: stats(repo, head))
     end || {:error, :not_found}
   end
 
@@ -37,9 +36,8 @@ defmodule GitGud.Web.CodebaseController do
   def branches(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, head} <- GitAgent.head(agent),
-           {:ok, branches} <- GitAgent.branches(agent), do:
+           {:ok, head} <- GitAgent.head(repo),
+           {:ok, branches} <- GitAgent.branches(repo), do:
         render(conn, "branch_list.html", repo: repo, head: head, branches: Enum.to_list(branches))
     end || {:error, :not_found}
   end
@@ -51,8 +49,7 @@ defmodule GitGud.Web.CodebaseController do
   def tags(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, tags} <- GitAgent.tags(agent), do:
+           {:ok, tags} <- GitAgent.tags(repo), do:
         render(conn, "tag_list.html", repo: repo, tags: Enum.to_list(tags))
     end || {:error, :not_found}
   end
@@ -64,10 +61,9 @@ defmodule GitGud.Web.CodebaseController do
   def commit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "oid" => oid} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, commit} <- GitAgent.object(agent, oid_parse(oid)),
-           {:ok, parents} <- GitAgent.commit_parents(agent, commit),
-           {:ok, diff} <- GitAgent.diff(agent, Enum.at(parents, 0), commit), do:
+           {:ok, commit} <- GitAgent.object(repo, oid_parse(oid)),
+           {:ok, parents} <- GitAgent.commit_parents(repo, commit),
+           {:ok, diff} <- GitAgent.diff(repo, Enum.at(parents, 0), commit), do:
         render(conn, "commit.html", repo: repo, commit: commit, commit_parents: Enum.to_list(parents), diff: diff)
     end || {:error, :not_found}
   end
@@ -79,9 +75,8 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(agent, revision),
-           {:ok, history} <- GitAgent.history(agent, object), do:
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, history} <- GitAgent.history(repo, object), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
     end || {:error, :not_found}
   end
@@ -89,9 +84,8 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(agent, revision),
-           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)), do:
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, history} <- GitAgent.history(repo, object, pathspec: Path.join(tree_path)), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: tree_path)
     end || {:error, :not_found}
   end
@@ -99,9 +93,8 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, reference} <- GitAgent.head(agent),
-           {:ok, history} <- GitAgent.history(agent, reference), do:
+           {:ok, reference} <- GitAgent.head(repo),
+           {:ok, history} <- GitAgent.history(repo, reference), do:
         render(conn, "commit_list.html", repo: repo, revision: reference, commits: history)
     end || {:error, :not_found}
   end
@@ -113,21 +106,19 @@ defmodule GitGud.Web.CodebaseController do
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(agent, revision),
-           {:ok, tree} <- GitAgent.tree(agent, object), do:
-        render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats(agent, reference || object))
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, tree} <- GitAgent.tree(repo, object), do:
+        render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats(repo, reference || object))
     end || {:error, :not_found}
   end
 
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(agent, revision),
-           {:ok, tree} <- GitAgent.tree(agent, object),
-           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)),
-           {:ok, tree} <- GitAgent.tree_entry_target(agent, tree_entry), do:
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, tree} <- GitAgent.tree(repo, object),
+           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, tree, Path.join(tree_path)),
+           {:ok, tree} <- GitAgent.tree_entry_target(repo, tree_entry), do:
         render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
     end || {:error, :not_found}
   end
@@ -139,11 +130,10 @@ defmodule GitGud.Web.CodebaseController do
   def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} = Repo.load_agent(repo),
-           {:ok, agent} <- Repo.git_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(agent, revision),
-           {:ok, tree} <- GitAgent.tree(agent, object),
-           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(blob_path)),
-           {:ok, blob} <- GitAgent.tree_entry_target(agent, tree_entry), do:
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, tree} <- GitAgent.tree(repo, object),
+           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, tree, Path.join(blob_path)),
+           {:ok, blob} <- GitAgent.tree_entry_target(repo, tree_entry), do:
         render(conn, "blob.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path)
     end || {:error, :not_found}
   end

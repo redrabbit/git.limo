@@ -189,12 +189,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_head(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def repo_head(%Repo{} = repo, %{} = _args, _info) do
-    case Repo.git_agent(repo) do
-      {:ok, agent} ->
-        GitAgent.head(agent)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.head(repo)
   end
 
   @doc """
@@ -202,12 +197,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_ref(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
   def repo_ref(%Repo{} = repo, %{name: name} = _args, _info) do
-    case Repo.git_agent(repo) do
-      {:ok, agent} ->
-         GitAgent.reference(agent, name)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.reference(repo, name)
   end
 
   @doc """
@@ -215,10 +205,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_refs(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_refs(args, %Absinthe.Resolution{source: repo} = _source) do
-    with {:ok, agent} <- Repo.git_agent(repo),
-         {:ok, stream} <- GitAgent.references(agent) do
-      {slice, offset, opts} = slice_stream(stream, args)
-      Connection.from_slice(slice, offset, opts)
+    case GitAgent.references(repo) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+    {:error, reason} ->
+      {:error, reason}
     end
   end
 
@@ -227,12 +219,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_tag(Repo.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, GitReference.t | GitTag.t} | {:error, term}
   def repo_tag(%Repo{} = repo, %{name: name} = _args, _info) do
-    case Repo.git_agent(repo) do
-      {:ok, agent} ->
-         GitAgent.tag(agent, name)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.tag(repo, name)
   end
 
   @doc """
@@ -240,10 +227,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_tags(args, %Absinthe.Resolution{source: repo} = _source) do
-    with {:ok, agent} <- Repo.git_agent(repo),
-         {:ok, stream} <- GitAgent.tags(agent) do
-      {slice, offset, opts} = slice_stream(stream, args)
-      Connection.from_slice(slice, offset, opts)
+    case GitAgent.tags(repo) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -274,12 +263,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_reference_target(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
   def git_reference_target(reference, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-         GitAgent.peel(agent, reference)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.peel(ctx.repo, reference)
   end
 
   @doc """
@@ -287,10 +271,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_history(args, %Absinthe.Resolution{context: ctx, source: revision} = _source) do
-    with {:ok, agent} <- Repo.git_agent(ctx.repo),
-         {:ok, stream} <- GitAgent.history(agent, revision) do
-      {slice, offset, opts} = slice_stream(stream, args)
-      Connection.from_slice(slice, offset, opts)
+    case GitAgent.history(ctx.repo, revision) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -299,10 +285,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_commit_parents(args,  %Absinthe.Resolution{context: ctx, source: commit} = _source) do
-    with {:ok, agent} <- Repo.git_agent(ctx.repo),
-         {:ok, stream} <- GitAgent.commit_parents(agent, commit) do
-      {slice, offset, opts} = slice_stream(stream, args)
-      Connection.from_slice(slice, offset, opts)
+    case GitAgent.commit_parents(ctx.repo, commit) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -311,9 +299,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
   def git_commit_author(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
-    with {:ok, agent} <- Repo.git_agent(ctx.repo),
-         {:ok, %{email: email} = author} <- GitAgent.commit_author(agent, commit), do:
-      batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users -> {:ok, users[email] || author} end)
+    case GitAgent.commit_author(ctx.repo, commit) do
+      {:ok, %{email: email} = author} ->
+        batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users -> {:ok, users[email] || author} end)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -321,12 +312,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_message(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def git_commit_message(commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.commit_message(agent, commit)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.commit_message(ctx.repo, commit)
   end
 
   @doc """
@@ -334,12 +320,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_commit_timestamp(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, DateTime.t} | {:error, term}
   def git_commit_timestamp(commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.commit_timestamp(agent, commit)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.commit_timestamp(ctx.repo, commit)
   end
 
   @doc """
@@ -357,9 +338,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tag_author(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
   def git_tag_author(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    with {:ok, agent} <- Repo.git_agent(ctx.repo),
-         {:ok, %{email: email} = author} <- GitAgent.tag_author(agent, tag), do:
-      batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users -> {:ok, users[email] || author} end)
+    case GitAgent.tag_author(ctx.repo, tag) do
+      {:ok, %{email: email} = author} ->
+         batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users -> {:ok, users[email] || author} end)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -367,12 +351,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tag_message(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def git_tag_message(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.tag_message(agent, tag)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.tag_message(ctx.repo, tag)
   end
 
   @doc """
@@ -380,12 +359,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tag_target(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
   def git_tag_target(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.peel(agent, tag)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.peel(ctx.repo, tag)
   end
 
   @doc """
@@ -400,12 +374,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree(Repo.git_revision, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
   def git_tree(revision, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.tree(agent, revision)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.tree(ctx.repo, revision)
   end
 
   @doc """
@@ -413,10 +382,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree_entries(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_tree_entries(args, %Absinthe.Resolution{context: ctx, source: tree} = _source) do
-    with {:ok, agent} <- Repo.git_agent(ctx.repo),
-         {:ok, stream} <- GitAgent.tree_entries(agent, tree) do
-      {slice, offset, opts} = slice_stream(stream, args)
-      Connection.from_slice(slice, offset, opts)
+    case GitAgent.tree_entries(ctx.repo, tree) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -425,12 +396,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree_entry_target(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
   def git_tree_entry_target(tree_entry, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.tree_entry_target(agent, tree_entry)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.tree_entry_target(ctx.repo, tree_entry)
   end
 
   @doc """
@@ -438,12 +404,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_blob_size(GitBlob.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def git_blob_size(blob, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case Repo.git_agent(ctx.repo) do
-      {:ok, agent} ->
-        GitAgent.blob_size(agent, blob)
-      {:error, reason} ->
-        {:error, reason}
-    end
+    GitAgent.blob_size(ctx.repo, blob)
   end
 
   @doc """

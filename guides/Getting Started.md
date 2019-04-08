@@ -38,7 +38,7 @@ These functions are compiled into a dynamic loadable, shared library. They are c
 >
 > [Erlang documentation - NIFs](http://erlang.org/doc/tutorial/nif.html)
 
-Altough in the previous example we have directly called low-level Git functions, most of the time `GitGud.Repo` provides a better entry-point to work with Git objects.
+Altough in the previous example we have directly called low-level Git functions, most of the time `GitRekt.GitAgent` provides a better entry-point to work with Git objects.
 
 Let's rewrite the last example using high-level Git helper modules:
 
@@ -51,10 +51,9 @@ repo = RepoQuery.user_repo("redrabbit", "gitgud")
 repo = Repo.load_agent!(repo)
 
 # show last commit of branch "master"
-{:ok, agent} = Repo.git_agent(repo)
-{:ok, commit, _ref} = GitAgent.revision(agent, "master")
-{:ok, author} = GitAgent.commit_author(agent, commit)
-{:ok, message} = GitAgent.commit_message(agent, commit)
+{:ok, commit, _ref} = GitAgent.revision(repo, "master")
+{:ok, author} = GitAgent.commit_author(repo, commit)
+{:ok, message} = GitAgent.commit_message(repo, commit)
 
 IO.puts "Last commit by #{author.name} <#{author.email}>:"
 IO.puts message
@@ -71,12 +70,11 @@ repo = RepoQuery.user_repo("redrabbit", "gitgud")
 repo = Repo.load_agent!(repo)
 
 # show last 10 commits
-{:ok, agent} = Repo.git_agent(repo)
-{:ok, head} = GitAgent.head(agent, repo)
-{:ok, hist} = GitAgent.history(agent, head)
+{:ok, head} = GitAgent.head(repo, repo)
+{:ok, hist} = GitAgent.history(repo, head)
 for commit <- Enum.take(hist, 10) do
-  {:ok, author} = GitAgent.commit_author(agent, commit)
-  {:ok, message} = GitAgent.commit_message(agent, commit)
+  {:ok, author} = GitAgent.commit_author(repo, commit)
+  {:ok, message} = GitAgent.commit_message(repo, commit)
   IO.puts "Commit by #{author.name} <#{author.email}>:"
   IO.puts message
 end

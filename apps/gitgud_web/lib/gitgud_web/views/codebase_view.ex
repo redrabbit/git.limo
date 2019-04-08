@@ -157,7 +157,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
   def blob_content(repo, blob) do
-    case GitAgent.blob_content(repo.__agent__, blob) do
+    case GitAgent.blob_content(repo, blob) do
       {:ok, content} -> content
       {:error, _reason} -> nil
     end
@@ -165,7 +165,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec blob_size(Repo.t, GitAgent.git_blob) :: non_neg_integer | nil
   def blob_size(repo, blob) do
-    case GitAgent.blob_size(repo.__agent__, blob) do
+    case GitAgent.blob_size(repo, blob) do
       {:ok, size} -> size
       {:error, _reason} -> nil
     end
@@ -173,7 +173,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_author(Repo.t, GitAgent.git_commit) :: map | nil
   def commit_author(repo, commit) do
-    case GitAgent.commit_author(repo.__agent__, commit) do
+    case GitAgent.commit_author(repo, commit) do
       {:ok, author} ->
         if user = UserQuery.by_email(author.email),
           do: user,
@@ -184,7 +184,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_timestamp(Repo.t, GitAgent.git_commit) :: DateTime.t | nil
   def commit_timestamp(repo, commit) do
-    case GitAgent.commit_timestamp(repo.__agent__, commit) do
+    case GitAgent.commit_timestamp(repo, commit) do
       {:ok, timestamp} -> timestamp
       {:error, _reason} -> nil
     end
@@ -192,7 +192,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_message(Repo.t, GitAgent.git_commit) :: binary | nil
   def commit_message(repo, commit) do
-    case GitAgent.commit_message(repo.__agent__, commit) do
+    case GitAgent.commit_message(repo, commit) do
       {:ok, message} -> message
       {:error, _reason} -> nil
     end
@@ -200,7 +200,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_message_title(Repo.t, GitAgent.git_commit) :: binary | nil
   def commit_message_title(repo, commit) do
-    case GitAgent.commit_message(repo.__agent__, commit) do
+    case GitAgent.commit_message(repo, commit) do
       {:ok, message} -> List.first(String.split(message, "\n", trim: true, parts: 2))
       {:error, _reason} -> nil
     end
@@ -208,7 +208,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_message_body(Repo.t, GitAgent.git_commit) :: binary | nil
   def commit_message_body(repo, commit) do
-    case GitAgent.commit_message(repo.__agent__, commit) do
+    case GitAgent.commit_message(repo, commit) do
       {:ok, message} -> List.last(String.split(message, "\n", trim: true, parts: 2))
       {:error, _reason} -> nil
     end
@@ -216,7 +216,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec commit_message_format(Repo.t, GitAgent.git_commit, keyword) :: {binary, binary | nil} | nil
   def commit_message_format(repo, commit, opts \\ []) do
-    case GitAgent.commit_message(repo.__agent__, commit) do
+    case GitAgent.commit_message(repo, commit) do
       {:ok, message} ->
         parts = String.split(message, "\n", trim: true, parts: 2)
         if length(parts) == 2,
@@ -257,7 +257,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec tree_entries(Repo.t, GitAgent.git_tree) :: [GitAgent.git_tree_entry]
   def tree_entries(repo, tree) do
-    case GitAgent.tree_entries(repo.__agent__, tree) do
+    case GitAgent.tree_entries(repo, tree) do
       {:ok, entries} -> entries
       {:error, _reason} -> []
     end
@@ -265,9 +265,9 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec tree_readme(Repo.t, GitAgent.git_tree) :: binary | nil
   def tree_readme(repo, tree) do
-    with {:ok, entry} <- GitAgent.tree_entry_by_path(repo.__agent__, tree, "README.md"),
-         {:ok, blob} <- GitAgent.tree_entry_target(repo.__agent__, entry),
-         {:ok, content} <- GitAgent.blob_content(repo.__agent__, blob),
+    with {:ok, entry} <- GitAgent.tree_entry_by_path(repo, tree, "README.md"),
+         {:ok, blob} <- GitAgent.tree_entry_target(repo, entry),
+         {:ok, content} <- GitAgent.blob_content(repo, blob),
          {:ok, html, []} <- Earmark.as_html(content) do
       raw(html)
     else
@@ -277,7 +277,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec diff_stats(Repo.t, GitAgent.git_diff) :: map | nil
   def diff_stats(repo, diff) do
-    case GitAgent.diff_stats(repo.__agent__, diff) do
+    case GitAgent.diff_stats(repo, diff) do
       {:ok, stats} -> stats
       {:error, _reason} -> nil
     end
@@ -285,7 +285,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec diff_deltas(Repo.t, GitAgent.git_diff) :: [map] | nil
   def diff_deltas(repo, diff) do
-    case GitAgent.diff_deltas(repo.__agent__, diff) do
+    case GitAgent.diff_deltas(repo, diff) do
       {:ok, deltas} -> deltas
       {:error, _reason} -> nil
     end
@@ -347,14 +347,14 @@ defmodule GitGud.Web.CodebaseView do
   #
 
   defp fetch_commit(repo, reference) do
-    case GitAgent.peel(repo.__agent__, reference) do
+    case GitAgent.peel(repo, reference) do
       {:ok, commit} -> commit
       {:error, _reason} -> nil
     end
   end
 
   defp fetch_author(repo, %{type: :reference} = reference) do
-    case GitAgent.peel(repo.__agent__, reference) do
+    case GitAgent.peel(repo, reference) do
       {:ok, commit} ->
         fetch_author(repo, commit)
       {:error, _reason} -> nil
@@ -362,14 +362,14 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp fetch_author(repo, %{type: :commit} = commit) do
-    case GitAgent.commit_author(repo.__agent__, commit) do
+    case GitAgent.commit_author(repo, commit) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end
   end
 
   defp fetch_author(repo, %{type: :tag} = tag) do
-    case GitAgent.tag_author(repo.__agent__, tag) do
+    case GitAgent.tag_author(repo, tag) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end

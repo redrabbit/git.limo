@@ -241,16 +241,6 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns the Git agent attached to the `repo` or create a new one.
-  """
-  @spec git_agent(t) :: {:ok, GitAgent.t} | {:error, term}
-  def git_agent(%__MODULE__{} = repo) do
-    if agent = repo.__agent__,
-      do: {:ok, agent},
-    else: {:error, :not_loaded}
-  end
-
-  @doc """
   Applies the given `receive_pack` command to the `repo`.
   """
   @spec git_push(t, ReceivePack.t) :: :ok | {:error, term}
@@ -268,6 +258,16 @@ defmodule GitGud.Repo do
   #
   # Protocols
   #
+
+  defimpl GitRekt.GitAgentWrapper do
+    alias GitGud.Repo
+
+    def unwrap(%Repo{__agent__: agent}) do
+      if agent,
+        do: {:ok, agent},
+      else: {:error, :missing_agent}
+    end
+  end
 
   defimpl GitGud.AuthorizationPolicies do
     alias GitGud.Repo
