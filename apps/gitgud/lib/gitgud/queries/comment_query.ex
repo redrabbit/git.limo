@@ -12,10 +12,18 @@ defmodule GitGud.CommentQuery do
 
   import Ecto.Query
 
+  @doc """
+  Returns a comment for the given `id`.
+  """
+  @spec by_id(pos_integer, keyword) :: Comment.t | nil
   def by_id(id, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :comment_query}, [id], opts))
   end
 
+  @doc """
+  Returns a query for fetching a single comment by `id`.
+  """
+  @spec comment_query(pos_integer) :: Ecto.Query.t
   def comment_query(id) do
     from(r in Comment, as: :comment, where: r.id == ^id)
   end

@@ -1,6 +1,6 @@
 defmodule GitGud.UserQuery do
   @moduledoc """
-  Conveniences for `GitGud.User` related queries.
+  Conveniences for user related queries.
   """
 
   @behaviour GitGud.DBQueryable

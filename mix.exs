@@ -46,30 +46,23 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Authorization,
           GitGud.AuthorizationPolicies
         ],
-        "Schemas": [
+        "Schemas & Queries": [
           GitGud.Auth,
           GitGud.OAuth2.Provider,
           GitGud.Comment,
+          GitGud.CommentQuery,
           GitGud.Email,
           GitGud.CommitLineReview,
           GitGud.Maintainer,
           GitGud.Repo,
           GitGud.RepoQuery,
+          GitGud.ReviewQuery,
           GitGud.SSHKey,
           GitGud.User,
           GitGud.UserQuery
         ],
         "Deployment": [
           GitGud.ReleaseTasks
-        ],
-        "Git helpers": [
-          GitGud.GitBlob,
-          GitGud.GitCommit,
-          GitGud.GitDiff,
-          GitGud.GitReference,
-          GitGud.GitTag,
-          GitGud.GitTree,
-          GitGud.GitTreeEntry,
         ],
         "Git Transfer Protocols": [
           GitGud.SSHServer,
@@ -102,6 +95,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.Gravatar,
           GitGud.Web.LandingPageController,
           GitGud.Web.MaintainerController,
+          GitGud.Web.Markdown,
           GitGud.Web.NavigationHelpers,
           GitGud.Web.OAuth2Controller,
           GitGud.Web.PaginationHelpers,
@@ -114,6 +108,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.UserSocket
         ],
         "Git low-level APIs": [
+          GitRekt.GitAgent,
           GitRekt.Git,
           GitRekt.Packfile,
           GitRekt.WireProtocol,

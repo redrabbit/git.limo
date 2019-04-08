@@ -1,4 +1,6 @@
 defmodule GitGud.GraphQL.CacheRepoMiddleware do
+  @moduledoc false
+
   @behaviour Absinthe.Middleware
 
   alias GitGud.Repo

@@ -43,16 +43,18 @@ Altough in the previous example we have directly called low-level Git functions,
 Let's rewrite the last example using high-level Git helper modules:
 
 ```elixir
-alias GitGud.{Repo, RepoQuery, GitCommit}
+alias GitGud.{Repo, RepoQuery}
+alias GitRekt.GitAgent
 
 # load repository
 repo = RepoQuery.user_repo("redrabbit", "gitgud")
-repo = Repo.load(repo)
+repo = Repo.load_agent!(repo)
 
 # show last commit of branch "master"
-{:ok, commit, _ref} = Repo.git_revision(repo, "master")
-{:ok, author} = GitCommit.author(commit)
-{:ok, message} = GitCommit.message(commit)
+{:ok, agent} = Repo.git_agent(repo)
+{:ok, commit, _ref} = GitAgent.revision(agent, "master")
+{:ok, author} = GitAgent.commit_author(agent, commit)
+{:ok, message} = GitAgent.commit_message(agent, commit)
 
 IO.puts "Last commit by #{author.name} <#{author.email}>:"
 IO.puts message
@@ -61,19 +63,21 @@ IO.puts message
 Here's a slightly more complex example displaying the last 10 commits:
 
 ```elixir
-alias GitGud.{Repo, RepoQuery, GitCommit}
+alias GitGud.{Repo, RepoQuery}
+alias GitRekt.GitAgent
 
 # load repository
 repo = RepoQuery.user_repo("redrabbit", "gitgud")
-repo = Repo.load(repo)
+repo = Repo.load_agent!(repo)
 
 # show last 10 commits
-{:ok, head} = Repo.git_head(repo)
-{:ok, hist} = Repo.git_history(head)
+{:ok, agent} = Repo.git_agent(repo)
+{:ok, head} = GitAgent.head(agent, repo)
+{:ok, hist} = GitAgent.history(agent, head)
 for commit <- Enum.take(hist, 10) do
-	{:ok, author} = GitCommit.author(commit)
-	{:ok, message} = GitCommit.message(commit)
-	IO.puts "Commit by #{author.name} <#{author.email}>:"
-	IO.puts message
+  {:ok, author} = GitAgent.commit_author(agent, commit)
+  {:ok, message} = GitAgent.commit_message(agent, commit)
+  IO.puts "Commit by #{author.name} <#{author.email}>:"
+  IO.puts message
 end
 ```

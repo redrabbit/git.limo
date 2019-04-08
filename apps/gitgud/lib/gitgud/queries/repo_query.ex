@@ -1,6 +1,6 @@
 defmodule GitGud.RepoQuery do
   @moduledoc """
-  Conveniences for `GitGud.Repo` related queries.
+  Conveniences for repository related queries.
   """
 
   @behaviour GitGud.DBQueryable
