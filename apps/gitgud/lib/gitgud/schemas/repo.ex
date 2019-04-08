@@ -151,8 +151,9 @@ defmodule GitGud.Repo do
   @doc """
   Loads the Git agent for the given `repo`.
   """
-  @spec load_agent(t) :: {:ok, t} | {:error, term}
-  def load_agent(%__MODULE__{__agent__: nil} = repo) do
+  @spec load_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
+  def load_agent(repo, type \\ :inproc)
+  def load_agent(%__MODULE__{__agent__: nil} = repo, :inproc) do
     case GitAgent.open(workdir(repo)) do
       {:ok, agent} ->
         {:ok, struct(repo, __agent__: agent)}
@@ -161,14 +162,23 @@ defmodule GitGud.Repo do
     end
   end
 
-  def load_agent(%__MODULE__{} = repo), do: repo
+  def load_agent(%__MODULE__{__agent__: nil} = repo, :shared) do
+    case GitAgent.start_link(workdir(repo)) do
+      {:ok, agent} ->
+        {:ok, struct(repo, __agent__: agent)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def load_agent(%__MODULE__{} = repo, _type), do: repo
 
   @doc """
   Similar to `load_agent/1`, but raises an exception if an error occurs.
   """
   @spec load_agent!(t) :: t
-  def load_agent!(%__MODULE__{} = repo) do
-    case load_agent(repo) do
+  def load_agent!(%__MODULE__{} = repo, type \\ :inproc) do
+    case load_agent(repo, type) do
       {:ok, repo} -> repo
       {:error, reason} -> raise reason
     end

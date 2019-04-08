@@ -251,7 +251,6 @@ defmodule GitRekt.GitAgent do
 
   @impl true
   def handle_continue({:history, stream, from}, handle) do
-    IO.inspect stream
     :ok = GenServer.reply(from, {:ok, Enum.to_list(stream)})
     {:noreply, handle}
   end
