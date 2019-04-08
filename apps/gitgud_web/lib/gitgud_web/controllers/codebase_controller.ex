@@ -40,7 +40,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, agent} <- Repo.git_agent(repo),
            {:ok, head} <- GitAgent.head(agent),
            {:ok, branches} <- GitAgent.branches(agent), do:
-        render(conn, "branch_list.html", repo: repo, head: head, branches: branches)
+        render(conn, "branch_list.html", repo: repo, head: head, branches: Enum.to_list(branches))
     end || {:error, :not_found}
   end
 
@@ -53,7 +53,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, repo} = Repo.load_agent(repo),
            {:ok, agent} <- Repo.git_agent(repo),
            {:ok, tags} <- GitAgent.tags(agent), do:
-        render(conn, "tag_list.html", repo: repo, tags: tags)
+        render(conn, "tag_list.html", repo: repo, tags: Enum.to_list(tags))
     end || {:error, :not_found}
   end
 
@@ -68,7 +68,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, commit} <- GitAgent.object(agent, oid_parse(oid)),
            {:ok, parents} <- GitAgent.commit_parents(agent, commit),
            {:ok, diff} <- GitAgent.diff(agent, Enum.at(parents, 0), commit), do:
-        render(conn, "commit.html", repo: repo, commit: commit, commit_parents: parents, diff: diff)
+        render(conn, "commit.html", repo: repo, commit: commit, commit_parents: Enum.to_list(parents), diff: diff)
     end || {:error, :not_found}
   end
 
