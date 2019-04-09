@@ -58,7 +58,7 @@
           </p>
         </header>
         <div class="card-content">
-          <%= diff_table(@conn, delta.new_file.path, delta) %>
+          <%= render("_diff_table.html", Map.put(assigns, :delta, delta)) %>
         </div>
       </div>
     </div>

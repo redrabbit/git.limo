@@ -2,11 +2,11 @@ defmodule GitGud.Web.CodebaseView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitRekt.Git
   alias GitRekt.GitAgent
 
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.Repo
   alias GitGud.ReviewQuery
 
   alias Phoenix.Param
@@ -72,88 +72,12 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec diff_table(Plug.Conn.t, Path.t, [map]) :: binary
-  def diff_table(conn, tree_path, delta) do
-    highlight_lang = highlight_language_from_path(tree_path)
-    repo_id = to_relay_id(conn.assigns.repo)
-    commit_oid = Git.oid_fmt(conn.assigns.commit.oid)
-    blob_oid = Git.oid_fmt(delta.new_file.oid)
-    content_tag(:table, [class: "blob-table diff-table", data: [repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid]], do: [
-      content_tag(:tbody, do:
-        for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do
-          [
-            content_tag(:tr, [class: "hunk"], do: [
-              content_tag(:td, "", class: "line-no", colspan: 2),
-              content_tag(:td, [class: "code", colspan: 2], do: [
-                content_tag(:div, hunk.header, class: "code-inner nohighlight")
-              ])
-            ]),
-            for {line, line_index} <- Enum.with_index(hunk.lines) do
-              line_class =
-                cond do
-                  line.origin == "+" -> "diff-addition"
-                  line.origin == "-" -> "diff-deletion"
-                  true -> ""
-                end
-              [
-                content_tag(:tr, [class: line_class], do: [
-                  (if line.old_line_no != -1,
-                    do: content_tag(:td, line.old_line_no, class: "line-no"),
-                  else: content_tag(:td, "", class: "line-no")),
-                  (if line.new_line_no != -1,
-                    do: content_tag(:td, line.new_line_no, class: "line-no"),
-                  else: content_tag(:td, "", class: "line-no")),
-                    content_tag(:td, [class: "code origin"], do: [
-                      content_tag(:button, [class: "button is-link is-small", data: [hunk: hunk_index, line: line_index]], do: [
-                        content_tag(:span, [class: "icon"], do: [
-                          content_tag(:i, "", [class: "fa fa-comment-alt"])
-                        ])
-                      ]),
-                      line.origin
-                    ]),
-                  content_tag(:td, [class: "code"], do: [
-                    content_tag(:div, line.content, class: Enum.join(["code-inner", highlight_lang], " "))
-                  ])
-                ]),
-                (if review = Map.get(line, :review),
-                  do: react_component("commit-line-review", [review_id: to_relay_id(review)], [tag: :tr, class: "inline-comments"]),
-                else: []
-                )
-              ]
-            end
-          ]
-        end
-      )
-    ])
-  end
+  @spec breadcrump_action(atom) :: atom
+  def breadcrump_action(:blob), do: :tree
+  def breadcrump_action(action), do: action
 
-  @spec batch_branches_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
-  def batch_branches_commits_authors(repo, references_commits) do
-    {references, commits} = Enum.unzip(references_commits)
-    commits_authors = batch_commits_authors(repo, commits)
-    Enum.zip(references, commits_authors)
-  end
-
-  @spec batch_tags_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
-  def batch_tags_commits_authors(repo, tags_commits) do
-    {tags, commits} = Enum.unzip(tags_commits)
-    authors = Enum.map(tags_commits, &fetch_author(repo, &1))
-    users = query_users(authors)
-    Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
-  end
-
-  @spec batch_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map}]
-  def batch_commits_authors(repo, commits) do
-    authors = Enum.map(commits, &fetch_author(repo, &1))
-    users = query_users(authors)
-    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
-  end
-
-  @spec sort_by_commit_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
-  def sort_by_commit_timestamp(repo, references_or_tags) do
-    commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
-    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
-  end
+  @spec repo_path(Repo.t) :: Path.t
+  def repo_path(repo), do: Repo.path(repo)
 
   @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
   def blob_content(repo, blob) do
@@ -317,13 +241,37 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec breadcrump_action(atom) :: atom
-  def breadcrump_action(:blob), do: :tree
-  def breadcrump_action(action), do: action
-
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do
     highlight_language(Path.extname(path))
+  end
+
+  @spec batch_branches_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
+  def batch_branches_commits_authors(repo, references_commits) do
+    {references, commits} = Enum.unzip(references_commits)
+    commits_authors = batch_commits_authors(repo, commits)
+    Enum.zip(references, commits_authors)
+  end
+
+  @spec batch_tags_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
+  def batch_tags_commits_authors(repo, tags_commits) do
+    {tags, commits} = Enum.unzip(tags_commits)
+    authors = Enum.map(tags_commits, &fetch_author(repo, &1))
+    users = query_users(authors)
+    Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
+  end
+
+  @spec batch_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map}]
+  def batch_commits_authors(repo, commits) do
+    authors = Enum.map(commits, &fetch_author(repo, &1))
+    users = query_users(authors)
+    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
+  end
+
+  @spec sort_by_commit_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
+  def sort_by_commit_timestamp(repo, references_or_tags) do
+    commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
+    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
   end
 
   @spec title(atom, map) :: binary

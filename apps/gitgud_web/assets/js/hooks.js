@@ -42,12 +42,12 @@ export default () => {
         if(td.classList.contains("origin")) {
           td.querySelector("button").addEventListener("click", event => {
             let tr = td.parentElement
-            if(!tr.nextSibling || !tr.nextSibling.classList.contains("inline-comments")) {
+            if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
               let row = table.insertRow(tr.rowIndex+1);
               row.classList.add("inline-comments")
               ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), row);
             }
-            tr.nextSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
+            tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
           })
           origin = td
         } else {
