@@ -19,7 +19,8 @@ defmodule GitGud.Umbrella.Mixfile do
 
   defp deps do
     [{:distillery, "~> 2.0"},
-     {:ex_doc, "~> 0.20", only: :dev, runtime: false}]
+     {:benchee, "~> 1.0", only: :dev},
+     {:ex_doc, "~> 0.20", only: :dev}]
   end
 
   defp aliases do
