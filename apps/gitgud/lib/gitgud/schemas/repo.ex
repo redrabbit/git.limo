@@ -259,16 +259,6 @@ defmodule GitGud.Repo do
   # Protocols
   #
 
-  defimpl GitRekt.GitAgentWrapper do
-    alias GitGud.Repo
-
-    def unwrap(%Repo{__agent__: agent}) do
-      if agent,
-        do: {:ok, agent},
-      else: {:error, :missing_agent}
-    end
-  end
-
   defimpl GitGud.AuthorizationPolicies do
     alias GitGud.Repo
 

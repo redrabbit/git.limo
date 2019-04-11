@@ -22,8 +22,8 @@ defmodule GitRekt.GitAgent do
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
-  @spec start_link(Path.t) :: GenServer.on_start
-  def start_link(path), do: GenServer.start_link(__MODULE__, path)
+  @spec start_link(Path.t, keyword) :: GenServer.on_start
+  def start_link(path, opts \\ []), do: GenServer.start_link(__MODULE__, path, opts)
 
   @doc """
   Opens the Git repository at the given `path`.
@@ -259,6 +259,10 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
+  defp call(%{__agent__: agent}, op), do: call(agent, op)
+  defp call(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
+  defp call(agent, op) when is_reference(agent), do: call(op, agent)
+
   defp call(:head, handle) do
     case Git.reference_resolve(handle, "HEAD") do
       {:ok, name, shorthand, oid} ->
@@ -370,18 +374,6 @@ defmodule GitRekt.GitAgent do
   defp call({:blob_size, %{type: :blob, blob: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj}, handle), do: fetch_target(obj, handle)
-
-  defp call(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
-  defp call(agent, op) when is_reference(agent), do: call(op, agent)
-  defp call(wrapper, op) do
-    case GitRekt.GitAgentWrapper.unwrap(wrapper) do
-      {:ok, agent} ->
-        call(agent, op)
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
 
   defp call_stream(op, handle) do
     case call(op, handle) do
