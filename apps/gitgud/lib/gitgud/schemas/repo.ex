@@ -3,7 +3,10 @@ defmodule GitGud.Repo do
   Git repository schema and helper functions.
 
   A `GitGud.Repo` is used to create, update and delete Git repositories.
-  It also provides a set of helper functions to run Git related functions.
+
+  Beside providing a set of helpers function used for *CRUD* operation on the
+  schema and it's associations, this module is also the entry-point (see
+  `load_agent/2`) for interactive with the underlying Git repository.
   """
 
   use Ecto.Schema
@@ -148,11 +151,27 @@ defmodule GitGud.Repo do
     end
   end
 
-  @doc """
+  @doc ~S"""
   Loads the Git agent for the given `repo`.
+
+  Once loaded, an agent can be used to interact with the underlying Git repository:
+
+  ```elixir
+  {:ok, repo} = GitGud.Repo.load_agent(repo)
+  {:ok, head} = GitRekt.GitAgent.head(repo)
+  IO.puts "current branch: #{head.name}"
+  ```
+
+  Often times, it might be preferable to manipulate Git objects in a dedicated process.
+  For example when you want to access a single repository from multiple processes simultaneously.
+
+  For such cases, you can explicitly tell to load the agent in `:shared` mode.
+
+  In shared mode, `GitRekt.GitAgent` does not operate on the `t:GitRekt.Git.repo/0` pointer directly.
+  Instead it starts a dedicated process and executes commands via message passing.
   """
   @spec load_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
-  def load_agent(repo, type \\ :inproc)
+  def load_agent(repo, mode \\ :inproc)
   def load_agent(%__MODULE__{__agent__: nil} = repo, :inproc) do
     arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
     case Git.repository_load(arg) do
@@ -173,14 +192,14 @@ defmodule GitGud.Repo do
     end
   end
 
-  def load_agent(%__MODULE__{} = repo, _type), do: repo
+  def load_agent(%__MODULE__{} = repo, _mode), do: repo
 
   @doc """
   Similar to `load_agent/1`, but raises an exception if an error occurs.
   """
   @spec load_agent!(t) :: t
-  def load_agent!(%__MODULE__{} = repo, type \\ :inproc) do
-    case load_agent(repo, type) do
+  def load_agent!(%__MODULE__{} = repo, mode \\ :inproc) do
+    case load_agent(repo, mode) do
       {:ok, repo} -> repo
       {:error, reason} -> raise reason
     end
@@ -243,10 +262,15 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Applies the given `receive_pack` command to the `repo`.
+  Applies the given `receive_pack` to the `repo`.
+
+  This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
+  It is responsible for writing objects and references to the underlying Git repository.
+
+  See `GitRekt.WireProtocol.ReceivePack` for more details.
   """
-  @spec git_push(t, ReceivePack.t) :: :ok | {:error, term}
-  def git_push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
+  @spec push(t, ReceivePack.t) :: :ok | {:error, term}
+  def push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
     with {:ok, oids} <- ReceivePack.apply_pack(receive_pack),
           :ok <- ReceivePack.apply_cmds(receive_pack),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do

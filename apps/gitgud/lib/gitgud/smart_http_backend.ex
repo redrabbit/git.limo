@@ -163,7 +163,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_exec(exec, repo, data) do
     repo.__agent__
-    |> WireProtocol.new(exec, callback: {Repo, :git_push, [repo]})
+    |> WireProtocol.new(exec, callback: {Repo, :push, [repo]})
     |> WireProtocol.run(data, skip: 1)
     |> elem(1)
   end
