@@ -26,6 +26,12 @@ defmodule GitRekt.GitAgent do
   def start_link(arg, opts \\ []), do: GenServer.start_link(__MODULE__, arg, opts)
 
   @doc """
+  Returns `true` if the repository is empty; otherwise returns `false`.
+  """
+  @spec empty?(agent) :: {:ok, boolean} | {:error, term}
+  def empty?(agent), do: call(agent, :empty?)
+
+  @doc """
   Returns the Git reference.
   """
   @spec head(agent) :: {:ok, git_reference} | {:error, term}
@@ -256,6 +262,10 @@ defmodule GitRekt.GitAgent do
   defp call(%{__agent__: agent}, op), do: call(agent, op)
   defp call(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
   defp call(agent, op) when is_reference(agent), do: call(op, agent)
+
+  defp call(:empty?, handle) do
+    {:ok, Git.repository_empty?(handle)}
+  end
 
   defp call(:head, handle) do
     case Git.reference_resolve(handle, "HEAD") do
