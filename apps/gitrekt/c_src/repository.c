@@ -2,6 +2,7 @@
 #include "object.h"
 #include "oid.h"
 #include "config.h"
+#include "postgres_backend.h"
 #include "geef.h"
 #include <string.h>
 #include <git2.h>
@@ -62,6 +63,61 @@ geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	if (git_repository_open(&repo, (char *) bin.data) < 0)
 		return geef_error(env);
+
+	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
+	res_repo->repo = repo;
+	term_repo = enif_make_resource(env, res_repo);
+	enif_release_resource(res_repo);
+
+	return enif_make_tuple2(env, atoms.ok, term_repo);
+}
+
+ERL_NIF_TERM
+geef_repository_open_postgres(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    PGconn *conn;
+	ErlNifBinary bin;
+    git_repository *repo;
+    git_odb *odb;
+    git_odb_backend *odb_backend;
+    git_refdb *refdb;
+    git_refdb_backend *refdb_backend;
+	int64_t repo_id;
+    int error;
+	geef_repository *res_repo;
+	ERL_NIF_TERM term_repo;
+
+
+	if (!enif_get_int64(env, argv[0], &repo_id))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&bin))
+		return geef_oom(env);
+
+	if (pq_connect(&conn, (char *)bin.data))
+		return GIT_ERROR;
+
+    error = git_odb_new(&odb);
+    if (!error)
+        error = git_repository_wrap_odb(&repo, odb);
+    if (!error)
+        error = git_odb_backend_postgres(&odb_backend, conn, repo_id);
+    if (!error)
+        error = git_odb_add_backend(odb, odb_backend, 1);
+    if (!error)
+        error = git_refdb_new(&refdb, repo);
+    if (!error)
+        error = git_refdb_backend_postgres(&refdb_backend, conn, repo_id);
+    if (!error)
+        error = git_refdb_set_backend(refdb, refdb_backend);
+    if (!error)
+        git_repository_set_refdb(repo, refdb);
+
+    if (error)
+        return geef_error(env);
 
 	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
 	res_repo->repo = repo;

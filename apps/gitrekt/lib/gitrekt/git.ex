@@ -84,6 +84,15 @@ defmodule GitRekt.Git do
     raise Code.LoadError, file: @nif_path_lib
   end
 
+  def repository_open(:postgres, repo_id, db_url) do
+    repository_open_postgres(repo_id, db_url)
+  end
+
+  @doc false
+  def repository_open_postgres(_repo_id, _db_url) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
   @doc """
   Returns `true` if `repo` is bare; elsewhise returns `false`.
   """

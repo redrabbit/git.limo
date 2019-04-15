@@ -4,6 +4,7 @@ defmodule GitRekt.WireProtocol do
   """
 
   alias GitRekt.Git
+  alias GitRekt.GitAgent
   alias GitRekt.Packfile
 
   @upload_caps ~w(thin-pack multi_ack multi_ack_detailed)
@@ -86,9 +87,9 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a stream describing each ref and it current value.
   """
-  @spec reference_discovery(Git.repo, binary) :: iolist
-  def reference_discovery(repo, service) do
-    [reference_head(repo), reference_list(repo), reference_tags(repo)]
+  @spec reference_discovery(GitAgent.agent, binary) :: iolist
+  def reference_discovery(agent, service) do
+    [reference_head(agent), reference_branches(agent), reference_tags(agent)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
     |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
@@ -154,36 +155,26 @@ defmodule GitRekt.WireProtocol do
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
 
-  defp format_ref_line({oid, refname}), do: "#{Git.oid_fmt(oid)} #{refname}"
+  defp format_ref_line(ref), do: "#{Git.oid_fmt(ref.oid)} #{ref.prefix <> ref.name}"
 
-  defp reference_head(repo) do
-    case Git.reference_resolve(repo, "HEAD") do
-      {:ok, _refname, _shorthand, oid} -> {oid, "HEAD"}
+  defp reference_head(agent) do
+    case GitAgent.head(agent) do
+      {:ok, head} -> %{head|prefix: "", name: "HEAD"}
       {:error, _reason} -> []
     end
   end
 
-  defp reference_list(repo) do
-    case Git.reference_stream(repo, "refs/heads/*") do
-      {:ok, stream} -> Enum.map(stream, fn {refname, _shortand, :oid, oid} -> {oid, refname} end)
+  defp reference_branches(agent) do
+    case GitAgent.branches(agent) do
+      {:ok, stream} -> Enum.to_list(stream)
       {:error, _reason} -> []
     end
   end
 
-  defp reference_tags(repo) do
-    case Git.reference_stream(repo, "refs/tags/*") do
-      {:ok, stream} -> Enum.map(stream, &peel_tag_ref(repo, &1))
+  defp reference_tags(agent) do
+    case GitAgent.tags(agent) do
+      {:ok, stream} -> Enum.to_list(stream)
       {:error, _reason} -> []
-    end
-  end
-
-  defp peel_tag_ref(repo, {refname, _shorthand, :oid, oid}) do
-    with {:ok, :tag, tag} <- Git.object_lookup(repo, oid),
-         {:ok, :commit, ^oid, commit} <- Git.tag_peel(tag),
-         {:ok, tag_oid} <- Git.object_id(commit) do
-      [{tag_oid, refname}, {oid, refname <> "^{}"}]
-    else
-      {:ok, :commit, _commit} -> {oid, refname}
     end
   end
 
