@@ -27,7 +27,7 @@ defmodule GitGud.SmartHTTPBackend do
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
 
-  alias GitRekt.Git
+  alias GitRekt.GitAgent
   alias GitRekt.WireProtocol
 
   alias GitGud.Auth
@@ -116,9 +116,9 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_info_refs(conn, repo, service) do
     if authorized?(conn, repo, service) do
-      case Git.repository_open(Repo.workdir(repo)) do
-        {:ok, handle} ->
-          refs = WireProtocol.reference_discovery(handle, service)
+      case Repo.load_agent(repo) do
+        {:ok, repo} ->
+          refs = WireProtocol.reference_discovery(repo, service)
           info = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
           conn
           |> put_resp_content_type("application/x-#{service}-advertisement")
@@ -133,9 +133,9 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_head_ref(conn, repo) do
     if authorized?(conn, repo, :read) do
-      with {:ok, handle} <- Git.repository_open(Repo.workdir(repo)),
-           {:ok, target, _oid} <- Git.reference_resolve(handle, "HEAD") do
-        send_resp(conn, :ok, "ref: #{target}")
+      with {:ok, repo} <- Repo.load_agent(repo),
+           {:ok, head} <- GitAgent.head(repo) do
+        send_resp(conn, :ok, "ref: #{head.prefix <> head.name}")
       else
         {:error, reason} ->
           conn
@@ -148,10 +148,10 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_pack(conn, repo, service) do
     if authorized?(conn, repo, service) do
       with {:ok, body, conn} <- read_body_full(conn),
-           {:ok, handle} <- Git.repository_open(Repo.workdir(repo)) do
+           {:ok, repo} <- Repo.load_agent(repo) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(service, {repo, handle}, body))
+        |> send_resp(:ok, git_exec(service, repo, body))
       else
         {:error, reason} ->
           conn
@@ -161,8 +161,8 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_exec(exec, {repo, handle}, data) do
-    handle
+  defp git_exec(exec, repo, data) do
+    repo.__agent__
     |> WireProtocol.new(exec, callback: {Repo, :git_push, [repo]})
     |> WireProtocol.run(data, skip: 1)
     |> elem(1)

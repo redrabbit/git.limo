@@ -79,13 +79,24 @@ defmodule GitRekt.Git do
   @doc """
   Returns a repository handle for the `path`.
   """
+  @spec repository_load(Path.t) :: {:ok, repo} | {:error, term}
+  def repository_load(path) when is_binary(path), do: repository_open(path)
+
+  @doc """
+  Returns a repository handle for a custom backend.
+  """
+  @spec repository_load({atom, [term]}) :: {:ok, repo} | {:error, term}
+  def repository_load({backend, args} = _backend_spec) do
+    {fun, _arity} = __ENV__.function
+    apply(__MODULE__, String.to_atom("repository_open_#{backend}"), args)
+  end
+
+  @doc """
+  Returns a repository handle for the `path`.
+  """
   @spec repository_open(Path.t) :: {:ok, repo} | {:error, term}
   def repository_open(_path) do
     raise Code.LoadError, file: @nif_path_lib
-  end
-
-  def repository_open(:postgres, repo_id, db_url) do
-    repository_open_postgres(repo_id, db_url)
   end
 
   @doc false

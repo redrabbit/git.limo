@@ -23,13 +23,7 @@ defmodule GitRekt.GitAgent do
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
   @spec start_link(Path.t, keyword) :: GenServer.on_start
-  def start_link(path, opts \\ []), do: GenServer.start_link(__MODULE__, path, opts)
-
-  @doc """
-  Opens the Git repository at the given `path`.
-  """
-  @spec open(Path.t) :: {:ok, Git.repo} | {:error, term}
-  def open(path), do: Git.repository_open(path)
+  def start_link(arg, opts \\ []), do: GenServer.start_link(__MODULE__, arg, opts)
 
   @doc """
   Returns the Git reference.
@@ -210,8 +204,8 @@ defmodule GitRekt.GitAgent do
   #
 
   @impl true
-  def init(path) do
-    case Git.repository_open(path) do
+  def init(arg) do
+    case Git.repository_load(arg) do
       {:ok, handle} ->
         {:ok, handle}
       {:error, reason} ->

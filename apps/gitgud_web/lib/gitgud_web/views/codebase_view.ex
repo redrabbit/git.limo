@@ -76,9 +76,6 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(:blob), do: :tree
   def breadcrump_action(action), do: action
 
-  @spec repo_path(Repo.t) :: Path.t
-  def repo_path(repo), do: Repo.path(repo)
-
   @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
   def blob_content(repo, blob) do
     case GitAgent.blob_content(repo, blob) do
@@ -211,7 +208,7 @@ defmodule GitGud.Web.CodebaseView do
   def diff_deltas(repo, diff) do
     case GitAgent.diff_deltas(repo, diff) do
       {:ok, deltas} -> deltas
-      {:error, _reason} -> nil
+      {:error, _reason} -> []
     end
   end
 

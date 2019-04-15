@@ -154,7 +154,8 @@ defmodule GitGud.Repo do
   @spec load_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
   def load_agent(repo, type \\ :inproc)
   def load_agent(%__MODULE__{__agent__: nil} = repo, :inproc) do
-    case GitAgent.open(workdir(repo)) do
+    arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
+    case Git.repository_load(arg) do
       {:ok, agent} ->
         {:ok, struct(repo, __agent__: agent)}
       {:error, reason} ->
@@ -163,7 +164,8 @@ defmodule GitGud.Repo do
   end
 
   def load_agent(%__MODULE__{__agent__: nil} = repo, :shared) do
-    case GitAgent.start_link(workdir(repo)) do
+    arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
+    case GitAgent.start_link(arg) do
       {:ok, agent} ->
         {:ok, struct(repo, __agent__: agent)}
       {:error, reason} ->
@@ -292,6 +294,9 @@ defmodule GitGud.Repo do
   # Helpers
   #
 
+  defp repo_load_param(repo, :filesystem), do: workdir(repo)
+  defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
+
   defp create_and_init(changeset, bare?) do
     Multi.new()
     |> Multi.insert(:repo, changeset)
@@ -326,10 +331,24 @@ defmodule GitGud.Repo do
   end
 
   defp init(_db, %{repo: repo}, bare?) do
-    Git.repository_init(workdir(repo), bare?)
+    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
+      do: Git.repository_init(workdir(repo), bare?),
+    else: {:ok, :noop}
   end
 
   defp rename(_db, %{repo: repo}, changeset) do
+    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
+      do: move_workdir(repo, changeset),
+    else: {:ok, :noop}
+  end
+
+  defp cleanup(_db, %{repo: repo}) do
+    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
+      do: File.rm_rf(workdir(repo)),
+    else: {:ok, :noop}
+  end
+
+  defp move_workdir(repo, changeset) do
     old_workdir = workdir(changeset.data)
     if get_change(changeset, :name) do
       new_workdir = workdir(repo)
@@ -342,7 +361,13 @@ defmodule GitGud.Repo do
     end
   end
 
-  defp cleanup(_db, %{repo: repo}) do
-    File.rm_rf(workdir(repo))
+  defp postgres_url(conf) do
+    to_string(%URI{
+      scheme: "postgresql",
+      host: Keyword.get(conf, :hostname),
+      port: Keyword.get(conf, :port),
+      path: "/#{Keyword.get(conf, :database)}",
+      userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
+    })
   end
 end

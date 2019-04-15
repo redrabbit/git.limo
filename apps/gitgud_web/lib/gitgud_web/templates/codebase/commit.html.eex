@@ -37,7 +37,7 @@
 
 <div class="columns">
   <div class="column">
-    <%= with stats <- diff_stats(@repo, @diff) do %>
+    <%= if stats = diff_stats(@repo, @diff) do %>
       <p>Showing <%= stats.files_changed %> changed files with <%= stats.insertions %> additions and <%= stats.deletions %> deletions.</p>
     <% end %>
   </div>
