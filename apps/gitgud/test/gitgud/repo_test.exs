@@ -11,7 +11,6 @@ defmodule GitGud.RepoTest do
     assert {:ok, repo} = Repo.create(factory(:repo, user))
     assert user.id in Enum.map(repo.maintainers, &(&1.id))
     assert File.dir?(Repo.workdir(repo))
-    assert Repo.empty?(repo)
     File.rm_rf!(Repo.workdir(repo))
   end
 

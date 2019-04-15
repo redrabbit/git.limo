@@ -2,6 +2,8 @@ defmodule GitGud.SSHServerTest do
   use GitGud.DataCase
   use GitGud.DataFactory
 
+  alias GitRekt.GitAgent
+
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.SSHKey
@@ -49,13 +51,13 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, ref} = Repo.git_head(repo)
-      assert {:ok, commit} = GitGud.GitReference.target(ref)
-      assert {:ok, "Initial commit\n"} = GitGud.GitCommit.message(commit)
-      assert {:ok, tree} = Repo.git_tree(commit)
-      assert {:ok, tree_entry} = GitGud.GitTree.by_path(tree, "README.md")
-      assert {:ok, blob} = GitGud.GitTreeEntry.target(tree_entry)
-      assert {:ok, ^readme_content} = GitGud.GitBlob.content(blob)
+      assert {:ok, head} = GitAgent.head(repo)
+      assert {:ok, commit} = GitAgent.peel(repo, head)
+      assert {:ok, "Initial commit\n"} = GitAgent.commit_message(repo, commit)
+      assert {:ok, tree} = GitAgent.tree(repo, commit)
+      assert {:ok, tree_entry} = GitAgent.tree_entry_by_path(repo, tree, "README.md")
+      assert {:ok, blob} = GitAgent.tree_entry_target(repo, tree_entry)
+      assert {:ok, ^readme_content} = GitAgent.blob_content(repo, blob)
     end
 
     test "pushes repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
@@ -63,8 +65,8 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, ref} = Repo.git_head(repo)
-      output = GitRekt.Git.oid_fmt(ref.oid) <> "\n"
+      assert {:ok, head} = GitAgent.head(repo)
+      output = GitRekt.Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
   end
@@ -74,8 +76,8 @@ defmodule GitGud.SSHServerTest do
 
     test "clones repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
-      assert {:ok, ref} = Repo.git_head(repo)
-      output = GitRekt.Git.oid_fmt(ref.oid) <> "\n"
+      assert {:ok, head} = GitAgent.head(repo)
+      output = GitRekt.Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
   end
