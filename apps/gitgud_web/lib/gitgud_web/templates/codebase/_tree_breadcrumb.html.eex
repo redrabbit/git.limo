@@ -1,4 +1,4 @@
-<%= if Map.has_key?(assigns, :tree_path) && !Enum.empty?(@tree_path) do %>
+<%= unless Enum.empty?(@tree_path) do %>
   <%= with {:codebase, action} <- current_route(@conn) do %>
     <nav class="breadcrumb" aria-label="breadcrumbs">
       <ul>

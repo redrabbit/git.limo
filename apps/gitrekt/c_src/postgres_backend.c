@@ -170,8 +170,8 @@ int postgres_odb_backend__write(git_odb_backend *_backend, const git_oid *oid, c
 	const int64_t repo_id = htonll(backend->repo_id);
 	const int type_n = htonl(type);
 	const int size_n = htonl(len);
-	const char *paramValues[5] = {oid->id, (char *)&repo_id, (char *)&type_n, (char *)&size_n, (char*)data};
-	const int paramLengths[5] = {20, sizeof(repo_id), sizeof(type_n), sizeof(size_n), len};
+	const char *paramValues[5] = {(char *)&repo_id, oid->id, (char *)&type_n, (char *)&size_n, (char*)data};
+	const int paramLengths[5] = {sizeof(repo_id), 20, sizeof(type_n), sizeof(size_n), len};
 	const int paramFormats[5] = {1, 1, 1, 1, 1};
 
 	result = PQexecParams(backend->conn, "INSERT INTO " GIT_ODB_TABLE_NAME " VALUES ($1, $2, $3, $4, $5)", 5, NULL, paramValues, paramLengths, paramFormats, 0);
@@ -383,18 +383,18 @@ int postgres_refdb_backend__write(git_refdb_backend *_backend, const git_referen
 
 	const int64_t repo_id = htonll(backend->repo_id);
 	if (target) {
-		const char *paramValues[3] = {name, (char *) &repo_id, target->id};
-		int paramLengths[3] = {strlen(name), sizeof(repo_id), 20};
-		int paramFormats[3] = {0, 1, 1};
+		const char *paramValues[3] = {(char *)&repo_id, name, target->id};
+		int paramLengths[3] = {sizeof(repo_id), strlen(name), 20};
+		int paramFormats[3] = {1, 0, 1};
         if(force == 1) {
             result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, NULL, $3) ON CONFLICT ON CONSTRAINT git_references_pkey DO UPDATE SET oid = $3, symlink = NULL", 3, NULL, paramValues, paramLengths, paramFormats, 0);
         } else {
             result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, NULL, $3) ON CONFLICT ON CONSTRAINT git_references_pkey DO NOTHING", 3, NULL, paramValues, paramLengths, paramFormats, 0);
         }
 	} else {
-		const char *paramValues[3] = {name, (char *) &repo_id, symbolic_target};
-		int paramLengths[3] = {strlen(name), sizeof(repo_id), strlen(symbolic_target)};
-		int paramFormats[3] = {0, 1, 0};
+		const char *paramValues[3] = {(char *)&repo_id, name, symbolic_target};
+		int paramLengths[3] = {sizeof(repo_id), strlen(name), strlen(symbolic_target)};
+		int paramFormats[3] = {1, 0, 0};
         if(force == 1) {
             result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, $3, NULL) ON CONFLICT ON CONSTRAINT git_references_pkey DO UPDATE SET symlink = $3, oid = NULL", 3, NULL, paramValues, paramLengths, paramFormats, 0);
         } else {

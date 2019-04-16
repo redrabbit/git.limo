@@ -428,7 +428,8 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec create_git_commit_line_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_git_commit_line_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
-    CommitLineReview.add_comment(from_relay_id(repo_id), commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
+    repo = RepoQuery.by_id(from_relay_id(repo_id))
+    CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
   end
 
   @doc """

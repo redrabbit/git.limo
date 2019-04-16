@@ -42,11 +42,11 @@ defmodule GitGud.CommitLineReview do
   @doc """
   Adds a new comment.
   """
-  @spec add_comment(pos_integer, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary) :: {:ok, Comment.t} | {:error, term}
-  def add_comment(repo_id, commit_oid, blob_oid, hunk, line, author, body) do
-    case DB.transaction(insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author, body)) do
+  @spec add_comment(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary) :: {:ok, Comment.t} | {:error, term}
+  def add_comment(repo, commit_oid, blob_oid, hunk, line, author, body) do
+    case DB.transaction(insert_review_comment(repo.id, commit_oid, blob_oid, hunk, line, author.id, body)) do
       {:ok, %{comment: comment}} ->
-        {:ok, struct(comment, author: author)}
+        {:ok, struct(comment, repo: repo, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
@@ -69,11 +69,11 @@ defmodule GitGud.CommitLineReview do
   # Helpers
   #
 
-  defp insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author, body) do
+  defp insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author_id, body) do
     review_opts = [on_conflict: {:replace, [:updated_at]}, conflict_target: [:repo_id, :commit_oid, :blob_oid, :hunk, :line]]
     Multi.new()
     |> Multi.insert(:review, changeset(%__MODULE__{}, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
-    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{author_id: author && author.id, body: body}))
+    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{repo_id: repo_id, author_id: author_id, body: body}))
     |> Multi.run(:line_review_comment, fn db, %{review: review, comment: comment} ->
       case db.insert_all("commit_line_reviews_comments", [%{review_id: review.id, comment_id: comment.id}]) do
         {1, val} -> {:ok, val}
