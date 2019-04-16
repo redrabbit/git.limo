@@ -34,8 +34,6 @@ typedef struct {
 
 int postgres_odb_backend__read(void **data_p, size_t *len_p, git_otype *type_p, git_odb_backend *_backend, const git_oid *oid)
 {
-	printf("postgres_odb_backend__read(%s)\n", git_oid_tostr_s(oid));
-
 	PGresult *result;
 	postgres_odb_backend *backend;
 
@@ -74,8 +72,6 @@ int postgres_odb_backend__read(void **data_p, size_t *len_p, git_otype *type_p, 
 
 int postgres_odb_backend__read_prefix(git_oid *out_oid, void **data_p, size_t *len_p, git_otype *type_p, git_odb_backend *_backend, const git_oid *short_oid, unsigned int len)
 {
-	printf("postgres_odb_backend__read_prefix(%s)\n", git_oid_tostr_s(short_oid));
-
 	if (len >= GIT_OID_HEXSZ) {
 		/* Just match the full identifier */
 		int error = postgres_odb_backend__read(data_p, len_p, type_p, _backend, short_oid);
@@ -90,8 +86,6 @@ int postgres_odb_backend__read_prefix(git_oid *out_oid, void **data_p, size_t *l
 
 int postgres_odb_backend__read_header(size_t *len_p, git_otype *type_p, git_odb_backend *_backend, const git_oid *oid)
 {
-	printf("postgres_odb_backend__read_header(%s)\n", git_oid_tostr_s(oid));
-
 	PGresult *result;
 	postgres_odb_backend *backend;
 
@@ -123,8 +117,6 @@ int postgres_odb_backend__read_header(size_t *len_p, git_otype *type_p, git_odb_
 
 int postgres_odb_backend__exists(git_odb_backend *_backend, const git_oid *oid)
 {
-	printf("postgres_odb_backend__exists(%s)\n", git_oid_tostr_s(oid));
-
 	postgres_odb_backend *backend;
 	int found;
 	PGresult *result;
@@ -155,8 +147,6 @@ int postgres_odb_backend__exists(git_odb_backend *_backend, const git_oid *oid)
 
 int postgres_odb_backend__write(git_odb_backend *_backend, const git_oid *oid, const void *data, size_t len, git_otype type)
 {
-	printf("postgres_odb_backend__write(%s)\n", git_oid_tostr_s(oid));
-
 	PGresult *result;
 	postgres_odb_backend *backend;
 
@@ -186,8 +176,6 @@ int postgres_odb_backend__write(git_odb_backend *_backend, const git_oid *oid, c
 
 void postgres_odb_backend__free(git_odb_backend *_backend)
 {
-	printf("postgres_odb_backend__free()\n");
-
 	postgres_odb_backend *backend;
 
 	assert(_backend);
@@ -200,8 +188,6 @@ void postgres_odb_backend__free(git_odb_backend *_backend)
 
 int postgres_refdb_backend__exists(int *exists, git_refdb_backend *_backend, const char *ref_name)
 {
-	printf("postgres_refdb_backend__exists(%s)\n", ref_name);
-
 	PGresult *result;
 	int found = 0;
 	postgres_refdb_backend *backend;
@@ -229,8 +215,6 @@ int postgres_refdb_backend__exists(int *exists, git_refdb_backend *_backend, con
 
 int postgres_refdb_backend__lookup(git_reference **out, git_refdb_backend *_backend, const char *ref_name)
 {
-	printf("postgres_refdb_backend__lookup(%s)\n", ref_name);
-
 	PGresult *result;
 	git_oid oid;
 	char *symlink;
@@ -269,8 +253,6 @@ int postgres_refdb_backend__lookup(git_reference **out, git_refdb_backend *_back
 }
 
 int postgres_refdb_backend__iterator_next(git_reference **out, git_reference_iterator *_iter) {
-	printf("postgres_refdb_backend__iterator_next()\n");
-
 	char* ref_name;
 	char *symlink;
 	git_oid oid;
@@ -292,8 +274,6 @@ int postgres_refdb_backend__iterator_next(git_reference **out, git_reference_ite
 }
 
 int postgres_refdb_backend__iterator_next_name(const char **ref_name, git_reference_iterator *_iter) {
-	printf("postgres_refdb_backend__iterator_next_name()\n");
-
 	postgres_refdb_iterator *iter;
 
 	assert(_iter);
@@ -318,8 +298,6 @@ void postgres_refdb_backend__iterator_free(git_reference_iterator *_iter) {
 
 int postgres_refdb_backend__iterator(git_reference_iterator **_iter, struct git_refdb_backend *_backend, const char *glob)
 {
-	printf("postgres_refdb_backend__iterator(%s)\n", glob);
-
 	PGresult *result;
 	char *pattern;
 	char *current_pos;
@@ -370,7 +348,6 @@ int postgres_refdb_backend__write(git_refdb_backend *_backend, const git_referen
 
 	PGresult *result;
 	const char *name = git_reference_name(ref);
-	printf("postgres_refdb_backend__write(%s, %d)\n", name, force);
 	const git_oid *target;
 	const char *symbolic_target;
 	postgres_refdb_backend *backend;
@@ -398,7 +375,7 @@ int postgres_refdb_backend__write(git_refdb_backend *_backend, const git_referen
         if(force == 1) {
             result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, $3, NULL) ON CONFLICT ON CONSTRAINT git_references_pkey DO UPDATE SET symlink = $3, oid = NULL", 3, NULL, paramValues, paramLengths, paramFormats, 0);
         } else {
-            result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, $3, NULL) ON CONFLICT ON CONSTRAINT git_references_pkey DO NOTHING, oid = NULL", 3, NULL, paramValues, paramLengths, paramFormats, 0);
+            result = PQexecParams(backend->conn, "INSERT INTO " GIT_REFDB_TABLE_NAME " VALUES($1, $2, $3, NULL) ON CONFLICT ON CONSTRAINT git_references_pkey DO NOTHING", 3, NULL, paramValues, paramLengths, paramFormats, 0);
         }
 	}
 
@@ -412,8 +389,6 @@ int postgres_refdb_backend__write(git_refdb_backend *_backend, const git_referen
 
 int postgres_refdb_backend__rename(git_reference **out, git_refdb_backend *_backend, const char *old_name, const char *new_name, int force, const git_signature *who, const char *message)
 {
-	printf("postgres_refdb_backend__rename(%s, %s)", old_name, new_name);
-
 	PGresult *result;
 	postgres_refdb_backend *backend;
 
@@ -436,8 +411,6 @@ int postgres_refdb_backend__rename(git_reference **out, git_refdb_backend *_back
 
 int postgres_refdb_backend__del(git_refdb_backend *_backend, const char *ref_name, const git_oid *old, const char *old_target)
 {
-	printf("postgres_refdb_backend__del(%s, %s)\n", ref_name, old_target);
-
 	PGresult *result;
 	postgres_refdb_backend *backend;
 
@@ -460,8 +433,6 @@ int postgres_refdb_backend__del(git_refdb_backend *_backend, const char *ref_nam
 
 void postgres_refdb_backend__free(git_refdb_backend *_backend)
 {
-	printf("postgres_refdb_backend__free()\n");
-
 	postgres_odb_backend *backend;
 
 	assert(_backend);

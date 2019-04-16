@@ -12,4 +12,5 @@ config :gitgud, GitGud.DB,
 config :gitgud,
   ssh_port: 8989,
   ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
+  git_storage: :postgres,
   git_root: Path.absname("priv/git-data", Path.dirname(__DIR__))

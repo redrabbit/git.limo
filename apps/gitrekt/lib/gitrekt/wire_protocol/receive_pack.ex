@@ -57,6 +57,9 @@ defmodule GitRekt.WireProtocol.ReceivePack do
       {:delete, _old_oid, name} ->
         :ok = Git.reference_delete(repo, name)
     end)
+    if Git.repository_empty?(repo),
+      do: Git.reference_create(repo, "HEAD", :symbolic, "refs/heads/master"),
+    else: :ok
   end
 
   #
