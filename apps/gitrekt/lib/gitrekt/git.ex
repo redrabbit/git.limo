@@ -87,7 +87,6 @@ defmodule GitRekt.Git do
   """
   @spec repository_load({atom, [term]}) :: {:ok, repo} | {:error, term}
   def repository_load({backend, args} = _backend_spec) do
-    {fun, _arity} = __ENV__.function
     apply(__MODULE__, String.to_atom("repository_open_#{backend}"), args)
   end
 
@@ -449,6 +448,14 @@ defmodule GitRekt.Git do
   """
   @spec commit_time(commit) :: {:ok, non_neg_integer, non_neg_integer} | {:error, term}
   def commit_time(_commit) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the full raw header of the given `commit`.
+  """
+  @spec commit_raw_header(commit) :: {:ok, binary} | {:error, term}
+  def commit_raw_header(_commit) do
     raise Code.LoadError, file: @nif_path_lib
   end
 

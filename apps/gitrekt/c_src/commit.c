@@ -236,6 +236,23 @@ geef_commit_time(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_commit_raw_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	ErlNifBinary bin;
+	geef_object *obj;
+    char *raw_header;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	raw_header = git_commit_raw_header((git_commit *) obj->obj);
+	if (geef_string_to_bin(&bin, raw_header) < 0)
+		return geef_error(env);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
+}
+
+ERL_NIF_TERM
 geef_commit_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	git_buf buf = { NULL, 0, 0 };
