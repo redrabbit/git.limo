@@ -208,7 +208,9 @@ defmodule GitGud.Web.CodebaseView do
   def diff_deltas(repo, diff) do
     case GitAgent.diff_deltas(repo, diff) do
       {:ok, deltas} -> deltas
-      {:error, _reason} -> []
+      {:error, reason} ->
+        IO.inspect reason
+        []
     end
   end
 

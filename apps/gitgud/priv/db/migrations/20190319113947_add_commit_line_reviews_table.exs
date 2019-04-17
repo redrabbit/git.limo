@@ -35,6 +35,5 @@ defmodule GitGud.DB.Migrations.AddCommitLineReviewsTable do
       FOR EACH ROW
       EXECUTE PROCEDURE cleanup_commit_line_review()
     """, "DROP TRIGGER commit_line_review_comments_cleanup"
-
   end
 end

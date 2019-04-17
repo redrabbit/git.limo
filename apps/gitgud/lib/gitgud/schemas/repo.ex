@@ -18,6 +18,8 @@ defmodule GitGud.Repo do
   alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
+  alias GitGud.GitCommit
+
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Maintainer
@@ -271,13 +273,11 @@ defmodule GitGud.Repo do
   """
   @spec push(t, ReceivePack.t) :: :ok | {:error, term}
   def push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
-    with {:ok, oids} <- ReceivePack.apply_pack(receive_pack),
+    with {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
           :ok <- ReceivePack.apply_cmds(receive_pack),
+          :ok <- persist_git_objects(repo, objs),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
-      if Process.whereis(GitGud.Web.PubSub) do
-        Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{cmds: cmds, oids: oids}})
-      end
-      :ok
+      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, objs: objs}})
     end
   end
 
@@ -320,6 +320,47 @@ defmodule GitGud.Repo do
 
   defp repo_load_param(repo, :filesystem), do: workdir(repo)
   defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
+
+  defp persist_git_objects(repo, objs) do
+    objs
+    |> Enum.map(&map_git_object(&1, repo.id))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.each(fn {schema, objs} -> DB.insert_all(schema, objs) end)
+  end
+
+  defp map_git_object({oid, :commit, data}, repo_id) do
+    {GitCommit, %{repo_id: repo_id, oid: oid, parents: extract_git_commit_parents(data)}}
+  end
+
+  defp map_git_object(_obj, _repo_id), do: nil
+
+  defp extract_git_commit(data) do
+    [header, message] = String.split(data, "\n\n", parts: 2)
+    header
+    |> String.split("\n", trim: true)
+    |> Enum.chunk_by(&String.starts_with?(&1, " "))
+    |> Enum.chunk_every(2)
+    |> Enum.flat_map(fn
+      [one] ->
+        one
+      [one, two] ->
+        two = Enum.join(Enum.map(two, &String.trim_leading/1), "")
+        List.update_at(one, -1, &(&1 <> two))
+    end)
+    |> Enum.map(fn line ->
+      [key, val] = String.split(line, " ", parts: 2)
+      {key, String.trim_trailing(val)}
+    end)
+    |> List.insert_at(0, {"message", message})
+  end
+
+  defp extract_git_commit_parents(data) do
+    data
+    |> extract_git_commit()
+    |> Enum.filter(&elem(&1, 0) == "parent")
+    |> Enum.map(&Git.oid_parse(elem(&1, 1)))
+  end
 
   defp create_and_init(changeset, bare?) do
     Multi.new()

@@ -36,10 +36,10 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @doc """
   Applies the given `receive_pack` *PACK* to the repository.
   """
-  @spec apply_pack(t) :: {:ok, [Git.oid]} | {:error, term}
-  def apply_pack(%__MODULE__{repo: repo, pack: pack} = _receive_pack) do
+  @spec apply_pack(t, :dump | :write | :write_dump) :: {:ok, [{Git.obj_type, binary} | Git.oid | {Git.oid, Git.obj_type, binary}]} | {:error, term}
+  def apply_pack(%__MODULE__{repo: repo, pack: pack} = _receive_pack, mode \\ :write) do
     case Git.repository_get_odb(repo) do
-      {:ok, odb} -> {:ok, Enum.map(pack, &apply_pack_obj(odb, &1))}
+      {:ok, odb} -> {:ok, Enum.map(pack, &apply_pack_obj(odb, &1, mode))}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -165,21 +165,26 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp obj_match?({type, _oid}, type), do: true
   defp obj_match?(_line, _type), do: false
 
-  defp apply_pack_obj(odb, {:delta_reference, {base_oid, base_obj_size, result_obj_size, cmds}}) do
-    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
+  defp apply_pack_obj(odb, {:delta_reference, {base_oid, base_obj_size, result_obj_size, cmds}}, mode) do
+    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid) # TODO
     if base_obj_size != byte_size(obj_data),
       do: raise ArgumentError, message: "invalid base PACK object size (#{base_obj_size} != #{byte_size(obj_data)})"
     new_data = resolve_delta_chain(obj_data, "", cmds)
       if result_obj_size != byte_size(new_data),
         do: raise ArgumentError, message: "invalid result PACK object size (#{result_obj_size} != #{byte_size(new_data)})"
-    apply_pack_obj(odb, {obj_type, new_data})
+    apply_pack_obj(odb, {obj_type, new_data}, mode)
   end
 
-  defp apply_pack_obj(odb, {obj_type, obj_data}) do
+  defp apply_pack_obj(_odb, {obj_type, obj_data}, :dump), do: {obj_type, obj_data}
+  defp apply_pack_obj(odb, {obj_type, obj_data}, :write) do
     case Git.odb_write(odb, obj_data, obj_type) do
       {:ok, oid} -> oid
       {:error, reason} -> raise ArgumentError, message: reason
     end
+  end
+
+  defp apply_pack_obj(odb, {obj_type, obj_data} = obj, :write_dump) do
+    {apply_pack_obj(odb, obj, :write), obj_type, obj_data}
   end
 
   defp resolve_delta_chain(_source, target, []), do: target
