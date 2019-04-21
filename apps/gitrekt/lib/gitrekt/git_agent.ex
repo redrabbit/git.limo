@@ -202,7 +202,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the underlying Git commit of the given `obj`.
   """
-  @spec peel(agent, git_reference | git_tag) :: {:ok, git_commit} | {:error, term}
+  @spec peel(agent, git_reference | git_object) :: {:ok, git_commit} | {:error, term}
   def peel(agent, obj), do: call(agent, {:peel, obj})
 
   #
@@ -546,6 +546,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp fetch_target(%{type: :commit} = commit, _handle), do: {:ok, commit}
   defp fetch_target(%{type: :tag, tag: tag}, _handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
