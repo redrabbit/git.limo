@@ -225,7 +225,7 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:commit_list, _commit} = op, _from, handle) do
+  def handle_call({:commit_parents, _commit} = op, _from, handle) do
     {:reply, call_stream(op, handle), handle}
   end
 
@@ -235,24 +235,26 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:history, _obj, _opts} = op, from, handle) do
-    case call_stream(op, handle) do
+  def handle_call({:history, obj, opts}, _from, handle) do
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
+    case call_stream({:history, obj, opts}, handle) do
       {:ok, stream} ->
-        {:noreply, handle, {:continue, {:history, stream, from}}}
+        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, handle}
       {:error, reason} ->
         {:reply, {:error, reason}, handle}
     end
   end
 
-  @impl true
-  def handle_call(op, _from, handle) do
-    {:reply, call(op, handle), handle}
+  def handle_call({:history_next, stream, chunk_size}, _from, handle) do
+    chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
+    slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
+    acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
+    {:reply, {Enum.to_list(chunk_stream), acc}, handle}
   end
 
   @impl true
-  def handle_continue({:history, stream, from}, handle) do
-    :ok = GenServer.reply(from, {:ok, Enum.to_list(stream)})
-    {:noreply, handle}
+  def handle_call(op, _from, handle) do
+    {:reply, call(op, handle), handle}
   end
 
   #
@@ -607,6 +609,17 @@ defmodule GitRekt.GitAgent do
       {:ok, diff} -> Git.diff_delta_count(diff)
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp async_stream(request, stream, chunk_size) do
+    agent = self()
+    Stream.resource(
+      fn -> stream end,
+      fn :halt -> {:halt, agent}
+         stream -> GenServer.call(agent, {request, stream, chunk_size})
+      end,
+      &(&1)
+    )
   end
 
   defp enumerate_stream(stream) when is_function(stream), do: %Stream{enum: Enum.to_list(stream)}
