@@ -273,12 +273,11 @@ defmodule GitGud.Repo do
   """
   @spec push(t, ReceivePack.t) :: :ok | {:error, term}
   def push(%__MODULE__{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
-    with {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
+    with {:ok, objs} <- write_git_objects(repo.id, receive_pack),
           :ok <- ReceivePack.apply_cmds(receive_pack),
-          :ok <- persist_git_objects(repo, objs),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
-      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, objs: objs}})
-    end
+          :ok <- write_git_meta_objects(repo.id, objs),
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
+      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: Map.keys(objs)}})
   end
 
   #
@@ -321,19 +320,41 @@ defmodule GitGud.Repo do
   defp repo_load_param(repo, :filesystem), do: workdir(repo)
   defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
 
-  defp persist_git_objects(repo, objs) do
+  defp write_git_objects(repo_id, receive_pack) do
+    if Application.get_env(:gitgud, :git_storage, :filesystem) != :postgres do
+      ReceivePack.apply_pack(receive_pack, :write_dump)
+    else
+      {objs, []} = ReceivePack.resolve_pack(receive_pack) # TODO
+      objs
+      |> Enum.map(&map_git_object(&1, repo_id))
+      |> Enum.chunk_every(5000)
+      |> Enum.each(&DB.insert_all("git_objects", &1))
+      {:ok, objs}
+    end
+  end
+
+  defp write_git_meta_objects(repo_id, objs) do
     objs
-    |> Enum.map(&map_git_object(&1, repo.id))
+    |> Enum.map(&map_git_meta_object(&1, repo_id))
     |> Enum.reject(&is_nil/1)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> Enum.each(fn {schema, objs} -> DB.insert_all(schema, objs) end)
   end
 
-  defp map_git_object({oid, :commit, data}, repo_id) do
+  def map_git_object_db_type(:commit), do: 1
+  def map_git_object_db_type(:tree), do: 2
+  def map_git_object_db_type(:blob), do: 3
+  def map_git_object_db_type(:tag), do: 4
+
+  defp map_git_object({oid, {obj_type, obj_data}}, repo_id) do
+    %{repo_id: repo_id, oid: oid, type: map_git_object_db_type(obj_type), size: byte_size(obj_data), data: obj_data}
+  end
+
+  defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
     {GitCommit, %{repo_id: repo_id, oid: oid, parents: extract_git_commit_parents(data)}}
   end
 
-  defp map_git_object(_obj, _repo_id), do: nil
+  defp map_git_meta_object(_obj, _repo_id), do: nil
 
   defp extract_git_commit(data) do
     [header, message] = String.split(data, "\n\n", parts: 2)

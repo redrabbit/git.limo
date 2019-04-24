@@ -36,10 +36,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @doc """
   Applies the given `receive_pack` *PACK* to the repository.
   """
-  @spec apply_pack(t, :dump | :write | :write_dump) :: {:ok, [{Git.obj_type, binary} | Git.oid | {Git.oid, Git.obj_type, binary}]} | {:error, term}
+  @spec apply_pack(t, :write | :write_dump) :: {:ok, [Git.oid] | map} | {:error, term}
   def apply_pack(%__MODULE__{repo: repo, pack: pack} = _receive_pack, mode \\ :write) do
     case Git.repository_get_odb(repo) do
-      {:ok, odb} -> {:ok, Enum.map(pack, &apply_pack_obj(odb, &1, mode))}
+      {:ok, odb} ->
+        case mode do
+          :write ->
+            {:ok, Enum.map(pack, &apply_pack_obj(odb, &1, mode))}
+          :write_dump ->
+            {:ok, Map.new(pack, &apply_pack_obj(odb, &1, mode))}
+        end
       {:error, reason} -> {:error, reason}
     end
   end
@@ -60,6 +66,18 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     if Git.repository_empty?(repo),
       do: Git.reference_create(repo, "HEAD", :symbolic, "refs/heads/master"),
     else: :ok
+  end
+
+  @doc """
+  Returns the resolvable Git objects and unresolvable Git delta-reference objects.
+  """
+  @spec resolve_pack(t) :: {map, [term]}
+  def resolve_pack(%__MODULE__{pack: pack} = _receive_pack) do
+    {objs, delta_refs} = Enum.split_with(pack, fn
+      {:delta_reference, _delta_ref} -> false
+      {_obj_type, _obj_data} -> true
+    end)
+    batch_resolve_objects(Map.new(objs, &{odb_object_hash(&1), &1}), Enum.map(delta_refs, fn {:delta_reference, delta_ref} -> delta_ref end))
   end
 
   #
@@ -83,7 +101,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def next(%__MODULE__{state: :update_req} = handle, lines) do
-    {_shallows, lines} = Enum.split_while(lines, &obj_match?(&1, :shallow))
+    {_shallows, lines} = Enum.split_while(lines, &odb_object_match?(&1, :shallow))
     {cmds, lines} = Enum.split_while(lines, &is_binary/1)
     {caps, cmds} = parse_caps(cmds)
     [:flush|lines] = lines
@@ -134,6 +152,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     apply(module, fun, args ++ [handle])
   end
 
+  defp odb_object_match?({type, _oid}, type), do: true
+  defp odb_object_match?(_line, _type), do: false
+
+  defp odb_object_hash({type, data}) do
+    case GitRekt.Git.odb_object_hash(type, data) do
+      {:ok, oid} -> oid
+      {:error, reason} -> raise reason
+    end
+  end
+
   defp report_status(cmds) do
     List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
   end
@@ -162,20 +190,11 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
-  defp obj_match?({type, _oid}, type), do: true
-  defp obj_match?(_line, _type), do: false
-
-  defp apply_pack_obj(odb, {:delta_reference, {base_oid, base_obj_size, result_obj_size, cmds}}, mode) do
-    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid) # TODO
-    if base_obj_size != byte_size(obj_data),
-      do: raise ArgumentError, message: "invalid base PACK object size (#{base_obj_size} != #{byte_size(obj_data)})"
-    new_data = resolve_delta_chain(obj_data, "", cmds)
-      if result_obj_size != byte_size(new_data),
-        do: raise ArgumentError, message: "invalid result PACK object size (#{result_obj_size} != #{byte_size(new_data)})"
-    apply_pack_obj(odb, {obj_type, new_data}, mode)
+  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, _cmds} = delta_ref}, mode) do
+    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
+    apply_pack_obj(odb, {obj_type, resolve_delta_object({obj_type, obj_data}, delta_ref)}, mode)
   end
 
-  defp apply_pack_obj(_odb, {obj_type, obj_data}, :dump), do: {obj_type, obj_data}
   defp apply_pack_obj(odb, {obj_type, obj_data}, :write) do
     case Git.odb_write(odb, obj_data, obj_type) do
       {:ok, oid} -> oid
@@ -183,8 +202,41 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
-  defp apply_pack_obj(odb, {obj_type, obj_data} = obj, :write_dump) do
-    {apply_pack_obj(odb, obj, :write), obj_type, obj_data}
+  defp apply_pack_obj(odb, obj, :write_dump) do
+    {apply_pack_obj(odb, obj, :write), obj}
+  end
+
+  defp batch_resolve_objects(objs, delta_refs) do
+    {delta_objs, delta_refs} = batch_resolve_delta_objects(objs, delta_refs)
+    objs = Map.merge(objs, delta_objs) # TODO
+    cond do
+      Enum.empty?(delta_refs) ->
+        {objs, []}
+      Enum.empty?(delta_objs) ->
+        {objs, delta_refs}
+      true ->
+        batch_resolve_objects(objs, delta_refs)
+    end
+  end
+
+  defp batch_resolve_delta_objects(objs, delta_refs) do
+    Enum.reduce(delta_refs, {%{}, []}, fn {base_oid, _, _, _} = delta_ref, {one, two} ->
+      if obj = Map.get(objs, base_oid) do
+        {:ok, obj} = resolve_delta_object(obj, delta_ref)
+        {Map.put(one, odb_object_hash(obj), obj), two}
+      else
+        {one, [delta_ref|two]}
+      end
+    end)
+  end
+
+  defp resolve_delta_object({obj_type, obj_data}, {_base_oid, base_obj_size, result_obj_size, cmds}) do
+    if base_obj_size == byte_size(obj_data) do
+      new_data = resolve_delta_chain(obj_data, "", cmds)
+      if result_obj_size == byte_size(new_data),
+        do: {:ok, {obj_type, new_data}},
+      else: raise "invalid result PACK object size (#{result_obj_size} != #{byte_size(new_data)})"
+    end ||  raise "invalid base PACK object size (#{base_obj_size} != #{byte_size(obj_data)})"
   end
 
   defp resolve_delta_chain(_source, target, []), do: target
