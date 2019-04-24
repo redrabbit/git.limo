@@ -224,6 +224,7 @@ static ErlNifFunc geef_funcs[] =
 	{"repository_get_workdir", 1, geef_repository_workdir, 0},
 	{"repository_get_odb", 1, geef_repository_odb, 0},
 	{"repository_get_config", 1, geef_repository_config, 0},
+	{"odb_object_hash", 2, geef_odb_hash, 0},
 	{"odb_object_exists?", 2, geef_odb_exists, 0},
     {"odb_read", 2, geef_odb_read, 0},
 	{"odb_write", 3, geef_odb_write, 0},

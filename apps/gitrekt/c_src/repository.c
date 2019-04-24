@@ -1,6 +1,7 @@
 #include "repository.h"
 #include "object.h"
 #include "oid.h"
+#include "oid.h"
 #include "config.h"
 #include "postgres_backend.h"
 #include "geef.h"
@@ -273,6 +274,33 @@ geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_resource(odb);
 
 	return enif_make_tuple2(env, atoms.ok, term_odb);
+}
+
+ERL_NIF_TERM
+geef_odb_hash(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary bin, oid_bin;
+    git_oid oid;
+    git_otype type;
+
+	type = geef_object_atom2type(argv[0]);
+	if (type == GIT_OBJ_BAD)
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+    if (git_odb_hash(&oid, bin.data, bin.size, type) < 0) {
+        enif_release_binary(&bin);
+        return geef_error(env);
+    }
+
+    enif_release_binary(&bin);
+
+	if (geef_oid_bin(&oid_bin, &oid) < 0)
+		return geef_oom(env);
+
+	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &oid_bin));
 }
 
 ERL_NIF_TERM

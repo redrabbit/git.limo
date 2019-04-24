@@ -299,6 +299,16 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the OID of an object `type` and raw `data`.
+
+  The resulting SHA-1 OID will be the identifier for the data buffer as if the data buffer it were to written to the ODB.
+  """
+  @spec odb_object_hash(obj_type, binary) :: {:ok, oid} | {:error, term}
+  def odb_object_hash(_type, _data) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
   """
   @spec odb_object_exists?(odb, oid) :: boolean
