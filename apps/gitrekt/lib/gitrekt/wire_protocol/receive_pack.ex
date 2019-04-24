@@ -69,7 +69,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   @doc """
-  Returns the resolvable Git objects and unresolvable Git delta-reference objects.
+  Returns the resolvable Git objects and unresolvable Git delta-reference objects for the given `receive_pack`.
   """
   @spec resolve_pack(t) :: {map, [term]}
   def resolve_pack(%__MODULE__{pack: pack} = _receive_pack) do
@@ -79,6 +79,12 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end)
     batch_resolve_objects(Map.new(objs, &{odb_object_hash(&1), &1}), Enum.map(delta_refs, fn {:delta_reference, delta_ref} -> delta_ref end))
   end
+
+  @doc """
+  Returns the resolvable Git objects and unresolvable Git delta-reference objects for the given `objs` and `delta_refs`.
+  """
+  @spec resolve_delta_objects(map, [term]) :: {map, [term]}
+  def resolve_delta_objects(objs, delta_refs), do: batch_resolve_objects(objs, delta_refs)
 
   #
   # Callbacks
@@ -192,7 +198,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, _cmds} = delta_ref}, mode) do
     {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
-    apply_pack_obj(odb, {obj_type, resolve_delta_object({obj_type, obj_data}, delta_ref)}, mode)
+    apply_pack_obj(odb, resolve_delta_object({obj_type, obj_data}, delta_ref), mode)
   end
 
   defp apply_pack_obj(odb, {obj_type, obj_data}, :write) do
@@ -222,8 +228,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp batch_resolve_delta_objects(objs, delta_refs) do
     Enum.reduce(delta_refs, {%{}, []}, fn {base_oid, _, _, _} = delta_ref, {one, two} ->
       if obj = Map.get(objs, base_oid) do
-        {:ok, obj} = resolve_delta_object(obj, delta_ref)
-        {Map.put(one, odb_object_hash(obj), obj), two}
+        new_obj = resolve_delta_object(obj, delta_ref)
+        {Map.put(one, odb_object_hash(new_obj), new_obj), two}
       else
         {one, [delta_ref|two]}
       end
@@ -234,7 +240,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     if base_obj_size == byte_size(obj_data) do
       new_data = resolve_delta_chain(obj_data, "", cmds)
       if result_obj_size == byte_size(new_data),
-        do: {:ok, {obj_type, new_data}},
+        do: {obj_type, new_data},
       else: raise "invalid result PACK object size (#{result_obj_size} != #{byte_size(new_data)})"
     end ||  raise "invalid base PACK object size (#{base_obj_size} != #{byte_size(obj_data)})"
   end
