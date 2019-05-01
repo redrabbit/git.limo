@@ -349,15 +349,15 @@ defmodule GitGud.Repo do
     |> Enum.each(fn {schema, objs} -> DB.insert_all(schema, objs) end)
   end
 
-  def map_git_object_type(1), do: :commit
-  def map_git_object_type(2), do: :tree
-  def map_git_object_type(3), do: :blob
-  def map_git_object_type(4), do: :tag
+  defp map_git_object_type(1), do: :commit
+  defp map_git_object_type(2), do: :tree
+  defp map_git_object_type(3), do: :blob
+  defp map_git_object_type(4), do: :tag
 
-  def map_git_object_db_type(:commit), do: 1
-  def map_git_object_db_type(:tree), do: 2
-  def map_git_object_db_type(:blob), do: 3
-  def map_git_object_db_type(:tag), do: 4
+  defp map_git_object_db_type(:commit), do: 1
+  defp map_git_object_db_type(:tree), do: 2
+  defp map_git_object_db_type(:blob), do: 3
+  defp map_git_object_db_type(:tag), do: 4
 
   defp map_git_object({oid, {obj_type, obj_data}}, repo_id) do
     %{repo_id: repo_id, oid: oid, type: map_git_object_db_type(obj_type), size: byte_size(obj_data), data: obj_data}
