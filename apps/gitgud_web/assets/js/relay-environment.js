@@ -1,11 +1,6 @@
 import {Environment, Network, Store, RecordSource} from "relay-runtime"
-import * as AbsintheSocket from "@absinthe/socket"
-import {createFetcher, createSubscriber} from "@absinthe/socket-relay/compat/cjs"
 
 import socket from "./socket"
-
-
-const transport = AbsintheSocket.create(socket)
 
 function fetchQuery(operation, variables) {
   return fetch("/graphql", {
@@ -22,8 +17,7 @@ function fetchQuery(operation, variables) {
 
 export default new Environment({
   network: Network.create(
-    fetchQuery,
-    createSubscriber(transport)
+    fetchQuery
   ),
   store: new Store(new RecordSource())
 })

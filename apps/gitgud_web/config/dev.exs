@@ -16,13 +16,6 @@ config :gitgud_web, GitGud.Web.Endpoint,
       "--progress",
       "--color",
       cd: Path.expand("../assets", __DIR__)
-    ],
-    node: [
-      "node_modules/relay-compiler/bin/relay-compiler",
-      "--src", "./js",
-      "--schema", "../priv/graphql/schema.json",
-      "--watch",
-      cd: Path.expand("../assets", __DIR__)
     ]
   ],
   live_reload: [
