@@ -37,9 +37,11 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   Applies the given `receive_pack` *PACK* to the repository.
   """
   @spec apply_pack(t, :write | :write_dump) :: {:ok, [Git.oid] | map} | {:error, term}
-  def apply_pack(%__MODULE__{repo: repo, pack: pack} = _receive_pack, mode \\ :write) do
+  def apply_pack(%__MODULE__{repo: repo} = receive_pack, mode \\ :write) do
     case Git.repository_get_odb(repo) do
       {:ok, odb} ->
+        {objs, delta_refs} = resolve_pack(receive_pack)
+        pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
         case mode do
           :write ->
             {:ok, Enum.map(pack, &apply_pack_obj(odb, &1, mode))}
