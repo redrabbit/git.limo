@@ -16,8 +16,7 @@ defmodule GitRekt.GitAgent do
   @type git_tree_entry :: %{oid: Git.oid, name: binary, mode: integer, type: :tree_entry, subtype: :blob | :tree}
   @type git_diff :: %{type: :diff, diff: Git.diff}
 
-  @type git_revision :: git_commit | git_reference | git_tag
-  @type git_object :: git_revision | git_blob | git_tree
+  @type git_object :: git_commit | git_blob | git_tree | git_tag
 
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
@@ -148,19 +147,19 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git tree entries of the given `obj`.
   """
-  @spec tree_entries(agent, git_object) :: {:ok, [git_tree_entry]} | {:error, term}
+  @spec tree_entries(agent, git_tree) :: {:ok, [git_tree_entry]} | {:error, term}
   def tree_entries(agent, obj), do: call(agent, {:tree_entries, obj})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `oid`.
   """
-  @spec tree_entry_by_id(agent, git_object, Git.oid) :: {:ok, git_tree_entry} | {:error, term}
+  @spec tree_entry_by_id(agent, git_tree, Git.oid) :: {:ok, git_tree_entry} | {:error, term}
   def tree_entry_by_id(agent, obj, oid), do: call(agent, {:tree_entry, obj, {:oid, oid}})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `path`.
   """
-  @spec tree_entry_by_id(agent, git_object, Path.t) :: {:ok, git_tree_entry} | {:error, term}
+  @spec tree_entry_by_id(agent, git_tree, Path.t) :: {:ok, git_tree_entry} | {:error, term}
   def tree_entry_by_path(agent, obj, path), do: call(agent, {:tree_entry, obj, {:path, path}})
 
   @doc """
@@ -196,7 +195,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git commit history of the given `obj`.
   """
-  @spec history(agent, git_object) :: {:ok, [git_commit]} | {:error, term}
+  @spec history(agent, git_reference | git_object) :: {:ok, [git_commit]} | {:error, term}
   def history(agent, obj, opts \\ []), do: call(agent, {:history, obj, opts})
 
   @doc """
