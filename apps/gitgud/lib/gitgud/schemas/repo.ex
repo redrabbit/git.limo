@@ -321,13 +321,13 @@ defmodule GitGud.Repo do
   defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
 
   defp write_git_objects(receive_pack, repo_id) do
-    if Application.get_env(:gitgud, :git_storage, :filesystem) != :postgres do
-      ReceivePack.apply_pack(receive_pack, :write_dump)
-    else
+    if Application.get_env(:gitgud, :git_storage, :filesystem) == :postgres do
       receive_pack
       |> ReceivePack.resolve_pack()
       |> resolve_remaining_git_delta_objects(repo_id)
       |> write_git_objects_batch(repo_id)
+    else
+      ReceivePack.apply_pack(receive_pack, :write_dump)
     end
   end
 
@@ -349,26 +349,6 @@ defmodule GitGud.Repo do
     |> Enum.each(fn {schema, objs} -> DB.insert_all(schema, objs) end)
   end
 
-  defp map_git_object_type(1), do: :commit
-  defp map_git_object_type(2), do: :tree
-  defp map_git_object_type(3), do: :blob
-  defp map_git_object_type(4), do: :tag
-
-  defp map_git_object_db_type(:commit), do: 1
-  defp map_git_object_db_type(:tree), do: 2
-  defp map_git_object_db_type(:blob), do: 3
-  defp map_git_object_db_type(:tag), do: 4
-
-  defp map_git_object({oid, {obj_type, obj_data}}, repo_id) do
-    %{repo_id: repo_id, oid: oid, type: map_git_object_db_type(obj_type), size: byte_size(obj_data), data: obj_data}
-  end
-
-  defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
-    {GitCommit, %{repo_id: repo_id, oid: oid, parents: extract_git_commit_parents(data)}}
-  end
-
-  defp map_git_meta_object(_obj, _repo_id), do: nil
-
   defp resolve_remaining_git_delta_objects({objs, []}, _repo_id), do: objs
   defp resolve_remaining_git_delta_objects({objs, delta_refs}, repo_id) do
     source_oids = Enum.map(delta_refs, &elem(&1, 0))
@@ -379,7 +359,38 @@ defmodule GitGud.Repo do
     Map.merge(objs, new_objs)
   end
 
-  defp extract_git_commit(data) do
+  defp map_git_object({oid, {obj_type, obj_data}}, repo_id) do
+    %{repo_id: repo_id, oid: oid, type: map_git_object_db_type(obj_type), size: byte_size(obj_data), data: obj_data}
+  end
+
+  defp map_git_object_type(1), do: :commit
+  defp map_git_object_type(2), do: :tree
+  defp map_git_object_type(3), do: :blob
+  defp map_git_object_type(4), do: :tag
+
+  defp map_git_object_db_type(:commit), do: 1
+  defp map_git_object_db_type(:tree), do: 2
+  defp map_git_object_db_type(:blob), do: 3
+  defp map_git_object_db_type(:tag), do: 4
+
+  defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
+    commit = extract_commit_props(data)
+    author = Regex.named_captures(~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/, commit["author"])
+    {GitCommit, %{
+      repo_id: repo_id,
+      oid: oid,
+      parents: Enum.map(List.wrap(commit["parent"] || []), &Git.oid_parse/1),
+      message: commit["message"],
+      author_name: author["name"],
+      author_email: author["email"],
+      gpg_signature: commit["gpgsig"],
+      committed_at: DateTime.to_naive(DateTime.from_unix!(String.to_integer(author["time"])))
+    }}
+  end
+
+  defp map_git_meta_object(_obj, _repo_id), do: nil
+
+  defp extract_commit_props(data) do
     [header, message] = String.split(data, "\n\n", parts: 2)
     header
     |> String.split("\n", trim: true)
@@ -397,13 +408,7 @@ defmodule GitGud.Repo do
       {key, String.trim_trailing(val)}
     end)
     |> List.insert_at(0, {"message", message})
-  end
-
-  defp extract_git_commit_parents(data) do
-    data
-    |> extract_git_commit()
-    |> Enum.filter(&elem(&1, 0) == "parent")
-    |> Enum.map(&Git.oid_parse(elem(&1, 1)))
+    |> Enum.reduce(%{}, fn {key, val}, acc -> Map.update(acc, key, val, &(List.wrap(val) ++ [&1])) end)
   end
 
   defp create_and_init(changeset, bare?) do

@@ -6,6 +6,11 @@ defmodule GitGud.DB.Migrations.AddGitCommitsTable do
       add :repo_id, references("repositories", on_delete: :delete_all), primary_key: true
       add :oid, :binary, primary_key: true
       add :parents, {:array, :binary}, null: false
+      add :message, :text
+      add :author_name, :string
+      add :author_email, :string
+      add :gpg_signature, :binary
+      add :committed_at, :naive_datetime
     end
 
     execute """

@@ -11,13 +11,23 @@ defmodule GitGud.GitCommit do
     belongs_to :repo, Repo, primary_key: true
     field :oid, :binary, primary_key: true
     field :parents, {:array, :binary}
+    field :message, :string
+    field :author_name, :string
+    field :author_email, :string
+    field :gpg_signature, :binary
+    field :committed_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
     repo_id: pos_integer,
     repo: Repo.t,
     oid: Git.oid,
-    parents: [Git.oid]
+    parents: [Git.oid],
+    message: binary,
+    author_name: binary,
+    author_email: binary,
+    gpg_signature: binary,
+    committed_at: NaiveDateTime.t
   }
 
   @doc """
