@@ -24,7 +24,7 @@ defmodule GitGud.Maintainer do
   import Ecto.Query, only: [from: 2]
   import Ecto.Changeset
 
-  schema "repository_maintainers" do
+  schema "maintainers" do
     belongs_to :user, User
     belongs_to :repo, Repo
     field :permission, :string, default: "read"
@@ -126,7 +126,7 @@ defmodule GitGud.Maintainer do
     maintainer
     |> cast(params, [:user_id, :repo_id, :permission])
     |> validate_required([:user_id, :repo_id])
-    |> unique_constraint(:user_id, name: "repository_maintainers_user_id_repo_id_index")
+    |> unique_constraint(:user_id, name: "maintainers_user_id_repo_id_index")
     |> validate_inclusion(:permission, ["read", "write", "admin"])
   end
 end
