@@ -58,6 +58,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Maintainer,
           GitGud.Repo,
           GitGud.RepoQuery,
+          GitGud.RepoSync,
           GitGud.ReviewQuery,
           GitGud.SSHKey,
           GitGud.User,

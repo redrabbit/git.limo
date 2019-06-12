@@ -71,7 +71,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   @doc """
-  Returns the resolvable Git objects and unresolvable Git delta-reference objects for the given `receive_pack`.
+  Returns the Git objects and Git delta-references for the given `receive_pack`.
   """
   @spec resolve_pack(t) :: {map, [term]}
   def resolve_pack(%__MODULE__{pack: pack} = _receive_pack) do
@@ -83,7 +83,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   @doc """
-  Returns the resolvable Git objects and unresolvable Git delta-reference objects for the given `objs` and `delta_refs`.
+  Returns the Git objects and Git delta-references for the given `objs` and `delta_refs`.
   """
   @spec resolve_delta_objects(map, [term]) :: {map, [term]}
   def resolve_delta_objects(objs, delta_refs), do: batch_resolve_objects(objs, delta_refs)

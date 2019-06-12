@@ -1,4 +1,7 @@
 defmodule GitGud.GitCommit do
+  @moduledoc """
+  Git commit schema and helper functions.
+  """
   use Ecto.Schema
 
   alias GitRekt.Git

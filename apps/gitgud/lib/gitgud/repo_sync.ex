@@ -1,6 +1,6 @@
 defmodule GitGud.RepoSync do
   @moduledoc """
-  Conveniences for fetching and pushing Git objects and meta objects.
+  Conveniences for storing Git objects and meta objects.
   """
 
   alias Ecto.Multi
@@ -17,7 +17,7 @@ defmodule GitGud.RepoSync do
   @batch_insert_chunk_size 5_000
 
   @doc """
-  Writes the `receive_pack` objects and references.
+  Writes the given `receive_pack` objects and references to the given `repo`.
   """
   @spec push(Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
   def push(%Repo{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
@@ -117,16 +117,16 @@ defmodule GitGud.RepoSync do
 
   defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
     commit = extract_commit_props(data)
-    author = Regex.named_captures(~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/, commit["author"])
+    author = extract_commit_author(commit)
     {GitCommit, %{
       repo_id: repo_id,
       oid: oid,
-      parents: Enum.map(List.wrap(commit["parent"] || []), &Git.oid_parse/1),
+      parents: extract_commit_parents(commit),
       message: commit["message"],
       author_name: author["name"],
       author_email: author["email"],
-      gpg_signature: commit["gpgsig"],
-      committed_at: DateTime.to_naive(DateTime.from_unix!(String.to_integer(author["time"])))
+      gpg_signature: extract_commit_gpg_key_id(commit),
+      committed_at: author["time"],
     }}
   end
 
@@ -139,11 +139,10 @@ defmodule GitGud.RepoSync do
     |> Enum.chunk_by(&String.starts_with?(&1, " "))
     |> Enum.chunk_every(2)
     |> Enum.flat_map(fn
-      [one] ->
-        one
+      [one] -> one
       [one, two] ->
-        two = Enum.join(Enum.map(two, &String.trim_leading/1), "")
-        List.update_at(one, -1, &(&1 <> two))
+        two = Enum.join(Enum.map(two, &String.trim_leading/1), "\n")
+        List.update_at(one, -1, &Enum.join([&1, two], "\n"))
     end)
     |> Enum.map(fn line ->
       [key, val] = String.split(line, " ", parts: 2)
@@ -151,5 +150,33 @@ defmodule GitGud.RepoSync do
     end)
     |> List.insert_at(0, {"message", message})
     |> Enum.reduce(%{}, fn {key, val}, acc -> Map.update(acc, key, val, &(List.wrap(val) ++ [&1])) end)
+  end
+
+  defp extract_commit_parents(commit) do
+    Enum.map(List.wrap(commit["parent"] || []), &Git.oid_parse/1)
+  end
+
+  defp extract_commit_author(commit) do
+    ~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/
+    |> Regex.named_captures(commit["author"])
+    |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
+  end
+
+  defp extract_commit_gpg_key_id(commit) do
+    if gpg_signature = commit["gpgsig"] do
+      {_checksum, lines} =
+        gpg_signature
+        |> String.split("\n")
+        |> List.delete_at(0)
+        |> List.delete_at(-1)
+        |> Enum.drop_while(&(&1 != ""))
+        |> List.delete_at(0)
+        |> List.pop_at(-1)
+
+      lines
+      |> Enum.join()
+      |> Base.decode64!()
+      |> binary_part(24, 8)
+    end
   end
 end

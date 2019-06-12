@@ -1,6 +1,30 @@
 defmodule GitRekt.Git do
-  @moduledoc """
+  @moduledoc ~S"""
   Erlang NIF that exposes a subset of *libgit2*'s library functions.
+
+  Most functions available in this module are implemented in C for performance reasons.
+  These functions are compiled into a dynamic loadable, shared library. They are called like any other Elixir functions.
+
+  > As a NIF library is dynamically linked into the emulator process, this is the fastest way of calling C-code from Erlang (alongside port drivers). Calling NIFs requires no context switches. But it is also the least safe, because a crash in a NIF brings the emulator down too.
+  >
+  > [Erlang documentation - NIFs](http://erlang.org/doc/tutorial/nif.html)
+
+  Let's see a brief example:
+
+  ```elixir
+  alias GitRekt.Git
+
+  # load repository
+  {:ok, repo} = Git.repository_open("/tmp/my-repo")
+
+  # show last commit of branch "master"
+  {:ok, :commit, _oid, commit} = Git.reference_peel(repo, "refs/heads/master")
+  {:ok, name, email, time, _offset} = Git.commit_author(commit)
+  {:ok, message} = Git.commit_message(commit)
+
+  IO.puts "Last commit by #{name} <#{email}>:"
+  IO.puts message
+  ```
   """
 
   @type repo          :: reference

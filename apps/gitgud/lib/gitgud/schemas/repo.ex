@@ -1,12 +1,6 @@
 defmodule GitGud.Repo do
   @moduledoc """
   Git repository schema and helper functions.
-
-  A `GitGud.Repo` is used to create, update and delete Git repositories.
-
-  Beside providing a set of helpers function used for *CRUD* operation on the
-  schema and it's associations, this module is also the entry-point (see
-  `load_agent/2`) for interactive with the underlying Git repository.
   """
 
   use Ecto.Schema
@@ -268,7 +262,7 @@ defmodule GitGud.Repo do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
 
-  See `GitRekt.WireProtocol.ReceivePack` for more details.
+  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoSync.push/2` for more details.
   """
   @spec push(t, ReceivePack.t) :: :ok | {:error, term}
   def push(%__MODULE__{} = repo, %ReceivePack{} = receive_pack) do
