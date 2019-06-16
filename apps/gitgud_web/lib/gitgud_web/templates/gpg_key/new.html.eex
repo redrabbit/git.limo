@@ -1,0 +1,17 @@
+<h2 class="subtitle">Add a new GPG key</h2>
+
+<%= form_for @changeset, Routes.gpg_key_path(@conn, :create), [as: :gpg_key], fn f -> %>
+  <div class="field">
+    <%= label f, :data, class: "label" %>
+    <div class="control">
+      <%= textarea f, :data, class: "textarea" %>
+    </div>
+    <%= error_tag f, :data %>
+  </div>
+
+  <hr />
+
+  <div class="field">
+    <%= submit "Add GPG key", class: "button is-link" %>
+  </div>
+<% end %>

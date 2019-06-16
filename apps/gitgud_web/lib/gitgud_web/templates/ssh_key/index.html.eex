@@ -6,13 +6,13 @@
   </div>
   <div class="level-right">
     <div class="level-item">
-      <a class="button is-success" href="<%= Routes.ssh_key_path(@conn, :new) %>">New</a>
+      <a class="button is-success" href="<%= Routes.ssh_key_path(@conn, :new) %>">New SSH key</a>
     </div>
   </div>
 </div>
 
 <%= if Enum.empty?(@user.ssh_keys) do %>
-  Nothing to see here.
+  <p>Nothing to see here.</p>
 <% else %>
   <%= for ssh_key <- @user.ssh_keys do %>
     <div class="columns">
@@ -31,8 +31,10 @@
           </header>
           <div class="card-content">
             <div class="content">
-              <label>Fingerprint:</label>
-              <code><%= ssh_key.fingerprint %></code>
+              <div>
+                <label>Fingerprint:</label>
+                <code class="is-size-7"><%= ssh_key.fingerprint %></code>
+              </div>
             </div>
           </div>
           <footer class="card-footer">

@@ -68,6 +68,11 @@ defmodule GitGud.Web.Router do
     post "/settings/ssh", SSHKeyController, :create
     delete "/settings/ssh", SSHKeyController, :delete
 
+    get "/settings/gpg", GPGKeyController, :index
+    get "/settings/gpg/new", GPGKeyController, :new
+    post "/settings/gpg", GPGKeyController, :create
+    delete "/settings/gpg", GPGKeyController, :delete
+
     get "/new", RepoController, :new
     post "/new", RepoController, :create
 
