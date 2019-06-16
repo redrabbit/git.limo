@@ -9,7 +9,7 @@ defmodule GitGud.DB.Migrations.AddGitCommitsTable do
       add :message, :text
       add :author_name, :string
       add :author_email, :string
-      add :gpg_signature, :binary
+      add :gpg_key_id, :binary
       add :committed_at, :naive_datetime
     end
 

@@ -15,6 +15,7 @@ defmodule GitGud.User do
   alias GitGud.Email
   alias GitGud.Repo
   alias GitGud.SSHKey
+  alias GitGud.GPGKey
 
   schema "users" do
     field :login, :string
@@ -29,6 +30,7 @@ defmodule GitGud.User do
     field :website_url, :string
     field :avatar_url, :string
     has_many :ssh_keys, SSHKey, on_delete: :delete_all
+    has_many :gpg_keys, GPGKey, on_delete: :delete_all
     timestamps()
   end
 
