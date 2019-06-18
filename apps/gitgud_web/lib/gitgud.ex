@@ -19,6 +19,16 @@ defimpl Phoenix.Param, for: GitGud.Repo do
   def to_param(repo), do: repo.name
 end
 
+defimpl Phoenix.Param, for: GitGud.Commit do
+  def to_param(commit), do: oid_fmt(commit.oid)
+end
+
+defimpl Phoenix.HTML.Safe, for: GitGud.Commit do
+  def to_iodata(commit) do
+    Phoenix.HTML.Safe.to_iodata(content_tag(:span, oid_fmt_short(commit.oid), class: "commit"))
+  end
+end
+
 defimpl Phoenix.HTML.Safe, for: Map do
   def to_iodata(%{type: :commit, oid: oid}) do
     Phoenix.HTML.Safe.to_iodata(content_tag(:span, oid_fmt_short(oid), class: "commit"))

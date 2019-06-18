@@ -8,6 +8,7 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.ReviewQuery
+  alias GitGud.Commit
 
   alias Phoenix.Param
 
@@ -92,7 +93,8 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, GitAgent.git_commit) :: map | nil
+  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit) :: map | nil
+  def commit_author(repo, %Commit{} = commit), do: fetch_author(repo, commit)
   def commit_author(repo, commit) do
     case GitAgent.commit_author(repo, commit) do
       {:ok, author} ->
@@ -103,7 +105,8 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_timestamp(Repo.t, GitAgent.git_commit) :: DateTime.t | nil
+  @spec commit_timestamp(Repo.t, Commit.t | GitAgent.git_commit) :: DateTime.t | nil
+  def commit_timestamp(_repo, %Commit{} = commit), do: commit.committed_at
   def commit_timestamp(repo, commit) do
     case GitAgent.commit_timestamp(repo, commit) do
       {:ok, timestamp} -> timestamp
@@ -111,7 +114,8 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(Repo.t, GitAgent.git_commit) :: binary | nil
+  @spec commit_message(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
+  def commit_message(_repo, %Commit{} = commit), do: commit.message
   def commit_message(repo, commit) do
     case GitAgent.commit_message(repo, commit) do
       {:ok, message} -> message
@@ -119,31 +123,27 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message_title(Repo.t, GitAgent.git_commit) :: binary | nil
+  @spec commit_message_title(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
   def commit_message_title(repo, commit) do
-    case GitAgent.commit_message(repo, commit) do
-      {:ok, message} -> List.first(String.split(message, "\n", trim: true, parts: 2))
-      {:error, _reason} -> nil
+    if message = commit_message(repo, commit) do
+      List.first(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 
-  @spec commit_message_body(Repo.t, GitAgent.git_commit) :: binary | nil
+  @spec commit_message_body(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
   def commit_message_body(repo, commit) do
-    case GitAgent.commit_message(repo, commit) do
-      {:ok, message} -> List.last(String.split(message, "\n", trim: true, parts: 2))
-      {:error, _reason} -> nil
+    if message = commit_message(repo, commit) do
+      List.last(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 
-  @spec commit_message_format(Repo.t, GitAgent.git_commit, keyword) :: {binary, binary | nil} | nil
+  @spec commit_message_format(Repo.t, Commit.t | GitAgent.git_commit, keyword) :: {binary, binary | nil} | nil
   def commit_message_format(repo, commit, opts \\ []) do
-    case GitAgent.commit_message(repo, commit) do
-      {:ok, message} ->
-        parts = String.split(message, "\n", trim: true, parts: 2)
-        if length(parts) == 2,
-          do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :pre))},
-        else: {List.first(parts), nil}
-      {:error, _reason} -> nil
+    if message = commit_message(repo, commit) do
+      parts = String.split(message, "\n", trim: true, parts: 2)
+      if length(parts) == 2,
+        do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :pre))},
+      else: {List.first(parts), nil}
     end
   end
 
@@ -328,6 +328,10 @@ defmodule GitGud.Web.CodebaseView do
 
   defp fetch_author(repo, {%{type: :tag} = tag, _commit}) do
     fetch_author(repo, tag)
+  end
+
+  defp fetch_author(_repo, %Commit{} = commit) do
+    %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
   end
 
   defp query_users(authors) do

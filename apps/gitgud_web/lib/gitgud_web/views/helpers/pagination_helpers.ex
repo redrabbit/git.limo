@@ -10,7 +10,14 @@ defmodule GitGud.Web.PaginationHelpers do
   Paginates the given `stream`.
   """
   @spec paginate(Plug.Conn.t, Stream.t, pos_integer) :: map
-  def paginate(conn, stream, limit \\ 20) do
+  def paginate(conn, stream, limit \\ 20)
+  def paginate(conn, {slice, total}, limit) do
+    count = max(trunc(Float.ceil(total / limit)), 1)
+    page = min(max(page_params(conn), 1), count)
+    %{current: page, previous?: page > 1, next?: page < count, previous: max(page-1, 1), next: min(page+1, count), first: 1, last: count, slice: slice}
+  end
+
+  def paginate(conn, stream, limit) do
     list = Enum.to_list(stream)
     count = max(trunc(Float.ceil(Enum.count(list) / limit)), 1)
     page = min(max(page_params(conn), 1), count)

@@ -82,9 +82,11 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- Repo.load_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(repo, revision),
-           {:ok, history} <- GitAgent.history(repo, object), do:
-        render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
+           {:ok, object, reference} <- GitAgent.revision(repo, revision) do
+        history = CommitQuery.history(repo, object.oid, limit: 20, offset: 20*(String.to_integer(conn.query_params["p"] || "1")-1))
+        total = CommitQuery.count_ancestors(repo, object.oid)
+        render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: {history, total}, tree_path: [])
+      end
     end || {:error, :not_found}
   end
 
@@ -100,9 +102,8 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- Repo.load_agent(repo),
-           {:ok, reference} <- GitAgent.head(repo),
-           {:ok, history} <- GitAgent.history(repo, reference), do:
-        render(conn, "commit_list.html", repo: repo, revision: reference, commits: history)
+           {:ok, reference} <- GitAgent.head(repo), do:
+        redirect(conn, to: Routes.codebase_path(conn, :history, user_login, repo_name, reference, []))
     end || {:error, :not_found}
   end
 
