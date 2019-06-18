@@ -1,5 +1,5 @@
 alias GitRekt.GitAgent
-alias GitGud.{Repo, RepoQuery, GitCommit}
+alias GitGud.{Repo, RepoQuery, CommitQuery}
 
 Logger.configure(level: :info)
 
@@ -12,5 +12,5 @@ Benchee.run %{
   "revwalk" =>
     fn -> {:ok, hist} = GitAgent.history repo, head; Enum.count hist end,
   "postgres" =>
-    fn -> {:ok, _count} = GitCommit.count_ancestors repo.id, head.oid end
+    fn -> CommitQuery.count_ancestors repo.id, head.oid end
 }

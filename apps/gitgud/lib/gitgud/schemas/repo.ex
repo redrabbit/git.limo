@@ -267,8 +267,11 @@ defmodule GitGud.Repo do
   @spec push(t, ReceivePack.t) :: :ok | {:error, term}
   def push(%__MODULE__{} = repo, %ReceivePack{} = receive_pack) do
     with {:ok, cmds, oids} <- RepoSync.push(repo, receive_pack),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: oids}})
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
+      if Application.get_application(:gitgud_web),
+        do: Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: oids}}),
+      else: :ok
+    end
   end
 
   #

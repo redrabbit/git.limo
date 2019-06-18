@@ -9,7 +9,7 @@ defmodule GitGud.RepoSync do
   alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
-  alias GitGud.GitCommit
+  alias GitGud.Commit
   alias GitGud.Repo
 
   import Ecto.Query, only: [from: 2]
@@ -116,7 +116,7 @@ defmodule GitGud.RepoSync do
   defp map_git_object_db_type(:tag), do: 4
 
   defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
-    {GitCommit, Map.merge(GitCommit.decode(data), %{repo_id: repo_id, oid: oid})}
+    {Commit, Map.merge(Commit.decode(data), %{repo_id: repo_id, oid: oid})}
   end
 
   defp map_git_meta_object(_obj, _repo_id), do: nil

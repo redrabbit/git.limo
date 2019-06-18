@@ -45,13 +45,13 @@ defmodule GitGud.SmartHTTPBackendTest do
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], cd: workdir)
-      assert {:ok, ref} = Repo.git_head(repo)
-      assert {:ok, commit} = GitGud.GitReference.target(ref)
-      assert {:ok, "Initial commit\n"} = GitGud.GitCommit.message(commit)
-      assert {:ok, tree} = Repo.git_tree(commit)
-      assert {:ok, tree_entry} = GitGud.GitTree.by_path(tree, "README.md")
-      assert {:ok, blob} = GitGud.GitTreeEntry.target(tree_entry)
-      assert {:ok, ^readme_content} = GitGud.GitBlob.content(blob)
+      assert {:ok, head} = GitAgent.head(repo)
+      assert {:ok, commit} = GitAgent.peel(repo, head)
+      assert {:ok, "Initial commit\n"} = GitAgent.commit_message(repo, commit)
+      assert {:ok, tree} = GitAgent.tree(repo, commit)
+      assert {:ok, tree_entry} = GitAgent.tree_entry_by_path(repo, tree, "README.md")
+      assert {:ok, blob} = GitAgent.tree_entry_target(repo, tree_entry)
+      assert {:ok, ^readme_content} = GitAgent.blob_content(repo, blob)
     end
 
     test "pushes repository (~500 commits)", %{user: user, repo: repo, workdir: workdir} do
