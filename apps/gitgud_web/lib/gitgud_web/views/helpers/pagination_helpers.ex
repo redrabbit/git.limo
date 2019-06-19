@@ -10,14 +10,7 @@ defmodule GitGud.Web.PaginationHelpers do
   Paginates the given `stream`.
   """
   @spec paginate(Plug.Conn.t, Stream.t, pos_integer) :: map
-  def paginate(conn, stream, limit \\ 20)
-  def paginate(conn, {slice, total}, limit) do
-    count = max(trunc(Float.ceil(total / limit)), 1)
-    page = min(max(page_params(conn), 1), count)
-    %{current: page, previous?: page > 1, next?: page < count, previous: max(page-1, 1), next: min(page+1, count), first: 1, last: count, slice: slice}
-  end
-
-  def paginate(conn, stream, limit) do
+  def paginate(conn, stream, limit \\ 20) do
     list = Enum.to_list(stream)
     count = max(trunc(Float.ceil(Enum.count(list) / limit)), 1)
     page = min(max(page_params(conn), 1), count)
@@ -28,7 +21,15 @@ defmodule GitGud.Web.PaginationHelpers do
   Paginates the given `stream`.
   """
   @spec paginate_cursor(Plug.Conn.t, Stream.t, (any, binary -> boolean), (any -> binary), pos_integer) :: map
-  def paginate_cursor(conn, stream, filter_fn, cursor_fn, limit \\ 20) do
+  def paginate_cursor(conn, stream, filter_fn, cursor_fn, limit \\ 20)
+  def paginate_cursor(conn, slice, _filter_fn, _cursor_fn, limit) when is_list(slice) do
+    page = page_params(conn)
+    if length(slice) > limit,
+      do: %{slice: Enum.take(slice, limit), previous?: page > 1, next?: true, previous: max(page-1, 1), next: page+1},
+    else: %{slice: slice, previous?: page > 1, next?: false, previous: max(page-1, 1), next: page}
+  end
+
+  def paginate_cursor(conn, stream, filter_fn, cursor_fn, limit) do
     {slice, previous?, next?} =
       cond do
         cursor = conn.params["before"] ->
@@ -58,6 +59,14 @@ defmodule GitGud.Web.PaginationHelpers do
   """
   @spec pagination(map) :: binary
   def pagination(%{previous?: false, next?: false} = _page), do: []
+  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next, current: _current} = page) do
+    content_tag(:nav, [class: "pagination is-right", role: "navigation"], do: [
+      link("Previous", to: "?p=#{if previous?, do: previous, else: "#"}", class: "pagination-previous", disabled: !previous?),
+      link("Next", to: "?p=#{if next?, do: next, else: "#"}", class: "pagination-next", disabled: !next?),
+      pagination_list(page)
+    ])
+  end
+
   def pagination(%{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}) do
     content_tag(:nav, [class: "", role: "navigation"], do: [
       link("Previous", to: "?before=#{if previous?, do: before_cursor, else: "#"}", class: "pagination-previous", disabled: !previous?),
@@ -65,11 +74,10 @@ defmodule GitGud.Web.PaginationHelpers do
     ])
   end
 
-  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next} = page) do
-    content_tag(:nav, [class: "pagination is-right", role: "navigation"], do: [
+  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next}) do
+    content_tag(:nav, [class: "", role: "navigation"], do: [
       link("Previous", to: "?p=#{if previous?, do: previous, else: "#"}", class: "pagination-previous", disabled: !previous?),
       link("Next", to: "?p=#{if next?, do: next, else: "#"}", class: "pagination-next", disabled: !next?),
-      pagination_list(page)
     ])
   end
 

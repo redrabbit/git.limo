@@ -11,7 +11,7 @@
   </div>
 </nav>
 
-<%= with page <- paginate(@conn, @commits) do %>
+<%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
   <table class="table is-fullwidth is-striped">
     <tbody>
       <%= for {commit, author} <- batch_commits_authors(@repo, page.slice) do %>
