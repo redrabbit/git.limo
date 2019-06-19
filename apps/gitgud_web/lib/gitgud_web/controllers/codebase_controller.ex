@@ -82,10 +82,9 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- Repo.load_agent(repo),
-           {:ok, object, reference} <- GitAgent.revision(repo, revision) do
-        history = CommitQuery.history(repo, object.oid, limit: 21, offset: 20*(String.to_integer(conn.query_params["p"] || "1")-1))
+           {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, history} <- GitAgent.history(repo, object), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
-      end
     end || {:error, :not_found}
   end
 
