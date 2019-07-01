@@ -9,7 +9,9 @@ defmodule GitRekt.Git do
   >
   > [Erlang documentation - NIFs](http://erlang.org/doc/tutorial/nif.html)
 
-  Let's see a brief example:
+  ## Example
+
+  Let's start with a basic code example showing the last commit author and message:
 
   ```elixir
   alias GitRekt.Git
@@ -17,14 +19,33 @@ defmodule GitRekt.Git do
   # load repository
   {:ok, repo} = Git.repository_open("/tmp/my-repo")
 
-  # show last commit of branch "master"
+  # fetch commit pointed by master
   {:ok, :commit, _oid, commit} = Git.reference_peel(repo, "refs/heads/master")
+
+  # fetch commit author & message
   {:ok, name, email, time, _offset} = Git.commit_author(commit)
   {:ok, message} = Git.commit_message(commit)
 
   IO.puts "Last commit by #{name} <#{email}>:"
   IO.puts message
   ```
+
+  First we open our repository using `repository_open/1`, passing the path of the Git repository.  We can fetch
+  a branch by passing the exact reference path to `reference_peel/2`. In our example, this allows us to access
+  the commit `master` is pointing to.
+
+  This is one of many ways to fetch a given commit, `reference_lookup/2` and `reference_glob/2` offer similar
+  functionalities. There are other related functions such as `revparse_single/2` and `revparse_ext/2` which
+  provide support for parsing [revspecs](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection).
+
+  ## Thread safety
+
+  Accessing a `t:repo/0` or any NIF allocated pointer (`t:blob/0`, `t:commit/0`, `t:config/0`, etc.) from multiple
+  processes simultaneously is not safe. These pointers should never be shared across processes.
+
+  In order to access a repository in a concurrent manner, each process has to initialize it's own repository
+  pointer using `repository_open/1`. Alternatively, the `GitRekt.GitAgent` module provides a similar API but
+  can use a dedicated process, so that its access can be serialized.
   """
 
   @type repo          :: reference
