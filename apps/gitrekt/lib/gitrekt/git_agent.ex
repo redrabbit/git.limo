@@ -18,11 +18,50 @@ defmodule GitRekt.GitAgent do
 
   @type git_object :: git_commit | git_blob | git_tree | git_tag
 
+  @callback put_agent(any, :inproc | :shared) :: {:ok, any} | {:error, term}
+  @callback get_agent(any) :: any
+
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
   @spec start_link(Path.t | {atom, [term]}, keyword) :: GenServer.on_start
   def start_link(arg, opts \\ []), do: GenServer.start_link(__MODULE__, arg, opts)
+
+  @doc ~S"""
+  Attaches a Git agent to the given `repo`.
+
+  Once attached, a repo can be used to interact with the underlying Git repository:
+
+  ```elixir
+  {:ok, repo} = GitRekt.GitAgent.attach(repo)
+  {:ok, head} = GitRekt.GitAgent.head(repo)
+  IO.puts "current branch: #{head.name}"
+  ```
+
+  Often times, it might be preferable to manipulate Git objects in a dedicated process.
+  For example when you want to access a single repository from multiple processes simultaneously.
+
+  For such cases, you can explicitly tell to load the agent in `:shared` mode.
+
+  In shared mode, `GitRekt.GitAgent` does not operate on the `t:GitRekt.Git.repo/0` pointer directly.
+  Instead it starts a dedicated process and executes commands via message passing.
+  """
+
+  @spec attach(any, :inproc | :shared) :: {:ok, any} | {:error, term}
+  def attach(%{__struct__: module} = repo, mode \\ :inproc) do
+    apply(module, :put_agent, [repo, mode])
+  end
+
+  @doc """
+  Similar to `attach/2`, but raises an exception if an error occurs.
+  """
+  @spec attach!(any, :inproc | :shared) :: any
+  def attach!(%{__struct__: _module} = repo, mode \\ :inproc) do
+    case attach(repo, mode) do
+      {:ok, repo} -> repo
+      {:error, reason} -> raise reason
+    end
+  end
 
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
@@ -260,9 +299,12 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp call(%{__agent__: agent}, op), do: call(agent, op)
   defp call(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
   defp call(agent, op) when is_reference(agent), do: call(op, agent)
+
+  defp call(%{__struct__: module} = repo, op) do
+    call(apply(module, :get_agent, [repo]), op)
+  end
 
   defp call(:empty?, handle) do
     {:ok, Git.repository_empty?(handle)}

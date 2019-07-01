@@ -3,10 +3,10 @@ defmodule GitGud.GraphQL.CacheRepoMiddleware do
 
   @behaviour Absinthe.Middleware
 
-  alias GitGud.Repo
+  alias GitRekt.GitAgent
 
   def call(resolution, repo) do
-    case Repo.load_agent(repo) do
+    case GitAgent.attach(repo) do
       {:ok, repo} ->
         resolution
         |> Map.update!(:context, &Map.put(&1, :repo, repo))

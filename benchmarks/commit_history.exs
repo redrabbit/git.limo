@@ -4,7 +4,7 @@ alias GitGud.{Repo, RepoQuery, CommitQuery}
 Logger.configure(level: :info)
 
 repo = RepoQuery.user_repo "redrabbit", "elixir"
-repo = Repo.load_agent! repo
+repo = GitAgent.attach! repo
 
 {:ok, head} = GitAgent.head repo
 

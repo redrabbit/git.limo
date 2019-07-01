@@ -116,7 +116,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_info_refs(conn, repo, service) do
     if authorized?(conn, repo, service) do
-      case Repo.load_agent(repo) do
+      case GitAgent.attach(repo) do
         {:ok, repo} ->
           refs = WireProtocol.reference_discovery(repo, service)
           info = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
@@ -133,7 +133,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_head_ref(conn, repo) do
     if authorized?(conn, repo, :read) do
-      with {:ok, repo} <- Repo.load_agent(repo),
+      with {:ok, repo} <- GitAgent.attach(repo),
            {:ok, head} <- GitAgent.head(repo) do
         send_resp(conn, :ok, "ref: #{head.prefix <> head.name}")
       else
@@ -148,7 +148,7 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_pack(conn, repo, service) do
     if authorized?(conn, repo, service) do
       with {:ok, body, conn} <- read_body_full(conn),
-           {:ok, repo} <- Repo.load_agent(repo) do
+           {:ok, repo} <- GitAgent.attach(repo) do
         conn
         |> put_resp_content_type("application/x-#{service}-result")
         |> send_resp(:ok, git_exec(service, repo, body))
