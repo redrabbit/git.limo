@@ -10,6 +10,7 @@ class CommentForm extends React.Component {
 
   componentDidMount() {
     this.bodyInput.current.focus()
+    this.bodyInput.current.setSelectionRange(this.bodyInput.current.value.length, this.bodyInput.current.value.length);
   }
 
   render() {
