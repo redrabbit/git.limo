@@ -12,19 +12,29 @@ defmodule GitGud.RepoSync do
   alias GitGud.Commit
   alias GitGud.Repo
 
+  import Ecto.Changeset, only: [change: 2]
   import Ecto.Query, only: [from: 2]
 
   @batch_insert_chunk_size 5_000
 
   @doc """
   Writes the given `receive_pack` objects and references to the given `repo`.
+
+  This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
+  It is responsible for writing objects and references to the underlying Git repository.
+
+  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoSync.push/2` for more details.
   """
   @spec push(Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
   def push(%Repo{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
     with {:ok, objs} <- push_objects(receive_pack, repo.id),
           :ok <- push_meta_objects(objs, repo.id),
-          :ok <- push_references(receive_pack), do:
-      {:ok, cmds, Map.keys(objs)}
+          :ok <- push_references(receive_pack),
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
+      if Application.get_application(:gitgud_web),
+        do: Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: Map.keys(objs)}}),
+      else: :ok
+    end
   end
 
   #

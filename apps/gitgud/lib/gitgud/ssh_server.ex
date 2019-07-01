@@ -29,8 +29,8 @@ defmodule GitGud.SSHServer do
   alias GitGud.Auth
   alias GitGud.User
   alias GitGud.UserQuery
-  alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.RepoSync
   alias GitGud.SSHKey
 
   alias GitRekt.GitAgent
@@ -120,7 +120,7 @@ defmodule GitGud.SSHServer do
     if authorized?(user, repo, exec) do
       case GitAgent.attach(repo) do
         {:ok, repo} ->
-          {service, output} = WireProtocol.next(WireProtocol.new(repo.__agent__, exec, callback: {Repo, :push, [repo]}))
+          {service, output} = WireProtocol.next(WireProtocol.new(repo.__agent__, exec, callback: {RepoSync, :push, [repo]}))
           :ssh_connection.send(conn, chan, output)
           {:ok, %{state|repo: repo, service: service}}
         {:error, _reason} ->
