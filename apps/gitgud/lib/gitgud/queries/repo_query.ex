@@ -58,7 +58,7 @@ defmodule GitGud.RepoQuery do
   """
   @spec by_path(Path.t, keyword) :: Repo.t | nil
   def by_path(path, opts \\ []) do
-    path = Path.relative_to(path, Repo.root_path())
+    path = Path.relative_to(path, Application.fetch_env!(:gitgud, :git_root))
     case Path.split(path) do
       [login, name] ->
         user_repo(login, name, opts)

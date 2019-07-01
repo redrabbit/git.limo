@@ -9,11 +9,9 @@ defmodule GitGud.Repo do
 
   alias GitRekt.GitAgent
   alias GitRekt.Git
-  alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
   alias GitGud.Maintainer
-  alias GitGud.RepoSync
   alias GitGud.User
   alias GitGud.UserQuery
 
@@ -188,38 +186,12 @@ defmodule GitGud.Repo do
   @doc """
   Returns the absolute path to the Git workdir for the given `repo`.
 
-  The path is a concatenation of `root_path/0`, `repo.owner.login` and `repo.name`.
+  The path is a concatenation of `Application.fetch_env!(:gitgud, :git_root)/0`, `repo.owner.login` and `repo.name`.
   """
   @spec workdir(t) :: Path.t
   def workdir(%__MODULE__{} = repo) do
     repo = DB.preload(repo, :owner)
-    Path.join([root_path(), repo.owner.login, repo.name])
-  end
-
-  @doc """
-  Returns the absolute path to the Git root directory.
-  """
-  @spec root_path() :: Path.t | nil
-  def root_path() do
-    Application.fetch_env!(:gitgud, :git_root)
-  end
-
-  @doc """
-  Applies the given `receive_pack` to the `repo`.
-
-  This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
-  It is responsible for writing objects and references to the underlying Git repository.
-
-  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoSync.push/2` for more details.
-  """
-  @spec push(t, ReceivePack.t) :: :ok | {:error, term}
-  def push(%__MODULE__{} = repo, %ReceivePack{} = receive_pack) do
-    with {:ok, cmds, oids} <- RepoSync.push(repo, receive_pack),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
-      if Application.get_application(:gitgud_web),
-        do: Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: oids}}),
-      else: :ok
-    end
+    Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner.login, repo.name])
   end
 
   #

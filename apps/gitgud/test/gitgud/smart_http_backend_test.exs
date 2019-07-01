@@ -91,7 +91,7 @@ defmodule GitGud.SmartHTTPBackendTest do
   defp create_user(context) do
     user = User.create!(factory(:user))
     on_exit fn ->
-      File.rmdir(Path.join(Repo.root_path, user.login))
+      File.rmdir(Path.join(Application.fetch_env!(:gitgud, :git_root), user.login))
     end
     Map.put(context, :user, user)
   end
@@ -106,7 +106,7 @@ defmodule GitGud.SmartHTTPBackendTest do
 
   defp clone_from_github(context) do
     File.rm_rf!(Repo.workdir(context.repo))
-    {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "https://github.com/almightycouch/gitgud.git", context.repo.name], cd: Path.join(Repo.root_path(), context.user.login))
+    {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "https://github.com/almightycouch/gitgud.git", context.repo.name], cd: Path.join(Application.fetch_env!(:gitgud, :git_root), context.user.login))
     :ok
   end
 

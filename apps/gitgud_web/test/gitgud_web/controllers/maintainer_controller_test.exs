@@ -67,7 +67,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
     users = Stream.repeatedly(fn -> User.create!(factory(:user)) end)
     users = Enum.take(users, 2)
     on_exit fn ->
-      File.rmdir(Path.join(Repo.root_path, hd(users).login))
+      File.rmdir(Path.join(Application.fetch_env!(:gitgud, :git_root), hd(users).login))
     end
     Map.put(context, :users, users)
   end
