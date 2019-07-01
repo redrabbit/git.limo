@@ -26,7 +26,14 @@ class CommentForm extends React.Component {
               <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
             </div>
             <div className="control">
-              <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+              {(() => {
+                switch(this.props.action) {
+                  case "edit":
+                    return <button className="button is-link" type="submit" disabled={this.state.body === ""}>Update comment</button>
+                  default:
+                    return <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+                }
+              })()}
             </div>
           </div>
         </form>

@@ -21,7 +21,7 @@ class Comment extends React.Component {
   render() {
     const {comment} = this.props
     if(this.state.edit) {
-      return <CommentForm body={comment.body} onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
+      return <CommentForm body={comment.body} action="edit" onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
     } else {
       return (
         <div className="comment">
