@@ -33,7 +33,7 @@ defmodule GitGud.SmartHTTPBackend do
   alias GitGud.Auth
   alias GitGud.User
   alias GitGud.RepoQuery
-  alias GitGud.RepoSync
+  alias GitGud.RepoStorage
 
   alias GitGud.Authorization
 
@@ -163,7 +163,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_exec(exec, repo, data) do
     repo.__agent__
-    |> WireProtocol.new(exec, callback: {RepoSync, :push, [repo]})
+    |> WireProtocol.new(exec, callback: {RepoStorage, :push, [repo]})
     |> WireProtocol.run(data, skip: 1)
     |> elem(1)
   end

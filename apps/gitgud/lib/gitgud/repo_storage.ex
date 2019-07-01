@@ -1,4 +1,4 @@
-defmodule GitGud.RepoSync do
+defmodule GitGud.RepoStorage do
   @moduledoc """
   Conveniences for storing Git objects and meta objects.
   """
@@ -23,7 +23,7 @@ defmodule GitGud.RepoSync do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
 
-  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoSync.push/2` for more details.
+  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoStorage.push/2` for more details.
   """
   @spec push(Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
   def push(%Repo{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
