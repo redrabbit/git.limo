@@ -12,6 +12,8 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
+  alias GitRekt.{GitCommit, GitTag, GitRef}
+
   import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Tag
 
@@ -151,14 +153,14 @@ defmodule GitGud.Web.CodebaseView do
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
   @spec revision_name(Repo.git_object) :: binary
-  def revision_name(%{oid: oid, type: :commit} = _object = _object), do: oid_fmt_short(oid)
-  def revision_name(%{name: name, type: :reference} = _object), do: name
-  def revision_name(%{name: name, type: :tag} = _object), do: name
+  def revision_name(%GitCommit{oid: oid} = _object = _object), do: oid_fmt_short(oid)
+  def revision_name(%GitRef{name: name} = _object), do: name
+  def revision_name(%GitTag{name: name} = _object), do: name
 
   @spec revision_type(GitAgent.git_object) :: atom
-  def revision_type(%{type: :commit} = _object), do: :commit
-  def revision_type(%{type: :tag} = _object), do: :tag
-  def revision_type(%{type: :reference, subtype: type} = _object), do: type
+  def revision_type(%GitCommit{} = _object), do: :commit
+  def revision_type(%GitTag{} = _object), do: :tag
+  def revision_type(%GitRef{type: type} = _object), do: type
 
   def revision_href(conn, revision_type) when is_atom(revision_type) do
     Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
@@ -300,7 +302,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  defp fetch_author(repo, %{type: :reference} = reference) do
+  defp fetch_author(repo, %GitRef{} = reference) do
     case GitAgent.peel(repo, reference) do
       {:ok, commit} ->
         fetch_author(repo, commit)
@@ -308,25 +310,25 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  defp fetch_author(repo, %{type: :commit} = commit) do
+  defp fetch_author(repo, %GitCommit{} = commit) do
     case GitAgent.commit_author(repo, commit) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_author(repo, %{type: :tag} = tag) do
+  defp fetch_author(repo, %GitTag{} = tag) do
     case GitAgent.tag_author(repo, tag) do
       {:ok, sig} -> sig
       {:error, _reason} -> nil
     end
   end
 
-  defp fetch_author(repo, {%{type: :reference} = _reference, commit}) do
+  defp fetch_author(repo, {%GitRef{} = _reference, commit}) do
     fetch_author(repo, commit)
   end
 
-  defp fetch_author(repo, {%{type: :tag} = tag, _commit}) do
+  defp fetch_author(repo, {%GitTag{} = tag, _commit}) do
     fetch_author(repo, tag)
   end
 

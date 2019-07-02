@@ -4,22 +4,14 @@ defmodule GitRekt.GitAgent do
   """
   use GenServer
 
-  alias GitRekt.Git
+  alias GitRekt.{Git, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff }
 
   @type agent :: pid | Git.repo
 
-  @type git_commit :: %{oid: Git.oid, type: :commit, commit: Git.commit}
-  @type git_reference :: %{oid: Git.oid, name: binary, prefix: binary, type: :reference, subtype: :branch | :tag}
-  @type git_tag :: %{oid: Git.oid, type: :tag, tag: Git.tag}
-  @type git_blob :: %{oid: Git.oid, type: :blob, blob: Git.blob}
-  @type git_tree :: %{oid: Git.oid, type: :tree, tree: Git.tree}
-  @type git_tree_entry :: %{oid: Git.oid, name: binary, mode: integer, type: :tree_entry, subtype: :blob | :tree}
-  @type git_diff :: %{type: :diff, diff: Git.diff}
+  @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
 
-  @type git_object :: git_commit | git_blob | git_tree | git_tag
-
-  @callback put_agent(any, :inproc | :shared) :: {:ok, any} | {:error, term}
-  @callback get_agent(any) :: any
+  @callback put_agent(repo :: any, mode :: :inproc | :shared) :: {:ok, any} | {:error, term}
+  @callback get_agent(repo :: any) :: any
 
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
@@ -72,55 +64,55 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git reference.
   """
-  @spec head(agent) :: {:ok, git_reference} | {:error, term}
+  @spec head(agent) :: {:ok, GitRef.t} | {:error, term}
   def head(agent), do: call(agent, :head)
 
   @doc """
   Returns all Git branches.
   """
-  @spec branches(agent) :: {:ok, [git_reference]} | {:error, term}
+  @spec branches(agent) :: {:ok, [GitRef.t]} | {:error, term}
   def branches(agent), do: call(agent, {:references, "refs/heads/*"})
 
   @doc """
   Returns the Git branch with the given `name`.
   """
-  @spec branch(agent, binary) :: {:ok, git_reference} | {:error, term}
+  @spec branch(agent, binary) :: {:ok, GitRef.t} | {:error, term}
   def branch(agent, name), do: call(agent, {:reference, "refs/heads/" <> name})
 
   @doc """
   Returns all Git tags.
   """
-  @spec tags(agent) :: {:ok, [git_tag]} | {:error, term}
+  @spec tags(agent) :: {:ok, [GitTag.t]} | {:error, term}
   def tags(agent), do: call(agent, {:references, "refs/tags/*"})
 
   @doc """
   Returns the Git tag with the given `name`.
   """
-  @spec tag(agent, binary) :: {:ok, git_tag} | {:error, term}
+  @spec tag(agent, binary) :: {:ok, GitTag.t} | {:error, term}
   def tag(agent, name), do: call(agent, {:reference, "refs/tags/" <> name})
 
   @doc """
   Returns the Git tag author of the given `tag`.
   """
-  @spec tag_author(agent, git_tag) :: {:ok, map} | {:error, term}
+  @spec tag_author(agent, GitTag.t) :: {:ok, map} | {:error, term}
   def tag_author(agent, tag), do: call(agent, {:author, tag})
 
   @doc """
   Returns the Git tag message of the given `tag`.
   """
-  @spec tag_message(agent, git_tag) :: {:ok, binary} | {:error, term}
+  @spec tag_message(agent, GitTag.t) :: {:ok, binary} | {:error, term}
   def tag_message(agent, tag), do: call(agent, {:message, tag})
 
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec references(agent, binary | :undefined) :: {:ok, [git_reference]} | {:error, term}
+  @spec references(agent, binary | :undefined) :: {:ok, [GitRef.t]} | {:error, term}
   def references(agent, glob \\ :undefined), do: call(agent, {:references, glob})
 
   @doc """
   Returns the Git reference with the given `name`.
   """
-  @spec reference(agent, binary) :: {:ok, git_reference} | {:error, term}
+  @spec reference(agent, binary) :: {:ok, GitRef.t} | {:error, term}
   def reference(agent, name), do: call(agent, {:reference, name})
 
   @doc """
@@ -132,115 +124,115 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git object matching the given `spec`.
   """
-  @spec revision(agent, binary) :: {:ok, git_object, git_reference | nil} | {:error, term}
+  @spec revision(agent, binary) :: {:ok, git_object, GitRef.t | nil} | {:error, term}
   def revision(agent, spec), do: call(agent, {:revision, spec})
 
   @doc """
   Returns the parent of the given `commit`.
   """
-  @spec commit_parents(agent, git_commit) :: {:ok, [git_commit]} | {:error, term}
+  @spec commit_parents(agent, GitCommit.t) :: {:ok, [GitCommit.t]} | {:error, term}
   def commit_parents(agent, commit), do: call(agent, {:commit_parents, commit})
 
   @doc """
   Returns the author of the given `commit`.
   """
-  @spec commit_author(agent, git_commit) :: {:ok, map} | {:error, term}
+  @spec commit_author(agent, GitCommit.t) :: {:ok, map} | {:error, term}
   def commit_author(agent, commit), do: call(agent, {:author, commit})
 
   @doc """
   Returns the message of the given `commit`.
   """
-  @spec commit_message(agent, git_commit) :: {:ok, binary} | {:error, term}
+  @spec commit_message(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
   def commit_message(agent, commit), do: call(agent, {:message, commit})
 
   @doc """
   Returns the timestamp of the given `commit`.
   """
-  @spec commit_timestamp(agent, git_commit) :: {:ok, DateTime.t} | {:error, term}
+  @spec commit_timestamp(agent, GitCommit.t) :: {:ok, DateTime.t} | {:error, term}
   def commit_timestamp(agent, commit), do: call(agent, {:commit_timestamp, commit})
 
   @doc """
   Returns the GPG signature of the given `commit`.
   """
-  @spec commit_gpg_signature(agent, git_commit) :: {:ok, binary} | {:error, term}
+  @spec commit_gpg_signature(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
   def commit_gpg_signature(agent, commit), do: call(agent, {:commit_gpg_signature, commit})
 
   @doc """
   Returns the content of the given `blob`.
   """
-  @spec blob_content(agent, git_blob) :: {:ok, binary} | {:error, term}
+  @spec blob_content(agent, GitBlob.t) :: {:ok, binary} | {:error, term}
   def blob_content(agent, blob), do: call(agent, {:blob_content, blob})
 
   @doc """
   Returns the size in byte of the given `blob`.
   """
-  @spec blob_size(agent, git_blob) :: {:ok, non_neg_integer} | {:error, term}
+  @spec blob_size(agent, GitBlob.t) :: {:ok, non_neg_integer} | {:error, term}
   def blob_size(agent, blob), do: call(agent, {:blob_size, blob})
 
   @doc """
   Returns the Git tree of the given `obj`.
   """
-  @spec tree(agent, git_object) :: {:ok, git_tree} | {:error, term}
+  @spec tree(agent, git_object) :: {:ok, GitTree.t} | {:error, term}
   def tree(agent, obj), do: call(agent, {:tree, obj})
 
   @doc """
   Returns the Git tree entries of the given `obj`.
   """
-  @spec tree_entries(agent, git_tree) :: {:ok, [git_tree_entry]} | {:error, term}
+  @spec tree_entries(agent, GitTree.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
   def tree_entries(agent, obj), do: call(agent, {:tree_entries, obj})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `oid`.
   """
-  @spec tree_entry_by_id(agent, git_tree, Git.oid) :: {:ok, git_tree_entry} | {:error, term}
+  @spec tree_entry_by_id(agent, GitTree.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
   def tree_entry_by_id(agent, obj, oid), do: call(agent, {:tree_entry, obj, {:oid, oid}})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `path`.
   """
-  @spec tree_entry_by_id(agent, git_tree, Path.t) :: {:ok, git_tree_entry} | {:error, term}
+  @spec tree_entry_by_id(agent, GitTree.t, Path.t) :: {:ok, GitTreeEntry.t} | {:error, term}
   def tree_entry_by_path(agent, obj, path), do: call(agent, {:tree_entry, obj, {:path, path}})
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
   """
-  @spec tree_entry_target(agent, git_tree_entry) :: {:ok, git_blob | git_tree} | {:error, term}
+  @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
   def tree_entry_target(agent, tree_entry), do: call(agent, {:tree_entry_target, tree_entry})
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
   """
-  @spec diff(agent, git_object, git_object, keyword) :: {:ok, git_diff} | {:error, term}
+  @spec diff(agent, git_object, git_object, keyword) :: {:ok, GitDiff.t} | {:error, term}
   def diff(agent, obj1, obj2, opts \\ []), do: call(agent, {:diff, obj1, obj2, opts})
 
   @doc """
   Returns the deltas of the given `diff`.
   """
-  @spec diff_deltas(agent, git_diff) :: {:ok, map} | {:error, term}
+  @spec diff_deltas(agent, GitDiff.t) :: {:ok, map} | {:error, term}
   def diff_deltas(agent, diff), do: call(agent, {:diff_deltas, diff})
 
   @doc """
   Returns a binary formated representation of the given `diff`.
   """
-  @spec diff_format(agent, git_diff, Git.diff_format) :: {:ok, binary} | {:error, term}
+  @spec diff_format(agent, GitDiff.t, Git.diff_format) :: {:ok, binary} | {:error, term}
   def diff_format(agent, diff, format \\ :patch), do: call(agent, {:diff_format, diff, format})
 
   @doc """
   Returns the stats of the given `diff`.
   """
-  @spec diff_stats(agent, git_diff) :: {:ok, map} | {:error, term}
+  @spec diff_stats(agent, GitDiff.t) :: {:ok, map} | {:error, term}
   def diff_stats(agent, diff), do: call(agent, {:diff_stats, diff})
 
   @doc """
   Returns the Git commit history of the given `obj`.
   """
-  @spec history(agent, git_reference | git_object) :: {:ok, [git_commit]} | {:error, term}
+  @spec history(agent, GitRef.t | git_object, keyword) :: {:ok, [GitCommit.t]} | {:error, term}
   def history(agent, obj, opts \\ []), do: call(agent, {:history, obj, opts})
 
   @doc """
   Returns the underlying Git commit of the given `obj`.
   """
-  @spec peel(agent, git_reference | git_object) :: {:ok, git_commit} | {:error, term}
+  @spec peel(agent, GitRef.t | git_object) :: {:ok, GitCommit.t} | {:error, term}
   def peel(agent, obj), do: call(agent, {:peel, obj})
 
   #
@@ -366,8 +358,8 @@ defmodule GitRekt.GitAgent do
 
   defp call({:tree, obj}, handle), do: fetch_tree(obj, handle)
   defp call({:diff, obj1, obj2, opts}, handle), do: fetch_diff(obj1, obj2, handle, opts)
-  defp call({:diff_format, %{type: :diff, diff: diff}, format}, _handle), do: Git.diff_format(diff, format)
-  defp call({:diff_deltas, %{type: :diff, diff: diff}}, _handle) do
+  defp call({:diff_format, %GitDiff{diff: diff}, format}, _handle), do: Git.diff_format(diff, format)
+  defp call({:diff_deltas, %GitDiff{diff: diff}}, _handle) do
     case Git.diff_deltas(diff) do
       {:ok, deltas} ->
         {:ok, Enum.map(deltas, &resolve_diff_delta/1)}
@@ -376,7 +368,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:diff_stats, %{type: :diff, diff: diff}}, _handle) do
+  defp call({:diff_stats, %GitDiff{diff: diff}}, _handle) do
     case Git.diff_stats(diff) do
       {:ok, files_changed, insertions, deletions} ->
         {:ok, resolve_diff_stats({files_changed, insertions, deletions})}
@@ -386,7 +378,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call({:tree_entry, obj, spec}, handle), do: fetch_tree_entry(obj, spec, handle)
-  defp call({:tree_entry_target, %{oid: oid, subtype: type}}, handle) do
+  defp call({:tree_entry_target, %GitTreeEntry{oid: oid, type: type}}, handle) do
     case Git.object_lookup(handle, oid) do
       {:ok, ^type, obj} ->
         {:ok, resolve_object({obj, type, oid})}
@@ -398,7 +390,7 @@ defmodule GitRekt.GitAgent do
   defp call({:tree_entries, obj}, handle), do: fetch_tree_entries(obj, handle)
   defp call({:author, obj}, _handle), do: fetch_author(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
-  defp call({:commit_parents, %{type: :commit, commit: commit}}, _handle) do
+  defp call({:commit_parents, %GitCommit{commit: commit}}, _handle) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_commit_parent/1)}
@@ -407,7 +399,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_timestamp, %{type: :commit, commit: commit}}, _handle) do
+  defp call({:commit_timestamp, %GitCommit{commit: commit}}, _handle) do
     case Git.commit_time(commit) do
       {:ok, time, _offset} ->
         DateTime.from_unix(time)
@@ -416,9 +408,9 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_gpg_signature, %{type: :commit, commit: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
-  defp call({:blob_content, %{type: :blob, blob: blob}}, _handle), do: Git.blob_content(blob)
-  defp call({:blob_size, %{type: :blob, blob: blob}}, _handle), do: Git.blob_content(blob)
+  defp call({:commit_gpg_signature, %GitCommit{commit: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
+  defp call({:blob_content, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
+  defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj}, handle), do: fetch_target(obj, handle)
 
@@ -435,32 +427,32 @@ defmodule GitRekt.GitAgent do
   defp resolve_reference({name, nil, :oid, oid}) do
     prefix = Path.dirname(name) <> "/"
     shorthand = Path.basename(name)
-    %{oid: oid, name: shorthand, prefix: prefix, type: :reference, subtype: resolve_reference_type(prefix)}
+    %GitRef{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix)}
   end
 
   defp resolve_reference({name, shorthand, :oid, oid}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
-    %{oid: oid, name: shorthand, prefix: prefix, type: :reference, subtype: resolve_reference_type(prefix)}
+    %GitRef{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix)}
   end
 
   defp resolve_reference_type("refs/heads/"), do: :branch
   defp resolve_reference_type("refs/tags/"), do: :tag
 
-  defp resolve_object({blob, :blob, oid}), do: %{oid: oid, type: :blob, blob: blob}
-  defp resolve_object({commit, :commit, oid}), do: %{oid: oid, type: :commit, commit: commit}
-  defp resolve_object({tree, :tree, oid}), do: %{oid: oid, type: :tree, tree: tree}
+  defp resolve_object({blob, :blob, oid}), do: %GitBlob{oid: oid, blob: blob}
+  defp resolve_object({commit, :commit, oid}), do: %GitCommit{oid: oid, commit: commit}
+  defp resolve_object({tree, :tree, oid}), do: %GitTree{oid: oid, tree: tree}
   defp resolve_object({tag, :tag, oid}) do
     case Git.tag_name(tag) do
       {:ok, name} ->
-        %{oid: oid, name: name, type: :tag, tag: tag}
+        %GitTag{oid: oid, name: name, tag: tag}
       {:error, _reason} ->
-        %{oid: oid, type: :tag, tag: tag}
+        %GitTag{oid: oid, tag: tag}
     end
   end
 
-  defp resolve_commit_parent({oid, commit}), do: %{oid: oid, type: :commit, commit: commit}
+  defp resolve_commit_parent({oid, commit}), do: %GitCommit{oid: oid, commit: commit}
 
-  defp resolve_tree_entry({mode, type, oid, name}), do: %{oid: oid, name: name, mode: mode, type: :tree_entry, subtype: type}
+  defp resolve_tree_entry({mode, type, oid, name}), do: %GitTreeEntry{oid: oid, name: name, mode: mode, type: type}
 
   defp resolve_diff_delta({{old_file, new_file, count, similarity}, hunks}) do
     %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Enum.map(hunks, &resolve_diff_hunk/1)}
@@ -491,16 +483,16 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree(%{type: :commit, commit: commit}, _handle) do
+  defp fetch_tree(%GitCommit{commit: commit}, _handle) do
     case Git.commit_tree(commit) do
       {:ok, oid, tree} ->
-        {:ok, %{oid: oid, type: :tree, tree: tree}}
+        {:ok, %GitTree{oid: oid, tree: tree}}
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp fetch_tree(%{type: :reference, name: name, prefix: prefix}, handle) do
+  defp fetch_tree(%GitRef{name: name, prefix: prefix}, handle) do
     case Git.reference_peel(handle, prefix <> name) do
       {:ok, obj_type, oid, obj} ->
         fetch_tree(resolve_object({obj, obj_type, oid}), handle)
@@ -509,7 +501,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree(%{type: :tag, tag: tag}, handle) do
+  defp fetch_tree(%GitTag{tag: tag}, handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
         fetch_tree(resolve_object({obj, obj_type, oid}), handle)
@@ -518,7 +510,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry(%{type: :tree, tree: tree}, {:oid, oid}, _handle) do
+  defp fetch_tree_entry(%GitTree{tree: tree}, {:oid, oid}, _handle) do
     case Git.tree_byid(tree, oid) do
       {:ok, mode, type, oid, name} ->
         {:ok, resolve_tree_entry({mode, type, oid, name})}
@@ -527,7 +519,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry(%{type: :tree, tree: tree}, {:path, path}, _handle) do
+  defp fetch_tree_entry(%GitTree{tree: tree}, {:path, path}, _handle) do
     case Git.tree_bypath(tree, path) do
       {:ok, mode, type, oid, name} ->
         {:ok, resolve_tree_entry({mode, type, oid, name})}
@@ -545,7 +537,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entries(%{type: :tree, tree: tree}, _handle) do
+  defp fetch_tree_entries(%GitTree{tree: tree}, _handle) do
     case Git.tree_entries(tree) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_tree_entry/1)}
@@ -563,10 +555,10 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_diff(%{type: :tree, tree: tree1}, %{type: :tree, tree: tree2}, handle, opts) do
+  defp fetch_diff(%GitTree{tree: tree1}, %GitTree{tree: tree2}, handle, opts) do
     case Git.diff_tree(handle, tree1, tree2, opts) do
       {:ok, diff} ->
-        {:ok, %{type: :diff, diff: diff}}
+        {:ok, %GitDiff{diff: diff}}
       {:error, reason} ->
         {:error, reason}
     end
@@ -578,7 +570,7 @@ defmodule GitRekt.GitAgent do
       fetch_diff(tree1, tree2, handle, opts)
   end
 
-  defp fetch_target(%{type: :reference, name: name, prefix: prefix}, handle) do
+  defp fetch_target(%GitRef{name: name, prefix: prefix}, handle) do
     case Git.reference_peel(handle, prefix <> name) do
       {:ok, obj_type, oid, obj} ->
         {:ok, resolve_object({obj, obj_type, oid})}
@@ -587,8 +579,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_target(%{type: :commit} = commit, _handle), do: {:ok, commit}
-  defp fetch_target(%{type: :tag, tag: tag}, _handle) do
+  defp fetch_target(%GitCommit{} = commit, _handle), do: {:ok, commit}
+  defp fetch_target(%GitTag{tag: tag}, _handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
         {:ok, resolve_object({obj, obj_type, oid})}
@@ -597,20 +589,20 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_author(%{type: :commit, commit: commit}) do
+  defp fetch_author(%GitCommit{commit: commit}) do
     with {:ok, name, email, time, _offset} <- Git.commit_author(commit),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_author(%{type: :tag, tag: tag}) do
+  defp fetch_author(%GitTag{tag: tag}) do
     with {:ok, name, email, time, _offset} <- Git.tag_author(tag),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_message(%{type: :commit, commit: commit}), do: Git.commit_message(commit)
-  defp fetch_message(%{type: :tag, tag: tag}), do: Git.tag_message(tag)
+  defp fetch_message(%GitCommit{commit: commit}), do: Git.commit_message(commit)
+  defp fetch_message(%GitTag{tag: tag}), do: Git.tag_message(tag)
 
   defp walk_history(obj, handle, opts) do
     {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
@@ -625,7 +617,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp pathspec_match_commit(%{type: :commit, commit: commit}, pathspec, handle) do
+  defp pathspec_match_commit(%GitCommit{commit: commit}, pathspec, handle) do
     with {:ok, _oid, tree} <- Git.commit_tree(commit),
          {:ok, match?} <- Git.pathspec_match_tree(tree, pathspec) do
       match? && pathspec_match_commit_tree(commit, tree, pathspec, handle)

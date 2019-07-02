@@ -9,10 +9,12 @@ defmodule GitGud.ReviewQuery do
   alias GitGud.DBQueryable
 
   alias GitRekt.Git
+  alias GitRekt.GitCommit
   alias GitRekt.GitAgent
 
   alias GitGud.Repo
   alias GitGud.CommitLineReview
+  alias GitGud.CommitReview
 
   import Ecto.Query
 
@@ -49,6 +51,27 @@ defmodule GitGud.ReviewQuery do
   end
 
   @doc """
+  Returns a commit review for the given `id`.
+  """
+  @spec commit_review_by_id(pos_integer, keyword) :: CommitReview.t | nil
+  def commit_review_by_id(id, opts \\ []) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [id], opts))
+  end
+
+  @doc """
+  Returns a commit review for the given `repo`, and `commit`.
+  """
+  @spec commit_review(Repo.t, GitAgent.git_commit | pos_integer, keyword) :: CommitReview.t | nil
+  def commit_review(repo, commit, opts \\ [])
+  def commit_review(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, oid], opts))
+  end
+
+  def commit_review(%Repo{id: repo_id} = _repo, id, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, id], opts))
+  end
+
+  @doc """
   Returns a query for fetching a single commit line review.
   """
   @spec commit_line_review_query(pos_integer) :: Ecto.Query.t
@@ -78,6 +101,30 @@ defmodule GitGud.ReviewQuery do
   @spec commit_line_review_query(pos_integer, Git.oid, Git.oid, non_neg_integer, non_neg_integer) :: Ecto.Query.t
   def commit_line_reviews_query(repo_id, commit_oid) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
+  end
+
+  @doc """
+  Returns a query for fetching a single commit review.
+  """
+  @spec commit_review_query(pos_integer) :: Ecto.Query.t
+  def commit_review_query(id) do
+    from(r in CommitReview, as: :review, where: r.id == ^id)
+  end
+
+  @doc """
+  Returns a query for fetching a single commit review.
+  """
+  @spec commit_review_query(pos_integer, pos_integer) :: Ecto.Query.t
+  def commit_review_query(repo_id, id) when is_integer(id) do
+    from(r in CommitReview, as: :review, where: r.repo_id == ^repo_id and r.id == ^id)
+  end
+
+  @doc """
+  Returns a query for fetching a single commit review.
+  """
+  @spec commit_review_query(pos_integer, Git.oid) :: Ecto.Query.t
+  def commit_review_query(repo_id, commit_oid) do
+    from(r in CommitReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
 
   #

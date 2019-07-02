@@ -7,7 +7,7 @@
     <% end %>
     <%= for entry <- tree_entries(@repo, @tree) do %>
       <tr>
-        <td><a href="<%= Routes.codebase_path(@conn, entry.subtype, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
+        <td><a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
       </tr>
     <% end %>
   <tbody>

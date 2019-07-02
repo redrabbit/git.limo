@@ -4,6 +4,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
 
   alias GitRekt.GitAgent
+  alias GitRekt.{GitCommit, GitRef, GitTag, GitTree, GitBlob}
 
   alias GitGud.DB
   alias GitGud.DBQueryable
@@ -83,11 +84,11 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
   end
 
-  def url(%{type: :reference, name: name} = _reference, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+  def url(%GitRef{name: name} = _reference, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :tree, ctx.repo.owner, ctx.repo, name, [])}
   end
 
-  def url(%{type: :commit, oid: oid} = _commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+  def url(%GitCommit{oid: oid} = _commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, ctx.repo.owner, ctx.repo, oid_fmt(oid))}
   end
 
@@ -247,16 +248,16 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the type for a given Git `object`.
   """
   @spec git_object_type(Repo.git_object, Absinthe.Resolution.t) :: atom
-  def git_object_type(%{type: :blob} = _object, _info), do: :git_blob
-  def git_object_type(%{type: :commit} = _object, _info), do: :git_commit
-  def git_object_type(%{type: :tag} = _object, _info), do: :git_annotated_tag
-  def git_object_type(%{type: :tree} = _object, _info), do: :git_tree
+  def git_object_type(%GitBlob{} = _object, _info), do: :git_blob
+  def git_object_type(%GitCommit{} = _object, _info), do: :git_commit
+  def git_object_type(%GitTag{} = _object, _info), do: :git_annotated_tag
+  def git_object_type(%GitTree{} = _object, _info), do: :git_tree
 
   @doc """
   Resolves the type for a given Git `tag`.
   """
   @spec git_reference_type(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
-  def git_reference_type(%{type: :reference, subtype: type} = _reference, _args, _info), do: {:ok, type}
+  def git_reference_type(%GitRef{type: type} = _reference, _args, _info), do: {:ok, type}
 
   @doc """
   Resolves the Git target for the given Git `reference` object.
@@ -366,8 +367,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the type for a given Git `tag`.
   """
   @spec git_tag_type(GitReference.t | GitTag.t, Absinthe.Resolution.t) :: {:ok, atom} | {:error, term}
-  def git_tag_type(%{type: :reference} = _tag, _info), do: :git_reference
-  def git_tag_type(%{type: :tag} = _tag, _info), do: :git_annotated_tag
+  def git_tag_type(%GitRef{} = _ref, _info), do: :git_reference
+  def git_tag_type(%GitTag{} = _tag, _info), do: :git_annotated_tag
 
   @doc """
   Resolves the tree for a given Git `commit` object.
