@@ -248,10 +248,20 @@ table.blob-table {
 }
 
 .inline-comments {
+  > header {
+    margin: 0 1rem;
+  }
+
   .comment, .comment-form {
     @extend .box;
     max-width: 780px;
     margin: 1rem;
+  }
+
+  .comment {
+    header {
+      margin-bottom: .8rem;
+    }
   }
 }
 

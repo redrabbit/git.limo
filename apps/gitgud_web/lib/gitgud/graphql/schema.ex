@@ -83,14 +83,14 @@ defmodule GitGud.GraphQL.Schema do
   """
   mutation do
     @desc "Create a comment"
-    field :add_git_commit_comment, type: :comment do
+    field :create_commit_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
-      arg :hunk, non_null(:integer), description: "The delta hunk index."
-      arg :line, non_null(:integer), description: "The delta line index."
+      arg :blob_oid, :git_oid, description: "The Git blob OID."
+      arg :hunk, :integer, description: "The delta hunk index."
+      arg :line, :integer, description: "The delta line index."
       arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.create_git_commit_line_comment/3
+      resolve &Resolvers.create_commit_comment/3
     end
 
     @desc "Update a comment"

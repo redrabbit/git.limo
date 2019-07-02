@@ -149,6 +149,11 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
+  @spec commit_review(Repo.t, Commit.t | GitAgent.git_commit) :: CommitReview.t | nil
+  def commit_review(repo, commit) do
+    ReviewQuery.commit_review(repo, commit)
+  end
+
   @spec revision_oid(GitAgent.git_object) :: binary
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
@@ -210,9 +215,7 @@ defmodule GitGud.Web.CodebaseView do
   def diff_deltas(repo, diff) do
     case GitAgent.diff_deltas(repo, diff) do
       {:ok, deltas} -> deltas
-      {:error, reason} ->
-        IO.inspect reason
-        []
+      {:error, _reason} -> []
     end
   end
 

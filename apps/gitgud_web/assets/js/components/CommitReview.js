@@ -10,7 +10,7 @@ import CommentForm from "./CommentForm"
 
 import {token} from "../auth"
 
-class CommitLineReview extends React.Component {
+class CommitReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
@@ -22,12 +22,9 @@ class CommitLineReview extends React.Component {
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
-      folded: !!props.reviewId,
+      folded: true,
       repoId: this.props.repoId,
       commitOid: this.props.commitOid,
-      blobOid: this.props.blobOid,
-      hunk: Number(this.props.hunk),
-      line: Number(this.props.line),
       comments: []
     }
   }
@@ -40,16 +37,13 @@ class CommitLineReview extends React.Component {
     const {reviewId} = this.props
     if(reviewId) {
       const query = graphql`
-        query CommitLineReviewQuery($id: ID!) {
+        query CommitReviewQuery($id: ID!) {
           node(id: $id) {
-            ... on CommitLineReview {
+            ... on CommitReview {
               repo {
                 id
               }
               commitOid
-              blobOid
-              hunk
-              line
               comments {
                 id
                 author {
@@ -71,35 +65,29 @@ class CommitLineReview extends React.Component {
       }
 
       fetchQuery(environment, query, variables)
-        .then(response => this.setState({
+        .then(response => {
+          this.setState({
           repoId: response.node.repo.id,
           commitOid: response.node.commitOid,
-          blobOid: response.node.blobOid,
-          hunk: response.node.hunk,
-          line: response.node.line,
           comments: response.node.comments
-        }))
+          })
+        })
     }
   }
 
   destroyComponent() {
-    if(this.state.comments.length === 0) {
-      let node = ReactDOM.findDOMNode(this)
-      let container = node.closest(".inline-comments")
-      ReactDOM.unmountComponentAtNode(node.parentNode)
-      container.parentNode.removeChild(container)
-      return true
-    } else {
-      return false
-    }
+    return false
   }
 
   render() {
     return (
-      <td colSpan={4}>
+      <div className="inline-comments">
+        <header>
+          <h2 className="subtitle">{this.state.comments.length == 1 ? "1 comment" : `${this.state.comments.length} comments`}</h2>
+        </header>
         {this.renderComments()}
         {token && this.renderForm()}
-      </td>
+      </div>
     )
   }
 
@@ -131,15 +119,12 @@ class CommitLineReview extends React.Component {
     const variables = {
       repoId: this.state.repoId,
       commitOid: this.state.commitOid,
-      blobOid: this.state.blobOid,
-      hunk: this.state.hunk,
-      line: this.state.line,
       body: body
     }
 
     const mutation = graphql`
-      mutation CommitLineReviewCreateCommentMutation($repoId: ID!, $commitOid: GitObjectID!, $blobOid: GitObjectID!, $hunk: Int!, $line: Int!, $body: String!) {
-        createCommitComment(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line, body: $body) {
+      mutation CommitReviewCreateCommentMutation($repoId: ID!, $commitOid: GitObjectID!, $body: String!) {
+        createCommitComment(repoId: $repoId, commitOid: $commitOid, body: $body) {
           id
           author {
             login
@@ -178,4 +163,4 @@ class CommitLineReview extends React.Component {
   }
 }
 
-export default CommitLineReview
+export default CommitReview

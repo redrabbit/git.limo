@@ -16,6 +16,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.Comment
   alias GitGud.CommentQuery
   alias GitGud.CommitLineReview
+  alias GitGud.CommitReview
   alias GitGud.ReviewQuery
 
   alias Absinthe.Relay.Connection
@@ -38,6 +39,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
   def node_type(%CommitLineReview{} = _node, _info), do: :commit_line_review
+  def node_type(%CommitReview{} = _node, _info), do: :commit_review
   def node_type(_struct, _info), do: nil
 
   @doc """
@@ -64,6 +66,12 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def node(%{id: id, type: :commit_line_review} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
     if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
+      do: {:ok, review},
+    else: node(%{id: id}, info)
+  end
+
+  def node(%{id: id, type: :commit_review} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
@@ -325,13 +333,21 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the line-review for a given Git `commit` object.
+  Resolves the line review for a given Git `commit` object.
   """
   @spec commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
   def commit_line_review(commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
     if line_review = ReviewQuery.commit_line_review(ctx.repo, commit, blob_oid, hunk, line, viewer: ctx[:current_user], preload: [comments: :author]),
       do: {:ok, line_review},
-    else: {:error, "there is no line-review for the given args"}
+    else: {:error, "there is no line review for the given args"}
+  end
+
+  @doc """
+  Resolves the review for a given Git `commit` object.
+  """
+  @spec commit_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
+  def commit_review(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, ReviewQuery.commit_review(ctx.repo, commit, viewer: ctx[:current_user], preload: [comments: :author])}
   end
 
   @doc """
@@ -425,12 +441,17 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Creates a Git commit line review.
+  Creates a Git commit review.
   """
-  @spec create_git_commit_line_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def create_git_commit_line_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body}, %Absinthe.Resolution{context: ctx}) do
+  @spec create_commit_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
+  def create_commit_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
     repo = RepoQuery.by_id(from_relay_id(repo_id))
     CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, ctx[:current_user], body)
+  end
+
+  def create_commit_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
+    repo = RepoQuery.by_id(from_relay_id(repo_id))
+    CommitReview.add_comment(repo, commit_oid, ctx[:current_user], body)
   end
 
   @doc """

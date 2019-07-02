@@ -25,6 +25,7 @@ class Comment extends React.Component {
     } else {
       return (
         <div className="comment">
+          <header className="comment-header">
           {comment.editable &&
             <div className="buttons is-pulled-right">
               <button className="button is-small" onClick={this.handleUpdateClick}>
@@ -40,6 +41,7 @@ class Comment extends React.Component {
             </div>
           }
           <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
+          </header>
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
         </div>
       )

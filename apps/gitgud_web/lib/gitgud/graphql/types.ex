@@ -234,11 +234,16 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.commit_line_review/3
     end
 
+    @desc "A single commit review."
+    field :review, :commit_review do
+      resolve &Resolvers.commit_review/3
+    end
+
     @desc "The HTTP URL for this commit."
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end
 
-  @doc "Represents a Git commit line review."
+  @desc "Represents a Git commit line review."
   node object :commit_line_review do
     @desc "The OID of the commit."
     field :commit_oid, non_null(:git_oid)
@@ -251,6 +256,18 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The delta line index."
     field :line, non_null(:integer)
+
+    @desc "A list of comments for this review."
+    field :comments, list_of(:comment)
+
+    @desc "The repository this commit belongs to."
+    field :repo, non_null(:repo)
+  end
+
+  @desc "Represents a Git commit review."
+  node object :commit_review do
+    @desc "The OID of the commit."
+    field :commit_oid, non_null(:git_oid)
 
     @desc "A list of comments for this review."
     field :comments, list_of(:comment)
