@@ -7,7 +7,7 @@
     "relay-compiler": "relay-compiler --src ./js --schema ../priv/graphql/schema.json"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.8.2",
+    "@fortawesome/fontawesome-free": "^5.9.0",
     "bulma": "^0.7.5",
     "bulma-divider": "^0.2.0",
     "highlight.js": "^9.15.8",
@@ -17,27 +17,27 @@
     "phoenix_live_view": "file:../../../deps/phoenix_live_view",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-relay": "^4.0.0"
+    "react-relay": "^5.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
+    "@babel/core": "^7.5.0",
     "@babel/plugin-proposal-export-default-from": "^7.2.0",
-    "@babel/preset-env": "^7.4.5",
+    "@babel/preset-env": "^7.5.0",
     "@babel/preset-react": "^7.0.0",
     "babel-loader": "^8.0.6",
-    "babel-plugin-relay": "^4.0.0",
+    "babel-plugin-relay": "^5.0.0",
     "copy-webpack-plugin": "^5.0.3",
-    "css-loader": "^2.1.1",
-    "file-loader": "^3.0.1",
-    "graphql": "^14.3.1",
-    "mini-css-extract-plugin": "^0.6.0",
+    "css-loader": "^3.0.0",
+    "file-loader": "^4.0.0",
+    "graphql": "^14.4.2",
+    "mini-css-extract-plugin": "^0.7.0",
     "node-sass": "^4.12.0",
-    "optimize-css-assets-webpack-plugin": "^5.0.1",
-    "relay-compiler": "^4.0.0",
-    "relay-compiler-webpack-plugin": "^4.0.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "relay-compiler": "^5.0.0",
+    "relay-compiler-webpack-plugin": "^5.0.0",
     "sass-loader": "^7.1.0",
     "uglifyjs-webpack-plugin": "^2.1.3",
-    "webpack": "^4.32.2",
-    "webpack-cli": "^3.3.2"
+    "webpack": "^4.35.2",
+    "webpack-cli": "^3.3.5"
   }
 }
