@@ -18,11 +18,18 @@
     <div class="columns">
       <div class="column is-12">
         <div class="card">
+          <header class="card-header">
+            <p class="card-header-title is-family-monospace">
+              0x<%= format_key_id(gpg_key.key_id) %>
+            </p>
+            <div class="card-header-icon" aria-label="more options">
+              <%= form_for @conn, Routes.gpg_key_path(@conn, :delete), [method: :delete, as: :gpg_key], fn f -> %>
+                <%= hidden_input(f, :id, value: gpg_key.id) %>
+                <button type="submit" class="delete"></button>
+              <% end %>
+            </div>
+          </header>
           <div class="is-pulled-right card-header-icon" aria-label="more options">
-            <%= form_for @conn, Routes.gpg_key_path(@conn, :delete), [method: :delete, as: :gpg_key], fn f -> %>
-              <%= hidden_input(f, :id, value: gpg_key.id) %>
-              <button type="submit" class="delete"></button>
-            <% end %>
           </div>
           <div class="card-content">
             <div class="content">
@@ -32,16 +39,18 @@
               </div>
               <div>
                 <label>Key ID:</label>
-                <code class="is-size-7"><%= Base.encode16(gpg_key.key_id) %></code>
+                <code class="is-size-7">0x<%= format_key_id(gpg_key.key_id) %></code>
               </div>
               <div>
                 <label>Subkeys:</label>
-                <code class="is-size-7">FFFFFFFFFFFFFFFF</code>
+                <code class="is-size-7">0xFFFF:FFFF:FFFF:FFFF</code>
               </div>
             </div>
           </div>
           <footer class="card-footer">
             <p class="card-footer-item">Added on <%= datetime_format(gpg_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
+            <p class="card-footer-item">
+            </p>
           </footer>
         </div>
       </div>
