@@ -20,6 +20,6 @@ defmodule GitRekt.Mixfile do
   end
 
   defp deps do
-    [{:elixir_make, "~> 0.4"}]
+    [{:elixir_make, "~> 0.6"}]
   end
 end

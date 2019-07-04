@@ -43,8 +43,8 @@ defmodule GitGud.Web.Mixfile do
      {:absinthe_phoenix, "~> 1.5.0-alpha.0"},
      {:oauth2, "~> 1.0"},
      {:bamboo, "~> 1.2"},
-     {:gettext, "~> 0.15"},
-     {:timex, "~> 3.5"},
+     {:gettext, "~> 0.17"},
+     {:timex, "~> 3.6"},
      {:earmark, "~> 1.3"},
      {:gitgud, in_umbrella: true}]
   end
