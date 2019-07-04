@@ -59,7 +59,7 @@ defmodule GitGud.ReviewQuery do
   end
 
   @doc """
-  Returns a commit review for the given `repo`, and `commit`.
+  Returns a commit review for the given `repo` and `commit`.
   """
   @spec commit_review(Repo.t, GitAgent.git_commit | pos_integer, keyword) :: CommitReview.t | nil
   def commit_review(repo, commit, opts \\ [])
@@ -69,6 +69,18 @@ defmodule GitGud.ReviewQuery do
 
   def commit_review(%Repo{id: repo_id} = _repo, id, opts) do
     DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, id], opts))
+  end
+
+  @doc """
+  Returns the number of comments for the given `repo` and `commit`.
+  """
+  @spec commit_comment_count(Repot.t, GitAgent.git_commit) :: non_neg_integer
+  def commit_comment_count(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_comment_count_query}, [repo_id, oid]))
+  end
+
+  def commit_comment_count(%Repo{id: repo_id} = _repo, commits) when is_list(commits) do
+    DB.all(DBQueryable.query({__MODULE__, :commit_comment_count_query}, [repo_id, Enum.map(commits, &(&1.oid))]))
   end
 
   @doc """
@@ -125,6 +137,22 @@ defmodule GitGud.ReviewQuery do
   @spec commit_review_query(pos_integer, Git.oid) :: Ecto.Query.t
   def commit_review_query(repo_id, commit_oid) do
     from(r in CommitReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
+  end
+
+  @doc """
+  Returns a query for counting the number of reviews for a single commit or a list of commits.
+  """
+  @spec commit_comment_count_query(pos_integer, Git.oid) :: Ecto.Query.t
+  def commit_comment_count_query(repo_id, commit_oids) when is_list(commit_oids) do
+    query1 = from r in CommitReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: %{commit_oid: r.commit_oid, count: count(c.id)}
+    query2 = from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: %{commit_oid: r.commit_oid, count: count(c.id)}
+    from c in subquery(union_all(query1, ^query2)), group_by: c.commit_oid, select: {c.commit_oid, sum(c.count)}
+  end
+
+  def commit_comment_count_query(repo_id, commit_oid) do
+    query1 = from r in CommitReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
+    query2 = from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
+    from c in subquery(union_all(query1, ^query2)), select: count(c.id)
   end
 
   #

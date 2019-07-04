@@ -14,9 +14,17 @@
 <%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
   <table class="table is-fullwidth is-striped">
     <tbody>
-      <%= for {commit, author} <- batch_commits_authors(@repo, page.slice) do %>
+      <%= for {commit, author, comment_count} <- batch_commits(@repo, page.slice) do %>
         <tr>
           <td>
+            <%= if comment_count > 0 do %>
+              <div class="is-pulled-right">
+                <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small">
+                  <span class="icon"><i class="fa fa-comment-alt"></i></span>
+                  <span><%= comment_count %></span>
+                </a>
+              </div>
+            <% end %>
             <p class="has-text-weight-bold">
               <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@repo, commit) %></a>
             </p>

@@ -265,6 +265,12 @@ defmodule GitGud.Web.CodebaseView do
     Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
   end
 
+  @spec batch_commits(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map, non_neg_integer}]
+  def batch_commits(repo, commits) do
+    aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
+    Enum.map(batch_commits_authors(repo, commits), fn {commit, author} -> {commit, author, aggregator[commit.oid] || 0} end)
+  end
+
   @spec batch_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map}]
   def batch_commits_authors(repo, commits) do
     authors = Enum.map(commits, &fetch_author(repo, &1))
