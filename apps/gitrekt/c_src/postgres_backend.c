@@ -1,3 +1,4 @@
+#ifdef PGSQL_BACKEND
 #include <assert.h>
 #include <string.h>
 
@@ -12,6 +13,10 @@
 
 #define GIT_ODB_TABLE_NAME "git_objects"
 #define GIT_REFDB_TABLE_NAME "git_references"
+
+#ifndef htonll
+#define htonll(x) ((((uint64_t)htonl(x)) << 32) + htonl((x) >> 32))
+#endif
 
 typedef struct {
 	git_odb_backend parent;
@@ -314,7 +319,8 @@ int postgres_refdb_backend__iterator(git_reference_iterator **_iter, struct git_
 	if(glob) {
 		pattern = strcpy(malloc(strlen(glob) + 1), glob);
 		current_pos = strchr(pattern, '%');
-		for (char* p = current_pos; (current_pos = strchr(pattern, '*')) != NULL; *current_pos = '%');
+		char *p;
+		for (p = current_pos; (current_pos = strchr(pattern, '*')) != NULL; *current_pos = '%');
 		const char *paramValues[2] = {(char *) &repo_id, pattern};
 		int paramLengths[2] = {sizeof(backend->repo_id), strlen(pattern)};
 		int paramFormats[2] = {1, 0};
@@ -543,3 +549,4 @@ int git_refdb_backend_postgres(git_refdb_backend **backend_out, PGconn *conn, in
 
 	return GIT_OK;
 }
+#endif

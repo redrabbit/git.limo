@@ -76,8 +76,13 @@ geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_open_postgres(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    PGconn *conn;
 	ErlNifBinary bin;
+#ifndef PGSQL_BACKEND
+	if (geef_string_to_bin(&bin, ":gitrekt not compiled with PGSQL_BACKEND") < 0)
+		return geef_error(env);
+	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
+#else
+    PGconn *conn;
     git_repository *repo;
     git_odb *odb;
     git_odb_backend *odb_backend;
@@ -126,6 +131,7 @@ geef_repository_open_postgres(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[
 	enif_release_resource(res_repo);
 
 	return enif_make_tuple2(env, atoms.ok, term_repo);
+#endif
 }
 
 ERL_NIF_TERM
