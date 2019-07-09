@@ -10,7 +10,8 @@ defmodule GitGud.Umbrella.Mixfile do
      start_permanent: Mix.env == :prod,
      aliases: aliases(),
      deps: deps(),
-     docs: docs()]
+     docs: docs(),
+     releases: [gitgud: [include_executables_for: [:unix], applications: [gitgud_web: :permanent, runtime_tools: :permanent]]]]
   end
 
   #
@@ -18,8 +19,7 @@ defmodule GitGud.Umbrella.Mixfile do
   #
 
   defp deps do
-    [{:distillery, "~> 2.1"},
-     {:benchee, "~> 1.0", only: :dev},
+    [{:benchee, "~> 1.0", only: :dev},
      {:ex_doc, "~> 0.20", only: :dev}]
   end
 
