@@ -83,6 +83,17 @@ defmodule GitGud.Auth do
     |> assoc_constraint(:user)
   end
 
+  @doc """
+  Returns an OAuth2.0 changeset for the given `params`.
+  """
+  @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
+  def oauth2_changeset(%__MODULE__{} = auth, params \\ %{}) do
+    auth
+    |> cast(params, [:user_id])
+    |> cast_assoc(:oauth2_providers, required: true)
+    |> assoc_constraint(:user)
+  end
+
   #
   # Helpers
   #

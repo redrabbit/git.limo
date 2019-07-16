@@ -103,6 +103,7 @@ defmodule GitGud.User do
 
   * `:profile` -- see `profile_changeset/2`.
   * `:password` -- see `password_changeset/2`.
+  * `:oauth2` -- see `oauth2_changeset/2`.
 
   This function can also be used to update email associations, for example:
 
@@ -224,6 +225,16 @@ defmodule GitGud.User do
     |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
   end
 
+  @doc """
+  Returns an OAuth2.0 changeset for the given `params`.
+  """
+  @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
+  def oauth2_changeset(%__MODULE__{} = user, params \\ %{}) do
+    user
+    |> cast(%{auth: params}, [])
+    |> cast_assoc(:auth, required: true, with: &Auth.oauth2_changeset/2)
+  end
+
   #
   # Helpers
   #
@@ -243,7 +254,8 @@ defmodule GitGud.User do
 
   defp update_changeset(user, :profile, params), do: profile_changeset(user, Map.new(params))
   defp update_changeset(user, :password, params), do: password_changeset(user, Map.new(params))
-  defp update_changeset(user, email_field, %Email{verified: true} = email), do: email_changeset(user, email_field, email)
+  defp update_changeset(user, :oauth2, params), do: oauth2_changeset(user, Map.new(params))
+  defp update_changeset(user, changeset_type, %Email{verified: true} = email) when changeset_type in [:primary_email, :public_email], do: email_changeset(user, changeset_type, email)
 
   defp validate_login(changeset) do
     changeset

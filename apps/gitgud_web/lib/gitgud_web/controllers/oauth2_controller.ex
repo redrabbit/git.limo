@@ -31,12 +31,23 @@ defmodule GitGud.Web.OAuth2Controller do
   def callback(conn, %{"provider" => provider, "code" => code}) do
     client = get_token!(provider, code: code, redirect_uri: Routes.oauth2_url(conn, :callback, provider))
     user_info = get_user!(provider, client)
-    if user = UserQuery.by_oauth(provider, user_info.id) do
-      conn
-      |> put_session(:user_id, user.id)
-      |> put_flash(:info, "Logged in.")
-      |> redirect(to: Routes.user_path(conn, :show, user))
-    else
+    cond do
+      user = UserQuery.by_oauth(provider, user_info.id) ->
+        conn
+        |> put_session(:user_id, user.id)
+        |> put_flash(:info, "Logged in.")
+        |> redirect(to: Routes.user_path(conn, :show, user))
+      user = UserQuery.by_email(user_info.email, preload: [auth: :oauth2_providers]) ->
+        user = User.update!(user, :oauth2, %{
+          oauth2_providers: [%{
+            provider: provider,
+            provider_id: user_info.id,
+            token: client.token.access_token
+          }|user.auth.oauth2_providers]})
+        conn
+        |> put_session(:user_id, user.id)
+        |> put_flash(:info, "OAuth2.0 provider #{provider} added.")
+        |> redirect(to: Routes.user_path(conn, :show, user))
       changeset = User.registration_changeset(%User{
         login: user_info.login,
         name: user_info.name,
@@ -48,10 +59,10 @@ defmodule GitGud.Web.OAuth2Controller do
           }]
         },
         emails: [%Email{address: user_info.email}]
-      })
-      conn
-      |> put_view(GitGud.Web.UserView)
-      |> render("new.html", changeset: changeset)
+      }) ->
+        conn
+        |> put_view(GitGud.Web.UserView)
+        |> render("new.html", changeset: changeset)
     end
   end
 
