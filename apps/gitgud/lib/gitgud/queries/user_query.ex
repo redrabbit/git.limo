@@ -113,7 +113,7 @@ defmodule GitGud.UserQuery do
   def user_oauth_query(provider, id) do
     from(u in User, as: :user,
       join: a in assoc(u, :auth),
-      join: p in assoc(a, :providers), where: p.provider == ^provider and p.provider_id == ^id,
+      join: p in assoc(a, :oauth2_providers), where: p.provider == ^provider and p.provider_id == ^id,
       preload: [auth: a])
   end
 

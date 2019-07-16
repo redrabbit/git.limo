@@ -41,7 +41,7 @@ defmodule GitGud.Web.Mixfile do
      {:absinthe, "~> 1.5.0-alpha.0", override: true},
      {:absinthe_relay, "~> 1.5.0-alpha.0", override: true},
      {:absinthe_phoenix, "~> 1.5.0-alpha.0"},
-     {:oauth2, "~> 1.0"},
+     {:oauth2, "~> 2.0"},
      {:bamboo, "~> 1.2"},
      {:gettext, "~> 0.17"},
      {:timex, "~> 3.6"},
