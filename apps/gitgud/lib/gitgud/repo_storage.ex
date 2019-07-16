@@ -44,7 +44,7 @@ defmodule GitGud.RepoStorage do
   defp push_objects(receive_pack, repo_id) do
     if Application.get_env(:gitgud, :git_storage, :filesystem) == :postgres do
       objs = resolve_git_objects_postgres(receive_pack, repo_id)
-      case DB.transaction(write_git_objects(objs, repo_id)) do
+      case DB.transaction(write_git_objects(objs, repo_id), timeout: :infinity) do
         {:ok, _} -> {:ok, objs}
       end
     else
@@ -53,7 +53,7 @@ defmodule GitGud.RepoStorage do
   end
 
   defp push_meta_objects(objs, repo_id) do
-    case DB.transaction(write_git_meta_objects(objs, repo_id)) do
+    case DB.transaction(write_git_meta_objects(objs, repo_id), timeout: :infinity) do
       {:ok, _} -> :ok
     end
   end
