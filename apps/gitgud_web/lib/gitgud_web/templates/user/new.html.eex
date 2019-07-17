@@ -59,6 +59,23 @@
         </div>
       <% end %>
 
+      <div class="is-divider" data-content="OR"></div>
+
+      <div class="buttons is-centered">
+        <a class="button is-small github" href="<%= Routes.oauth2_path(@conn, :authorize, "github") %>">
+          <span class="icon"><i class="fab fa-lg fa-github"></i></span>
+          <span>GitHub</span>
+        </a>
+        <a class="button is-small gitlab" href="<%= Routes.oauth2_path(@conn, :authorize, "gitlab") %>">
+          <span class="icon"><i class="fab fa-lg fa-gitlab"></i></span>
+          <span>GitLab</span>
+        </a>
+        <a class="button is-small bitbucket" disabled>
+          <span class="icon"><i class="fab fa-lg fa-bitbucket"></i></span>
+          <span>Bitbucket</span>
+        </a>
+      </div>
+
       <hr />
 
       <div class="is-size-7">
