@@ -1,0 +1,38 @@
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle">OAuth2.0</h2>
+    </div>
+  </div>
+</div>
+
+
+<div class="columns">
+  <div class="column is-12">
+    <div class="field">
+      <small>Click on icon to activate signin with one of the following services</small>
+    </div>
+    <div class="field is-grouped  is-grouped-multiline">
+      <%= for provider <- ["github", "gitlab", "bitbucket"] do %>
+        <div class="control">
+          <div class="buttons has-addons">
+            <%= if oauth2 = Enum.find(@user.auth.oauth2_providers, &(&1.provider == provider)) do %>
+              <div class="button is-small is-static <%= provider %>">
+                <span class="icon"><%= provider_icon(provider) %></span>
+              </div>
+              <%= form_for @conn, Routes.oauth2_path(@conn, :delete), [method: :delete, as: :oauth2], fn f -> %>
+                <%= hidden_input(f, :id, value: oauth2.id) %>
+                <button type="submit" class="button is-small is-light has-text-black">Disconnect</button>
+              <% end %>
+            <% else %>
+              <div class="button is-small is-static <%= provider %>-alt">
+                <span class="icon"><%= provider_icon(provider) %></span>
+              </div>
+              <a href="<%= Routes.oauth2_path(@conn, :authorize, provider) %>" class="button is-small">Connect</a>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

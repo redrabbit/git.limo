@@ -179,7 +179,7 @@ defmodule GitGud.User do
     |> cast_assoc(:emails, required: true, with: &Email.registration_changeset/2)
     |> validate_required([:login, :name])
     |> validate_login()
-    |> validate_oauth_email()
+    |> verify_oauth2_email()
     |> validate_url(:website_url)
     |> validate_url(:avatar_url)
   end
@@ -248,7 +248,7 @@ defmodule GitGud.User do
 
   defp set_verified_primary_email(db, %{user: user}) do
     if email = Enum.find(user.emails, &(&1.verified)),
-      do: db.insert(update_changeset(user, :primary_email, email)),
+      do: db.update(update_changeset(user, :primary_email, email)),
     else: {:ok, user}
   end
 
@@ -278,10 +278,21 @@ defmodule GitGud.User do
     end || changeset
   end
 
-  defp validate_oauth_email(changeset) do
+  defp verify_oauth2_email(changeset) do
     if auth_changeset = get_change(changeset, :auth) do
-      if get_change(auth_changeset, :oauth2_providers) do
-        put_change(changeset, :emails, Enum.map(get_change(changeset, :emails), &merge(&1, Email.verification_changeset(&1.data))))
+      emails = get_change(changeset, :emails)
+      if email_changeset = !Enum.empty?(emails) && hd(emails) do
+        providers = get_change(auth_changeset, :oauth2_providers)
+        if provider_changeset = !Enum.empty?(providers) && hd(providers) do
+          case Phoenix.Token.verify(GitGud.Web.Endpoint, get_change(provider_changeset, :token), provider_changeset.params["email_token"]) do
+            {:ok, email_address} ->
+              if email_address == get_change(email_changeset, :address) do
+                put_change(changeset, :emails, Enum.map(emails, &merge(&1, Email.verification_changeset(&1.data))))
+              end
+            {:error, reason} ->
+              nil
+          end
+        end
       end
     end || changeset
   end

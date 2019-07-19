@@ -55,7 +55,7 @@ defmodule GitGud.Web.Router do
     get "/settings/password", UserController, :edit_password
     put "/settings/password", UserController, :update_password
 
-    get "/settings/emails", EmailController, :edit
+    get "/settings/emails", EmailController, :index
     post "/settings/emails", EmailController, :create
     put "/settings/emails", EmailController, :update
     delete "/settings/emails", EmailController, :delete
@@ -72,6 +72,9 @@ defmodule GitGud.Web.Router do
     get "/settings/gpg/new", GPGKeyController, :new
     post "/settings/gpg", GPGKeyController, :create
     delete "/settings/gpg", GPGKeyController, :delete
+
+    get "/settings/oauth2", OAuth2Controller, :index, as: :oauth2
+    delete "/settings/oauth2", OAuth2Controller, :delete, as: :oauth2
 
     get "/new", RepoController, :new
     post "/new", RepoController, :create
@@ -91,7 +94,7 @@ defmodule GitGud.Web.Router do
       put "/settings", RepoController, :update
       delete "/settings", RepoController, :delete
 
-      get "/settings/maintainers", MaintainerController, :edit
+      get "/settings/maintainers", MaintainerController, :index
       post "/settings/maintainers", MaintainerController, :create
       put "/settings/maintainers", MaintainerController, :update
       delete "/settings/maintainers", MaintainerController, :delete

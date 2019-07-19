@@ -7,7 +7,7 @@
 </div>
 
 <%= unless Enum.empty?(@user.emails) do %>
-  <table class="table is-fullwidth has-outer-border">
+  <table class="table is-fullwidth">
     <tbody>
       <%= for email <- @user.emails do %>
         <tr>

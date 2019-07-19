@@ -35,7 +35,7 @@
             <div class="content">
               <div>
                 <label>Email addresses:</label>
-                <span class="tag">test@example.com</tag>
+                <span class="tag">test@example.com</span>
               </div>
               <div>
                 <label>Key ID:</label>
@@ -49,8 +49,7 @@
           </div>
           <footer class="card-footer">
             <p class="card-footer-item">Added on <%= datetime_format(gpg_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
-            <p class="card-footer-item">
-            </p>
+            <p class="card-footer-item">Never user</p>
           </footer>
         </div>
       </div>

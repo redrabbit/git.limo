@@ -66,5 +66,4 @@ defmodule GitGud.Web.GPGKeyController do
       {:error, :bad_request}
     end
   end
-
 end

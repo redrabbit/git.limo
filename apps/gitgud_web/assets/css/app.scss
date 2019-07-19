@@ -117,16 +117,28 @@ table.table {
     background-color: #4078c0;
   }
 
+  &.github-alt {
+    color: #4078c0;
+  }
+
   &.gitlab {
     color: $white-bis;
     border-color: transparent;
     background-color: #fca326;
   }
 
+  &.gitlab-alt {
+    color: #fca326;
+  }
+
   &.bitbucket {
     color: $white-bis;
     border-color: transparent;
     background-color: #205081;
+  }
+
+  &.bitbucket-alt {
+    color: #205081;
   }
 }
 

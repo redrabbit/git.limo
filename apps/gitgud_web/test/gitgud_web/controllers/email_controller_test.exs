@@ -12,12 +12,12 @@ defmodule GitGud.Web.EmailControllerTest do
 
   test "renders email settings if authenticated", %{conn: conn, user: user} do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
-    conn = get(conn, Routes.email_path(conn, :edit))
+    conn = get(conn, Routes.email_path(conn, :index))
     assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Emails</h2>)
   end
 
   test "fails to render email settings if not authenticated", %{conn: conn} do
-    conn = get(conn, Routes.email_path(conn, :edit))
+    conn = get(conn, Routes.email_path(conn, :index))
     assert html_response(conn, 401) =~ "Unauthorized"
   end
 
@@ -26,7 +26,7 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
     assert get_flash(conn, :info) == "Email '#{email_params.address}' added."
-    assert redirected_to(conn) == Routes.email_path(conn, :edit)
+    assert redirected_to(conn) == Routes.email_path(conn, :index)
     assert_email_delivered_with(subject: "Verify your email address")
   end
 
@@ -44,13 +44,13 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: email_params)
     assert get_flash(conn, :info) == "Email '#{email_address}' added."
-    assert redirected_to(conn) == Routes.email_path(conn, :edit)
+    assert redirected_to(conn) == Routes.email_path(conn, :index)
     receive do
       {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
         {start_link, _} = :binary.match(text, "http://")
         conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
         assert get_flash(conn, :info) == "Email '#{email_address}' verified."
-        assert redirected_to(conn) == Routes.email_path(conn, :edit)
+        assert redirected_to(conn) == Routes.email_path(conn, :index)
     after
       1_000 -> raise "email not delivered"
     end
@@ -68,7 +68,7 @@ defmodule GitGud.Web.EmailControllerTest do
 
     test "renders emails", %{conn: conn, user: user, emails: emails} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = get(conn, Routes.email_path(conn, :edit))
+      conn = get(conn, Routes.email_path(conn, :index))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Emails</h2>)
       for email <- emails do
         assert html_response(conn, 200) =~ email.address
@@ -88,7 +88,7 @@ defmodule GitGud.Web.EmailControllerTest do
       for email <- emails do
         conn = delete(conn, Routes.email_path(conn, :delete), email: %{id: to_string(email.id)})
         assert get_flash(conn, :info) == "Email '#{email.address}' deleted."
-        assert redirected_to(conn) == Routes.email_path(conn, :edit)
+        assert redirected_to(conn) == Routes.email_path(conn, :index)
       end
     end
   end

@@ -18,11 +18,11 @@ defmodule GitGud.Web.EmailController do
   @doc """
   Renders emails address.
   """
-  @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
-  def edit(conn, _params) do
+  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
+  def index(conn, _params) do
     user = DB.preload(current_user(conn), :emails)
     changeset = Email.registration_changeset(%Email{})
-    render(conn, "edit.html", user: user, changeset: changeset)
+    render(conn, "index.html", user: user, changeset: changeset)
   end
 
   @doc """
@@ -37,12 +37,12 @@ defmodule GitGud.Web.EmailController do
         GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
         conn
         |> put_flash(:info, "Email '#{email.address}' added.")
-        |> redirect(to: Routes.email_path(conn, :edit))
+        |> redirect(to: Routes.email_path(conn, :index))
       {:error, changeset} ->
         conn
         |> put_status(:bad_request)
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-        |> render("edit.html", user: user, changeset: %{changeset|action: :insert})
+        |> render("index.html", user: user, changeset: %{changeset|action: :insert})
     end
   end
 
@@ -58,11 +58,11 @@ defmodule GitGud.Web.EmailController do
         User.update!(user, :primary_email, email)
         conn
         |> put_flash(:info, "Email '#{email.address}' is now your primary email.")
-        |> redirect(to: Routes.email_path(conn, :edit))
+        |> redirect(to: Routes.email_path(conn, :index))
       else
         conn
         |> put_flash(:info, "Email '#{email.address}' is already your primary email.")
-        |> redirect(to: Routes.email_path(conn, :edit))
+        |> redirect(to: Routes.email_path(conn, :index))
       end
     else
       {:error, :bad_request}
@@ -80,7 +80,7 @@ defmodule GitGud.Web.EmailController do
       Email.delete!(email)
       conn
       |> put_flash(:info, "Email '#{email.address}' deleted.")
-      |> redirect(to: Routes.email_path(conn, :edit))
+      |> redirect(to: Routes.email_path(conn, :index))
     else
       {:error, :bad_request}
     end
@@ -98,7 +98,7 @@ defmodule GitGud.Web.EmailController do
       GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
       conn
       |> put_flash(:info, "A verification email has been sent to '#{email.address}'.")
-      |> redirect(to: Routes.email_path(conn, :edit))
+      |> redirect(to: Routes.email_path(conn, :index))
     else
       {:error, :bad_request}
     end
@@ -117,28 +117,28 @@ defmodule GitGud.Web.EmailController do
             Email.verify!(email)
             conn
             |> put_flash(:info, "Email '#{email.address}' verified.")
-            |> redirect(to: Routes.email_path(conn, :edit))
+            |> redirect(to: Routes.email_path(conn, :index))
           else
             conn
             |> put_flash(:info, "Email '#{email.address}' already verified.")
-            |> redirect(to: Routes.email_path(conn, :edit))
+            |> redirect(to: Routes.email_path(conn, :index))
           end
         else
           conn
           |> put_status(:bad_request)
           |> put_flash(:error, "Invalid verification email.")
-          |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
+          |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
         end
       {:error, :invalid} ->
         conn
         |> put_status(:bad_request)
         |> put_flash(:error, "Invalid verification token.")
-        |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
+        |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
       {:error, :expired} ->
         conn
         |> put_status(:bad_request)
         |> put_flash(:error, "Verification token expired.")
-        |> render("edit.html", user: user, changeset: Email.registration_changeset(%Email{}))
+        |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
     end
   end
 end

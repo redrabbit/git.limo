@@ -11,12 +11,12 @@ defmodule GitGud.Web.MaintainerControllerTest do
 
   test "renders repo maintainer creation settings if authenticated", %{conn: conn, users: [user1, _user2], repo: repo} do
     conn = Plug.Test.init_test_session(conn, user_id: user1.id)
-    conn = get(conn, Routes.maintainer_path(conn, :edit, user1, repo))
+    conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
     assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Maintainers</h2>)
   end
 
   test "fails to render repository maintainer settings if not authenticated", %{conn: conn, users: [user1, _user2], repo: repo} do
-    conn = get(conn, Routes.maintainer_path(conn, :edit, user1, repo))
+    conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
     assert html_response(conn, 401) =~ "Unauthorized"
   end
 
@@ -24,7 +24,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user1.id)
     conn = post(conn, Routes.maintainer_path(conn, :create, user1, repo), maintainer: %{user_id: to_string(user2.id)})
     assert get_flash(conn, :info) == "Maintainer '#{user2.login}' added."
-    assert redirected_to(conn) == Routes.maintainer_path(conn, :edit, user1, repo)
+    assert redirected_to(conn) == Routes.maintainer_path(conn, :index, user1, repo)
   end
 
   describe "when repository maintainer exist" do
@@ -32,7 +32,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
 
     test "renders maintainers", %{conn: conn, users: [user1, user2], repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
-      conn = get(conn, Routes.maintainer_path(conn, :edit, user1, repo))
+      conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Maintainers</h2>)
       assert html_response(conn, 200) =~ user2.login
     end
@@ -41,7 +41,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = put(conn, Routes.maintainer_path(conn, :update, user1, repo), maintainer: %{id: to_string(maintainer.id), permission: "write"})
       assert get_flash(conn, :info) == "Maintainer '#{user2.login}' permission set to 'write'."
-      assert redirected_to(conn) == Routes.maintainer_path(conn, :edit, user1, repo)
+      assert redirected_to(conn) == Routes.maintainer_path(conn, :index, user1, repo)
     end
 
     test "fails to update maintainer with invalid permission", %{conn: conn, users: [user1, _user2], repo: repo, maintainer: maintainer} do
@@ -55,7 +55,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = delete(conn, Routes.maintainer_path(conn, :delete, user1, repo), maintainer: %{id: to_string(maintainer.id)})
       assert get_flash(conn, :info) == "Maintainer '#{user2.login}' deleted."
-      assert redirected_to(conn) == Routes.maintainer_path(conn, :edit, user1, repo)
+      assert redirected_to(conn) == Routes.maintainer_path(conn, :index, user1, repo)
     end
   end
 

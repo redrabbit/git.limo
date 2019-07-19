@@ -5,16 +5,45 @@ defmodule GitGud.Web.OAuth2Controller do
 
   use GitGud.Web, :controller
 
-  alias GitGud.Auth
-  alias GitGud.Email
+  import GitGud.Web.OAuth2View, only: [provider_name: 1]
+
+  alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
 
   alias GitGud.OAuth2.{GitHub, GitLab, Provider}
 
-  plug :put_layout, :hero
+  plug :ensure_authenticated when action in [:index]
+  plug :put_layout, :user_settings when action in [:index]
 
   action_fallback GitGud.Web.FallbackController
+
+
+  @doc """
+  Renders OAuth2.0 providers.
+  """
+  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
+  def index(conn, _params) do
+    user = DB.preload(current_user(conn), [auth: :oauth2_providers])
+    render(conn, "index.html", user: user)
+  end
+
+  @doc """
+  Deletes an OAuth2.0 provider.
+  """
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"oauth2" => oauth2_params} = _params) do
+    user = DB.preload(current_user(conn), [auth: :oauth2_providers])
+    oauth2_id = String.to_integer(oauth2_params["id"])
+    if oauth2 = Enum.find(user.auth.oauth2_providers, &(&1.id == oauth2_id)) do
+      oauth2 = Provider.delete!(oauth2)
+      conn
+      |> put_flash(:info, "OAuth2.0 provider #{provider_name(oauth2.provider)} disconnected.")
+      |> redirect(to: Routes.oauth2_path(conn, :index))
+    else
+      {:error, :bad_request}
+    end
+  end
 
   @doc """
   Redirects to the providers authorize URL.
@@ -32,35 +61,39 @@ defmodule GitGud.Web.OAuth2Controller do
     client = get_token!(provider, code: code, redirect_uri: Routes.oauth2_url(conn, :callback, provider))
     user_info = get_user!(provider, client)
     cond do
+      user = authenticated?(conn) && DB.preload(current_user(conn), auth: :oauth2_providers) ->
+        case Provider.create(auth_id: user.auth.id, provider: provider, provider_id: user_info.id, token: client.token.access_token) do
+          {:ok, oauth2} ->
+            conn
+            |> put_session(:user_id, user.id)
+            |> put_flash(:info, "OAuth2.0 provider #{provider_name(oauth2.provider)} connected.")
+            |> redirect(to: Routes.oauth2_path(conn, :index))
+          {:error, _changeset} ->
+            conn
+            |> put_status(:bad_request)
+            |> put_layout(:user_settings)
+            |> put_flash(:error, "Something went wrong!")
+            |> render("index.html", user: user)
+        end
       user = UserQuery.by_oauth(provider, user_info.id) ->
         conn
         |> put_session(:user_id, user.id)
-        |> put_flash(:info, "Logged in.")
+        |> put_flash(:info, "Welcome #{user.login}.")
         |> redirect(to: Routes.user_path(conn, :show, user))
-      user = UserQuery.by_email(user_info.email, preload: [auth: :oauth2_providers]) ->
-        user = User.update!(user, :oauth2, %{
-          oauth2_providers: [%{
+      true ->
+        changeset = User.registration_changeset(%User{}, %{
+          login: user_info.login,
+          name: user_info.name,
+          auth: %{oauth2_providers: [%{
             provider: provider,
             provider_id: user_info.id,
-            token: client.token.access_token
-          }|user.auth.oauth2_providers]})
+            token: client.token.access_token,
+            email_token: Phoenix.Token.sign(conn, client.token.access_token, user_info.email)
+          }]},
+          emails: [%{address: user_info.email}]
+        })
         conn
-        |> put_session(:user_id, user.id)
-        |> put_flash(:info, "OAuth2.0 provider #{provider} added.")
-        |> redirect(to: Routes.user_path(conn, :show, user))
-      changeset = User.registration_changeset(%User{
-        login: user_info.login,
-        name: user_info.name,
-        auth: %Auth{
-          oauth2_providers: [%Provider{
-            provider: provider,
-            provider_id: user_info.id,
-            token: client.token.access_token
-          }]
-        },
-        emails: [%Email{address: user_info.email}]
-      }) ->
-        conn
+        |> put_layout(:hero)
         |> put_view(GitGud.Web.UserView)
         |> render("new.html", changeset: changeset)
     end

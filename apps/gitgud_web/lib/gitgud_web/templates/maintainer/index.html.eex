@@ -6,7 +6,7 @@
   </div>
 </div>
 
-<table class="table has-outer-border is-fullwidth">
+<table class="table is-fullwidth">
   <tbody>
     <%= for maintainer <- @maintainers do %>
       <tr>
