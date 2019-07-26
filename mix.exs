@@ -4,14 +4,21 @@ defmodule GitGud.Umbrella.Mixfile do
   @version "0.2.4"
 
   def project do
-    [apps_path: "apps",
-     version: @version,
-     name: "Git Gud",
-     start_permanent: Mix.env == :prod,
-     aliases: aliases(),
-     deps: deps(),
-     docs: docs(),
-     releases: [gitgud: [include_executables_for: [:unix], applications: [gitgud_web: :permanent, runtime_tools: :permanent]]]]
+    [
+      apps_path: "apps",
+      version: @version,
+      name: "Git Gud",
+      start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
+      deps: deps(),
+      docs: docs(),
+      releases: [
+        gitgud: [
+          include_executables_for: [:unix],
+          applications: [gitgud_web: :permanent, runtime_tools: :permanent]
+        ]
+      ]
+    ]
   end
 
   #
@@ -19,14 +26,15 @@ defmodule GitGud.Umbrella.Mixfile do
   #
 
   defp deps do
-    [{:benchee, "~> 1.0", only: :dev},
-     {:ex_doc, "~> 0.20", only: :dev}]
+    [{:benchee, "~> 1.0", only: :dev}, {:ex_doc, "~> 0.20", only: :dev}]
   end
 
   defp aliases do
-    ["ecto.setup": ["ecto.create", "ecto.migrate", "run apps/gitgud/priv/db/seeds.exs"],
-     "ecto.reset": ["ecto.drop", "ecto.setup"],
-     test: ["ecto.create --quiet", "ecto.migrate", "test"]]
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run apps/gitgud/priv/db/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
   end
 
   defp docs do
@@ -36,14 +44,14 @@ defmodule GitGud.Umbrella.Mixfile do
       canonical: "https://git.limo",
       source_url: "https://github.com/almightycouch/gitgud",
       extras: [
-        "guides/Getting Started.md",
+        "guides/Getting Started.md"
       ],
       groups_for_modules: [
-        "Database": [
+        Database: [
           GitGud.DB,
           GitGud.DBQueryable
         ],
-        "Authorization": [
+        Authorization: [
           GitGud.Authorization,
           GitGud.AuthorizationPolicies
         ],
@@ -67,7 +75,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.User,
           GitGud.UserQuery
         ],
-        "Deployment": [
+        Deployment: [
           GitGud.ReleaseTasks
         ],
         "Git Transfer Protocols": [
@@ -78,7 +86,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.OAuth2.GitHub,
           GitGud.OAuth2.GitLab
         ],
-        "GraphQL": [
+        GraphQL: [
           GitGud.GraphQL.Resolvers,
           GitGud.GraphQL.Schema,
           GitGud.GraphQL.Types
@@ -86,7 +94,7 @@ defmodule GitGud.Umbrella.Mixfile do
         "Email Delivery": [
           GitGud.Mailer
         ],
-        "Web": [
+        Web: [
           GitGud.Web,
           GitGud.Web.AuthenticationPlug,
           GitGud.Web.CodebaseController,
@@ -121,7 +129,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitRekt.WireProtocol,
           GitRekt.WireProtocol.ReceivePack,
           GitRekt.WireProtocol.UploadPack
-        ],
+        ]
       ]
     ]
   end
