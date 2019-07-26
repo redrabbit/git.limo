@@ -1,0 +1,65 @@
+dist: xenial
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      - libzmq3-dev
+
+
+matrix:
+  include:
+    - os: linux
+      elixir: 1.6
+    - os: linux
+      elixir: 1.7
+    - os: linux
+      elixir: 1.8.1
+    elixir: 1.9.0
+    - os: linux
+      otp_release: 19.0
+    - os: linux
+      otp_release: 20.3
+    - os: linux
+      - os: linux
+    otp_release: 21.0.3
+    otp_release: 22.0
+  exclude:
+  - otp_release: 22.0
+    elixir: 1.6
+  - otp_release: 19 
+    elixir: 1.8.1
+  - otp_release: 19
+    elixir: 1.9.0 
+## https://github.com/hexpm/hexpm/issues/831
+
+script:
+  #  - "mix format --check-formatted --dry-run"
+  - "MIX_ENV=test mix do deps.get, test"
+
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew update                       ; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew install zeromq erlang rebar3 ; fi
+  - >
+    if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+    echo "Increase the maximum number of open file descriptors on macOS" ;
+    sudo sysctl -w kern.maxfiles=20480                                   ;
+    sudo sysctl -w kern.maxfilesperproc=20480                            ;
+    ulimit -S -n                                                         ;
+    ulimit -n 20000                                                      ;
+    ulimit -S -n                                                         ;
+    fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb   ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then sudo dpkg -i erlang-solutions_1.0_all.deb                                 ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then sudo apt-get -y update && sudo apt-get install esl-erlang                 ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then sudo curl -o /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3 ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] ; then sudo chmod 755 /usr/local/bin/rebar3                                      ; fi
+

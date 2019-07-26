@@ -2,9 +2,14 @@ ERLANG_PATH ?= $(shell erl -eval 'io:format("~s", [lists:concat([code:root_dir()
 CFLAGS  	?= -O2 -Wall -Wextra -Wno-unused-parameter -I$(ERLANG_PATH)
 LDFLAGS 	+= -lgit2
 
+
+
+
 ifneq ($(OS),Windows_NT)
 	CFLAGS += -fPIC
 	ifeq ($(shell uname),Darwin)
+		CFLAGS += -I/usr/local/include
+		LDFLAGS += -L/usr/local/lib
 		LDFLAGS += -dynamiclib -undefined dynamic_lookup
 	endif
 endif
