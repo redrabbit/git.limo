@@ -447,7 +447,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def create_commit_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
     repo = RepoQuery.by_id(from_relay_id(repo_id))
     if author = ctx[:current_user],
-      do: CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body)
+      do: CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body),
     else: {:error, "Unauthorized"}
   end
 
