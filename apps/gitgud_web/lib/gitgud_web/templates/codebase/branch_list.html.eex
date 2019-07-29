@@ -3,10 +3,10 @@
 <%= if Enum.empty?(@branches) do %>
   Nothing to see here.
 <% else %>
-  <%= with page <- paginate(@conn, sort_by_commit_timestamp(@repo, @branches)) do %>
+  <%= with page <- paginate(@conn, sort_by_timestamp(@repo, @branches)) do %>
     <table class="table is-fullwidth is-striped">
       <tbody>
-        <%= for {branch, {commit, author}} <- batch_branches_commits_authors(@repo, page.slice) do %>
+        <%= for {branch, {commit, author}} <- batch_branches(@repo, page.slice) do %>
           <tr>
             <td>
               <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-link", else: "" %> has-text-weight-semibold">

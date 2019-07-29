@@ -9,6 +9,7 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.Repo
   alias GitGud.ReviewQuery
   alias GitGud.Commit
+  alias GitGud.CommitQuery
 
   alias Phoenix.Param
 
@@ -250,36 +251,28 @@ defmodule GitGud.Web.CodebaseView do
     highlight_language(Path.extname(path))
   end
 
-  @spec batch_branches_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
-  def batch_branches_commits_authors(repo, references_commits) do
+  @spec batch_commits(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map, boolean, non_neg_integer}]
+  def batch_commits(repo, commits) do
+    batch_commits_comments_count(repo, commits)
+  end
+
+  @spec batch_branches(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
+  def batch_branches(repo, references_commits) do
     {references, commits} = Enum.unzip(references_commits)
     commits_authors = batch_commits_authors(repo, commits)
     Enum.zip(references, commits_authors)
   end
 
-  @spec batch_tags_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
-  def batch_tags_commits_authors(repo, tags_commits) do
+  @spec batch_tags(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
+  def batch_tags(repo, tags_commits) do
     {tags, commits} = Enum.unzip(tags_commits)
     authors = Enum.map(tags_commits, &fetch_author(repo, &1))
     users = query_users(authors)
     Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
   end
 
-  @spec batch_commits(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map, non_neg_integer}]
-  def batch_commits(repo, commits) do
-    aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
-    Enum.map(batch_commits_authors(repo, commits), fn {commit, author} -> {commit, author, aggregator[commit.oid] || 0} end)
-  end
-
-  @spec batch_commits_authors(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map}]
-  def batch_commits_authors(repo, commits) do
-    authors = Enum.map(commits, &fetch_author(repo, &1))
-    users = query_users(authors)
-    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
-  end
-
-  @spec sort_by_commit_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
-  def sort_by_commit_timestamp(repo, references_or_tags) do
+  @spec sort_by_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
+  def sort_by_timestamp(repo, references_or_tags) do
     commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
     Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
   end
@@ -303,6 +296,27 @@ defmodule GitGud.Web.CodebaseView do
   #
   # Helpers
   #
+
+  defp batch_commits_authors(repo, commits) do
+    authors = Enum.map(commits, &fetch_author(repo, &1))
+    users = query_users(authors)
+    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
+  end
+
+  defp batch_commits_gpg_sign(repo, commits) do
+    gpg_map = CommitQuery.gpg_signature(repo, commits)
+    Enum.map(batch_commits_authors(repo, commits), fn
+      {commit, %User{id: user_id} = author} ->
+        {commit, author, gpg_map[commit.oid] == user_id}
+      {commit, author} ->
+        {commit, author, false}
+    end)
+  end
+
+  defp batch_commits_comments_count(repo, commits) do
+    aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
+    Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, verified?} -> {commit, author, verified?, aggregator[commit.oid] || 0} end)
+  end
 
   defp fetch_commit(repo, reference) do
     case GitAgent.peel(repo, reference) do

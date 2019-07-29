@@ -14,7 +14,7 @@
 <%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
   <table class="table is-fullwidth is-striped">
     <tbody>
-      <%= for {commit, author, comment_count} <- batch_commits(@repo, page.slice) do %>
+      <%= for {commit, author, verified?, comment_count} <- batch_commits(@repo, page.slice) do %>
         <tr>
           <td>
             <%= if comment_count > 0 do %>
@@ -34,11 +34,16 @@
               <span class="has-text-black"><%= author.name %></span>
             <% end %>
             committed <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %>
+            <%= if verified? do %>
+              <span class="icon is-small has-text-success">
+                <i class="fa fa-check"></i>
+              </span>
+            <% end %>
           </td>
-          <td class="has-text-right">
+          <td class="has-text-right has-text-weight-semibold">
             <p class="buttons is-pulled-right">
-              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary has-text-weight-semibold"><%= commit %></a>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
+              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-primary"><%= commit %></a>
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, []) %>" class="button is-small is-warning">
                 <span class="icon is-small">
                   <i class="fa fa-code"></i>
                 </span>
