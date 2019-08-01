@@ -5,7 +5,9 @@ defmodule GitGud.Commit do
   use Ecto.Schema
 
   alias GitRekt.Git
+
   alias GitGud.Repo
+  alias GitGud.GPGKey
 
   @primary_key false
   schema "commits" do
@@ -84,18 +86,8 @@ defmodule GitGud.Commit do
 
   defp extract_commit_gpg_key_id(commit) do
     if gpg_signature = commit["gpgsig"] do
-      {_checksum, lines} =
-        gpg_signature
-        |> String.split("\n")
-        |> List.delete_at(0)
-        |> List.delete_at(-1)
-        |> Enum.drop_while(&(&1 != ""))
-        |> List.delete_at(0)
-        |> List.pop_at(-1)
-
-      lines
-      |> Enum.join()
-      |> Base.decode64!()
+      gpg_signature
+      |> GPGKey.decode!()
       |> binary_part(24, 8)
     end
   end
