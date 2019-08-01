@@ -113,6 +113,27 @@ defmodule GitGud.GPGKey do
     21 => :reserved, # Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)
   }
 
+  @sym_key_algos %{
+    0 => :plain, # Plaintext or unencrypted data
+    1 => :idea, # IDEA
+    2 => :triple_des, # TripleDES (168 bit key derived from 192)
+    3 => :cast5, # CAST5 (128 bit key, as per RFC2144)
+    4 => :blowfish, # Blowfish (128 bit key, 16 rounds)
+    5 => :reserved, # Reserved
+    6 => :reserved, # Reserved
+    7 => :aes128, # AES with 128-bit key
+    8 => :aes192, # AES with 192-bit key
+    9 => :aes256, # AES with 256-bit key
+    10 => :twofish, # Twofish with 256-bit key
+  }
+
+  @comp_algos %{
+    0 => :uncompressed, # Uncompressed
+    1 => :zip, # ZIP
+    2 => :zlib, # ZLIB
+    3 => :bzip2, # BZip2
+  }
+
   @hash_algos %{
     1 => :md5,
     2 => :sha1,
@@ -272,5 +293,9 @@ defmodule GitGud.GPGKey do
   end
 
   defp parse_packet_sig_sub_data(:creation_time = type, timestamp), do: {type, DateTime.from_unix!(:binary.decode_unsigned(timestamp))}
+  defp parse_packet_sig_sub_data(type, timestamp) when type in [:expiration_time, :key_expiration_time], do: {type, :binary.decode_unsigned(timestamp)}
+  defp parse_packet_sig_sub_data(:preferred_sym_algo = type, data), do: {type || :undefined, Enum.map(:binary.bin_to_list(data), &Map.get(@sym_key_algos, &1, :undefined))}
+  defp parse_packet_sig_sub_data(:preferred_hash_algo = type, data), do: {type || :undefined, Enum.map(:binary.bin_to_list(data), &Map.get(@hash_algos, &1, :undefined))}
+  defp parse_packet_sig_sub_data(:preferred_comp_algo = type, data), do: {type || :undefined, Enum.map(:binary.bin_to_list(data), &Map.get(@comp_algos, &1, :undefined))}
   defp parse_packet_sig_sub_data(type, data), do: {type || :undefined, data}
 end
