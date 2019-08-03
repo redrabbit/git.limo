@@ -19,10 +19,16 @@
               <%= with author <- commit_author(@repo, @commit) do %>
                 <%= if Map.has_key?(author, :id) do %>
                   <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
+                  committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+                  <%= if commit_verified?(@repo, @commit) do %>
+                    <span class="icon is-small has-text-success">
+                      <i class="fa fa-check"></i>
+                    </span>
+                  <% end %>
                 <% else %>
                   <span class="has-text-black"><%= author.name %></span>
+                  committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
                 <% end %>
-                committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
               <% end %>
             </p>
             <%= if message_body do %>

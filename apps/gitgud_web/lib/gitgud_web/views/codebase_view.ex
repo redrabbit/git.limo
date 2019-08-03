@@ -155,6 +155,11 @@ defmodule GitGud.Web.CodebaseView do
     ReviewQuery.commit_review(repo, commit)
   end
 
+  @spec commit_verified?(Repo.t, Commit.t | GitAgent.git_commit) :: boolean
+  def commit_verified?(repo, commit) do
+    !!CommitQuery.gpg_signature(repo, commit)
+  end
+
   @spec revision_oid(GitAgent.git_object) :: binary
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
