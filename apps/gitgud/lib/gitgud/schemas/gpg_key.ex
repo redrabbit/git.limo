@@ -263,8 +263,9 @@ defmodule GitGud.GPGKey do
     %{version: 4, type: @signature_types[t], pub_algo: @pub_key_algos[pub_algo], hash_algo: @hash_algos[hash_algo], hashed_sub_packets: parse_packet_sig_sub(hashed_sub, []), unhashed_sub_packets: parse_packet_sig_sub(unhashed_sub, []), prefix: prefix, signature: sig}
   end
 
-  defp parse_packet_tag(tag, <<4, timestamp::32, pub_algo::8, data::binary>>) when tag in [:pubk, :pubsubk] do
-    %{version: 4, timestamp: DateTime.from_unix!(timestamp), pub_algo: @pub_key_algos[pub_algo], data: data}
+  defp parse_packet_tag(tag, <<4, timestamp::32, pub_algo::8, data::binary>> = tag_data) when tag in [:pubk, :pubsubk] do
+    tag_size = byte_size(tag_data)
+    %{version: 4, timestamp: DateTime.from_unix!(timestamp), pub_algo: @pub_key_algos[pub_algo], fingerprint: :crypto.hash(:sha, <<0x99, tag_size::16>> <> tag_data), data: data}
   end
 
   defp parse_packet_tag(:uid, uid) do
