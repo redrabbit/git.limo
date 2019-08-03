@@ -12,6 +12,6 @@
   <hr />
 
   <div class="field">
-    <%= submit "Add GPG key", class: "button is-link" %>
+    <%= submit "Add GPG key", class: "button is-success" %>
   </div>
 <% end %>

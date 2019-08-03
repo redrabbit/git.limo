@@ -20,6 +20,6 @@
   <hr />
 
   <div class="field">
-    <%= submit "Add SSH key", class: "button is-link" %>
+    <%= submit "Add SSH key", class: "button is-success" %>
   </div>
 <% end %>
