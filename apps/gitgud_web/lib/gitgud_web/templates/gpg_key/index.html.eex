@@ -35,7 +35,9 @@
             <div class="content">
               <div>
                 <label>Email addresses:</label>
-                <span class="tag">test@example.com</span>
+                <%= for email_address <- gpg_key.emails do %>
+                  <span class="tag <%= if Enum.any?(@user.emails, &(&1.verified && &1.address == email_address)), do: "is-primary" %>"><%= email_address %></span>
+                <% end %>
               </div>
               <div>
                 <label>Key ID:</label>
@@ -43,7 +45,9 @@
               </div>
               <div>
                 <label>Subkeys:</label>
-                <code class="is-size-7">0xFFFF:FFFF:FFFF:FFFF</code>
+                <%= for sub_key <- gpg_key.sub_keys do %>
+                  <code class="is-size-7">0x<%= format_key_id(sub_key) %></code>
+                <% end %>
               </div>
             </div>
           </div>

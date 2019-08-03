@@ -4,6 +4,7 @@ defmodule GitGud.Web.GPGKeyView do
 
   def format_key_id(key) do
     key
+    |> binary_part(20, -8)
     |> Base.encode16()
     |> String.graphemes()
     |> Enum.chunk_every(4)

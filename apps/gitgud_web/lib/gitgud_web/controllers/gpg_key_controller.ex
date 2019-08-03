@@ -18,7 +18,7 @@ defmodule GitGud.Web.GPGKeyController do
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, _params) do
-    user = DB.preload(current_user(conn), :gpg_keys)
+    user = DB.preload(current_user(conn), [:gpg_keys, :emails])
     render(conn, "index.html", user: user)
   end
 
