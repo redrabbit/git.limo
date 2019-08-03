@@ -8,6 +8,8 @@ defmodule GitGud.Web.GPGKeyController do
   alias GitGud.DB
   alias GitGud.GPGKey
 
+  import GitGud.Web.GPGKeyView, only: [format_key_id: 1]
+
   plug :ensure_authenticated
   plug :put_layout, :user_settings
 
@@ -40,7 +42,7 @@ defmodule GitGud.Web.GPGKeyController do
     case GPGKey.create(Map.put(gpg_key_params, "user_id", user.id)) do
       {:ok, gpg_key} ->
         conn
-        |> put_flash(:info, "GPG key '#{Base.encode16(gpg_key.key_id)}' added.")
+        |> put_flash(:info, "GPG key 0x#{format_key_id(gpg_key.key_id)} added.")
         |> redirect(to: Routes.gpg_key_path(conn, :index))
       {:error, changeset} ->
         conn
@@ -60,7 +62,7 @@ defmodule GitGud.Web.GPGKeyController do
     if gpg_key = Enum.find(user.gpg_keys, &(&1.id == gpg_key_id)) do
       gpg_key = GPGKey.delete!(gpg_key)
       conn
-      |> put_flash(:info, "GPG key '#{Base.encode16(gpg_key.key_id)}' deleted.")
+      |> put_flash(:info, "GPG key 0x#{format_key_id(gpg_key.key_id)} deleted.")
       |> redirect(to: Routes.gpg_key_path(conn, :index))
     else
       {:error, :bad_request}
