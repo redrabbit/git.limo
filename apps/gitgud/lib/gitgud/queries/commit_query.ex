@@ -88,7 +88,7 @@ defmodule GitGud.CommitQuery do
   def gpg_signature_query(%Repo{id: repo_id} = _repo, commits), do: gpg_signature_query(repo_id, commits)
   def gpg_signature_query(repo_id, commits) when is_list(commits) do
     oids = Enum.map(commits, &(&1.oid))
-    from(c in Commit, join: g in GPGKey, on: g.key_id == c.gpg_key_id, join: u in assoc(g, :user), where: c.repo_id == ^repo_id and c.oid in ^oids, select: {c.oid, u.id})
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), join: u in assoc(g, :user), where: c.repo_id == ^repo_id and c.oid in ^oids, select: {c.oid, u.id})
   end
 
   #

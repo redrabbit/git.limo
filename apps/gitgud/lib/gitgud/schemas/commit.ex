@@ -88,7 +88,11 @@ defmodule GitGud.Commit do
     if gpg_signature = commit["gpgsig"] do
       gpg_signature
       |> GPGKey.decode!()
-      |> binary_part(24, 8)
+      |> GPGKey.parse!()
+      |> IO.inspect
+      |> Keyword.fetch!(:sig)
+      |> Map.fetch!(:sub_pack)
+      |> Keyword.fetch!(:issuer)
     end
   end
 end

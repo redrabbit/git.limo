@@ -14,6 +14,8 @@ defmodule GitGud.GPGKey do
     belongs_to :user, User
     field :data, :string, virtual: true
     field :key_id, :binary
+    field :sub_keys, {:array, :binary}
+    field :emails, {:array, :string}
     timestamps(updated_at: false)
   end
 
@@ -194,7 +196,7 @@ defmodule GitGud.GPGKey do
     gpg_key
     |> cast(params, [:user_id, :data])
     |> validate_required([:user_id, :data])
-    |> put_key_id()
+    |> put_data()
     |> unique_constraint(:key_id, name: :gpg_keys_user_id_key_id_index)
     |> assoc_constraint(:user)
   end
@@ -207,9 +209,10 @@ defmodule GitGud.GPGKey do
     {_checksum, lines} =
       message
       |> String.trim()
-      |> String.split("\n")
+      |> String.split(["\n", "\r", "\r\n"])
       |> List.delete_at(0)
       |> List.delete_at(-1)
+      |> IO.inspect
       |> Enum.drop_while(&(&1 != ""))
       |> List.delete_at(0)
       |> List.pop_at(-1)
@@ -226,10 +229,16 @@ defmodule GitGud.GPGKey do
   # Helpers
   #
 
-  defp put_key_id(changeset) do
-    if _data = changeset.valid? && get_change(changeset, :data),
-     do: put_change(changeset, :key_id, Base.decode16!("FFFFFFFFFFFFFFFF")),
-   else: changeset
+  defp put_data(changeset) do
+    if armored_data = changeset.valid? && get_change(changeset, :data) do
+      data = decode!(armored_data)
+      gpg_key = parse!(data)
+      pub_key = Keyword.fetch!(gpg_key, :pubk)
+      changeset
+      |> put_change(:key_id, pub_key.fingerprint)
+      |> put_change(:sub_keys, Enum.map(Keyword.get_values(gpg_key, :pubsubk), &(&1.fingerprint)))
+      |> put_change(:emails, Enum.map(Keyword.get_values(gpg_key, :uid), &(&1.email)))
+    end || changeset
   end
 
   defp parse_packet("", acc), do: Enum.reverse(acc)
@@ -260,7 +269,7 @@ defmodule GitGud.GPGKey do
   end
 
   defp parse_packet_tag(:sig, <<4, t::8, pub_algo::8, hash_algo::8, hashed_sub_size::16, hashed_sub::binary-size(hashed_sub_size), unhashed_sub_size::16, unhashed_sub::binary-size(unhashed_sub_size), prefix::binary-size(2), sig::binary>>) do
-    %{version: 4, type: @signature_types[t], pub_algo: @pub_key_algos[pub_algo], hash_algo: @hash_algos[hash_algo], hashed_sub_packets: parse_packet_sig_sub(hashed_sub, []), unhashed_sub_packets: parse_packet_sig_sub(unhashed_sub, []), prefix: prefix, signature: sig}
+    %{version: 4, type: @signature_types[t], pub_algo: @pub_key_algos[pub_algo], hash_algo: @hash_algos[hash_algo], sub_pack: parse_packet_sig_sub(hashed_sub, []) ++ parse_packet_sig_sub(unhashed_sub, []), prefix: prefix, signature: sig}
   end
 
   defp parse_packet_tag(tag, <<4, timestamp::32, pub_algo::8, data::binary>> = tag_data) when tag in [:pubk, :pubsubk] do
