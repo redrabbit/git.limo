@@ -17,6 +17,7 @@ defmodule GitGud.GPGKey do
     field :sub_keys, {:array, :binary}
     field :emails, {:array, :string}
     timestamps(updated_at: false)
+    field :expires_at, :naive_datetime
   end
 
   @type t :: %__MODULE__{
@@ -234,10 +235,12 @@ defmodule GitGud.GPGKey do
       data = decode!(armored_data)
       gpg_key = parse!(data)
       pub_key = Keyword.fetch!(gpg_key, :pubk)
+      pub_sig = Keyword.fetch!(gpg_key, :sig)
       changeset
       |> put_change(:key_id, pub_key.fingerprint)
       |> put_change(:sub_keys, Enum.map(Keyword.get_values(gpg_key, :pubsubk), &(&1.fingerprint)))
       |> put_change(:emails, Enum.map(Keyword.get_values(gpg_key, :uid), &(&1.email)))
+      |> put_change(:expires_at, DateTime.to_naive(DateTime.add(pub_key.timestamp, Keyword.get(pub_sig.sub_pack, :key_expiration_time, 0))))
     end || changeset
   end
 

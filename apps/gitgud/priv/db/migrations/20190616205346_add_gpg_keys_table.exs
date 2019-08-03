@@ -8,6 +8,7 @@ defmodule GitGud.DB.Migrations.AddGpgKeysTable do
       add :sub_keys, {:array, :binary}
       add :emails, {:array, :string}, null: false
       timestamps(updated_at: false)
+      add :expires_at, :naive_datetime
     end
     create unique_index("gpg_keys", [:user_id, :key_id])
   end
