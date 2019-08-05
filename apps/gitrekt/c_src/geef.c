@@ -256,6 +256,7 @@ static ErlNifFunc geef_funcs[] =
 	{"commit_create",  8, geef_commit_create, 0},
 	{"commit_message", 1, geef_commit_message, 0},
 	{"commit_author", 1, geef_commit_author, 0},
+	{"commit_committer", 1, geef_commit_committer, 0},
 	{"commit_time", 1, geef_commit_time, 0},
 	{"commit_raw_header", 1, geef_commit_raw_header, 0},
 	{"commit_header", 2, geef_commit_header, 0},

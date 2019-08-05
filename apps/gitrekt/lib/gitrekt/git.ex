@@ -499,6 +499,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the committer of the given `commit`.
+  """
+  @spec commit_committer(commit) :: {:ok, binary, binary, non_neg_integer, non_neg_integer} | {:error, term}
+  def commit_committer(_commit) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Returns the time of the given `commit`.
   """
   @spec commit_time(commit) :: {:ok, non_neg_integer, non_neg_integer} | {:error, term}

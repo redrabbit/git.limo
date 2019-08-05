@@ -221,6 +221,26 @@ geef_commit_author(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_commit_committer(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM name, email, time, offset;
+	geef_object *obj;
+	const git_signature* signature;
+
+	if (!enif_get_resource(env, argv[0], geef_object_type, (void **) &obj))
+		return enif_make_badarg(env);
+
+	signature = git_commit_committer((git_commit *) obj->obj);
+    if (signature == NULL)
+        return geef_error(env);
+
+    if (geef_signature_to_erl(&name, &email, &time, &offset, env, signature))
+        return geef_error(env);
+
+    return enif_make_tuple5(env, atoms.ok, name, email, time, offset);
+}
+
+ERL_NIF_TERM
 geef_commit_time(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM time, offset;

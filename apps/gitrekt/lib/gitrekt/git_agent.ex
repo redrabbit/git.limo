@@ -140,6 +140,12 @@ defmodule GitRekt.GitAgent do
   def commit_author(agent, commit), do: call(agent, {:author, commit})
 
   @doc """
+  Returns the committer of the given `commit`.
+  """
+  @spec commit_committer(agent, GitCommit.t) :: {:ok, map} | {:error, term}
+  def commit_committer(agent, commit), do: call(agent, {:committer, commit})
+
+  @doc """
   Returns the message of the given `commit`.
   """
   @spec commit_message(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
@@ -389,6 +395,7 @@ defmodule GitRekt.GitAgent do
 
   defp call({:tree_entries, obj}, handle), do: fetch_tree_entries(obj, handle)
   defp call({:author, obj}, _handle), do: fetch_author(obj)
+  defp call({:committer, obj}, _handle), do: fetch_committer(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
   defp call({:commit_parents, %GitCommit{commit: commit}}, _handle) do
     case Git.commit_parents(commit) do
@@ -591,6 +598,12 @@ defmodule GitRekt.GitAgent do
 
   defp fetch_author(%GitCommit{commit: commit}) do
     with {:ok, name, email, time, _offset} <- Git.commit_author(commit),
+         {:ok, datetime} <- DateTime.from_unix(time), do:
+      {:ok, %{name: name, email: email, timestamp: datetime}}
+  end
+
+  defp fetch_committer(%GitCommit{commit: commit}) do
+    with {:ok, name, email, time, _offset} <- Git.commit_committer(commit),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
