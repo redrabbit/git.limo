@@ -100,6 +100,13 @@ table.table {
   a {
     position: relative;
     margin-left: -15px;
+    transition: margin-left .2s;
+  }
+
+  &:hover {
+    a:not(:last-child) {
+      margin-left: 0;
+    }
   }
 }
 
