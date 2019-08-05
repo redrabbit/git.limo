@@ -91,6 +91,18 @@ table.table {
   }
 }
 
+.avatar-stack {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  margin-right: -5px;
+  padding-left: 15px;
+
+  a {
+    position: relative;
+    margin-left: -15px;
+  }
+}
+
 @keyframes slideDown {
     0%, 100% { transform: translateY(-100px); }
     5%, 95% { transform: translateY(0px); }

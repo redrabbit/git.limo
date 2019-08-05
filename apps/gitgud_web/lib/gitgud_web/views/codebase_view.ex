@@ -96,15 +96,31 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit) :: map | nil
-  def commit_author(repo, %Commit{} = commit), do: fetch_author(repo, commit)
+  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit) :: User.t | map | nil
   def commit_author(repo, commit) do
-    case GitAgent.commit_author(repo, commit) do
-      {:ok, author} ->
-        if user = UserQuery.by_email(author.email),
-          do: user,
-        else: author
-      {:error, _reason} -> nil
+    if author = fetch_author(repo, commit) do
+      if user = UserQuery.by_email(author.email),
+        do: user,
+      else: author
+    end
+  end
+
+  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit, :with_committer) :: {User.t | map | nil, User.t | map | nil}
+  def commit_author(repo, commit, :with_committer) do
+    author = fetch_author(repo, commit)
+    author_user = UserQuery.by_email(author.email) || author
+    committer = fetch_committer(repo, commit)
+    if author.email == committer.email,
+     do: {author_user, author_user},
+   else: {author_user, UserQuery.by_email(committer.email) || committer}
+  end
+
+  @spec commit_committer(Repo.t, Commit.t | GitAgent.git_commit) :: User.t | map | nil
+  def commit_committer(repo, commit) do
+    if committer = fetch_committer(repo, commit) do
+      if user = UserQuery.by_email(committer.email),
+        do: user,
+      else: committer
     end
   end
 
@@ -308,19 +324,32 @@ defmodule GitGud.Web.CodebaseView do
     Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
   end
 
+  defp batch_commits_committers(repo, commits) do
+    authors = Enum.map(commits, &fetch_author(repo, &1))
+    authors_emails = Enum.map(authors, &(&1.email))
+    committers = Enum.map(commits, &{&1.oid, fetch_committer(repo, &1)})
+    committers = Enum.filter(committers, fn {_oid, committer} -> committer.email in authors_emails end)
+    committers = Enum.into(committers, %{})
+    users = query_users(authors ++ Map.values(committers))
+    commits
+    |> Enum.zip(authors)
+    |> Enum.map(fn {commit, author} -> {commit, author, Map.get(committers, commit.oid, author)} end)
+    |> Enum.map(&zip_author(&1, users))
+  end
+
   defp batch_commits_gpg_sign(repo, commits) do
     gpg_map = CommitQuery.gpg_signature(repo, commits)
-    Enum.map(batch_commits_authors(repo, commits), fn
-      {commit, %User{id: user_id} = author} ->
-        {commit, author, gpg_map[commit.oid] == user_id}
-      {commit, author} ->
-        {commit, author, false}
+    Enum.map(batch_commits_committers(repo, commits), fn
+      {commit, author, %User{id: user_id} = committer} ->
+        {commit, author, committer, gpg_map[commit.oid] == user_id}
+      {commit, author, committer} ->
+        {commit, author, committer, false}
     end)
   end
 
   defp batch_commits_comments_count(repo, commits) do
     aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
-    Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, verified?} -> {commit, author, verified?, aggregator[commit.oid] || 0} end)
+    Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, committer, verified?} -> {commit, author, committer, verified?, aggregator[commit.oid] || 0} end)
   end
 
   defp fetch_commit(repo, reference) do
@@ -361,6 +390,29 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp fetch_author(_repo, %Commit{} = commit) do
+    %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
+  end
+
+  defp fetch_committer(repo, %GitRef{} = reference) do
+    case GitAgent.peel(repo, reference) do
+      {:ok, commit} ->
+        fetch_committer(repo, commit)
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fetch_committer(repo, %GitCommit{} = commit) do
+    case GitAgent.commit_committer(repo, commit) do
+      {:ok, sig} -> sig
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fetch_committer(repo, {%GitRef{} = _reference, commit}) do
+    fetch_committer(repo, commit)
+  end
+
+  defp fetch_committer(_repo, %Commit{} = commit) do
     %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
   end
 
@@ -441,7 +493,16 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  defp zip_author({parent, author}, users) do
-    {parent, Map.get(users, author.email, author)}
+  defp zip_author({commit, author}, users) do
+    {commit, Map.get(users, author.email, author)}
+  end
+
+  defp zip_author({commit, author, author}, users) do
+    user = Map.get(users, author.email, author)
+    {commit, user, user}
+  end
+
+  defp zip_author({commit, author, committer}, users) do
+    {commit, Map.get(users, author.email, author), Map.get(users, committer.email, committer)}
   end
 end
