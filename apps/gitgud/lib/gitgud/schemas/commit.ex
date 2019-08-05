@@ -36,8 +36,8 @@ defmodule GitGud.Commit do
   @doc """
   Decodes the given *RAW* commit `data`.
   """
-  @spec decode(binary) :: map
-  def decode(data) do
+  @spec decode!(binary) :: map
+  def decode!(data) do
     commit = extract_commit_props(data)
     author = extract_commit_author(commit)
     %{

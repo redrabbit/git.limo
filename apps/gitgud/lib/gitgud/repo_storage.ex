@@ -22,8 +22,6 @@ defmodule GitGud.RepoStorage do
 
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
-
-  See `GitRekt.WireProtocol.ReceivePack` and `GitGud.RepoStorage.push/2` for more details.
   """
   @spec push(Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
   def push(%Repo{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
@@ -126,7 +124,7 @@ defmodule GitGud.RepoStorage do
   defp map_git_object_db_type(:tag), do: 4
 
   defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
-    {Commit, Map.merge(Commit.decode(data), %{repo_id: repo_id, oid: oid})}
+    {Commit, Map.merge(Commit.decode!(data), %{repo_id: repo_id, oid: oid})}
   end
 
   defp map_git_meta_object(_obj, _repo_id), do: nil

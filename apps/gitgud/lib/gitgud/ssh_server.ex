@@ -7,21 +7,11 @@ defmodule GitGud.SSHServer do
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
 
-  ## Authentication
-
   A registered `GitGud.User` can authenticate with following methods:
 
   * *public-key* - if any of the associated `GitGud.SSHKey` matches.
   * *password* - if the given credentials are correct.
   * *interactive* - interactive login prompt allowing several tries.
-
-  To clone a repository, run following command:
-
-      git clone 'ssh://redrabbit@localhost:8989/USER/REPO'
-
-  ## Authorization
-
-  In order to read and/or write to a repository, a user needs to have the required permissions.
 
   See `GitGud.Authorization` for more details.
   """

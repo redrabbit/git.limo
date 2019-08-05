@@ -7,21 +7,12 @@ defmodule GitGud.SmartHTTPBackend do
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
 
-  ## Authentication
-
   A registered `GitGud.User` can authenticate over HTTP via *Basic Authentication*.
   This is only, required for commands requiring specific permissions (such as pushing commits and cloning private repos).
 
-  To clone a repository, run following command:
-
-      git clone 'http://localhost:4000/USER/REPO'
-
-  ## Authorization
-
-  In order to read and/or write to a repository, a user needs to have the required permissions.
-
   See `GitGud.Authorization` for more details.
   """
+
   use Plug.Router
 
   import Base, only: [decode64: 1]

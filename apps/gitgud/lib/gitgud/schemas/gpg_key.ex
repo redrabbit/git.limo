@@ -12,10 +12,10 @@ defmodule GitGud.GPGKey do
 
   schema "gpg_keys" do
     belongs_to :user, User
-    field :data, :string, virtual: true
     field :key_id, :binary
     field :sub_keys, {:array, :binary}
     field :emails, {:array, :string}
+    field :data, :string, virtual: true
     timestamps(updated_at: false)
     field :expires_at, :naive_datetime
   end
@@ -24,9 +24,12 @@ defmodule GitGud.GPGKey do
     id: pos_integer,
     user_id: pos_integer,
     user: User.t,
-    data: binary,
     key_id: binary,
+    sub_keys: [binary],
+    emails: [binary],
+    data: binary,
     inserted_at: NaiveDateTime.t,
+    expires_at: NaiveDateTime.t
   }
 
   @packet_types %{
@@ -222,6 +225,10 @@ defmodule GitGud.GPGKey do
     |> Base.decode64!()
   end
 
+  @doc """
+  Parses the given GPG key `data`.
+  """
+  @spec parse!(binary) :: keyword
   def parse!(data) do
     parse_packet(data, [])
   end

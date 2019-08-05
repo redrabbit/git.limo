@@ -10,10 +10,6 @@ defmodule GitGud.Email do
 
   Once verified, an email address can be used to authenticate users (see `GitGud.Auth.check_credentials/2`)
   and resolve Git commit authors.
-
-  In order to associate Git commits to a specific `GitGud.User` account, every user can have has many email
-  addresses as he likes. Once verified, emails appearing in Git commits will automatically be linked to the
-  associated user. See `GitGud.GPGKey` for more details on how to verify GPG (or S/MIME) signed commits.
   """
 
   use Ecto.Schema
