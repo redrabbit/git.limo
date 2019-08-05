@@ -216,7 +216,6 @@ defmodule GitGud.GPGKey do
       |> String.split(["\n", "\r", "\r\n"])
       |> List.delete_at(0)
       |> List.delete_at(-1)
-      |> IO.inspect
       |> Enum.drop_while(&(&1 != ""))
       |> List.delete_at(0)
       |> List.pop_at(-1)

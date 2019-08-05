@@ -17,6 +17,8 @@ defmodule GitGud.Commit do
     field :message, :string
     field :author_name, :string
     field :author_email, :string
+    field :committer_name, :string
+    field :committer_email, :string
     field :gpg_key_id, :binary
     field :committed_at, :naive_datetime
   end
@@ -29,6 +31,8 @@ defmodule GitGud.Commit do
     message: binary,
     author_name: binary,
     author_email: binary,
+    committer_name: binary,
+    committer_email: binary,
     gpg_key_id: binary,
     committed_at: NaiveDateTime.t
   }
@@ -40,11 +44,14 @@ defmodule GitGud.Commit do
   def decode!(data) do
     commit = extract_commit_props(data)
     author = extract_commit_author(commit)
+    committer = extract_commit_committer(commit)
     %{
       parents: extract_commit_parents(commit),
       message: commit["message"],
       author_name: author["name"],
       author_email: author["email"],
+      committer_name: committer["name"],
+      committer_email: committer["email"],
       gpg_key_id: extract_commit_gpg_key_id(commit),
       committed_at: author["time"],
     }
@@ -84,12 +91,17 @@ defmodule GitGud.Commit do
     |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
   end
 
+  defp extract_commit_committer(commit) do
+    ~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/
+    |> Regex.named_captures(commit["committer"])
+    |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
+  end
+
   defp extract_commit_gpg_key_id(commit) do
     if gpg_signature = commit["gpgsig"] do
       gpg_signature
       |> GPGKey.decode!()
       |> GPGKey.parse!()
-      |> IO.inspect
       |> Keyword.fetch!(:sig)
       |> Map.fetch!(:sub_pack)
       |> Keyword.fetch!(:issuer)

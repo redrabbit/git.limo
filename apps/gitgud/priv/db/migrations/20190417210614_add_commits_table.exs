@@ -9,6 +9,8 @@ defmodule GitGud.DB.Migrations.AddCommitsTable do
       add :message, :text
       add :author_name, :string
       add :author_email, :string
+      add :committer_name, :string
+      add :committer_email, :string
       add :gpg_key_id, :binary
       add :committed_at, :naive_datetime
     end
@@ -25,6 +27,6 @@ defmodule GitGud.DB.Migrations.AddCommitsTable do
       SELECT c.oid, c.parents FROM dg c;
     END;
     $$ LANGUAGE plpgsql STABLE;
-    """, "DROP FUNCTION git_commit_dag"
+    """, "DROP FUNCTION git_commit_dag_desc"
   end
 end
