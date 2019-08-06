@@ -7,6 +7,7 @@ defmodule GitGud.AuthorizationTest do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
+  alias GitGud.RepoStorage
   alias GitGud.RepoQuery
 
   setup [:create_users, :create_repos]
@@ -138,7 +139,7 @@ defmodule GitGud.AuthorizationTest do
       end)
     on_exit fn ->
       for repo <- repos do
-        File.rm_rf(Repo.workdir(repo))
+        File.rm_rf(RepoStorage.workdir(repo))
       end
     end
     Map.put(context, :repos, repos)

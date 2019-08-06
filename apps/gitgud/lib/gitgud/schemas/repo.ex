@@ -14,6 +14,7 @@ defmodule GitGud.Repo do
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.RepoStorage
 
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
@@ -112,7 +113,7 @@ defmodule GitGud.Repo do
       {:error, %Ecto.Changeset{} = changeset} ->
         raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
       {:error, reason} ->
-        raise File.Error, reason: reason, action: "rename directory", path: IO.chardata_to_string(workdir(repo))
+        raise File.Error, reason: reason, action: "rename directory", path: Path.join(repo.owner.login, repo.name)
     end
   end
 
@@ -181,17 +182,6 @@ defmodule GitGud.Repo do
     if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
 
-  @doc """
-  Returns the absolute path to the Git workdir for the given `repo`.
-
-  The path is a concatenation of the Git root path, `repo.owner.login` and `repo.name`.
-  """
-  @spec workdir(t) :: Path.t
-  def workdir(%__MODULE__{} = repo) do
-    repo = DB.preload(repo, :owner)
-    Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner.login, repo.name])
-  end
-
   #
   # Protocols
   #
@@ -202,8 +192,7 @@ defmodule GitGud.Repo do
     def get_agent(%Repo{} = repo), do: repo.__agent__
 
     def put_agent(%Repo{__agent__: nil} = repo, :inproc) do
-      arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
-      case Git.repository_load(arg) do
+      case Git.repository_load(RepoStorage.init_param(repo)) do
         {:ok, agent} ->
           {:ok, struct(repo, __agent__: agent)}
         {:error, reason} ->
@@ -212,8 +201,7 @@ defmodule GitGud.Repo do
     end
 
     def put_agent(%Repo{__agent__: nil} = repo, :shared) do
-      arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
-      case GitAgent.start_link(arg) do
+      case GitAgent.start_link(RepoStorage.init_param(repo)) do
         {:ok, agent} ->
           {:ok, struct(repo, __agent__: agent)}
         {:error, reason} ->
@@ -222,23 +210,6 @@ defmodule GitGud.Repo do
     end
 
     def put_agent(%Repo{} = repo, _mode), do: repo
-
-    #
-    # Helpers
-    #
-
-    defp repo_load_param(repo, :filesystem), do: Repo.workdir(repo)
-    defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
-
-    defp postgres_url(conf) do
-      to_string(%URI{
-        scheme: "postgresql",
-        host: Keyword.get(conf, :hostname),
-        port: Keyword.get(conf, :port),
-        path: "/#{Keyword.get(conf, :database)}",
-        userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
-      })
-    end
   end
 
   defimpl GitGud.AuthorizationPolicies do
@@ -307,34 +278,13 @@ defmodule GitGud.Repo do
     |> DB.transaction()
   end
 
-  defp init(_db, %{repo: repo}, bare?) do
-    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
-      do: Git.repository_init(workdir(repo), bare?),
-    else: {:ok, :noop}
-  end
+  defp init(_db, %{repo: repo}, bare?), do: RepoStorage.init(repo, bare?)
 
   defp rename(_db, %{repo: repo}, changeset) do
-    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
-      do: move_workdir(repo, changeset),
-    else: {:ok, :noop}
+    unless get_change(changeset, :name),
+      do: {:ok, :noop},
+    else: RepoStorage.rename(repo, changeset.data)
   end
 
-  defp cleanup(_db, %{repo: repo}) do
-    if Application.get_env(:gitgud, :git_storage, :filesystem) == :filesystem,
-      do: File.rm_rf(workdir(repo)),
-    else: {:ok, :noop}
-  end
-
-  defp move_workdir(repo, changeset) do
-    old_workdir = workdir(changeset.data)
-    if get_change(changeset, :name) do
-      new_workdir = workdir(repo)
-      case File.rename(old_workdir, new_workdir) do
-        :ok -> {:ok, new_workdir}
-        {:error, reason} -> {:error, reason}
-      end
-    else
-      {:ok, old_workdir}
-    end
-  end
+  defp cleanup(_db, %{repo: repo}), do: RepoStorage.cleanup(repo)
 end

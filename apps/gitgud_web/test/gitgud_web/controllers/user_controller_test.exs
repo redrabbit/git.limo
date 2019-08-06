@@ -6,6 +6,7 @@ defmodule GitGud.Web.UserControllerTest do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
+  alias GitGud.RepoStorage
 
   test "renders user registration form", %{conn: conn} do
     conn = get(conn, Routes.user_path(conn, :new))
@@ -179,7 +180,7 @@ defmodule GitGud.Web.UserControllerTest do
     repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, context.user)) end), 3)
     on_exit fn ->
       for repo <- repos do
-        File.rm_rf(Repo.workdir(repo))
+        File.rm_rf(RepoStorage.workdir(repo))
       end
     end
     Map.put(context, :repos, repos)

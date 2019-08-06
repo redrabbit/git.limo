@@ -18,6 +18,55 @@ defmodule GitGud.RepoStorage do
   @batch_insert_chunk_size 5_000
 
   @doc """
+  Initializes a new Git repository for the given `repo`.
+  """
+  @spec init(Repo.t, boolean) :: {:ok, Git.repo} | {:error, term}
+  def init(%Repo{} = repo, bare?) do
+    case Application.get_env(:gitgud, :git_storage, :filesystem) do
+      :postgres ->
+        {:ok, :noop}
+      :filesystem ->
+        Git.repository_init(workdir(repo), bare?)
+    end
+  end
+
+  @doc """
+  Returns an initialization parameter for the given `repo`.
+  """
+  @spec init_param(Repo.t) :: term
+  def init_param(%Repo{} = repo), do: repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
+
+  @doc """
+  Renames the given `repo`.
+  """
+  @spec rename(Repo.t, Repo.t) :: {:ok, Path.t} | {:error, term}
+  def rename(%Repo{} = repo, %Repo{} = old_repo) do
+    case Application.get_env(:gitgud, :git_storage, :filesystem) do
+      :postgres ->
+        {:ok, :noop}
+      :filesystem ->
+        old_workdir = workdir(old_repo)
+        new_workdir = workdir(repo)
+        case File.rename(old_workdir, new_workdir) do
+          :ok -> {:ok, new_workdir}
+          {:error, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  @doc """
+  Removes associated data for the given `repo`.
+  """
+  @spec cleanup(Repo.t) :: {:ok, [Path.t]} | {:error, term}
+  def cleanup(%Repo{} = repo) do
+    case Application.get_env(:gitgud, :git_storage, :filesystem) do
+      :postgres ->
+        {:ok, :noop}
+      :filesystem -> File.rm_rf(workdir(repo))
+    end
+  end
+
+  @doc """
   Writes the given `receive_pack` objects and references to the given `repo`.
 
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
@@ -35,18 +84,30 @@ defmodule GitGud.RepoStorage do
     end
   end
 
+  @doc """
+  Returns the absolute path to the Git workdir for the given `repo`.
+
+  The path is a concatenation of the Git root path, `repo.owner.login` and `repo.name`.
+  """
+  @spec workdir(Repo.t) :: Path.t
+  def workdir(%Repo{} = repo) do
+    repo = DB.preload(repo, :owner)
+    Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner.login, repo.name])
+  end
+
   #
   # Helpers
   #
 
   defp push_objects(receive_pack, repo_id) do
-    if Application.get_env(:gitgud, :git_storage, :filesystem) == :postgres do
-      objs = resolve_git_objects_postgres(receive_pack, repo_id)
-      case DB.transaction(write_git_objects(objs, repo_id), timeout: :infinity) do
-        {:ok, _} -> {:ok, objs}
-      end
-    else
-      ReceivePack.apply_pack(receive_pack, :write_dump)
+    case Application.get_env(:gitgud, :git_storage, :filesystem) do
+      :postgres ->
+        objs = resolve_git_objects_postgres(receive_pack, repo_id)
+        case DB.transaction(write_git_objects(objs, repo_id), timeout: :infinity) do
+          {:ok, _} -> {:ok, objs}
+        end
+      :filesystem ->
+        ReceivePack.apply_pack(receive_pack, :write_dump)
     end
   end
 
@@ -128,4 +189,17 @@ defmodule GitGud.RepoStorage do
   end
 
   defp map_git_meta_object(_obj, _repo_id), do: nil
+
+  defp repo_load_param(repo, :filesystem), do: workdir(repo)
+  defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
+
+  defp postgres_url(conf) do
+    to_string(%URI{
+      scheme: "postgresql",
+      host: Keyword.get(conf, :hostname),
+      port: Keyword.get(conf, :port),
+      path: "/#{Keyword.get(conf, :database)}",
+      userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
+    })
+  end
 end

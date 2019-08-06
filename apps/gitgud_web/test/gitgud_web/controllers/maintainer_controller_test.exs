@@ -5,6 +5,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoStorage
   alias GitGud.Maintainer
 
   setup [:create_users, :create_repo]
@@ -75,7 +76,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
   defp create_repo(context) do
     repo = Repo.create!(factory(:repo, hd(context.users)))
     on_exit fn ->
-      File.rm_rf(Repo.workdir(repo))
+      File.rm_rf(RepoStorage.workdir(repo))
     end
     Map.put(context, :repo, repo)
   end
@@ -87,4 +88,3 @@ defmodule GitGud.Web.MaintainerControllerTest do
     |> Map.update!(:repo, &DB.preload(&1, :maintainers))
   end
 end
-

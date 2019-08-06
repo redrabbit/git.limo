@@ -6,6 +6,7 @@ defmodule GitGud.SmartHTTPBackendTest do
 
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoStorage
   alias GitGud.SmartHTTPBackend
   alias GitGud.SmartHTTPBackendRouter
 
@@ -99,13 +100,13 @@ defmodule GitGud.SmartHTTPBackendTest do
   defp create_repo(context) do
     repo = Repo.create!(factory(:repo, context.user))
     on_exit fn ->
-      File.rm_rf(Repo.workdir(repo))
+      File.rm_rf(RepoStorage.workdir(repo))
     end
     Map.put(context, :repo, repo)
   end
 
   defp clone_from_github(context) do
-    File.rm_rf!(Repo.workdir(context.repo))
+    File.rm_rf!(RepoStorage.workdir(context.repo))
     {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "https://github.com/almightycouch/gitgud.git", context.repo.name], cd: Path.join(Application.fetch_env!(:gitgud, :git_root), context.user.login))
     :ok
   end

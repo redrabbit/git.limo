@@ -4,6 +4,7 @@ defmodule GitGud.RepoQueryTest do
 
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoStorage
   alias GitGud.RepoQuery
 
   setup [:create_users, :create_repos]
@@ -43,7 +44,7 @@ defmodule GitGud.RepoQueryTest do
 
   test "gets single repository by path", %{repos: repos} do
     for repo <- repos do
-      assert repo.id == RepoQuery.by_path(Repo.workdir(repo), preload: :maintainers).id
+      assert repo.id == RepoQuery.by_path(RepoStorage.workdir(repo), preload: :maintainers).id
     end
   end
 
@@ -65,7 +66,7 @@ defmodule GitGud.RepoQueryTest do
     repos = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, &1)) end), 3))
     on_exit fn ->
       for repo <- repos do
-        File.rm_rf(Repo.workdir(repo))
+        File.rm_rf(RepoStorage.workdir(repo))
       end
     end
     Map.put(context, :repos, repos)

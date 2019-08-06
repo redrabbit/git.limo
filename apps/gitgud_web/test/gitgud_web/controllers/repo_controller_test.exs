@@ -4,6 +4,7 @@ defmodule GitGud.Web.RepoControllerTest do
 
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoStorage
   alias GitGud.RepoQuery
   alias GitGud.Email
 
@@ -27,7 +28,7 @@ defmodule GitGud.Web.RepoControllerTest do
     repo = RepoQuery.user_repo(user, repo_params.name)
     assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' created."
     assert redirected_to(conn) == Routes.codebase_path(conn, :show, user, repo)
-    File.rm_rf!(Repo.workdir(repo))
+    File.rm_rf!(RepoStorage.workdir(repo))
   end
 
   test "fails to create repository with invalid name", %{conn: conn, user: user} do
@@ -73,7 +74,7 @@ defmodule GitGud.Web.RepoControllerTest do
       assert repo.description == "This project is really awesome!"
       assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' updated."
       assert redirected_to(conn) == Routes.repo_path(conn, :edit, user, repo)
-      File.rm_rf!(Repo.workdir(repo))
+      File.rm_rf!(RepoStorage.workdir(repo))
     end
 
     test "fails to update repository with invalid name", %{conn: conn, user: user, repo: repo} do
@@ -109,7 +110,7 @@ defmodule GitGud.Web.RepoControllerTest do
   defp create_repo(context) do
     repo = Repo.create!(factory(:repo, context.user))
     on_exit fn ->
-      File.rm_rf(Repo.workdir(repo))
+      File.rm_rf(RepoStorage.workdir(repo))
     end
     Map.put(context, :repo, repo)
   end
