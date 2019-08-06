@@ -283,7 +283,7 @@ defmodule GitGud.User do
       emails = get_change(changeset, :emails)
       if email_changeset = !Enum.empty?(emails) && hd(emails) do
         providers = get_change(auth_changeset, :oauth2_providers)
-        if provider_changeset = !Enum.empty?(providers) && hd(providers) do
+        if provider_changeset = is_list(providers) && providers != [] && hd(providers) do
           case Phoenix.Token.verify(GitGud.Web.Endpoint, get_change(provider_changeset, :token), provider_changeset.params["email_token"]) do
             {:ok, email_address} ->
               if email_address == get_change(email_changeset, :address) do
