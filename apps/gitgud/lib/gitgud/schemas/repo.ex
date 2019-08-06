@@ -18,8 +18,6 @@ defmodule GitGud.Repo do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  @behaviour GitAgent
-
   schema "repositories" do
     belongs_to :owner, User
     field :name, :string
@@ -195,40 +193,53 @@ defmodule GitGud.Repo do
   end
 
   #
-  # Callbacks
-  #
-
-  @impl true
-  def put_agent(%__MODULE__{__agent__: nil} = repo, :inproc) do
-    arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
-    case Git.repository_load(arg) do
-      {:ok, agent} ->
-        {:ok, struct(repo, __agent__: agent)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @impl true
-  def put_agent(%__MODULE__{__agent__: nil} = repo, :shared) do
-    arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
-    case GitAgent.start_link(arg) do
-      {:ok, agent} ->
-        {:ok, struct(repo, __agent__: agent)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @impl true
-  def put_agent(%__MODULE__{} = repo, _mode), do: repo
-
-  @impl true
-  def get_agent(%__MODULE__{} = repo), do: repo.__agent__
-
-  #
   # Protocols
   #
+
+  defimpl GitRekt.GitAccess do
+    alias GitGud.Repo
+
+    def get_agent(%Repo{} = repo), do: repo.__agent__
+
+    def put_agent(%Repo{__agent__: nil} = repo, :inproc) do
+      arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
+      case Git.repository_load(arg) do
+        {:ok, agent} ->
+          {:ok, struct(repo, __agent__: agent)}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+
+    def put_agent(%Repo{__agent__: nil} = repo, :shared) do
+      arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
+      case GitAgent.start_link(arg) do
+        {:ok, agent} ->
+          {:ok, struct(repo, __agent__: agent)}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+
+    def put_agent(%Repo{} = repo, _mode), do: repo
+
+    #
+    # Helpers
+    #
+
+    defp repo_load_param(repo, :filesystem), do: Repo.workdir(repo)
+    defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
+
+    defp postgres_url(conf) do
+      to_string(%URI{
+        scheme: "postgresql",
+        host: Keyword.get(conf, :hostname),
+        port: Keyword.get(conf, :port),
+        path: "/#{Keyword.get(conf, :database)}",
+        userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
+      })
+    end
+  end
 
   defimpl GitGud.AuthorizationPolicies do
     alias GitGud.Repo
@@ -262,9 +273,6 @@ defmodule GitGud.Repo do
   #
   # Helpers
   #
-
-  defp repo_load_param(repo, :filesystem), do: workdir(repo)
-  defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
 
   defp create_and_init(changeset, bare?) do
     Multi.new()
@@ -328,15 +336,5 @@ defmodule GitGud.Repo do
     else
       {:ok, old_workdir}
     end
-  end
-
-  defp postgres_url(conf) do
-    to_string(%URI{
-      scheme: "postgresql",
-      host: Keyword.get(conf, :hostname),
-      port: Keyword.get(conf, :port),
-      path: "/#{Keyword.get(conf, :database)}",
-      userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
-    })
   end
 end

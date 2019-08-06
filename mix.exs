@@ -116,6 +116,7 @@ defmodule GitGud.Umbrella.Mixfile do
         ],
         "Git low-level APIs": [
           GitRekt.GitAgent,
+          GitRekt.GitAccess,
           GitRekt.Git,
           GitRekt.Packfile,
           GitRekt.WireProtocol,

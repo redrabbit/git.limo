@@ -4,14 +4,11 @@ defmodule GitRekt.GitAgent do
   """
   use GenServer
 
-  alias GitRekt.{Git, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff }
+  alias GitRekt.{Git, GitAccess, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
 
   @type agent :: pid | Git.repo
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
-
-  @callback put_agent(repo :: any, mode :: :inproc | :shared) :: {:ok, any} | {:error, term}
-  @callback get_agent(repo :: any) :: any
 
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
@@ -39,16 +36,16 @@ defmodule GitRekt.GitAgent do
   Instead it starts a dedicated process and executes commands via message passing.
   """
 
-  @spec attach(any, :inproc | :shared) :: {:ok, any} | {:error, term}
-  def attach(%{__struct__: module} = repo, mode \\ :inproc) do
-    apply(module, :put_agent, [repo, mode])
+  @spec attach(GitAccess.t, :inproc | :shared) :: {:ok, any} | {:error, term}
+  def attach(repo, mode \\ :inproc) do
+    GitAccess.put_agent(repo, mode)
   end
 
   @doc """
   Similar to `attach/2`, but raises an exception if an error occurs.
   """
-  @spec attach!(any, :inproc | :shared) :: any
-  def attach!(%{__struct__: _module} = repo, mode \\ :inproc) do
+  @spec attach!(GitAccess.t, :inproc | :shared) :: any
+  def attach!(repo, mode \\ :inproc) do
     case attach(repo, mode) do
       {:ok, repo} -> repo
       {:error, reason} -> raise reason
@@ -59,187 +56,187 @@ defmodule GitRekt.GitAgent do
   Returns `true` if the repository is empty; otherwise returns `false`.
   """
   @spec empty?(agent) :: {:ok, boolean} | {:error, term}
-  def empty?(agent), do: call(agent, :empty?)
+  def empty?(agent), do: exec(agent, :empty?)
 
   @doc """
   Returns the Git reference.
   """
   @spec head(agent) :: {:ok, GitRef.t} | {:error, term}
-  def head(agent), do: call(agent, :head)
+  def head(agent), do: exec(agent, :head)
 
   @doc """
   Returns all Git branches.
   """
   @spec branches(agent) :: {:ok, [GitRef.t]} | {:error, term}
-  def branches(agent), do: call(agent, {:references, "refs/heads/*"})
+  def branches(agent), do: exec(agent, {:references, "refs/heads/*"})
 
   @doc """
   Returns the Git branch with the given `name`.
   """
   @spec branch(agent, binary) :: {:ok, GitRef.t} | {:error, term}
-  def branch(agent, name), do: call(agent, {:reference, "refs/heads/" <> name})
+  def branch(agent, name), do: exec(agent, {:reference, "refs/heads/" <> name})
 
   @doc """
   Returns all Git tags.
   """
   @spec tags(agent) :: {:ok, [GitTag.t]} | {:error, term}
-  def tags(agent), do: call(agent, {:references, "refs/tags/*"})
+  def tags(agent), do: exec(agent, {:references, "refs/tags/*"})
 
   @doc """
   Returns the Git tag with the given `name`.
   """
   @spec tag(agent, binary) :: {:ok, GitTag.t} | {:error, term}
-  def tag(agent, name), do: call(agent, {:reference, "refs/tags/" <> name})
+  def tag(agent, name), do: exec(agent, {:reference, "refs/tags/" <> name})
 
   @doc """
   Returns the Git tag author of the given `tag`.
   """
   @spec tag_author(agent, GitTag.t) :: {:ok, map} | {:error, term}
-  def tag_author(agent, tag), do: call(agent, {:author, tag})
+  def tag_author(agent, tag), do: exec(agent, {:author, tag})
 
   @doc """
   Returns the Git tag message of the given `tag`.
   """
   @spec tag_message(agent, GitTag.t) :: {:ok, binary} | {:error, term}
-  def tag_message(agent, tag), do: call(agent, {:message, tag})
+  def tag_message(agent, tag), do: exec(agent, {:message, tag})
 
   @doc """
   Returns all Git references matching the given `glob`.
   """
   @spec references(agent, binary | :undefined) :: {:ok, [GitRef.t]} | {:error, term}
-  def references(agent, glob \\ :undefined), do: call(agent, {:references, glob})
+  def references(agent, glob \\ :undefined), do: exec(agent, {:references, glob})
 
   @doc """
   Returns the Git reference with the given `name`.
   """
   @spec reference(agent, binary) :: {:ok, GitRef.t} | {:error, term}
-  def reference(agent, name), do: call(agent, {:reference, name})
+  def reference(agent, name), do: exec(agent, {:reference, name})
 
   @doc """
   Returns the Git object with the given `oid`.
   """
   @spec object(agent, Git.oid) :: {:ok, git_object} | {:error, term}
-  def object(agent, oid), do: call(agent, {:object, oid})
+  def object(agent, oid), do: exec(agent, {:object, oid})
 
   @doc """
   Returns the Git object matching the given `spec`.
   """
   @spec revision(agent, binary) :: {:ok, git_object, GitRef.t | nil} | {:error, term}
-  def revision(agent, spec), do: call(agent, {:revision, spec})
+  def revision(agent, spec), do: exec(agent, {:revision, spec})
 
   @doc """
   Returns the parent of the given `commit`.
   """
   @spec commit_parents(agent, GitCommit.t) :: {:ok, [GitCommit.t]} | {:error, term}
-  def commit_parents(agent, commit), do: call(agent, {:commit_parents, commit})
+  def commit_parents(agent, commit), do: exec(agent, {:commit_parents, commit})
 
   @doc """
   Returns the author of the given `commit`.
   """
   @spec commit_author(agent, GitCommit.t) :: {:ok, map} | {:error, term}
-  def commit_author(agent, commit), do: call(agent, {:author, commit})
+  def commit_author(agent, commit), do: exec(agent, {:author, commit})
 
   @doc """
   Returns the committer of the given `commit`.
   """
   @spec commit_committer(agent, GitCommit.t) :: {:ok, map} | {:error, term}
-  def commit_committer(agent, commit), do: call(agent, {:committer, commit})
+  def commit_committer(agent, commit), do: exec(agent, {:committer, commit})
 
   @doc """
   Returns the message of the given `commit`.
   """
   @spec commit_message(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
-  def commit_message(agent, commit), do: call(agent, {:message, commit})
+  def commit_message(agent, commit), do: exec(agent, {:message, commit})
 
   @doc """
   Returns the timestamp of the given `commit`.
   """
   @spec commit_timestamp(agent, GitCommit.t) :: {:ok, DateTime.t} | {:error, term}
-  def commit_timestamp(agent, commit), do: call(agent, {:commit_timestamp, commit})
+  def commit_timestamp(agent, commit), do: exec(agent, {:commit_timestamp, commit})
 
   @doc """
   Returns the GPG signature of the given `commit`.
   """
   @spec commit_gpg_signature(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
-  def commit_gpg_signature(agent, commit), do: call(agent, {:commit_gpg_signature, commit})
+  def commit_gpg_signature(agent, commit), do: exec(agent, {:commit_gpg_signature, commit})
 
   @doc """
   Returns the content of the given `blob`.
   """
   @spec blob_content(agent, GitBlob.t) :: {:ok, binary} | {:error, term}
-  def blob_content(agent, blob), do: call(agent, {:blob_content, blob})
+  def blob_content(agent, blob), do: exec(agent, {:blob_content, blob})
 
   @doc """
   Returns the size in byte of the given `blob`.
   """
   @spec blob_size(agent, GitBlob.t) :: {:ok, non_neg_integer} | {:error, term}
-  def blob_size(agent, blob), do: call(agent, {:blob_size, blob})
+  def blob_size(agent, blob), do: exec(agent, {:blob_size, blob})
 
   @doc """
   Returns the Git tree of the given `obj`.
   """
   @spec tree(agent, git_object) :: {:ok, GitTree.t} | {:error, term}
-  def tree(agent, obj), do: call(agent, {:tree, obj})
+  def tree(agent, obj), do: exec(agent, {:tree, obj})
 
   @doc """
   Returns the Git tree entries of the given `obj`.
   """
   @spec tree_entries(agent, GitTree.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
-  def tree_entries(agent, obj), do: call(agent, {:tree_entries, obj})
+  def tree_entries(agent, obj), do: exec(agent, {:tree_entries, obj})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `oid`.
   """
   @spec tree_entry_by_id(agent, GitTree.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
-  def tree_entry_by_id(agent, obj, oid), do: call(agent, {:tree_entry, obj, {:oid, oid}})
+  def tree_entry_by_id(agent, obj, oid), do: exec(agent, {:tree_entry, obj, {:oid, oid}})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `path`.
   """
   @spec tree_entry_by_id(agent, GitTree.t, Path.t) :: {:ok, GitTreeEntry.t} | {:error, term}
-  def tree_entry_by_path(agent, obj, path), do: call(agent, {:tree_entry, obj, {:path, path}})
+  def tree_entry_by_path(agent, obj, path), do: exec(agent, {:tree_entry, obj, {:path, path}})
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
   """
   @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
-  def tree_entry_target(agent, tree_entry), do: call(agent, {:tree_entry_target, tree_entry})
+  def tree_entry_target(agent, tree_entry), do: exec(agent, {:tree_entry_target, tree_entry})
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
   """
   @spec diff(agent, git_object, git_object, keyword) :: {:ok, GitDiff.t} | {:error, term}
-  def diff(agent, obj1, obj2, opts \\ []), do: call(agent, {:diff, obj1, obj2, opts})
+  def diff(agent, obj1, obj2, opts \\ []), do: exec(agent, {:diff, obj1, obj2, opts})
 
   @doc """
   Returns the deltas of the given `diff`.
   """
   @spec diff_deltas(agent, GitDiff.t) :: {:ok, map} | {:error, term}
-  def diff_deltas(agent, diff), do: call(agent, {:diff_deltas, diff})
+  def diff_deltas(agent, diff), do: exec(agent, {:diff_deltas, diff})
 
   @doc """
   Returns a binary formated representation of the given `diff`.
   """
   @spec diff_format(agent, GitDiff.t, Git.diff_format) :: {:ok, binary} | {:error, term}
-  def diff_format(agent, diff, format \\ :patch), do: call(agent, {:diff_format, diff, format})
+  def diff_format(agent, diff, format \\ :patch), do: exec(agent, {:diff_format, diff, format})
 
   @doc """
   Returns the stats of the given `diff`.
   """
   @spec diff_stats(agent, GitDiff.t) :: {:ok, map} | {:error, term}
-  def diff_stats(agent, diff), do: call(agent, {:diff_stats, diff})
+  def diff_stats(agent, diff), do: exec(agent, {:diff_stats, diff})
 
   @doc """
   Returns the Git commit history of the given `obj`.
   """
   @spec history(agent, GitRef.t | git_object, keyword) :: {:ok, [GitCommit.t]} | {:error, term}
-  def history(agent, obj, opts \\ []), do: call(agent, {:history, obj, opts})
+  def history(agent, obj, opts \\ []), do: exec(agent, {:history, obj, opts})
 
   @doc """
   Returns the underlying Git commit of the given `obj`.
   """
   @spec peel(agent, GitRef.t | git_object) :: {:ok, GitCommit.t} | {:error, term}
-  def peel(agent, obj), do: call(agent, {:peel, obj})
+  def peel(agent, obj), do: exec(agent, {:peel, obj})
 
   #
   # Callbacks
@@ -297,12 +294,10 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp call(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
-  defp call(agent, op) when is_reference(agent), do: call(op, agent)
+  defp exec(agent, op) when is_reference(agent), do: call(op, agent)
+  defp exec(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
 
-  defp call(%{__struct__: module} = repo, op) do
-    call(apply(module, :get_agent, [repo]), op)
-  end
+  defp exec(agent, op), do: call(op, GitAccess.get_agent(agent))
 
   defp call(:empty?, handle) do
     {:ok, Git.repository_empty?(handle)}
@@ -602,14 +597,14 @@ defmodule GitRekt.GitAgent do
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_committer(%GitCommit{commit: commit}) do
-    with {:ok, name, email, time, _offset} <- Git.commit_committer(commit),
+  defp fetch_author(%GitTag{tag: tag}) do
+    with {:ok, name, email, time, _offset} <- Git.tag_author(tag),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_author(%GitTag{tag: tag}) do
-    with {:ok, name, email, time, _offset} <- Git.tag_author(tag),
+  defp fetch_committer(%GitCommit{commit: commit}) do
+    with {:ok, name, email, time, _offset} <- Git.commit_committer(commit),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
