@@ -1,0 +1,89 @@
+@import "_variables";
+@import "_mixins";
+
+.popover {
+    position: relative;
+    display: inline-block;
+
+    .popover-content {
+        z-index: 99;
+        position: absolute;
+        display: inline-block;
+        opacity: 0;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        visibility: hidden;
+        max-width: $popover-max-width;
+        width: max-content;
+
+        &::before {
+            position: absolute;
+            content: '';
+            border-style: solid;
+            pointer-events: none;
+            height: 0;
+            width: 0;
+            top: 100%;
+            left: 50%;
+            right: auto;
+            border-color: transparent;
+            border-bottom-color: $popover-background-color;
+            border-left-color: $popover-background-color;
+            border-width: 0.4rem;
+            margin-left: -0.4rem;
+            margin-top: -0.4rem;
+            box-shadow: $popover-caret-shadow;
+            transform-origin: center;
+        }
+
+        .box {
+          padding: .4rem;
+        }
+    }
+
+    @include top;
+
+    &.is-popover-bottom {
+        @include bottom;
+    }
+
+    &.is-popover-left {
+      .popover-content {
+        left: -20px;
+        transform: initial;
+
+        &::before {
+          left: 28px;
+          transform-origin: initial;
+        }
+      }
+    }
+
+    &.is-popover-right {
+      .popover-content {
+        left: auto;
+        right: -20px;
+        transform: initial;
+
+        &::before {
+          left: auto;
+          right: 23px;
+          transform-origin: initial;
+        }
+      }
+    }
+
+    &.is-popover-active,
+    &:hover {
+        .popover-content {
+        opacity: 1;
+        visibility: visible;
+        }
+    }
+
+    .popover-trigger:focus ~ .popover-content {
+        opacity: 1;
+        visibility: visible;
+    }
+}

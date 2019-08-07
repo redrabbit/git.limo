@@ -1,0 +1,29 @@
+@mixin top {
+    .popover-content {
+        top: auto;
+        bottom: 100%;
+        padding-bottom: 10px;
+
+        &::before {
+            top: 100%;
+            bottom: auto;
+            margin-top: -16px;
+            transform: rotate(-45deg);
+        }
+    }
+}
+
+@mixin bottom {
+    .popover-content {
+        top: 100%;
+        bottom: auto;
+        padding-top: 8px;
+
+        &::before {
+            top: 1px;
+            bottom: auto;
+            margin-top: 2px;
+            transform: rotate(135deg);
+        }
+    }
+}
