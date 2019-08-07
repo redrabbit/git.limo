@@ -10,6 +10,7 @@
     "@fortawesome/fontawesome-free": "^5.9.0",
     "bulma": "^0.7.5",
     "bulma-divider": "^0.2.0",
+    "bulma-tooltip": "^2.0.2",
     "highlight.js": "^9.15.8",
     "moment": "^2.24.0",
     "phoenix": "file:../../../deps/phoenix",
