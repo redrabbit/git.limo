@@ -1,2 +1,125 @@
-elixir		ex exs
-markdown	md
+1c                bls os
+abnf              abnf
+actionscript      as
+ada               ada adb ads
+angelscript       angelscript
+applescript       applescript scpt
+arduino           ino
+asciidoc          asciidoc adoc asc
+aspectj           aj
+autohotkey        ahl ahlk
+autoit            au3
+awk               awk auk gawk mawk nawk
+bash              bash
+basic             vb bas cls frm frx vba vbhtml vbs
+brainfuck         b bf
+capnproto         capn
+ceylon            ceylon
+clean             icl dcl
+clojure           clj boot cl2 cljc cljs cljs.hl cljsm cljx hic
+cmake             cmake cmake.in
+coffeescript      coffee _coffee cake cjsx iced
+coq               coq
+cpp               c cats  h idc cpp c++ cc cp cxx h h++ hh hpp hxx inc inl ipp tcc tpp
+crystal           cr
+cs                cs cake csx
+css               css
+d                 d di
+dart              dart
+diff              diff patch
+django            jinja jinja2 mustache njk
+dns               zone arpa
+dockerfile        dockerfile
+dos               bat cmd
+ebnf              ebnf
+elixir            ex exs
+elm               elm
+erb               erb erb.deface
+erlang            erl app.src es escript hrl xrl yrl
+fortran           f90 f f03 f08 f77 f95 for fpp
+fsharp            fs fsi fsx
+gams              gms
+gcode             g cnc gco gcode
+gherkin           feature
+glsl              glsl fp frag frg fsh fshader geo geom glslv gshader shader tesc tese vert vrx vsh vshader
+go                go
+golo              golo
+gradle            gradle
+groovy            groovy grt gtpl gvy
+haml              haml haml.deface
+handlebars        handlebars hbs
+haskell           hs hsc
+haxe              hx hxsl
+http              http
+hy                hy
+inform7           ni i7x
+ini               ini cfg prefs properties
+java              java
+javascript        js
+json              json avsc geojson gltf har ice JSON-tmLanguage jsonl mcmeta tfstate tfstate.backup topojson webapp webmanifest yy yyp
+julia             jl
+kotlin            kt ktm kts
+lasso             lasso las lasso8 lasso9 ldml
+less              less
+lisp              lisp asd cl l lsp ny podsl sexp
+livescript        ls _ls
+llvm              ll
+lsl               lsl lslp
+lua               lua nse p8 pd_lua rbxs wlua
+makefile          mak make mk mkfile
+markdown          md markdown
+mathematica       mathematica cdf ma mt nb nbp wl wlt
+matlab            matlab
+mercury           moo
+monkey            monkey monkey2
+moonscript        moon
+nimrod            nim nim.cfg nimble nimrod nims
+nix               nix
+objectivec        m
+ocaml             ml eliom eliomi ml4 mli mll mly
+openscad          scad
+oxygene           oxygene
+perl              pl al ph plx pm psgi t
+pgsql             pgsql
+php               php php3 php4 php5 phps phpt
+plaintext         txt
+pony              pony
+powershell        ps1 psd1 psm1
+processing        pde
+prolog            pro prolog yap
+protobuf          proto
+puppet            pp
+purebasic         pb pbi
+python            py py3
+q                 q
+qml               qml qbs
+r                 r rd rsx
+reasonml          re rei
+ruby              rb builder eye gemspec god jbuilder mspec podspec rabl rake rbuild rbw rbx ru ruby spec thor watchr
+rust              rs rs.in
+sas               sas
+scala             scala kojo sbt sc
+scheme            scm sch sld sls sps ss
+scilab            sci sce tst
+scss              scss sass
+shell             sh
+smali             smali
+smalltalk         st cs
+sqf               sqf hqf
+sql               sql
+stan              stan
+stylus            styl
+swift             swift
+tcl               tcl adp tm
+tex               tex toc
+thrift            thrift
+twig              twig
+typescript        ts
+vala              vala vapi
+verilog           v veo
+vhdl              vhdl vhd vhf vhi vho vhs vht vhw
+vim               vim
+xml               xml adml admx ant axml builds ccproj ccxml clixml cproject cscfg csdef csl csproj ct depproj dita ditamap ditaval dll.config dotsettings filters fsproj fxml glade gml gmx grxml iml ivy jelly jsproj kml launch mdpolicy mjml mm mod mxml natvis ncl ndproj nproj nuspec odd osm pkgproj plist pluginspec proj props ps1xml psc1 pt rdf resx rss scxml sfproj shproj srdf storyboard stTheme sublime-snippet targets tmCommand tml tmLanguage tmPreferences tmSnippet tmTheme tsx ui urdf ux vbproj vcxproj vsixmanifest vssettings vstemplate vxml wixproj workflow wsdl wsf wxi wxl wxs x3d xacro xaml xib xlf xliff xmi xml.dist xproj xsd xspec xul zcml
+xquery            xquery xq xql xqm xqy
+yaml              yml
+zephir            zep
