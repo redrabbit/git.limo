@@ -34,7 +34,7 @@ defmodule GitGud.Web.EmailView do
   defp primary_tag(_conn, %User{}, %Email{}), do: nil
 
   defp public_tag(_conn, %User{id: user_id, public_email_id: email_id}, %Email{id: email_id, user_id: user_id}) do
-    content_tag(:span, [class: "tag is-warning"], do: "Public")
+    content_tag(:span, [class: "tag is-info"], do: "Public")
   end
 
   defp public_tag(_conn, %User{}, %Email{}), do: nil
@@ -53,8 +53,8 @@ defmodule GitGud.Web.EmailView do
     [
       hidden_input(form, :id, value: email.id),
       content_tag(:div, [class: "tags has-addons"], do: [
-        content_tag(:span, [class: "tag is-danger"], do: "Unverified"),
-        submit("resend", class: "button tag is-light", style: "line-height:1rem")
+        content_tag(:span, [class: "tag"], do: "Unverified"),
+        submit(content_tag(:span, content_tag(:i, [], class: "fa fa-sync"), [class: "icon"]), [class: "button tag is-warning"])
       ])
     ]
   end
