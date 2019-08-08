@@ -338,8 +338,13 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp batch_commits_gpg_sign(repo, commits) do
-    gpg_map = CommitQuery.gpg_signature(repo, commits)
-    Enum.map(batch_commits_committers(repo, commits), fn
+    batch = batch_commits_committers(repo, commits)
+    commits = Enum.filter(batch, fn
+      {_commit, _author, %User{}} -> true
+      {_commit, _author, _committer} -> false
+    end)
+    gpg_map = CommitQuery.gpg_signature(repo, Enum.map(commits, &elem(&1, 0)))
+    Enum.map(batch, fn
       {commit, author, %User{} = committer} ->
         {commit, author, committer, gpg_map[commit.oid]}
       {commit, author, committer} ->
