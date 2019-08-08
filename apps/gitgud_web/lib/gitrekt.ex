@@ -6,13 +6,18 @@ import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
 defimpl Phoenix.HTML.Safe, for: GitCommit do
   def to_iodata(%GitCommit{oid: oid}) do
-    Phoenix.HTML.Safe.to_iodata(content_tag(:span, oid_fmt_short(oid), class: "commit"))
+    Phoenix.HTML.Safe.to_iodata([
+      content_tag(:span, oid_fmt_short(oid), class: "is-family-monospace")
+    ])
   end
 end
 
 defimpl Phoenix.HTML.Safe, for: GitTag do
   def to_iodata(%GitTag{name: name}) do
-    Phoenix.HTML.Safe.to_iodata([content_tag(:span, content_tag(:i, [], class: "fa fa-tag"), class: "icon"), content_tag(:span, name)])
+    Phoenix.HTML.Safe.to_iodata([
+      content_tag(:span, content_tag(:i, [], class: "fa fa-tag"), class: "icon"),
+      content_tag(:span, name)
+    ])
   end
 end
 

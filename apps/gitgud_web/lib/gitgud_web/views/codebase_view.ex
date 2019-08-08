@@ -171,9 +171,9 @@ defmodule GitGud.Web.CodebaseView do
     ReviewQuery.commit_review(repo, commit)
   end
 
-  @spec commit_verified?(Repo.t, Commit.t | GitAgent.git_commit) :: boolean
-  def commit_verified?(repo, commit) do
-    !!CommitQuery.gpg_signature(repo, commit)
+  @spec commit_gpg_key(Repo.t, Commit.t | GitAgent.git_commit) :: GPGKey.t | nil
+  def commit_gpg_key(repo, commit) do
+    CommitQuery.gpg_signature(repo, commit)
   end
 
   @spec revision_oid(GitAgent.git_object) :: binary
@@ -340,16 +340,16 @@ defmodule GitGud.Web.CodebaseView do
   defp batch_commits_gpg_sign(repo, commits) do
     gpg_map = CommitQuery.gpg_signature(repo, commits)
     Enum.map(batch_commits_committers(repo, commits), fn
-      {commit, author, %User{id: user_id} = committer} ->
-        {commit, author, committer, gpg_map[commit.oid] == user_id}
+      {commit, author, %User{} = committer} ->
+        {commit, author, committer, gpg_map[commit.oid]}
       {commit, author, committer} ->
-        {commit, author, committer, false}
+        {commit, author, committer, nil}
     end)
   end
 
   defp batch_commits_comments_count(repo, commits) do
     aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
-    Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, committer, verified?} -> {commit, author, committer, verified?, aggregator[commit.oid] || 0} end)
+    Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, committer, gpg_key} -> {commit, author, committer, gpg_key, aggregator[commit.oid] || 0} end)
   end
 
   defp fetch_commit(repo, reference) do

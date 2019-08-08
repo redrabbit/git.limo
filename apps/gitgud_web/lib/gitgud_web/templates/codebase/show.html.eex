@@ -1,6 +1,4 @@
-<div class="content">
-  <%= markdown(@repo.description) %>
-</div>
+<div class="content"><%= @repo.description %></div>
 
 <div class="tabs is-toggle is-fullwidth">
   <ul>

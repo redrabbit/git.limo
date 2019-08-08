@@ -39,9 +39,9 @@ defmodule GitGud.CommitQuery do
   end
 
   @doc """
-  Returns the user associated to given GPG signed `commit`.
+  Returns the GPG key associated to given signed `commit`.
   """
-  @spec gpg_signature(Repo.t | pos_integer, Commit.t | [Commit.t], keyword) :: pos_integer | map
+  @spec gpg_signature(Repo.t | pos_integer, Commit.t | [Commit.t], keyword) :: GPGKey.t | map
   def gpg_signature(repo, commit, opts \\ [])
   def gpg_signature(repo, commits, opts) when is_list(commits) do
     Map.new(DB.all(DBQueryable.query({__MODULE__, :gpg_signature_query}, [repo, commits], opts)))
@@ -87,17 +87,17 @@ defmodule GitGud.CommitQuery do
   end
 
   @doc """
-  Returns a query for fetching the user associated to the given GPG signed `commit`.
+  Returns a query for fetching the GPG key associated to the given signed `commit`.
   """
   @spec gpg_signature_query(Repo.t | pos_integer, [Commit.t]) :: Ecto.Query
   def gpg_signature_query(%Repo{id: repo_id} = _repo, commit), do: gpg_signature_query(repo_id, commit)
   def gpg_signature_query(repo_id, commits) when is_list(commits) do
     oids = Enum.map(commits, &(&1.oid))
-    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), join: u in assoc(g, :user), where: c.repo_id == ^repo_id and c.oid in ^oids and c.committer_email in g.emails, select: {c.oid, u.id})
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid in ^oids and c.committer_email in g.emails, select: {c.oid, g})
   end
 
   def gpg_signature_query(repo_id, commit) do
-    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), join: u in assoc(g, :user), where: c.repo_id == ^repo_id and c.oid == ^commit.oid and c.committer_email in g.emails, select: u.id)
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^commit.oid and c.committer_email in g.emails, select: g)
   end
 
   #

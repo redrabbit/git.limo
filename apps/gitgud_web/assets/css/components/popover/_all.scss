@@ -38,7 +38,17 @@
         }
 
         .box {
-          padding: .4rem;
+          padding: 0;
+          font-size: .8rem;
+
+          .box-header {
+            .box-header-title {
+              padding: .7rem;
+            }
+          }
+          .box-content {
+            padding: .7rem;
+          }
         }
     }
 

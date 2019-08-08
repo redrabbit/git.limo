@@ -4,12 +4,12 @@
   Nothing to see here.
 <% else %>
   <%= with page <- paginate(@conn, sort_by_timestamp(@repo, @tags)) do %>
-    <table class="table is-fullwidth is-striped">
+    <table class="table is-fullwidth">
       <tbody>
         <%= for {tag, {commit, author}} <- batch_tags(@repo, page.slice) do %>
           <tr>
             <td>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-semibold">
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small is-light has-text-weight-medium">
                 <%= tag %>
               </a>
               <%= if Map.has_key?(author, :id) do %>

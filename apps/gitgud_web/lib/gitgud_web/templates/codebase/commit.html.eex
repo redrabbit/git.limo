@@ -5,44 +5,38 @@
         <header class="card-header">
           <p class="card-header-title"><%= message_title %></p>
           <p class="card-header-icon buttons">
-            <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button is-small has-text-weight-semibold"><%= @commit %></a>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-warning has-text-weight-semibold">
-              <span class="icon is-small">
+            <button class="button tooltip is-small is-white has-text-grey-light has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></button>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
+              <span class="icon">
                 <i class="fa fa-code"></i>
               </span>
             </a>
           </p>
         </header>
         <div class="card-content">
-          <div class="content">
-            <p>
-              <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
-                <%= if Map.has_key?(committer, :id) do %>
-                  <%= if Map.has_key?(author, :id) && committer.id != author.id do %>
-                    <div class="avatar-stack">
-                      <a href="<%= Routes.user_path(@conn, :show, committer) %>"><%= gravatar(committer, size: 20) %></a>
-                      <a href="<%= Routes.user_path(@conn, :show, author) %>"><%= gravatar(author, size: 20) %></a>
-                    </div>
-                    <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer.login %></a>
-                  <% else %>
-                    <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer %></a>
-                  <% end %>
-                  committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-                  <%= if commit_verified?(@repo, @commit) do %>
-                    <span class="icon is-small has-text-success">
-                      <i class="fa fa-check"></i>
-                    </span>
-                  <% end %>
-                <% else %>
-                  <span class="has-text-black"><%= committer.name %></span>
-                  committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-                <% end %>
+          <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
+            <%= if Map.has_key?(committer, :id) do %>
+              <%= if Map.has_key?(author, :id) && committer.id != author.id do %>
+                <div class="avatar-stack">
+                  <a href="<%= Routes.user_path(@conn, :show, committer) %>"><%= gravatar(committer, size: 20) %></a>
+                  <a href="<%= Routes.user_path(@conn, :show, author) %>"><%= gravatar(author, size: 20) %></a>
+                </div>
+                <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer.login %></a>
+              <% else %>
+                <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer %></a>
               <% end %>
-            </p>
-            <%= if message_body do %>
-              <div class="log-message"><%= message_body %></div>
+              committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+              <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
+                <%= render "_commit_signature.html", conn: @conn, committer: committer, gpg_key: gpg_key %>
+              <% end %>
+            <% else %>
+              <span class="has-text-black"><%= committer.name %></span>
+              committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
             <% end %>
-          </div>
+          <% end %>
+          <%= if message_body do %>
+            <div class="log-message"><%= message_body %></div>
+          <% end %>
         </div>
       <% end %>
     </div>
@@ -64,8 +58,8 @@
         <header class="card-header">
           <p class="card-header-title"><%= delta.new_file.path %></p>
           <p class="card-header-icon buttons">
-            <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-warning has-text-weight-semibold">
-              <span class="icon is-small">
+            <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-link is-inverted">
+              <span class="icon">
                 <i class="fa fa-code"></i>
               </span>
             </a>

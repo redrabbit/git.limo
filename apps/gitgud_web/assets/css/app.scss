@@ -1,12 +1,14 @@
 @charset "utf-8";
 
-@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,700|Work+Sans:400,600,700');
+@import url('https://fonts.googleapis.com/css?family=Fira+Sans:400,500,700|Fira+Mono:400,500,700|Fira+Code:400,500,700|Work+Sans:400,500,700');
 
 @import "~bulma/sass/utilities/_all";
 
 $family-sans-serif: "Work Sans", sans-serif;
 $family-primary: $family-sans-serif;
 $family-secondary: "Fira Sans", sans-serif;
+$family-monospace: "Fira Mono", monospace;
+$family-code: "Fira Code", monospace;
 
 $box-radius: $radius-small;
 $notification-radius: $radius-small;
@@ -29,11 +31,11 @@ $divider-thickness: $hr-height;
 @import "~bulma-divider/src/sass/index";
 @import "~bulma-tooltip/src/sass/index";
 
-$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+$fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
 
-@import "~@fortawesome/fontawesome-free/scss/fontawesome";
-@import "~@fortawesome/fontawesome-free/scss/brands";
-@import "~@fortawesome/fontawesome-free/scss/solid";
+@import "~@fortawesome/fontawesome-pro/scss/fontawesome";
+@import "~@fortawesome/fontawesome-pro/scss/brands";
+@import "~@fortawesome/fontawesome-pro/scss/solid";
 
 @import "../../../../deps/phoenix_live_view/assets/css/live_view.css";
 
@@ -121,6 +123,67 @@ table.table {
     5%, 95% { transform: translateY(0px); }
 }
 
+.box {
+  .box-header {
+    @extend .card-header;
+
+    .box-header-title {
+      @extend .card-header-title;
+    }
+
+    .box-header-icon {
+      @extend .card-header-icon;
+    }
+  }
+
+  .box-content {
+    @extend .card-content;
+  }
+
+}
+
+.box.signed-commit {
+  width: 15rem;
+
+  .box-header {
+    .box-header-title {
+      display: inline-block;
+      font-weight: 400;
+
+      strong {
+        font-weight: 600;
+      }
+    }
+  }
+  .box-content {
+    .committer {
+      strong {
+        font-weight: 700;
+        font-family: $family-secondary;
+      }
+      a {
+        color: $dark;
+      }
+
+      margin-bottom: .2rem;
+      padding-bottom: .2rem;
+
+      figure {
+        padding-right: .4rem;
+      }
+    }
+
+    span.gpg-key-id {
+      color: $grey;
+    }
+
+    hr {
+      margin: .4rem 0;
+      height: .1rem;
+    }
+  }
+}
+
 .message {
   position: fixed;
   right: 1.5rem;
@@ -129,10 +192,6 @@ table.table {
   min-width: 20rem;
   transform: translateY(-100px);
   animation: slideDown 4s 0 1 ease forwards;
-}
-
-.commit {
-  font-family: $family-monospace;
 }
 
 .button {
@@ -230,10 +289,14 @@ table.table {
   }
 }
 
-.log-message pre {
-  padding: 0;
-  color: $grey;
-  background-color: $white;
+.log-message {
+  margin-top: 1rem;
+
+  pre {
+    padding: 0;
+    color: $grey;
+    background-color: $white;
+  }
 }
 
 table.blob-table {

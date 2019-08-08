@@ -4,12 +4,12 @@
   Nothing to see here.
 <% else %>
   <%= with page <- paginate(@conn, sort_by_timestamp(@repo, @branches)) do %>
-    <table class="table is-fullwidth is-striped">
+    <table class="table is-fullwidth">
       <tbody>
         <%= for {branch, {commit, author}} <- batch_branches(@repo, page.slice) do %>
           <tr>
             <td>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-link", else: "" %> has-text-weight-semibold">
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-link", else: "is-light" %> has-text-weight-medium">
                 <%= branch %>
               </a>
               Updated <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %> by
