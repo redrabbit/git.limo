@@ -23,11 +23,17 @@ export default () => {
   document.querySelectorAll("table.blob-table").forEach(table => {
     const lang = table.dataset.lang
     const langDetect = hljs.getLanguage(lang)
-    let state
+    let state = ""
+    let lines = []
     table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(line => {
-      const result = langDetect ? hljs.highlight(lang, line.textContent, true, state) : hljs.highlightAuto(line.textContent)
-      state = result.top
-      line.innerHTML = result.value
+      state += line.textContent + "\n"
+      lines.push(line)
+    })
+    let result = langDetect ? hljs.highlight(lang, state, true): hljs.highlightAuto(state)
+    result.value.split("\n").forEach((html, i) => {
+      if (i < lines.length) {
+        lines[i].innerHTML = html
+      }
     })
   })
 
