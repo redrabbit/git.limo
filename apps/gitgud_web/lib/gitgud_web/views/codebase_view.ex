@@ -441,7 +441,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  defp highlight_language(_extension), do: "nohighlight"
+  defp highlight_language(_extension), do: "plaintext"
 
   defp wrap_message(content, :pre) do
     content_tag(:pre, String.trim(content))

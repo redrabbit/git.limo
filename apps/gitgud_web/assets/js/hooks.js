@@ -20,7 +20,16 @@ export default () => {
     })
   })
 
-  document.querySelectorAll(".code .code-inner").forEach(block => hljs.highlightBlock(block))
+  document.querySelectorAll("table.blob-table").forEach(table => {
+    const lang = table.dataset.lang
+    const langDetect = hljs.getLanguage(lang)
+    let state
+    table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(line => {
+      const result = langDetect ? hljs.highlight(lang, line.textContent, true, state) : hljs.highlightAuto(line.textContent)
+      state = result.top
+      line.innerHTML = result.value
+    })
+  })
 
   document.querySelectorAll("[data-react-class]").forEach(e => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
