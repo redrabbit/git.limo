@@ -37,7 +37,8 @@ export default () => {
           state = undefined
           continue
         }
-        highlight(row.querySelector("td.code .code-inner:not(.highlight)"))
+        const line = row.querySelector("td.code .code-inner:not(.highlight)")
+        if(line) highlight(line)
       }
     } else {
       table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(highlight)

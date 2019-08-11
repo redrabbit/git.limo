@@ -1,5 +1,5 @@
 <%= with highlight_lang <- highlight_language_from_path(@delta.new_file.path) do %>
-  <table class="blob-table diff-table" data-lang="<%= highlight_lang %>">
+  <table class="blob-table diff-table" data-lang="<%= highlight_lang %>"  data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-blob-oid="<%= oid_fmt(@delta.new_file.oid) %>">
     <tbody>
       <%= for {hunk, hunk_index} <- Enum.with_index(@delta.hunks) do %>
         <tr class="hunk">
