@@ -2,7 +2,7 @@ import React from "react"
 
 import hljs from "highlight.js"
 
-import {commitMutation, graphql} from "react-relay"
+import {commitMutation, requestSubscription, graphql} from "react-relay"
 
 import moment from "moment"
 
@@ -14,11 +14,15 @@ class Comment extends React.Component {
   constructor(props) {
     super(props)
     this.body = React.createRef()
+    this.subscribeUpdate = this.subscribeUpdate.bind(this)
+    this.subscribeDelete = this.subscribeDelete.bind(this)
     this.highlightCodeFences = this.highlightCodeFences.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
+    this.updateSubscription = this.subscribeUpdate()
+    this.deleteSubscription = this.subscribeDelete()
     this.state = {edit: false}
   }
 
@@ -28,6 +32,11 @@ class Comment extends React.Component {
 
   componentDidUpdate() {
     this.highlightCodeFences()
+  }
+
+  componentWillUnmount() {
+    this.updateSubscription.dispose()
+    this.deleteSubscription.dispose()
   }
 
   render() {
@@ -58,6 +67,58 @@ class Comment extends React.Component {
         </div>
       )
     }
+  }
+
+  subscribeUpdate() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommentUpdateSubscription($commentId: ID!) {
+        commentUpdate(id: $commentId) {
+          body
+          author {
+            name
+            login
+          }
+        }
+      }
+    `
+
+    const variables = {
+      commentId: comment.id
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => {
+        console.log("update", comment)
+        this.props.onUpdate(response.commentUpdate)
+      }
+    })
+  }
+
+  subscribeDelete() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommentDeleteSubscription($commentId: ID!) {
+        commentDelete(id: $commentId) {
+          id
+        }
+      }
+    `
+
+    const variables = {
+      commentId: comment.id
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => {
+        console.log("delete", comment)
+        this.props.onDelete(response.commentDelete)
+      }
+    })
   }
 
   highlightCodeFences() {

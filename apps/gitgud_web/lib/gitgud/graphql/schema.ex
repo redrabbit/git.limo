@@ -24,6 +24,16 @@ defmodule GitGud.GraphQL.Schema do
     end
   end
 
+  @spec from_relay_id(Absinthe.Relay.Node.global_id, Absinthe.Resolution.t) :: struct | nil
+  def from_relay_id(global_id, info) do
+    with {:ok, node} <- Absinthe.Relay.Node.from_global_id(global_id, __MODULE__),
+         {:ok, node} <- Resolvers.node(node, info) do
+      node
+    else
+      {:error, _reason} -> nil
+    end
+  end
+
   @doc """
   Returns the Relay global id for the given `node`.
   """
@@ -107,6 +117,30 @@ defmodule GitGud.GraphQL.Schema do
     end
   end
 
+  @desc """
+  """
+  subscription do
+    @desc "Subscribe to new comments"
+    field :commit_comment_create, :comment do
+      arg :repo_id, non_null(:id), description: "The repository."
+      arg :commit_oid, non_null(:git_oid), description: "This Git commit OID."
+      config &Resolvers.commit_comment_created/2
+    end
+
+    @desc "Subscribe to comment updates"
+    field :comment_update, :comment do
+      arg :id, non_null(:id), description: "The ID of the comment."
+      config &Resolvers.comment_updated/2
+      trigger :update_comment, topic: &(&1.id)
+    end
+
+    @desc "Subscribe to comment deletions"
+    field :comment_delete, :comment do
+      arg :id, non_null(:id), description: "The ID of the comment."
+      config &Resolvers.comment_deleted/2
+      trigger :delete_comment, topic: &(&1.id)
+    end
+  end
 
   node interface do
     resolve_type &Resolvers.node_type/2

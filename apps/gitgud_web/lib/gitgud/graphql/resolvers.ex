@@ -52,25 +52,25 @@ defmodule GitGud.GraphQL.Resolvers do
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :repo} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+  def node(%{id: id, type: :repo} = _node_type, %{context: ctx} = info) do
     if repo = RepoQuery.by_id(to_integer(id), viewer: ctx[:current_user], preload: [owner: :public_email]),
       do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :comment} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+  def node(%{id: id, type: :comment} = _node_type, %{context: ctx} = info) do
     if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: :author),
       do: {:ok, comment},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :commit_line_review} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+  def node(%{id: id, type: :commit_line_review} = _node_type, %{context: ctx} = info) do
     if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :commit_review} = _node_type, %Absinthe.Resolution{context: ctx} = info) do
+  def node(%{id: id, type: :commit_review} = _node_type, %{context: ctx} = info) do
     if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
       do: {:ok, review},
     else: node(%{id: id}, info)
@@ -479,6 +479,25 @@ defmodule GitGud.GraphQL.Resolvers do
     if comment = CommentQuery.by_id(from_relay_id(id)) do
       if authorized?(ctx[:current_user], comment, :admin),
         do: Comment.delete(comment),
+      else: {:error, "Unauthorized"}
+    end
+  end
+
+  def commit_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _ctx) do
+  end
+
+  def comment_updated(%{id: id}, %{context: ctx} = info) do
+    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+      if authorized?(ctx[:current_user], comment, :read),
+        do: {:ok, topic: comment.id},
+      else: {:error, "Unauthorized"}
+    end
+  end
+
+  def comment_deleted(%{id: id}, %{context: ctx}) do
+    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+      if authorized?(ctx[:current_user], comment, :read),
+        do: {:ok, topic: comment.id},
       else: {:error, "Unauthorized"}
     end
   end

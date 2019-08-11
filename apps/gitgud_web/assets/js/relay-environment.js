@@ -1,5 +1,8 @@
 import {Environment, Network, Store, RecordSource} from "relay-runtime"
 
+import {create} from "@absinthe/socket"
+import {createSubscriber} from "@absinthe/socket-relay"
+
 import socket from "./socket"
 
 function fetchQuery(operation, variables) {
@@ -17,7 +20,8 @@ function fetchQuery(operation, variables) {
 
 export default new Environment({
   network: Network.create(
-    fetchQuery
+    fetchQuery,
+    createSubscriber(create(socket))
   ),
   store: new Store(new RecordSource())
 })
