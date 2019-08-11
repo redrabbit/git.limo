@@ -67,6 +67,11 @@ nav.navbar {
   }
 }
 
+pre code.hljs {
+  padding: 0;
+  background-color: transparent;
+}
+
 table.table {
   &.has-outer-border {
     border: 1px solid $grey-lighter;

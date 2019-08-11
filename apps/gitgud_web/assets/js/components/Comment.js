@@ -1,5 +1,7 @@
 import React from "react"
 
+import hljs from "highlight.js"
+
 import {commitMutation, graphql} from "react-relay"
 
 import moment from "moment"
@@ -11,11 +13,21 @@ import CommentForm from "./CommentForm"
 class Comment extends React.Component {
   constructor(props) {
     super(props)
+    this.body = React.createRef()
+    this.highlightCodeFences = this.highlightCodeFences.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
     this.state = {edit: false}
+  }
+
+  componentDidMount() {
+    this.highlightCodeFences()
+  }
+
+  componentDidUpdate() {
+    this.highlightCodeFences()
   }
 
   render() {
@@ -42,9 +54,15 @@ class Comment extends React.Component {
           }
           <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
           </header>
-          <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} />
+          <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} ref={this.body} />
         </div>
       )
+    }
+  }
+
+  highlightCodeFences() {
+    if(this.body.current) {
+      this.body.current.querySelectorAll("pre code").forEach(code => hljs.highlightBlock(code))
     }
   }
 
