@@ -358,6 +358,13 @@ table.blob-table {
     margin: 0 1rem;
   }
 
+  &.commit-review {
+    border-top: 1px solid $grey-lighter;
+    padding-top: 1rem;
+    background-color: $white-bis;
+
+  }
+
   .comment, .comment-form {
     @extend .box;
     max-width: 780px;
