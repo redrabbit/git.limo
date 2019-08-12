@@ -23,7 +23,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   alias GitGud.Web.Router.Helpers, as: Routes
 
-  import String, only: [to_integer: 1]
+  import Absinthe.Subscription, only: [publish: 3]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
 
   import GitRekt.Git, only: [oid_fmt: 1]
@@ -47,13 +47,13 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec node(map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
   def node(%{id: id, type: :user} = _node_type, info) do
-    if user = UserQuery.by_id(to_integer(id), preload: :public_email),
+    if user = UserQuery.by_id(String.to_integer(id), preload: :public_email),
       do: {:ok, user},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :repo} = _node_type, %{context: ctx} = info) do
-    if repo = RepoQuery.by_id(to_integer(id), viewer: ctx[:current_user], preload: [owner: :public_email]),
+    if repo = RepoQuery.by_id(String.to_integer(id), viewer: ctx[:current_user], preload: [owner: :public_email]),
       do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
     else: node(%{id: id}, info)
   end
@@ -443,19 +443,42 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Creates a Git commit review.
   """
-  @spec create_commit_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def create_commit_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
+  @spec create_commit_line_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
+  def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
     repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
-    if author = ctx[:current_user],
-      do: CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body),
-    else: {:error, "Unauthorized"}
+    if author = ctx[:current_user] do
+      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line)
+      case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
+        {:ok, line_review, comment} ->
+          unless old_line_review do
+            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}")
+            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
+          else
+            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
+          end
+          {:ok, comment}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, "Unauthorized"}
+    end
   end
 
-  def create_commit_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
+  @spec create_commit_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
+  def create_commit_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
     repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
-    if author = ctx[:current_user],
-      do: CommitReview.add_comment(repo, commit_oid, author, body),
-    else: {:error, "Unauthorized"}
+    if author = ctx[:current_user] do
+      case CommitReview.add_comment(repo, commit_oid, author, body) do
+        {:ok, comment} ->
+          publish(GitGud.Web.Endpoint, comment, commit_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}")
+          {:ok, comment}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, "Unauthorized"}
+    end
   end
 
   @doc """
@@ -483,10 +506,19 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
-  def commit_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _ctx) do
+  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid}, _ctx) do
+     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}"}
   end
 
-  def comment_updated(%{id: id}, %{context: ctx} = info) do
+  def commit_line_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _ctx) do
+     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+  end
+
+  def commit_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _ctx) do
+     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}"}
+  end
+
+  def comment_updated(%{id: id}, %{context: ctx}) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
       if authorized?(ctx[:current_user], comment, :read),
         do: {:ok, topic: comment.id},

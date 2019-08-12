@@ -1,7 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
-import {fetchQuery,commitMutation, graphql} from "react-relay";
+import {fetchQuery,commitMutation, requestSubscription, graphql} from "react-relay";
 
 import environment from "../relay-environment"
 
@@ -14,11 +14,13 @@ class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
-    this.destroyComponent = this.destroyComponent.bind(this)
+    this.subscribeNewComments = this.subscribeNewComments.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
+    this.destroyComponent = this.destroyComponent.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
     this.handleFormCancel = this.handleFormCancel.bind(this)
+    this.handleCommentCreate = this.handleCommentCreate.bind(this)
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
@@ -71,29 +73,84 @@ class CommitLineReview extends React.Component {
       }
 
       fetchQuery(environment, query, variables)
-        .then(response => this.setState({
+        .then(response => {
+          this.setState({
           repoId: response.node.repo.id,
           commitOid: response.node.commitOid,
           blobOid: response.node.blobOid,
           hunk: response.node.hunk,
           line: response.node.line,
           comments: response.node.comments
-        }))
-    }
-  }
-
-  destroyComponent() {
-    if(this.state.comments.length === 0) {
-      let node = ReactDOM.findDOMNode(this)
-      let container = node.closest(".inline-comments")
-      ReactDOM.unmountComponentAtNode(node.parentNode)
-      container.parentNode.removeChild(container)
-      return true
+          })
+          this.subscribeNewComments()
+        })
     } else {
-      return false
+      this.subscribeNewComments()
     }
   }
 
+  static subscribeNewLineReviews(repoId, commitOid, blobOid, config) {
+    const subscription = graphql`
+      subscription CommitLineReviewCreateSubscription(
+        $repoId: ID!,
+        $commitOid: GitObjectID!,
+        $blobOid: GitObjectID!
+      ) {
+        commitLineReviewCreate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid) {
+          id
+          hunk
+          line
+        }
+      }
+    `
+
+    const variables = {
+      repoId: repoId,
+      commitOid: commitOid,
+      blobOid: blobOid
+    }
+
+    return requestSubscription(environment, {...config, ...{subscription, variables}})
+  }
+
+  subscribeNewComments() {
+    const subscription = graphql`
+      subscription CommitLineReviewCommentCreateSubscription(
+        $repoId: ID!,
+        $commitOid: GitObjectID!,
+        $blobOid: GitObjectID!,
+        $hunk: Int!,
+        $line: Int!
+      ) {
+        commitLineReviewCommentCreate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+          id
+          author {
+            login
+            avatarUrl
+            url
+          }
+          editable
+          body
+          bodyHtml
+          insertedAt
+        }
+      }
+    `
+
+    const variables = {
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid,
+      blobOid: this.state.blobOid,
+      hunk: this.state.hunk,
+      line: this.state.line
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.handleCommentCreate(response.commitLineReviewCommentCreate),
+    })
+  }
   render() {
     return (
       <td colSpan={4}>
@@ -127,6 +184,18 @@ class CommitLineReview extends React.Component {
     }
   }
 
+  destroyComponent() {
+    if(this.state.comments.length === 0) {
+      let node = ReactDOM.findDOMNode(this)
+      let container = node.closest(".inline-comments")
+      ReactDOM.unmountComponentAtNode(node.parentNode)
+      container.parentNode.removeChild(container)
+      return true
+    } else {
+      return false
+    }
+  }
+
   handleFormSubmit(body) {
     const variables = {
       repoId: this.state.repoId,
@@ -139,7 +208,7 @@ class CommitLineReview extends React.Component {
 
     const mutation = graphql`
       mutation CommitLineReviewCreateCommentMutation($repoId: ID!, $commitOid: GitObjectID!, $blobOid: GitObjectID!, $hunk: Int!, $line: Int!, $body: String!) {
-        createCommitComment(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line, body: $body) {
+        createCommitLineReviewComment(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line, body: $body) {
           id
           author {
             login
@@ -158,7 +227,8 @@ class CommitLineReview extends React.Component {
       mutation,
       variables,
       onCompleted: (response, errors) => {
-        this.setState(state => ({folded: true, comments: [...state.comments, response.createCommitComment]}))
+        this.handleCommentCreate(response.createCommitLineReviewComment)
+        this.setState({folded: true})
       }
     })
   }
@@ -167,6 +237,10 @@ class CommitLineReview extends React.Component {
     if(!this.destroyComponent()) {
       this.setState({folded: true})
     }
+  }
+
+  handleCommentCreate(comment) {
+    this.setState(state => ({comments: state.comments.find(oldComment => oldComment.id == comment.id) ? state.comments : [...state.comments, comment]}))
   }
 
   handleCommentUpdate(comment) {

@@ -60,6 +60,25 @@ export default () => {
 
   if(token) {
     document.querySelectorAll("table.diff-table").forEach(table => {
+      const {repoId, commitOid, blobOid} = table.dataset
+      CommitLineReview.subscribeNewLineReviews(repoId, commitOid, blobOid, {
+        onNext: response => {
+          const {id, hunk, line} = response.commitLineReviewCreate
+          let tr = table.querySelectorAll("tbody tr.hunk")[hunk]
+          for(let i = 0; i <= line; i++) {
+            tr = tr.nextElementSibling
+            if(tr.classList.contains("inline-comments")) {
+              tr = tr.nextElementSibling
+            }
+          }
+          if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
+            console.log("add row", tr)
+            let row = table.insertRow(tr.rowIndex+1)
+            row.classList.add("inline-comments")
+            ReactDOM.render(React.createElement(CommitLineReview, {reviewId: id}), row)
+          }
+        }
+      })
       table.querySelectorAll("tbody tr:not(.hunk) td.code").forEach(td => {
         let origin
         if(td.classList.contains("origin")) {
@@ -68,7 +87,7 @@ export default () => {
             if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
               let row = table.insertRow(tr.rowIndex+1);
               row.classList.add("inline-comments")
-              ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), row);
+              ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), row)
             }
             tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
           })

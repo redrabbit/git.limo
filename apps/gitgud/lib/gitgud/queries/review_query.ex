@@ -27,27 +27,37 @@ defmodule GitGud.ReviewQuery do
   end
 
   @doc """
-  Returns a commit line review for the given `repo` and `id`.
-  """
-  @spec commit_line_review(Repo.t, pos_integer, keyword) :: CommitLineReview.t | nil
-  def commit_line_review(%Repo{id: repo_id} = _repo, id, opts \\ []) do
-    DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, id], opts))
-  end
-
-  @doc """
   Returns a commit line review for the given `repo`, `commit`, `blob_oid`, `hunk` and `line`.
   """
-  @spec commit_line_review(Repo.t, GitAgent.git_commit, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
-  def commit_line_review(%Repo{id: repo_id} = _repo, commit, blob_oid, hunk, line, opts \\ []) do
-    DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, commit.oid, blob_oid, hunk, line], opts))
+  @spec commit_line_review(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
+  def commit_line_review(repo, commit, blob_oid, hunk, line, opts \\ [])
+  def commit_line_review(%Repo{id: repo_id} = _repo, %GitCommit{oid: commit_oid} = _commit, blob_oid, hunk, line, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, commit_oid, blob_oid, hunk, line], opts))
+  end
+
+  def commit_line_review(%Repo{id: repo_id} = _repo, commit_oid, blob_oid, hunk, line, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, commit_oid, blob_oid, hunk, line], opts))
+  end
+
+  def commit_line_review(repo_id, commit_oid, blob_oid, hunk, line, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, commit_oid, blob_oid, hunk, line], opts))
   end
 
   @doc """
   Returns all commit line reviews for the given `repo` and `commit`.
   """
-  @spec commit_line_reviews(Repo.t, GitAgent.git_commit, keyword) :: [CommitLineReview.t]
-  def commit_line_reviews(%Repo{id: repo_id} = _repo, commit, opts \\ []) do
-    DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit.oid], opts))
+  @spec commit_line_reviews(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, keyword) :: [CommitLineReview.t]
+  def commit_line_reviews(repo, commit, opts \\ [])
+  def commit_line_reviews(%Repo{id: repo_id} = _repo, %GitCommit{oid: commit_oid} = _commit, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit_oid], opts))
+  end
+
+  def commit_line_reviews(%Repo{id: repo_id} = _repo, commit_oid, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit_oid], opts))
+  end
+
+  def commit_line_reviews(repo_id, commit_oid, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit_oid], opts))
   end
 
   @doc """
@@ -61,14 +71,18 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a commit review for the given `repo` and `commit`.
   """
-  @spec commit_review(Repo.t, GitAgent.git_commit | pos_integer, keyword) :: CommitReview.t | nil
+  @spec commit_review(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, keyword) :: CommitReview.t | nil
   def commit_review(repo, commit, opts \\ [])
   def commit_review(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit, opts) do
     DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, oid], opts))
   end
 
-  def commit_review(%Repo{id: repo_id} = _repo, id, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, id], opts))
+  def commit_review(%Repo{id: repo_id} = _repo, oid, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, oid], opts))
+  end
+
+  def commit_review(repo_id, oid, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, oid], opts))
   end
 
   @doc """

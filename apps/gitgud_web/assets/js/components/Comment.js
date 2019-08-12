@@ -21,22 +21,17 @@ class Comment extends React.Component {
     this.handleCancel = this.handleCancel.bind(this)
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
-    this.updateSubscription = this.subscribeUpdate()
-    this.deleteSubscription = this.subscribeDelete()
     this.state = {edit: false}
   }
 
   componentDidMount() {
+    this.subscribeUpdate()
+    this.subscribeDelete()
     this.highlightCodeFences()
   }
 
   componentDidUpdate() {
     this.highlightCodeFences()
-  }
-
-  componentWillUnmount() {
-    this.updateSubscription.dispose()
-    this.deleteSubscription.dispose()
   }
 
   render() {

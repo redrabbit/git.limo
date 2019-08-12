@@ -92,15 +92,23 @@ defmodule GitGud.GraphQL.Schema do
   The root query for implementing GraphQL mutations.
   """
   mutation do
-    @desc "Create a comment"
-    field :create_commit_comment, type: :comment do
+    @desc "Create a new commit line review comment"
+    field :create_commit_line_review_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, :git_oid, description: "The Git blob OID."
-      arg :hunk, :integer, description: "The delta hunk index."
-      arg :line, :integer, description: "The delta line index."
+      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
+      arg :hunk, non_null(:integer), description: "The delta hunk index."
+      arg :line, non_null(:integer), description: "The delta line index."
       arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.create_commit_comment/3
+      resolve &Resolvers.create_commit_line_review_comment/3
+    end
+
+    @desc "Create a new commit review comment"
+    field :create_commit_review_comment, type: :comment do
+      arg :repo_id, non_null(:id), description: "The repository ID."
+      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
+      arg :body, non_null(:string), description: "The body of the comment."
+      resolve &Resolvers.create_commit_review_comment/3
     end
 
     @desc "Update a comment"
@@ -120,11 +128,29 @@ defmodule GitGud.GraphQL.Schema do
   @desc """
   """
   subscription do
-    @desc "Subscribe to new comments"
-    field :commit_comment_create, :comment do
+    @desc "Subscribe to new line commit reviews"
+    field :commit_line_review_create, :commit_line_review do
       arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "This Git commit OID."
-      config &Resolvers.commit_comment_created/2
+      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
+      arg :blob_oid, non_null(:git_oid), description: "The Git commit OID."
+      config &Resolvers.commit_line_review_created/2
+    end
+
+    @desc "Subscribe to new line commit review comments"
+    field :commit_line_review_comment_create, :comment do
+      arg :repo_id, non_null(:id), description: "The repository."
+      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
+      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
+      arg :hunk, non_null(:integer), description: "The delta hunk index."
+      arg :line, non_null(:integer), description: "The delta line index."
+      config &Resolvers.commit_line_review_comment_created/2
+    end
+
+    @desc "Subscribe to new commit review comments"
+    field :commit_review_comment_create, :comment do
+      arg :repo_id, non_null(:id), description: "The repository."
+      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
+      config &Resolvers.commit_review_comment_created/2
     end
 
     @desc "Subscribe to comment updates"
