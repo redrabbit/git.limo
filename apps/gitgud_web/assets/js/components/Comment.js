@@ -74,11 +74,9 @@ class Comment extends React.Component {
     const subscription = graphql`
       subscription CommentUpdateSubscription($commentId: ID!) {
         commentUpdate(id: $commentId) {
+          id
           body
-          author {
-            name
-            login
-          }
+          bodyHtml
         }
       }
     `
@@ -90,10 +88,7 @@ class Comment extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => {
-        console.log("update", comment)
-        this.props.onUpdate(response.commentUpdate)
-      }
+      onNext: response => this.props.onUpdate(response.commentUpdate)
     })
   }
 
@@ -114,10 +109,7 @@ class Comment extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => {
-        console.log("delete", comment)
-        this.props.onDelete(response.commentDelete)
-      }
+      onNext: response => this.props.onDelete(response.commentDelete)
     })
   }
 

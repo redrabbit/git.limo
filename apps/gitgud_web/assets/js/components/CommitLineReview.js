@@ -170,7 +170,7 @@ class CommitLineReview extends React.Component {
   }
 
   handleCommentUpdate(comment) {
-    this.setState(state => ({comments: state.comments.map(oldComment => oldComment.id === comment.id ? comment : oldComment)}))
+    this.setState(state => ({comments: state.comments.map(oldComment => oldComment.id === comment.id ? {...oldComment, ...comment} : oldComment)}))
   }
   handleCommentDelete(comment) {
     this.setState(state => ({comments: state.comments.filter(oldComment => oldComment.id !== comment.id)}))
