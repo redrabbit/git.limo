@@ -1,4 +1,4 @@
-defprotocol GitRekt.GitAccess do
+defprotocol GitRekt.GitRepo do
   @moduledoc """
   Protocol for implementing access to Git repositories.
   """

@@ -186,7 +186,7 @@ defmodule GitGud.Repo do
   # Protocols
   #
 
-  defimpl GitRekt.GitAccess do
+  defimpl GitRekt.GitRepo do
     alias GitGud.Repo
 
     def get_agent(%Repo{} = repo), do: repo.__agent__

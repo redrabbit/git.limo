@@ -1,12 +1,66 @@
 defmodule GitRekt.GitAgent do
-  @moduledoc """
+  @moduledoc ~S"""
   High-level API for running Git commands on a repository.
+
+  This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it works with
+  structs such as `GitRekt.GitRef`, `GitRekt.GitCommit`, `GitRekt.GitTree`, etc...
+
+  Additionally, it allows access to repositories from different processes simultaneously.
+
+  ## Example
+
+  Let's rewrite the example exposed in the `GitRekt.Git` module:
+
+  ```elixir
+  alias GitRekt.Git
+  alias GitRekt.GitAgent
+
+  # load repository
+  {:ok, repo} = Git.repository_open("/tmp/my-repo")
+
+  # fetch master branch
+  {:ok, branch} = GitAgent.branch(repo, "master")
+
+  # fetch commit pointed by master
+  {:ok, commit} = GitAgent.peel(repo, branch)
+
+  # fetch commit author & message
+  {:ok, author} = GitAgent.commit_author(repo, commit)
+  {:ok, message} = GitAgent.commit_message(repo, commit)
+
+  IO.puts "Last commit by #{author.name} <#{author.email}>:"
+  IO.puts message
+  ```
+
+  Notice that we still use `GitRekt.Git.repository_open/1` in order to load our repository.
+  Now, instead of passing a `t:GitRekt.Git.repo/0` pointer we want to start a dedicated process for our repository:
+
+  ```elixir
+  alias GitRekt.Git
+  alias GitRekt.GitAgent
+
+  # start a dedicated process for the repository
+  {:ok, repo} = GitAgent.start_link("/tmp/my-repo")
+
+  spawn_link fn ->
+    # fetch HEAD
+    {:ok, head} = GitAgent.head(repo)
+
+    # fetch the commit history starting from HEAD
+    {:ok, history} = GitAgent.history(repo, head)
+
+    IO.puts "#{Enum.count(history)} commits"
+  end
+  ```
+
+  We swapped `GitRekt.Git.repository_open/1` with `start_link/1`, allowing multiple processes to access
+  the repository in a safe manner. Internally, this is done by serializing function calls via message passing.
   """
   use GenServer
 
-  alias GitRekt.{Git, GitAccess, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
+  alias GitRekt.{Git, GitRepo, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
 
-  @type agent :: pid | Git.repo
+  @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
 
@@ -36,15 +90,15 @@ defmodule GitRekt.GitAgent do
   Instead it starts a dedicated process and executes commands via message passing.
   """
 
-  @spec attach(GitAccess.t, :inproc | :shared) :: {:ok, any} | {:error, term}
+  @spec attach(GitRepo.t, :inproc | :shared) :: {:ok, any} | {:error, term}
   def attach(repo, mode \\ :inproc) do
-    GitAccess.put_agent(repo, mode)
+    GitRepo.put_agent(repo, mode)
   end
 
   @doc """
   Similar to `attach/2`, but raises an exception if an error occurs.
   """
-  @spec attach!(GitAccess.t, :inproc | :shared) :: any
+  @spec attach!(GitRepo.t, :inproc | :shared) :: any
   def attach!(repo, mode \\ :inproc) do
     case attach(repo, mode) do
       {:ok, repo} -> repo
@@ -297,7 +351,7 @@ defmodule GitRekt.GitAgent do
   defp exec(agent, op) when is_reference(agent), do: call(op, agent)
   defp exec(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
 
-  defp exec(agent, op), do: call(op, GitAccess.get_agent(agent))
+  defp exec(agent, op), do: call(op, GitRepo.get_agent(agent))
 
   defp call(:empty?, handle) do
     {:ok, Git.repository_empty?(handle)}
