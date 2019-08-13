@@ -111,7 +111,7 @@ class CommitReview extends React.Component {
 
   render() {
     return (
-      <div className="inline-comments commit-review">
+      <div className="inline-comments">
         <header>
           <h2 className="subtitle">{this.state.comments.length == 1 ? "1 comment" : `${this.state.comments.length} comments`}</h2>
         </header>

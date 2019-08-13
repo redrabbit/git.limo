@@ -67,13 +67,14 @@
         </header>
         <div class="card-content">
           <%= render("_diff_table.html", Map.put(assigns, :delta, delta)) %>
-          <%= if review = commit_review(@repo, @commit) do %>
-            <%= react_component("commit-review", review_id: to_relay_id(review)) %>
-          <% else %>
-            <%= react_component("commit-review", repo_id: to_relay_id(@repo), commit_oid: oid_fmt(@commit.oid)) %>
-          <% end %>
         </div>
       </div>
     </div>
   </div>
+<% end %>
+
+<%= if review = commit_review(@repo, @commit) do %>
+  <%= react_component("commit-review", review_id: to_relay_id(review)) %>
+<% else %>
+  <%= react_component("commit-review", repo_id: to_relay_id(@repo), commit_oid: oid_fmt(@commit.oid)) %>
 <% end %>
