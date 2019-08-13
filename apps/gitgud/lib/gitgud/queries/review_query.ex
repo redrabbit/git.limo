@@ -108,7 +108,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a query for fetching a single commit line review.
   """
-  @spec commit_line_review_query(pos_integer) :: Ecto.Query.t
+  @spec commit_line_review_query(pos_integer, pos_integer) :: Ecto.Query.t
   def commit_line_review_query(repo_id, id) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.id == ^id)
   end
@@ -124,7 +124,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a query for fetching all commit line reviews.
   """
-  @spec commit_line_review_query(pos_integer, Git.oid, Git.oid, non_neg_integer, non_neg_integer) :: Ecto.Query.t
+  @spec commit_line_reviews_query(pos_integer, Git.oid) :: Ecto.Query.t
   def commit_line_reviews_query(repo_id, commit_oid) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
