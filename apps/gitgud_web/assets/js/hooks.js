@@ -74,7 +74,6 @@ export default () => {
             }
           }
           if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
-            console.log("add row", tr)
             let row = table.insertRow(tr.rowIndex+1)
             row.classList.add("inline-comments")
             ReactDOM.render(React.createElement(CommitLineReview, {reviewId: id}), row)
