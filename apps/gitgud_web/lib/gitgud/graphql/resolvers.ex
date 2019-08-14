@@ -357,6 +357,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the line reviews for a given Git `commit` object.
+  """
+  @spec commit_line_reviews(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, [CommitLineReview.t]} | {:error, term}
+  def commit_line_reviews(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, ReviewQuery.commit_line_reviews(ctx.repo, commit, viewer: ctx[:current_user], preload: [comments: :author])}
+  end
+
+  @doc """
   Resolves the review for a given Git `commit` object.
   """
   @spec commit_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}

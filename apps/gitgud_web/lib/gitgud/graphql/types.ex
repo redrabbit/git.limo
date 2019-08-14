@@ -228,12 +228,17 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
-    @desc "A single line commit review."
+    @desc "A single commit line review."
     field :line_review, non_null(:commit_line_review) do
       arg :blob_oid, non_null(:git_oid), description: "The OID of the blob."
       arg :hunk, non_null(:integer), description:  "The delta hunk index."
       arg :line, non_null(:integer), description: "The delta line index."
       resolve &Resolvers.commit_line_review/3
+    end
+
+    @desc "All commit line reviews."
+    field :line_reviews, list_of(:commit_line_review) do
+      resolve &Resolvers.commit_line_reviews/3
     end
 
     @desc "A single commit review."
