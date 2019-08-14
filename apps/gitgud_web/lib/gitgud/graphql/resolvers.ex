@@ -521,19 +521,40 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
+  @doc """
+  Returns the subscription topic for commit line review create event.
+  """
+  @spec commit_line_review_created(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
      {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
+  @doc """
+  Returns the subscription topic for commit line review comment events.
+  """
+  @spec commit_line_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
      {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
+  @doc """
+  Returns the subscription topic for commit review comment events.
+  """
+  @spec commit_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
      {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
+  @doc """
+  Returns the subscription topic for comment update events.
+  """
+  @spec comment_updated(map, map) :: {:ok, keyword} | {:error, term}
   def comment_updated(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
+
+  @doc """
+  Returns the subscription topic for comment delete events.
+  """
+  @spec comment_deleted(map, map) :: {:ok, keyword} | {:error, term}
   def comment_deleted(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc false
