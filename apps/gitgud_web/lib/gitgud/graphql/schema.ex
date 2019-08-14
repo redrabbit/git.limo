@@ -25,9 +25,9 @@ defmodule GitGud.GraphQL.Schema do
   end
 
   @spec from_relay_id(Absinthe.Relay.Node.global_id, Absinthe.Resolution.t) :: struct | nil
-  def from_relay_id(global_id, info) do
+  def from_relay_id(global_id, info, opts \\ []) do
     with {:ok, node} <- Absinthe.Relay.Node.from_global_id(global_id, __MODULE__),
-         {:ok, node} <- Resolvers.node(node, info) do
+         {:ok, node} <- Resolvers.node(node, info, opts) do
       node
     else
       {:error, _reason} -> nil

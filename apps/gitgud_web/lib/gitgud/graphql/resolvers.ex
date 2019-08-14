@@ -29,7 +29,7 @@ defmodule GitGud.GraphQL.Resolvers do
   import GitRekt.Git, only: [oid_fmt: 1]
 
   import GitGud.Authorization, only: [authorized?: 3]
-  import GitGud.GraphQL.Schema, only: [from_relay_id: 1]
+  import GitGud.GraphQL.Schema, only: [from_relay_id: 1, from_relay_id: 3]
 
   @doc """
   Resolves a node object type.
@@ -45,38 +45,39 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves a node object.
   """
-  @spec node(map, Absinthe.Resolution.t) :: {:ok, map} | {:error, term}
-  def node(%{id: id, type: :user} = _node_type, info) do
-    if user = UserQuery.by_id(String.to_integer(id), preload: :public_email),
+  @spec node(map, Absinthe.Resolution.t, keyword) :: {:ok, map} | {:error, term}
+  def node(node_type, info, opts \\ [])
+  def node(%{id: id, type: :user}, info, opts) do
+    if user = UserQuery.by_id(String.to_integer(id), preload: Keyword.get(opts, :preload, :public_email)),
       do: {:ok, user},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :repo} = _node_type, %{context: ctx} = info) do
-    if repo = RepoQuery.by_id(String.to_integer(id), viewer: ctx[:current_user], preload: [owner: :public_email]),
+  def node(%{id: id, type: :repo}, %{context: ctx} = info, opts) do
+    if repo = RepoQuery.by_id(String.to_integer(id), viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [owner: :public_email])),
       do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :comment} = _node_type, %{context: ctx} = info) do
-    if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: :author),
+  def node(%{id: id, type: :comment}, %{context: ctx} = info, opts) do
+    if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :author)),
       do: {:ok, comment},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :commit_line_review} = _node_type, %{context: ctx} = info) do
-    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
+  def node(%{id: id, type: :commit_line_review}, %{context: ctx} = info, opts) do
+    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:repo, comments: :author])),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
-  def node(%{id: id, type: :commit_review} = _node_type, %{context: ctx} = info) do
-    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: [:repo, comments: :author]),
+  def node(%{id: id, type: :commit_review}, %{context: ctx} = info, opts) do
+    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:repo, comments: :author])),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
-  def node(%{} = _node_type, _info) do
+  def node(_node_type, _info, _opts) do
     {:error, "this given node id is not valid"}
   end
 
@@ -487,9 +488,16 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: id, body: body}, %Absinthe.Resolution{context: ctx}) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
-      if authorized?(ctx[:current_user], comment, :admin),
-        do: Comment.update(comment, body: body),
-      else: {:error, "Unauthorized"}
+      if authorized?(ctx[:current_user], comment, :admin) do
+        case Comment.update(comment, body: body) do
+          {:ok, comment} ->
+            thread = GitGud.CommentQuery.thread(comment)
+            publish(GitGud.Web.Endpoint, comment, comment_update: comment_subscription_topic(thread))
+            {:ok, comment}
+        end
+      else
+        {:error, "Unauthorized"}
+      end
     end
   end
 
@@ -499,40 +507,34 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: id}, %Absinthe.Resolution{context: ctx}) do
-    if comment = CommentQuery.by_id(from_relay_id(id)) do
-      if authorized?(ctx[:current_user], comment, :admin),
-        do: Comment.delete(comment),
-      else: {:error, "Unauthorized"}
+    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+      if authorized?(ctx[:current_user], comment, :admin) do
+        case Comment.delete(comment) do
+          {:ok, comment} ->
+            thread = GitGud.CommentQuery.thread(comment)
+            publish(GitGud.Web.Endpoint, comment, comment_delete: comment_subscription_topic(thread))
+            {:ok, comment}
+        end
+      else
+        {:error, "Unauthorized"}
+      end
     end
   end
 
-  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid}, _ctx) do
+  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid}, _info) do
      {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}"}
   end
 
-  def commit_line_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _ctx) do
+  def commit_line_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
      {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
-  def commit_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _ctx) do
+  def commit_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
      {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}"}
   end
 
-  def comment_updated(%{id: id}, %{context: ctx}) do
-    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
-      if authorized?(ctx[:current_user], comment, :read),
-        do: {:ok, topic: comment.id},
-      else: {:error, "Unauthorized"}
-    end
-  end
-
-  def comment_deleted(%{id: id}, %{context: ctx}) do
-    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
-      if authorized?(ctx[:current_user], comment, :read),
-        do: {:ok, topic: comment.id},
-      else: {:error, "Unauthorized"}
-    end
-  end
+  def comment_updated(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
+  def comment_deleted(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc false
   @spec batch_users_by_email(any, [binary]) :: map
@@ -590,5 +592,12 @@ defmodule GitGud.GraphQL.Resolvers do
         limit = if start_offset == 0, do: end_offset, else: limit
         {start_offset, limit}
     end
+  end
+
+  defp comment_subscription_topic(%Comment{id: id}), do: id
+  defp comment_subscription_topic(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), do: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"
+  defp comment_subscription_topic(%CommitReview{repo_id: repo_id, commit_oid: commit_oid}), do: "#{repo_id}:#{oid_fmt(commit_oid)}"
+  defp comment_subscription_topic(node_id, info) do
+    comment_subscription_topic(from_relay_id(node_id, info, preload: []))
   end
 end
