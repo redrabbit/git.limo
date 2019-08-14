@@ -147,7 +147,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Fetches a single Git reference by its name."
     field :ref, :git_reference do
-      arg :name, :string, description: "The name of the reference."
+      arg :name, non_null(:string), description: "The name of the reference."
       resolve &Resolvers.repo_ref/3
     end
 
@@ -158,8 +158,14 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Fetches a single Git tag by its name."
     field :tag, :git_tag do
-      arg :name, :string, description: "The name of the tag."
+      arg :name, non_null(:string), description: "The name of the tag."
       resolve &Resolvers.repo_tag/3
+    end
+
+    @desc "Fetches a single Git object by its OID."
+    field :object, non_null(:git_object) do
+      arg :oid, non_null(:git_oid), description: "The OID of the object."
+      resolve &Resolvers.repo_object/3
     end
 
     @desc "The HTTP URL for this repository."

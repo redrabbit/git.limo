@@ -247,6 +247,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves a Git object by OID for a given `repo`.
+  """
+  @spec repo_object(Repo.t, %{oid: binary}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
+  def repo_object(%Repo{} = repo, %{oid: oid} = _args, _info) do
+    GitAgent.object(repo, oid)
+  end
+
+  @doc """
   Resolves the type for a given Git `actor`.
   """
   @spec git_actor_type(User.t | map, Absinthe.Resolution.t) :: atom
