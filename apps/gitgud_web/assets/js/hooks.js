@@ -59,11 +59,13 @@ export default () => {
   }
 
   if(token) {
-    document.querySelectorAll("table.diff-table").forEach(table => {
-      const {repoId, commitOid, blobOid} = table.dataset
-      CommitLineReview.subscribeNewLineReviews(repoId, commitOid, blobOid, {
+    const diff = document.getElementById("diff-commit")
+    if(diff) {
+      const {repoId, commitOid} = diff.dataset
+      CommitLineReview.subscribeNewLineReviews(repoId, commitOid, {
         onNext: response => {
-          const {id, hunk, line} = response.commitLineReviewCreate
+          const {id, blobOid, hunk, line} = response.commitLineReviewCreate
+          let table = document.querySelector(`table.diff-table[data-blob-oid=${blobOid}]`)
           let tr = table.querySelectorAll("tbody tr.hunk")[hunk]
           for(let i = 0; i <= line; i++) {
             tr = tr.nextElementSibling
@@ -79,25 +81,29 @@ export default () => {
           }
         }
       })
-      table.querySelectorAll("tbody tr:not(.hunk) td.code").forEach(td => {
-        let origin
-        if(td.classList.contains("origin")) {
-          td.querySelector("button").addEventListener("click", event => {
-            let tr = td.parentElement
-            if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
-              let row = table.insertRow(tr.rowIndex+1);
-              row.classList.add("inline-comments")
-              ReactDOM.render(React.createElement(CommitLineReview, {...table.dataset, ...event.currentTarget.dataset}), row)
-            }
-            tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
-          })
-          origin = td
-        } else {
-          origin = td.previousElementSibling
-        }
-        td.addEventListener("mouseover", () => origin.classList.add("is-active"))
-        td.addEventListener("mouseout", () => origin.classList.remove("is-active"))
+
+      document.querySelectorAll("table.diff-table").forEach(table => {
+        const {blobOid} = table.dataset
+        table.querySelectorAll("tbody tr:not(.hunk) td.code").forEach(td => {
+          let origin
+          if(td.classList.contains("origin")) {
+            td.querySelector("button").addEventListener("click", event => {
+              let tr = td.parentElement
+              if(!tr.nextElementSibling || !tr.nextElementSibling.classList.contains("inline-comments")) {
+                let row = table.insertRow(tr.rowIndex+1);
+                row.classList.add("inline-comments")
+                ReactDOM.render(React.createElement(CommitLineReview, {...{repoId: repoId, commitOid: commitOid, blobOid: blobOid}, ...event.currentTarget.dataset}), row)
+              }
+              tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
+            })
+            origin = td
+          } else {
+            origin = td.previousElementSibling
+          }
+          td.addEventListener("mouseover", () => origin.classList.add("is-active"))
+          td.addEventListener("mouseout", () => origin.classList.remove("is-active"))
+        })
       })
-    })
+    }
   }
 }

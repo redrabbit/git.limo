@@ -132,7 +132,6 @@ defmodule GitGud.GraphQL.Schema do
     field :commit_line_review_create, :commit_line_review do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, non_null(:git_oid), description: "The Git commit OID."
       config &Resolvers.commit_line_review_created/2
     end
 

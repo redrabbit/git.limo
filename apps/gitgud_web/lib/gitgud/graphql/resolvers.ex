@@ -452,7 +452,7 @@ defmodule GitGud.GraphQL.Resolvers do
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
         {:ok, line_review, comment} ->
           unless old_line_review do
-            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}")
+            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
             publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
           else
             publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
@@ -521,8 +521,8 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
-  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid}, _info) do
-     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}"}
+  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
+     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do

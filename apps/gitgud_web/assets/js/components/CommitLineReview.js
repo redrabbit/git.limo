@@ -92,15 +92,12 @@ class CommitLineReview extends React.Component {
     }
   }
 
-  static subscribeNewLineReviews(repoId, commitOid, blobOid, config) {
+  static subscribeNewLineReviews(repoId, commitOid, config) {
     const subscription = graphql`
-      subscription CommitLineReviewCreateSubscription(
-        $repoId: ID!,
-        $commitOid: GitObjectID!,
-        $blobOid: GitObjectID!
-      ) {
-        commitLineReviewCreate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid) {
+      subscription CommitLineReviewCreateSubscription($repoId: ID!, $commitOid: GitObjectID!) {
+        commitLineReviewCreate(repoId: $repoId, commitOid: $commitOid) {
           id
+          blobOid
           hunk
           line
         }
@@ -110,7 +107,6 @@ class CommitLineReview extends React.Component {
     const variables = {
       repoId: repoId,
       commitOid: commitOid,
-      blobOid: blobOid
     }
 
     return requestSubscription(environment, {...config, ...{subscription, variables}})
