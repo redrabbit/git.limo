@@ -14,15 +14,15 @@ defmodule GitGud.DB.Migrations.AddCommitLineReviewsTable do
     create unique_index("commit_line_reviews", [:repo_id, :commit_oid, :blob_oid, :hunk, :line])
 
     create table("commit_line_reviews_comments", primary_key: false) do
-      add :review_id, references("commit_line_reviews", on_delete: :delete_all), null: false
+      add :thread_id, references("commit_line_reviews", on_delete: :delete_all), null: false
       add :comment_id, references("comments", on_delete: :delete_all), null: false
     end
 
     execute """
     CREATE FUNCTION cleanup_commit_line_review() RETURNS TRIGGER AS $$
     BEGIN
-      IF NOT EXISTS(SELECT TRUE FROM commit_line_reviews_comments WHERE review_id = OLD.review_id) THEN
-        DELETE FROM commit_line_reviews WHERE id = OLD.review_id;
+      IF NOT EXISTS(SELECT TRUE FROM commit_line_reviews_comments WHERE thread_id = OLD.thread_id) THEN
+        DELETE FROM commit_line_reviews WHERE id = OLD.thread_id;
       END IF;
       RETURN NEW;
     END;

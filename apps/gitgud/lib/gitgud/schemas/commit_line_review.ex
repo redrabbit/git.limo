@@ -17,7 +17,7 @@ defmodule GitGud.CommitLineReview do
 
   schema "commit_line_reviews" do
     belongs_to :repo, Repo
-    many_to_many :comments, Comment, join_through: "commit_line_reviews_comments", join_keys: [review_id: :id, comment_id: :id]
+    many_to_many :comments, Comment, join_through: "commit_line_reviews_comments", join_keys: [thread_id: :id, comment_id: :id]
     field :commit_oid, :binary
     field :blob_oid, :binary
     field :hunk, :integer
@@ -75,9 +75,9 @@ defmodule GitGud.CommitLineReview do
     review_opts = [on_conflict: {:replace, [:updated_at]}, conflict_target: [:repo_id, :commit_oid, :blob_oid, :hunk, :line]]
     Multi.new()
     |> Multi.insert(:review, changeset(%__MODULE__{}, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
-    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{repo_id: repo_id, author_id: author_id, body: body}))
+    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{repo_id: repo_id, thread_table: "commit_line_reviews_comments", author_id: author_id, body: body}))
     |> Multi.run(:review_comment, fn db, %{review: review, comment: comment} ->
-      case db.insert_all("commit_line_reviews_comments", [%{review_id: review.id, comment_id: comment.id}]) do
+      case db.insert_all("commit_line_reviews_comments", [%{thread_id: review.id, comment_id: comment.id}]) do
         {1, val} -> {:ok, val}
       end
     end)

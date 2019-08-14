@@ -13,6 +13,7 @@ defmodule GitGud.Comment do
 
   schema "comments" do
     belongs_to :repo, Repo
+    field :thread_table, :string
     belongs_to :author, User
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
@@ -24,6 +25,7 @@ defmodule GitGud.Comment do
     id: pos_integer,
     repo_id: pos_integer,
     repo: Repo.t,
+    thread_table: binary,
     author_id: pos_integer,
     author: User.t,
     parent_id: pos_integer | nil,
@@ -79,8 +81,8 @@ defmodule GitGud.Comment do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = comment, params \\ %{}) do
     comment
-    |> cast(params, [:repo_id, :author_id, :parent_id, :body])
-    |> validate_required([:repo_id, :author_id, :body])
+    |> cast(params, [:repo_id, :thread_table, :author_id, :parent_id, :body])
+    |> validate_required([:repo_id, :thread_table, :author_id, :body])
     |> assoc_constraint(:repo)
     |> assoc_constraint(:author)
     |> assoc_constraint(:parent)
