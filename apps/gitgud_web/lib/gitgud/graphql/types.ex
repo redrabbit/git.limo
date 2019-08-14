@@ -207,6 +207,8 @@ defmodule GitGud.GraphQL.Types do
     @desc "The author of the commit."
     field :author, non_null(:git_actor), resolve: &Resolvers.git_commit_author/3
 
+    field :committer, non_null(:git_actor), resolve: &Resolvers.git_commit_committer/3
+
     @desc "The message of the commit."
     field :message, non_null(:string), resolve: &Resolvers.git_commit_message/3
 

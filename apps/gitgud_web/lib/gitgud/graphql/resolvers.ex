@@ -318,6 +318,19 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the committer for a given Git `commit` object.
+  """
+  @spec git_commit_committer(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
+  def git_commit_committer(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
+    case GitAgent.commit_committer(ctx.repo, commit) do
+      {:ok, %{email: email} = author} ->
+        batch({__MODULE__, :batch_users_by_email, ctx[:current_user]}, email, fn users -> {:ok, users[email] || author} end)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Resolves the message for a given Git `commit` object.
   """
   @spec git_commit_message(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
