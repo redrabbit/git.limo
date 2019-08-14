@@ -1,4 +1,4 @@
-defmodule GitGud.GraphQL.CacheRepoMiddleware do
+defmodule GitGud.GraphQL.RepoMiddleware do
   @moduledoc false
 
   @behaviour Absinthe.Middleware

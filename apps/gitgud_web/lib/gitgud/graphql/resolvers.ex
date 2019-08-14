@@ -55,7 +55,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def node(%{id: id, type: :repo}, %{context: ctx} = info, opts) do
     if repo = RepoQuery.by_id(String.to_integer(id), viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [owner: :public_email])),
-      do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
+      do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: node(%{id: id}, info)
   end
 
@@ -159,7 +159,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def user_repo(%User{} = user, %{name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
-      do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
+      do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
 
@@ -174,7 +174,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def repo(%{owner: owner, name: name}, %Absinthe.Resolution{context: ctx} = _info) do
     if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
-      do: {:middleware, GitGud.GraphQL.CacheRepoMiddleware, repo},
+      do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository '#{owner}/#{name}' is not valid"}
   end
 
