@@ -9,8 +9,6 @@ defmodule GitGud.CommentQuery do
   alias GitGud.DBQueryable
 
   alias GitGud.Comment
-  alias GitGud.CommitLineReview
-  alias GitGud.CommitReview
 
   import Ecto.Query
 
@@ -42,12 +40,8 @@ defmodule GitGud.CommentQuery do
   Returns a query for fetching the associated thread for the given comment `id` and `table`.
   """
   @spec thread_query(pos_integer, binary) :: Ecto.Query.t
-  def thread_query(id, "commit_line_reviews_comments" = table) do
-    from r in CommitLineReview, join: t in ^table, on: [comment_id: ^id]
-  end
-
-  def thread_query(id, "commit_reviews_comments" = table) do
-    from r in CommitReview, join: t in ^table, on: [comment_id: ^id]
+  def thread_query(id, table) do
+    from r in thread_struct(table), join: t in ^table, on: [comment_id: ^id], where: t.thread_id == r.id
   end
 
   #
@@ -77,4 +71,7 @@ defmodule GitGud.CommentQuery do
   defp join_preload(query, preload, _viewer) do
     preload(query, ^preload)
   end
+
+  defp thread_struct("commit_line_reviews_comments"), do: GitGud.CommitLineReview
+  defp thread_struct("commit_reviews_comments"), do: GitGud.CommitReview
 end
