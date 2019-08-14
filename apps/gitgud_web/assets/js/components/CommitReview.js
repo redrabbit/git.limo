@@ -14,7 +14,10 @@ class CommitReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
-    this.subscribeNewComments = this.subscribeNewComments.bind(this)
+    this.subscribeComments = this.subscribeComments.bind(this)
+    this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
+    this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
+    this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
@@ -72,14 +75,20 @@ class CommitReview extends React.Component {
           commitOid: response.node.commitOid,
           comments: response.node.comments
           })
-          this.subscribeNewComments()
+          this.subscribeComments()
         })
     } else {
-      this.subscribeNewComments()
+      this.subscribeComments()
     }
   }
 
-  subscribeNewComments() {
+  subscribeComments() {
+    this.subscribeCommentCreate()
+    this.subscribeCommentUpdate()
+    this.subscribeCommentDelete()
+  }
+
+  subscribeCommentCreate() {
     const subscription = graphql`
       subscription CommitReviewCommentCreateSubscription($repoId: ID!, $commitOid: GitObjectID!) {
         commitReviewCommentCreate(repoId: $repoId, commitOid: $commitOid) {
@@ -106,6 +115,52 @@ class CommitReview extends React.Component {
       subscription,
       variables,
       onNext: response => this.handleCommentCreate(response.commitReviewCommentCreate),
+    })
+  }
+
+  subscribeCommentUpdate() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommitReviewCommentUpdateSubscription($repoId: ID!, $commitOid: GitObjectID!) {
+        commitReviewCommentUpdate(repoId: $repoId, commitOid: $commitOid) {
+          id
+          body
+          bodyHtml
+        }
+      }
+    `
+
+    const variables = {
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.handleCommentUpdate(response.commitReviewCommentUpdate)
+    })
+  }
+
+  subscribeCommentDelete() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommitReviewCommentDeleteSubscription($repoId: ID!, $commitOid: GitObjectID!) {
+        commitReviewCommentDelete(repoId: $repoId, commitOid: $commitOid) {
+          id
+        }
+      }
+    `
+
+    const variables = {
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.handleCommentDelete(response.commitReviewCommentDelete)
     })
   }
 

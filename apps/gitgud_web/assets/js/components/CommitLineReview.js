@@ -14,7 +14,10 @@ class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
-    this.subscribeNewComments = this.subscribeNewComments.bind(this)
+    this.subscribeComments = this.subscribeComments.bind(this)
+    this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
+    this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
+    this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.destroyComponent = this.destroyComponent.bind(this)
@@ -82,10 +85,10 @@ class CommitLineReview extends React.Component {
           line: response.node.line,
           comments: response.node.comments
           })
-          this.subscribeNewComments()
+          this.subscribeComments()
         })
     } else {
-      this.subscribeNewComments()
+      this.subscribeComments()
     }
   }
 
@@ -113,7 +116,13 @@ class CommitLineReview extends React.Component {
     return requestSubscription(environment, {...config, ...{subscription, variables}})
   }
 
-  subscribeNewComments() {
+  subscribeComments() {
+    this.subscribeCommentCreate()
+    this.subscribeCommentUpdate()
+    this.subscribeCommentDelete()
+  }
+
+  subscribeCommentCreate() {
     const subscription = graphql`
       subscription CommitLineReviewCommentCreateSubscription(
         $repoId: ID!,
@@ -151,6 +160,71 @@ class CommitLineReview extends React.Component {
       onNext: response => this.handleCommentCreate(response.commitLineReviewCommentCreate),
     })
   }
+
+  subscribeCommentUpdate() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommitLineReviewCommentUpdateSubscription(
+        $repoId: ID!,
+        $commitOid: GitObjectID!,
+        $blobOid: GitObjectID!,
+        $hunk: Int!,
+        $line: Int!
+      ) {
+        commitLineReviewCommentUpdate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+          id
+          body
+          bodyHtml
+        }
+      }
+    `
+
+    const variables = {
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid,
+      blobOid: this.state.blobOid,
+      hunk: this.state.hunk,
+      line: this.state.line
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.handleCommentUpdate(response.commitLineReviewCommentUpdate)
+    })
+  }
+
+  subscribeCommentDelete() {
+    const {comment} = this.props
+    const subscription = graphql`
+      subscription CommitLineReviewCommentDeleteSubscription(
+        $repoId: ID!,
+        $commitOid: GitObjectID!,
+        $blobOid: GitObjectID!,
+        $hunk: Int!,
+        $line: Int!
+      ) {
+        commitLineReviewCommentDelete(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+          id
+        }
+      }
+    `
+
+    const variables = {
+      repoId: this.state.repoId,
+      commitOid: this.state.commitOid,
+      blobOid: this.state.blobOid,
+      hunk: this.state.hunk,
+      line: this.state.line
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.handleCommentDelete(response.commitLineReviewCommentDelete)
+    })
+  }
+
   render() {
     return (
       <td colSpan={4}>

@@ -452,10 +452,10 @@ defmodule GitGud.GraphQL.Resolvers do
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
         {:ok, line_review, comment} ->
           unless old_line_review do
-            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}")
-            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
+            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}")
+            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
           else
-            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
+            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
           end
           {:ok, comment}
         {:error, reason} ->
@@ -472,7 +472,7 @@ defmodule GitGud.GraphQL.Resolvers do
     if author = ctx[:current_user] do
       case CommitReview.add_comment(repo, commit_oid, author, body) do
         {:ok, comment} ->
-          publish(GitGud.Web.Endpoint, comment, commit_review_comment_create: "#{repo_id}:#{oid_fmt(commit_oid)}")
+          publish(GitGud.Web.Endpoint, comment, commit_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
           {:ok, comment}
         {:error, reason} ->
           {:error, reason}
@@ -489,10 +489,10 @@ defmodule GitGud.GraphQL.Resolvers do
   def update_comment(_parent, %{id: id, body: body}, %Absinthe.Resolution{context: ctx}) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
       if authorized?(ctx[:current_user], comment, :admin) do
+        thread = GitGud.CommentQuery.thread(comment)
         case Comment.update(comment, body: body) do
           {:ok, comment} ->
-            thread = GitGud.CommentQuery.thread(comment)
-            publish(GitGud.Web.Endpoint, comment, comment_update: comment_subscription_topic(thread))
+            publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :update))
             {:ok, comment}
         end
       else
@@ -509,10 +509,10 @@ defmodule GitGud.GraphQL.Resolvers do
   def delete_comment(_parent, %{id: id}, %Absinthe.Resolution{context: ctx}) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
       if authorized?(ctx[:current_user], comment, :admin) do
+        thread = GitGud.CommentQuery.thread(comment)
         case Comment.delete(comment) do
           {:ok, comment} ->
-            thread = GitGud.CommentQuery.thread(comment)
-            publish(GitGud.Web.Endpoint, comment, comment_delete: comment_subscription_topic(thread))
+            publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :delete))
             {:ok, comment}
         end
       else
@@ -522,15 +522,15 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid}, _info) do
-     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}"}
+     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}"}
   end
 
-  def commit_line_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
-     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+  def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
+     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
-  def commit_review_comment_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-     {:ok, topic: "#{repo_id}:#{oid_fmt(commit_oid)}"}
+  def commit_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
+     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   def comment_updated(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
@@ -594,10 +594,13 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
+  defp comment_subscription(%CommitLineReview{} = thread, action), do: {String.to_atom("commit_line_review_comment_#{action}"), comment_subscription_topic(thread)}
+  defp comment_subscription(%CommitReview{} = thread, action), do: {String.to_atom("commit_review_comment_#{action}"), comment_subscription_topic(thread)}
+
+  defp comment_subscriptions(thread, action), do: [{String.to_atom("comment_#{action}"), comment_subscription_topic(thread)}, comment_subscription(thread, action)]
+
   defp comment_subscription_topic(%Comment{id: id}), do: id
   defp comment_subscription_topic(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), do: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"
   defp comment_subscription_topic(%CommitReview{repo_id: repo_id, commit_oid: commit_oid}), do: "#{repo_id}:#{oid_fmt(commit_oid)}"
-  defp comment_subscription_topic(node_id, info) do
-    comment_subscription_topic(from_relay_id(node_id, info, preload: []))
-  end
+  defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(from_relay_id(node_id, info, preload: []))
 end

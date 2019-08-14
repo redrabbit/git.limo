@@ -14,8 +14,6 @@ class Comment extends React.Component {
   constructor(props) {
     super(props)
     this.body = React.createRef()
-    this.subscribeUpdate = this.subscribeUpdate.bind(this)
-    this.subscribeDelete = this.subscribeDelete.bind(this)
     this.highlightCodeFences = this.highlightCodeFences.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
@@ -25,8 +23,6 @@ class Comment extends React.Component {
   }
 
   componentDidMount() {
-    this.subscribeUpdate()
-    this.subscribeDelete()
     this.highlightCodeFences()
   }
 
@@ -62,50 +58,6 @@ class Comment extends React.Component {
         </div>
       )
     }
-  }
-
-  subscribeUpdate() {
-    const {comment} = this.props
-    const subscription = graphql`
-      subscription CommentUpdateSubscription($commentId: ID!) {
-        commentUpdate(id: $commentId) {
-          id
-          body
-          bodyHtml
-        }
-      }
-    `
-
-    const variables = {
-      commentId: comment.id
-    }
-
-    return requestSubscription(environment, {
-      subscription,
-      variables,
-      onNext: response => this.props.onUpdate(response.commentUpdate)
-    })
-  }
-
-  subscribeDelete() {
-    const {comment} = this.props
-    const subscription = graphql`
-      subscription CommentDeleteSubscription($commentId: ID!) {
-        commentDelete(id: $commentId) {
-          id
-        }
-      }
-    `
-
-    const variables = {
-      commentId: comment.id
-    }
-
-    return requestSubscription(environment, {
-      subscription,
-      variables,
-      onNext: response => this.props.onDelete(response.commentDelete)
-    })
   }
 
   highlightCodeFences() {
