@@ -49,7 +49,6 @@ defmodule GitGud.Umbrella.Mixfile do
         ],
         "Schemas & Queries": [
           GitGud.Auth,
-          GitGud.OAuth2.Provider,
           GitGud.Comment,
           GitGud.CommentQuery,
           GitGud.Email,
@@ -76,11 +75,13 @@ defmodule GitGud.Umbrella.Mixfile do
         ],
         "OAuth2.0": [
           GitGud.OAuth2.GitHub,
-          GitGud.OAuth2.GitLab
+          GitGud.OAuth2.GitLab,
+          GitGud.OAuth2.Provider,
         ],
         "GraphQL": [
           GitGud.GraphQL.Resolvers,
           GitGud.GraphQL.Schema,
+          GitGud.GraphQL.Schema.Compiled,
           GitGud.GraphQL.Types
         ],
         "Email Delivery": [
@@ -121,6 +122,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitRekt.GitRef,
           GitRekt.GitTag,
           GitRekt.GitBlob,
+          GitRekt.GitDiff,
           GitRekt.GitTree,
           GitRekt.GitTreeEntry,
           GitRekt.Git,

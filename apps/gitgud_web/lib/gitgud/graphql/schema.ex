@@ -24,6 +24,9 @@ defmodule GitGud.GraphQL.Schema do
     end
   end
 
+  @doc """
+  Returns the source struct for the given Relay `global_id`.
+  """
   @spec from_relay_id(Absinthe.Relay.Node.global_id, Absinthe.Resolution.t) :: struct | nil
   def from_relay_id(global_id, info, opts \\ []) do
     with {:ok, node} <- Absinthe.Relay.Node.from_global_id(global_id, __MODULE__),

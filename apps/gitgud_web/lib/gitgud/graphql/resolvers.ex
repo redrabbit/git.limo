@@ -149,9 +149,12 @@ defmodule GitGud.GraphQL.Resolvers do
     Connection.from_query(query, &DB.all/1, args)
   end
 
+  @doc """
+  Returns the search result type.
+  """
   @spec search_result_type(User.t|Repo.t, Absinthe.Resolution.t) :: atom
-  def search_result_type(%User{}, _info), do: :user
-  def search_result_type(%Repo{}, _info), do: :repo
+  def search_result_type(%User{} = _result, _info), do: :user
+  def search_result_type(%Repo{} = _result, _info), do: :repo
 
   @doc """
   Resolves a repository object by name for a given `user`.
@@ -172,7 +175,11 @@ defmodule GitGud.GraphQL.Resolvers do
     Connection.from_query(query, fn query -> Enum.map(DB.all(query), &GitAgent.attach!/1) end, args)
   end
 
-  def repo(%{owner: owner, name: name}, %Absinthe.Resolution{context: ctx} = _info) do
+  @doc """
+  Resolves a repository object.
+  """
+  @spec repo(map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
+  def repo(%{owner: owner, name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
       do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository '#{owner}/#{name}' is not valid"}
@@ -214,7 +221,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves all Git reference objects for a given `repo`.
   """
   @spec repo_refs(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def repo_refs(args, %Absinthe.Resolution{source: repo} = _source) do
+  def repo_refs(args, %Absinthe.Resolution{source: repo} = _info) do
     case GitAgent.references(repo) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -236,7 +243,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves all Git tag objects for a given `repo`.
   """
   @spec repo_tags(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def repo_tags(args, %Absinthe.Resolution{source: repo} = _source) do
+  def repo_tags(args, %Absinthe.Resolution{source: repo} = _info) do
     case GitAgent.tags(repo) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -288,7 +295,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the commit history starting from the given Git `revision` object.
   """
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_history(args, %Absinthe.Resolution{context: ctx, source: revision} = _source) do
+  def git_history(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
     case GitAgent.history(ctx.repo, revision) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -302,7 +309,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the parents for a given Git `commit` object.
   """
   @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_commit_parents(args,  %Absinthe.Resolution{context: ctx, source: commit} = _source) do
+  def git_commit_parents(args,  %Absinthe.Resolution{context: ctx, source: commit} = _info) do
     case GitAgent.commit_parents(ctx.repo, commit) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -428,7 +435,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the tree entries for a given Git `tree` object.
   """
   @spec git_tree_entries(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entries(args, %Absinthe.Resolution{context: ctx, source: tree} = _source) do
+  def git_tree_entries(args, %Absinthe.Resolution{context: ctx, source: tree} = _info) do
     case GitAgent.tree_entries(ctx.repo, tree) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -458,7 +465,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Returns `true` if the viewer can edit a given `comment`; otherwise, returns `false`.
   """
   @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
-  def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx}) do
+  def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
      {:ok, authorized?(ctx[:current_user], comment, :admin)}
   end
 
@@ -471,10 +478,10 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Creates a Git commit review.
+  Creates a Git line commit review comment.
   """
   @spec create_commit_line_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
+  def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
     if author = ctx[:current_user] do
       old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line)
@@ -495,8 +502,11 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
+  @doc """
+  Creates a Git commit review commit.
+  """
   @spec create_commit_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def create_commit_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx}) do
+  def create_commit_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
     if author = ctx[:current_user] do
       case CommitReview.add_comment(repo, commit_oid, author, body) do
@@ -515,7 +525,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Updates a comment.
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def update_comment(_parent, %{id: id, body: body}, %Absinthe.Resolution{context: ctx}) do
+  def update_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
@@ -532,10 +542,10 @@ defmodule GitGud.GraphQL.Resolvers do
 
 
   @doc """
-  Updates a comment.
+  Deletes a comment.
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
-  def delete_comment(_parent, %{id: id}, %Absinthe.Resolution{context: ctx}) do
+  def delete_comment(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
@@ -578,13 +588,13 @@ defmodule GitGud.GraphQL.Resolvers do
   Returns the subscription topic for comment update events.
   """
   @spec comment_updated(map, map) :: {:ok, keyword} | {:error, term}
-  def comment_updated(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
+  def comment_updated(%{id: id} = _args, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc """
   Returns the subscription topic for comment delete events.
   """
   @spec comment_deleted(map, map) :: {:ok, keyword} | {:error, term}
-  def comment_deleted(%{id: id}, info), do: {:ok, topic: comment_subscription_topic(id, info)}
+  def comment_deleted(%{id: id} = _args, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc false
   @spec batch_users_by_email(any, [binary]) :: map
