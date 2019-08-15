@@ -56,8 +56,12 @@
             </div>
           </div>
           <footer class="card-footer">
-            <p class="card-footer-item">Added on <%= datetime_format(gpg_key.inserted_at, "{D} {Mshort} {YYYY}") %></p>
-            <p class="card-footer-item">Expires <%= datetime_format(gpg_key.expires_at, "{relative}") %></p>
+            <p class="card-footer-item">
+              <span>Added on <%= datetime_format(gpg_key.inserted_at, "{D} {Mshort} {YYYY}") %></span>
+            </p>
+            <p class="card-footer-item">
+              <span>Expires <%= datetime_format(gpg_key.expires_at, "{relative}") %></span>
+            </p>
           </footer>
         </div>
       </div>
