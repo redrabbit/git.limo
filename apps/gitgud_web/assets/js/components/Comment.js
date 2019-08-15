@@ -35,6 +35,7 @@ class Comment extends React.Component {
     if(this.state.edit) {
       return <CommentForm body={comment.body} action="edit" onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
     } else {
+      const timestamp = moment.utc(comment.insertedAt)
       return (
         <div className="comment">
           <header className="comment-header">
@@ -52,7 +53,7 @@ class Comment extends React.Component {
               </button>
             </div>
           }
-          <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> {moment.utc(comment.insertedAt).fromNow()}
+          <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
           </header>
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} ref={this.body} />
         </div>
