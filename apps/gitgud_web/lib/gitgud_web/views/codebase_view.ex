@@ -298,6 +298,13 @@ defmodule GitGud.Web.CodebaseView do
     Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
   end
 
+  @spec chunk_by_timestamp(Repo.t, Enumerable.t) :: Enumerable.t
+  def chunk_by_timestamp(repo, commits) do
+    repo
+    |> chunk_batched_commits_by_timestamp(commits)
+    |> order_commits_chunks()
+  end
+
   @spec title(atom, map) :: binary
   def title(:show, %{repo: repo}) do
     if desc = repo.description,
@@ -419,6 +426,36 @@ defmodule GitGud.Web.CodebaseView do
 
   defp fetch_committer(_repo, %Commit{} = commit) do
     %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
+  end
+
+  defp fetch_timestamp(repo, %GitCommit{} = commit) do
+    case GitAgent.commit_timestamp(repo, commit) do
+      {:ok, timestamp} -> timestamp
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fetch_timestamp(_repo, %Commit{} = commit) do
+    commit.committed_at
+  end
+
+  defp find_commit_timestamp({timestamp, _}, timestamp), do: true
+  defp find_commit_timestamp({_, _}, _), do: false
+
+  defp chunk_batched_commits_by_timestamp(repo, commits) do
+    Enum.reduce(commits, [], fn {commit, _author, _committer, _gpg_key, _comment_count} = tuple, acc ->
+      timestamp = DateTime.to_date(fetch_timestamp(repo, commit))
+      idx = Enum.find_index(acc, &find_commit_timestamp(&1, timestamp))
+      if idx,
+        do: List.update_at(acc, idx, fn {timestamp, tuples} -> {timestamp, [tuple|tuples]} end),
+      else: [{timestamp, [tuple]}|acc]
+    end)
+  end
+
+  defp order_commits_chunks(chunks) do
+    chunks
+    |> Enum.reverse()
+    |> Enum.map(fn {timestamp, commits} -> {timestamp, Enum.reverse(commits)} end)
   end
 
   defp query_users(authors) do

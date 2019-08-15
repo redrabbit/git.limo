@@ -31,6 +31,7 @@ $divider-thickness: $hr-height;
 
 @import "~bulma-divider/src/sass/index";
 @import "~bulma-tooltip/src/sass/index";
+@import "~bulma-timeline/src/sass/index";
 
 $fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
 
@@ -87,6 +88,27 @@ table.table {
     padding: 3rem 0;
     .hero-banner {
       position: absolute;
+    }
+  }
+}
+
+.commits-timeline {
+  margin-bottom: 1.5rem;
+
+  .timeline-header {
+    justify-content: end;
+  }
+
+  .timeline-item {
+    padding-bottom: 0;
+
+    &.is-spacer {
+      height: 0.8em;
+    }
+
+    .timeline-content {
+      width: 100%;
+      padding-top: 0.8em;
     }
   }
 }
@@ -302,6 +324,18 @@ table.table {
     padding: 0;
     color: $grey;
     background-color: $white;
+  }
+}
+
+table.commits-table {
+  width: 100%;
+  table-layout: fixed;
+  tbody {
+    tr {
+      td + td {
+        width: 10rem;
+      }
+    }
   }
 }
 

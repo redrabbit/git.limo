@@ -22,4 +22,11 @@ defmodule GitGud.Web.DateTimeFormatter do
       do: content_tag(:time, Timex.format!(datetime, "{relative}", :relative), datetime: datetime_str, data_tooltip: datetime_str, class: "tooltip"),
     else: content_tag(:time, Timex.format!(datetime, format), datetime: datetime_str)
   end
+
+  def datetime_format(%Date{} = date, format) do
+    date_str = Date.to_iso8601(date)
+    if String.contains?(format, "{relative}"),
+      do: content_tag(:time, Timex.format!(date, "{relative}", :relative), date: date_str, data_tooltip: date_str, class: "tooltip"),
+    else: content_tag(:time, Timex.format!(date, format), date: date_str)
+  end
 end
