@@ -14,20 +14,26 @@ class Comment extends React.Component {
   constructor(props) {
     super(props)
     this.body = React.createRef()
+    this.formatTimestamp = this.formatTimestamp.bind(this)
     this.highlightCodeFences = this.highlightCodeFences.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
     this.handleCancel = this.handleCancel.bind(this)
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
-    this.state = {edit: false}
+    this.state = {edit: false, timestamp: moment.utc(this.props.comment.insertedAt).fromNow()}
   }
 
   componentDidMount() {
     this.highlightCodeFences()
+    this.interval = setInterval(this.formatTimestamp, 3000)
   }
 
   componentDidUpdate() {
     this.highlightCodeFences()
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval)
   }
 
   render() {
@@ -39,26 +45,30 @@ class Comment extends React.Component {
       return (
         <div className="comment">
           <header className="comment-header">
-          {comment.editable &&
-            <div className="buttons is-pulled-right">
-              <button className="button is-small" onClick={this.handleUpdateClick}>
-                <span className="icon is-small">
-                  <i className="fa fa-pen"></i>
-                </span>
-              </button>
-              <button className="button is-small" onClick={this.handleDeleteClick}>
-                <span className="icon is-small">
-                  <i className="fa fa-trash"></i>
-                </span>
-              </button>
-            </div>
-          }
-          <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+            {comment.editable &&
+              <div className="buttons is-pulled-right">
+                <button className="button is-small" onClick={this.handleUpdateClick}>
+                  <span className="icon is-small">
+                    <i className="fa fa-pen"></i>
+                  </span>
+                </button>
+                <button className="button is-small" onClick={this.handleDeleteClick}>
+                  <span className="icon is-small">
+                    <i className="fa fa-trash"></i>
+                  </span>
+                </button>
+              </div>
+            }
+            <a className="has-text-black" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={20} />{comment.author.login}</a> <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
           </header>
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} ref={this.body} />
         </div>
       )
     }
+  }
+
+  formatTimestamp() {
+    this.setState({timestamp: moment.utc(this.props.comment.insertedAt).fromNow()})
   }
 
   highlightCodeFences() {
