@@ -80,6 +80,13 @@ defmodule GitGud.Web.CodebaseView do
   def breadcrump_action(:blob), do: :tree
   def breadcrump_action(action), do: action
 
+  @spec repo_head(Repo.t) :: GitRef.t | nil
+  def repo_head(repo) do
+    case GitAgent.head(repo) do
+      {:ok, branch} -> branch
+      {:error, _reason} -> nil
+    end
+  end
   @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
   def blob_content(repo, blob) do
     case GitAgent.blob_content(repo, blob) do

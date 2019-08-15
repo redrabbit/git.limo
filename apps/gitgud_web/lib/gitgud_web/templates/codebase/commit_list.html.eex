@@ -12,7 +12,7 @@
 </nav>
 
 <%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
-  <div class="timeline commits-timeline">
+  <div class="timeline commit-timeline">
     <%= for {date, commits} <- chunk_by_timestamp(@repo, batch_commits(@repo, page.slice)) do %>
       <div class="timeline-header">
         <span class="tag"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></span>

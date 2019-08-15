@@ -4,16 +4,37 @@
       <%= with {message_title, message_body} <- commit_message_format(@repo, @commit) do %>
         <header class="card-header">
           <p class="card-header-title"><%= message_title %></p>
-          <p class="card-header-icon buttons">
-            <button class="button tooltip is-small is-white has-text-grey-light has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></button>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
-              <span class="icon">
-                <i class="fa fa-code"></i>
-              </span>
-            </a>
-          </p>
+          <div class="card-header-icon">
+            <div class="buttons">
+              <button class="button tooltip is-small is-white has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></button>
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
+                <span class="icon">
+                  <i class="fa fa-code"></i>
+                </span>
+              </a>
+            </div>
+          </div>
         </header>
         <div class="card-content">
+          <div class="commit-parents">
+            <div class="field is-grouped">
+              <div class="control">
+                <label class="label">Parents:</label>
+              </div>
+              <div class="control">
+                <div class="buttons">
+                  <%= for parent <- @commit_parents do %>
+                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button tooltip is-small is-white has-text-grey-light has-text-weight-bold" data-tooltip="<%= oid_fmt(parent.oid)%>"><%= parent %></a>
+                  <% end %>
+                  <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, repo_head(@repo), []) %>?after=<%= oid_fmt(@commit.oid) %>" class="button is-small is-white has-text-grey-light">
+                    <span class="icon">
+                      <i class="fa fa-ellipsis-v"></i>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
           <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
             <%= if Map.has_key?(committer, :id) do %>
               <%= if Map.has_key?(author, :id) && committer.id != author.id do %>

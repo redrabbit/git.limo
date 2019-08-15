@@ -92,7 +92,15 @@ table.table {
   }
 }
 
-.commits-timeline {
+.commit-parents {
+  float: right;
+  margin-right: -0.74rem;
+
+  label {
+    font-weight: 400;
+  }
+}
+.commit-timeline {
   margin-bottom: 1.5rem;
 
   .timeline-header {
@@ -322,7 +330,6 @@ table.table {
 
   pre {
     padding: 0;
-    color: $grey;
     background-color: $white;
   }
 }
