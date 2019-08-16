@@ -8,8 +8,6 @@ import environment from "../relay-environment"
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
 
-import {token} from "../auth"
-
 class CommitReview extends React.Component {
   constructor(props) {
     super(props)
@@ -171,7 +169,7 @@ class CommitReview extends React.Component {
           <h2 className="subtitle">{this.state.comments.length == 1 ? "1 comment" : `${this.state.comments.length} comments`}</h2>
         </header>
         {this.renderComments()}
-        {token && this.renderForm()}
+        {this.renderForm()}
       </div>
     )
   }
