@@ -127,7 +127,13 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
         case tree_entry_target do
           %GitBlob{} ->
-            redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
+            unless reference  do
+              conn
+              |> put_status(:moved_permanently)
+              |> redirect(to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
+            else
+              redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
+            end
           %GitTree{} = tree ->
             render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
         end
