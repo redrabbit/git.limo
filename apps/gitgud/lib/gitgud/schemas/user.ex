@@ -289,7 +289,7 @@ defmodule GitGud.User do
               if email_address == get_change(email_changeset, :address) do
                 put_change(changeset, :emails, Enum.map(emails, &merge(&1, Email.verification_changeset(&1.data))))
               end
-            {:error, reason} ->
+            {:error, _reason} ->
               nil
           end
         end
