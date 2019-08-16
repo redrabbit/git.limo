@@ -322,9 +322,15 @@ textarea.textarea {
 }
 
 .card.blob {
+  .card-header.blob-commit {
+    border-bottom: 1px solid $grey-lighter;
+    .card-header-title {
+      font-weight: 400;
+    }
+  }
+
   .card-content {
     padding: 0;
-    border-top: 1px solid $grey-lighter;
     overflow-x: scroll;
   }
 }
@@ -350,14 +356,37 @@ table.commits-table {
   }
 }
 
+table.tree-table {
+  thead {
+    td, th {
+      border-width: 0 0 1px;
+      background-color: $light;
+    }
+  }
+}
+
 table.blob-table {
   border-collapse: separate;
   width: 100%;
-  margin: 1rem 0;
 
   tbody {
     tr {
+      &:first-child {
+        td {
+          padding-top: .35rem;
+        }
+      }
+
+      &:last-child {
+        td {
+          padding-bottom: .35rem;
+        }
+      }
+
       td {
+        border: none;
+        padding: 0;
+
         &.line-no {
           font-size: 0.875em;
           font-family: $family-monospace;

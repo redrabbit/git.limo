@@ -29,7 +29,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a commit line review for the given `repo`, `commit`, `blob_oid`, `hunk` and `line`.
   """
-  @spec commit_line_review(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
+  @spec commit_line_review(Repo.t | pos_integer, GitCommit.t | Git.oid, Git.oid, non_neg_integer, non_neg_integer, keyword) :: CommitLineReview.t | nil
   def commit_line_review(repo, commit, blob_oid, hunk, line, opts \\ [])
   def commit_line_review(%Repo{id: repo_id} = _repo, %GitCommit{oid: commit_oid} = _commit, blob_oid, hunk, line, opts) do
     DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [repo_id, commit_oid, blob_oid, hunk, line], opts))
@@ -46,7 +46,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns all commit line reviews for the given `repo` and `commit`.
   """
-  @spec commit_line_reviews(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, keyword) :: [CommitLineReview.t]
+  @spec commit_line_reviews(Repo.t | pos_integer, GitCommit.t | Git.oid, keyword) :: [CommitLineReview.t]
   def commit_line_reviews(repo, commit, opts \\ [])
   def commit_line_reviews(%Repo{id: repo_id} = _repo, %GitCommit{oid: commit_oid} = _commit, opts) do
     DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit_oid], opts))
@@ -71,7 +71,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a commit review for the given `repo` and `commit`.
   """
-  @spec commit_review(Repo.t | pos_integer, GitAgent.git_commit | Git.oid, keyword) :: CommitReview.t | nil
+  @spec commit_review(Repo.t | pos_integer, GitCommit.t | Git.oid, keyword) :: CommitReview.t | nil
   def commit_review(repo, commit, opts \\ [])
   def commit_review(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit, opts) do
     DB.one(DBQueryable.query({__MODULE__, :commit_review_query}, [repo_id, oid], opts))
@@ -88,7 +88,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns the number of comments for the given `repo` and `commit`.
   """
-  @spec commit_comment_count(Repot.t, GitAgent.git_commit) :: non_neg_integer
+  @spec commit_comment_count(Repot.t, GitCommit.t) :: non_neg_integer
   def commit_comment_count(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit) do
     DB.one(DBQueryable.query({__MODULE__, :commit_comment_count_query}, [repo_id, oid]))
   end

@@ -1,9 +1,9 @@
 <%= with highlight_lang <- highlight_language_from_path(Path.join(@tree_path)) do %>
-  <table class="blob-table" data-lang="<%= highlight_lang %>">
+  <table class="table blob-table" data-lang="<%= highlight_lang %>">
     <tbody>
       <%= for {line_content, line_no} <- Enum.with_index(String.split(blob_content(@repo, @blob), "\n"), 1) do %>
         <tr>
-          <td class="line-no" colspan=2><%= line_no %></td>
+          <td class="line-no"><%= line_no %></td>
           <td class="code">
             <div class="code-inner"><%= line_content %></div>
           </td>

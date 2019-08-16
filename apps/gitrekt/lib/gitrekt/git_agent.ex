@@ -60,6 +60,8 @@ defmodule GitRekt.GitAgent do
 
   alias GitRekt.{Git, GitRepo, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
 
+  require Logger
+
   @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
@@ -233,28 +235,46 @@ defmodule GitRekt.GitAgent do
   def tree(agent, obj), do: exec(agent, {:tree, obj})
 
   @doc """
-  Returns the Git tree entries of the given `obj`.
-  """
-  @spec tree_entries(agent, GitTree.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
-  def tree_entries(agent, obj), do: exec(agent, {:tree_entries, obj})
-
-  @doc """
   Returns the Git tree entry for the given `obj` and `oid`.
   """
-  @spec tree_entry_by_id(agent, GitTree.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
+  @spec tree_entry_by_id(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
   def tree_entry_by_id(agent, obj, oid), do: exec(agent, {:tree_entry, obj, {:oid, oid}})
 
   @doc """
   Returns the Git tree entry for the given `obj` and `path`.
   """
-  @spec tree_entry_by_id(agent, GitTree.t, Path.t) :: {:ok, GitTreeEntry.t} | {:error, term}
+  @spec tree_entry_by_path(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, GitTreeEntry.t} | {:error, term}
   def tree_entry_by_path(agent, obj, path), do: exec(agent, {:tree_entry, obj, {:path, path}})
+
+  @doc """
+  Returns the Git tree entry and it's last commit for the given `obj` and `path`.
+  """
+  @spec tree_entry_with_commit(agent, GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, GitTreeEntry.t, GitCommit.t} | {:error, term}
+  def tree_entry_with_commit(agent, obj, path), do: exec(agent, {:tree_entry_with_commit, obj, path})
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
   """
   @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
   def tree_entry_target(agent, tree_entry), do: exec(agent, {:tree_entry_target, tree_entry})
+
+  @doc """
+  Returns the Git tree entries of the given `obj`.
+  """
+  @spec tree_entries(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
+  def tree_entries(agent, obj), do: exec(agent, {:tree_entries, obj})
+
+  @doc """
+  Returns the Git tree entries and their last commit for the given `obj`.
+  """
+  @spec tree_entries_with_commits(agent, GitCommit.t | GitTag.t | GitRef.t) :: {:ok, [{GitTreeEntry.t, GitCommit.t}]} | {:error, term}
+  def tree_entries_with_commits(agent, obj), do: exec(agent, {:tree_entries_with_commits, obj})
+
+  @doc """
+  Returns the Git tree entries and their last commit for the given `obj` and `path`.
+  """
+  @spec tree_entries_with_commits(agent, GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, [{GitTreeEntry.t, GitCommit.t}]} | {:error, term}
+  def tree_entries_with_commits(agent, obj, path), do: exec(agent, {:tree_entries_with_commits, obj, path})
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
@@ -289,8 +309,8 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the underlying Git commit of the given `obj`.
   """
-  @spec peel(agent, GitRef.t | git_object) :: {:ok, GitCommit.t} | {:error, term}
-  def peel(agent, obj), do: exec(agent, {:peel, obj})
+  @spec peel(agent, GitRef.t | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
+  def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
 
   #
   # Callbacks
@@ -433,16 +453,26 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call({:tree_entry, obj, spec}, handle), do: fetch_tree_entry(obj, spec, handle)
-  defp call({:tree_entry_target, %GitTreeEntry{oid: oid, type: type}}, handle) do
-    case Git.object_lookup(handle, oid) do
-      {:ok, ^type, obj} ->
-        {:ok, resolve_object({obj, type, oid})}
-      {:error, reason} ->
-        {:error, reason}
-    end
+  defp call({:tree_entry_with_commit, obj, path}, handle) do
+    with {:ok, tree_entry} <- fetch_tree_entry(obj, {:path, path}, handle),
+         {:ok, commit} <- fetch_tree_entry_commit(obj, path, handle), do:
+      {:ok, tree_entry, commit}
   end
 
+  defp call({:tree_entry_target, %GitTreeEntry{} = tree_entry}, handle), do: fetch_target(tree_entry, :undefined, handle)
   defp call({:tree_entries, obj}, handle), do: fetch_tree_entries(obj, handle)
+  defp call({:tree_entries_with_commits, obj}, handle) do
+    with {:ok, tree_entries} <- fetch_tree_entries(obj, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(obj, handle), do:
+      zip_tree_entries_commits(tree_entries, commits, "", handle)
+  end
+
+  defp call({:tree_entries_with_commits, obj, path}, handle) do
+    with {:ok, tree_entries} <- fetch_tree_entries(obj, path, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(obj, path, handle), do:
+      zip_tree_entries_commits(tree_entries, commits, path, handle)
+  end
+
   defp call({:author, obj}, _handle), do: fetch_author(obj)
   defp call({:committer, obj}, _handle), do: fetch_committer(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
@@ -468,7 +498,7 @@ defmodule GitRekt.GitAgent do
   defp call({:blob_content, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
-  defp call({:peel, obj}, handle), do: fetch_target(obj, handle)
+  defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
 
   defp call_stream(op, handle) do
     case call(op, handle) do
@@ -549,7 +579,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp fetch_tree(%GitRef{name: name, prefix: prefix}, handle) do
-    case Git.reference_peel(handle, prefix <> name) do
+    case Git.reference_peel(handle, prefix <> name, :commit) do
       {:ok, obj_type, oid, obj} ->
         fetch_tree(resolve_object({obj, obj_type, oid}), handle)
       {:error, reason} ->
@@ -593,6 +623,17 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp fetch_tree_entry_commit(obj, path, handle) do
+    case walk_history(obj, handle, pathspec: path) do
+      {:ok, stream} ->
+        stream = Stream.take(stream, 1)
+        {:ok, List.first(Enum.to_list(stream))}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+
   defp fetch_tree_entries(%GitTree{tree: tree}, _handle) do
     case Git.tree_entries(tree) do
       {:ok, stream} ->
@@ -611,6 +652,29 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp fetch_tree_entries(%GitTree{} = tree, path, handle) do
+    with {:ok, tree_entry} <- fetch_tree_entry(tree, {:path, path}, handle),
+         {:ok, tree} <- fetch_target(tree_entry, :tree, handle), do:
+     fetch_tree_entries(tree, handle)
+  end
+
+  defp fetch_tree_entries(obj, path, handle) do
+    case fetch_tree(obj, handle) do
+      {:ok, tree} ->
+        fetch_tree_entries(tree, path, handle)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp fetch_tree_entries_commits(obj, handle) do
+    walk_history(obj, handle, [])
+  end
+
+  defp fetch_tree_entries_commits(obj, path, handle) do
+    walk_history(obj, handle, pathspec: path)
+  end
+
   defp fetch_diff(%GitTree{tree: tree1}, %GitTree{tree: tree2}, handle, opts) do
     case Git.diff_tree(handle, tree1, tree2, opts) do
       {:ok, diff} ->
@@ -626,8 +690,8 @@ defmodule GitRekt.GitAgent do
       fetch_diff(tree1, tree2, handle, opts)
   end
 
-  defp fetch_target(%GitRef{name: name, prefix: prefix}, handle) do
-    case Git.reference_peel(handle, prefix <> name) do
+  defp fetch_target(%GitRef{name: name, prefix: prefix}, target, handle) do
+    case Git.reference_peel(handle, prefix <> name, target) do
       {:ok, obj_type, oid, obj} ->
         {:ok, resolve_object({obj, obj_type, oid})}
       {:error, reason} ->
@@ -635,14 +699,39 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_target(%GitCommit{} = commit, _handle), do: {:ok, commit}
-  defp fetch_target(%GitTag{tag: tag}, _handle) do
+  defp fetch_target(%GitTag{} = tag, :tag, _handle), do: {:ok, tag}
+  defp fetch_target(%GitTag{tag: tag}, target, handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
-        {:ok, resolve_object({obj, obj_type, oid})}
+        if target == :undefined,
+          do: {:ok, resolve_object({obj, obj_type, oid})},
+        else: fetch_target(resolve_object({obj, obj_type, oid}), target, handle)
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp fetch_target(%GitCommit{} = commit, :commit, _handle), do: {:ok, commit}
+  defp fetch_target(%GitCommit{} = commit, target, handle) do
+    fetch_target(fetch_tree(commit, handle), target, handle)
+  end
+
+  defp fetch_target(%GitBlob{} = blob, :blob, _handle), do: {:ok, blob}
+  defp fetch_target(%GitTree{} = tree, :tree, _handle), do: {:ok, tree}
+
+  defp fetch_target(%GitTreeEntry{oid: oid, type: type}, target, handle) do
+    case Git.object_lookup(handle, oid) do
+      {:ok, ^type, obj} ->
+        if target == :undefined,
+          do: {:ok, resolve_object({obj, type, oid})},
+        else: fetch_target(resolve_object({obj, type, oid}), target, handle)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp fetch_target(obj, target, _handle) do
+    {:error, "cannot peel #{inspect obj} to #{target}"}
   end
 
   defp fetch_author(%GitCommit{commit: commit}) do
@@ -720,4 +809,21 @@ defmodule GitRekt.GitAgent do
 
   defp enumerate_stream(stream) when is_function(stream), do: %Stream{enum: Enum.to_list(stream)}
   defp enumerate_stream(%Stream{} = stream), do: Map.update!(stream, :enum, &Enum.to_list/1)
+
+  defp zip_tree_entries_commits(tree_entries, commits, path, handle) do
+    path_map = Map.new(tree_entries, &{Path.join(path, &1.name), &1})
+    {missing_entries, tree_entries_commits} = Enum.reduce_while(commits, {path_map, []}, &zip_tree_entries_commit(&1, &2, tree_entries, handle))
+    if Enum.empty?(missing_entries),
+      do: {:ok, tree_entries_commits},
+    else: {:ok, tree_entries_commits ++ Enum.map(missing_entries, fn {_path, tree_entry} -> {tree_entry, nil} end)}
+  end
+
+  defp zip_tree_entries_commit(_commit, {map, acc}, _tree_entries, _handle) when map == %{} do
+    {:halt, {%{}, acc}}
+  end
+
+  defp zip_tree_entries_commit(commit, {path_map, acc}, tree_entries, handle) do
+    entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
+    {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
+  end
 end

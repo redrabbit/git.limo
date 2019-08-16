@@ -13,7 +13,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
-  alias GitRekt.{GitCommit, GitTag, GitRef}
+  alias GitRekt.{GitCommit, GitTag, GitTree, GitTreeEntry, GitBlob, GitDiff, GitRef}
 
   import Phoenix.Controller, only: [action_name: 1]
 
@@ -106,7 +106,7 @@ defmodule GitGud.Web.CodebaseView do
       {:error, _reason} -> nil
     end
   end
-  @spec blob_content(Repo.t, GitAgent.git_blob) :: binary | nil
+  @spec blob_content(Repo.t, GitBlob.t) :: binary | nil
   def blob_content(repo, blob) do
     case GitAgent.blob_content(repo, blob) do
       {:ok, content} -> content
@@ -114,7 +114,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec blob_size(Repo.t, GitAgent.git_blob) :: non_neg_integer | nil
+  @spec blob_size(Repo.t, GitBlob.t) :: non_neg_integer | nil
   def blob_size(repo, blob) do
     case GitAgent.blob_size(repo, blob) do
       {:ok, size} -> size
@@ -122,7 +122,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit) :: User.t | map | nil
+  @spec commit_author(Repo.t, Commit.t | GitCommit.t) :: User.t | map | nil
   def commit_author(repo, commit) do
     if author = fetch_author(repo, commit) do
       if user = UserQuery.by_email(author.email),
@@ -131,7 +131,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, Commit.t | GitAgent.git_commit, :with_committer) :: {User.t | map | nil, User.t | map | nil}
+  @spec commit_author(Repo.t, Commit.t | GitCommit.t, :with_committer) :: {User.t | map | nil, User.t | map | nil}
   def commit_author(repo, commit, :with_committer) do
     author = fetch_author(repo, commit)
     author_user = UserQuery.by_email(author.email) || author
@@ -141,7 +141,7 @@ defmodule GitGud.Web.CodebaseView do
    else: {author_user, UserQuery.by_email(committer.email) || committer}
   end
 
-  @spec commit_committer(Repo.t, Commit.t | GitAgent.git_commit) :: User.t | map | nil
+  @spec commit_committer(Repo.t, Commit.t | GitCommit.t) :: User.t | map | nil
   def commit_committer(repo, commit) do
     if committer = fetch_committer(repo, commit) do
       if user = UserQuery.by_email(committer.email),
@@ -150,7 +150,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_timestamp(Repo.t, Commit.t | GitAgent.git_commit) :: DateTime.t | nil
+  @spec commit_timestamp(Repo.t, Commit.t | GitCommit.t) :: DateTime.t | nil
   def commit_timestamp(_repo, %Commit{} = commit), do: commit.committed_at
   def commit_timestamp(repo, commit) do
     case GitAgent.commit_timestamp(repo, commit) do
@@ -159,7 +159,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
+  @spec commit_message(Repo.t, Commit.t | GitCommit.t) :: binary | nil
   def commit_message(_repo, %Commit{} = commit), do: commit.message
   def commit_message(repo, commit) do
     case GitAgent.commit_message(repo, commit) do
@@ -168,21 +168,21 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message_title(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
+  @spec commit_message_title(Repo.t, Commit.t | GitCommit.t) :: binary | nil
   def commit_message_title(repo, commit) do
     if message = commit_message(repo, commit) do
       List.first(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 
-  @spec commit_message_body(Repo.t, Commit.t | GitAgent.git_commit) :: binary | nil
+  @spec commit_message_body(Repo.t, Commit.t | GitCommit.t) :: binary | nil
   def commit_message_body(repo, commit) do
     if message = commit_message(repo, commit) do
       List.last(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 
-  @spec commit_message_format(Repo.t, Commit.t | GitAgent.git_commit, keyword) :: {binary, binary | nil} | nil
+  @spec commit_message_format(Repo.t, Commit.t | GitCommit.t, keyword) :: {binary, binary | nil} | nil
   def commit_message_format(repo, commit, opts \\ []) do
     if message = commit_message(repo, commit) do
       parts = String.split(message, "\n", trim: true, parts: 2)
@@ -192,12 +192,12 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_review(Repo.t, Commit.t | GitAgent.git_commit) :: CommitReview.t | nil
+  @spec commit_review(Repo.t, Commit.t | GitCommit.t) :: CommitReview.t | nil
   def commit_review(repo, commit) do
     ReviewQuery.commit_review(repo, commit)
   end
 
-  @spec commit_gpg_key(Repo.t, Commit.t | GitAgent.git_commit) :: GPGKey.t | nil
+  @spec commit_gpg_key(Repo.t, Commit.t | GitCommit.t) :: GPGKey.t | nil
   def commit_gpg_key(repo, commit) do
     CommitQuery.gpg_signature(repo, commit)
   end
@@ -205,7 +205,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec revision_oid(GitAgent.git_object) :: binary
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
-  @spec revision_name(Repo.git_object) :: binary
+  @spec revision_name(GitAgent.git_object) :: binary
   def revision_name(%GitCommit{oid: oid} = _object = _object), do: oid_fmt_short(oid)
   def revision_name(%GitRef{name: name} = _object), do: name
   def revision_name(%GitTag{name: name} = _object), do: name
@@ -215,18 +215,9 @@ defmodule GitGud.Web.CodebaseView do
   def revision_type(%GitTag{} = _object), do: :tag
   def revision_type(%GitRef{type: type} = _object), do: type
 
+  @spec revision_href(Plug.Conn.t, GitAgent.git_object | atom) :: binary
   def revision_href(conn, revision_type) when is_atom(revision_type) do
     Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
-  end
-
-  defp revision_action_href(conn) do
-    %{repo: repo, tree_path: tree_path} = Map.take(conn.assigns, [:repo, :tree_path])
-    case action_name(conn) do
-      :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
-      :tree -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
-      :blob -> Routes.codebase_path(conn, :blob, repo.owner, repo, "__rev__", tree_path)
-      :history -> Routes.codebase_path(conn, :history, repo.owner, repo, "__rev__", tree_path)
-    end
   end
 
   def revision_href(conn, revision) do
@@ -241,7 +232,18 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_entries(Repo.t, GitAgent.git_tree) :: [GitAgent.git_tree_entry]
+  @spec revision_action_href(Plug.Conn.t) :: binary
+  def revision_action_href(conn) do
+    %{repo: repo, tree_path: tree_path} = Map.take(conn.assigns, [:repo, :tree_path])
+    case action_name(conn) do
+      :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
+      :tree -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
+      :blob -> Routes.codebase_path(conn, :blob, repo.owner, repo, "__rev__", tree_path)
+      :history -> Routes.codebase_path(conn, :history, repo.owner, repo, "__rev__", tree_path)
+    end
+  end
+
+  @spec tree_entries(Repo.t, GitTree.t) :: [GitTree.t_entry]
   def tree_entries(repo, tree) do
     case GitAgent.tree_entries(repo, tree) do
       {:ok, entries} -> entries
@@ -249,7 +251,22 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_readme(Repo.t, GitAgent.git_tree) :: binary | nil
+  @spec tree_entries_with_commits(Repo.t, GitTree.t, Path.t) :: [{GitTreeEntry.t, GitCommit.t}]
+  def tree_entries_with_commits(repo, revision, []) do
+    case GitAgent.tree_entries_with_commits(repo, revision) do
+      {:ok, entries} -> entries
+      {:error, reason} -> raise reason
+    end
+  end
+
+  def tree_entries_with_commits(repo, revision, path) do
+    case GitAgent.tree_entries_with_commits(repo, revision, Path.join(path)) do
+      {:ok, entries} -> entries
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @spec tree_readme(Repo.t, GitTree.t) :: binary | nil
   def tree_readme(repo, tree) do
     with {:ok, entry} <- GitAgent.tree_entry_by_path(repo, tree, "README.md"),
          {:ok, blob} <- GitAgent.tree_entry_target(repo, entry),
@@ -261,7 +278,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_stats(Repo.t, GitAgent.git_diff) :: map | nil
+  @spec diff_stats(Repo.t, GitDiff.t) :: map | nil
   def diff_stats(repo, diff) do
     case GitAgent.diff_stats(repo, diff) do
       {:ok, stats} -> stats
@@ -269,7 +286,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_deltas(Repo.t, GitAgent.git_diff) :: [map] | nil
+  @spec diff_deltas(Repo.t, GitDiff.t) :: [map] | nil
   def diff_deltas(repo, diff) do
     case GitAgent.diff_deltas(repo, diff) do
       {:ok, deltas} -> deltas
@@ -277,7 +294,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_deltas_with_reviews(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
+  @spec diff_deltas_with_reviews(Repo.t, GitCommit.t, GitDiff.t) :: [map] | nil
   def diff_deltas_with_reviews(repo, commit, diff) do
     commit_reviews = ReviewQuery.commit_line_reviews(repo, commit)
     Enum.map(diff_deltas(repo, diff), fn delta ->
@@ -290,7 +307,7 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec diff_deltas_with_comments(Repo.t, GitAgent.git_commit, GitAgent.git_diff) :: [map] | nil
+  @spec diff_deltas_with_comments(Repo.t, GitCommit.t, GitDiff.t) :: [map] | nil
   def diff_deltas_with_comments(repo, commit, diff) do
     commit_reviews = ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author])
     Enum.map(diff_deltas(repo, diff), fn delta ->
@@ -308,19 +325,19 @@ defmodule GitGud.Web.CodebaseView do
     highlight_language(Path.extname(path))
   end
 
-  @spec batch_commits(Repo.t, Enumerable.t) :: [{GitAgent.git_commit, User.t | map, boolean, non_neg_integer}]
+  @spec batch_commits(Repo.t, Enumerable.t) :: [{GitCommit.t, User.t | map, boolean, non_neg_integer}]
   def batch_commits(repo, commits) do
     batch_commits_comments_count(repo, commits)
   end
 
-  @spec batch_branches(Repo.t, Enumerable.t) :: [{GitAgent.git_reference, {GitAgent.git_commit, User.t | map}}]
+  @spec batch_branches(Repo.t, Enumerable.t) :: [{GitRef.t, {GitCommit.t, User.t | map}}]
   def batch_branches(repo, references_commits) do
     {references, commits} = Enum.unzip(references_commits)
     commits_authors = batch_commits_authors(repo, commits)
     Enum.zip(references, commits_authors)
   end
 
-  @spec batch_tags(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, {GitAgent.git_commit, User.t | map}}]
+  @spec batch_tags(Repo.t, Enumerable.t) :: [{GitRef.t | GitTag.t, {GitCommit.t, User.t | map}}]
   def batch_tags(repo, tags_commits) do
     {tags, commits} = Enum.unzip(tags_commits)
     authors = Enum.map(tags_commits, &fetch_author(repo, &1))
@@ -328,10 +345,15 @@ defmodule GitGud.Web.CodebaseView do
     Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
   end
 
-  @spec sort_by_timestamp(Repo.t, Enumerable.t) :: [{GitAgent.git_reference | GitAgent.git_tag, GitAgent.git_commit}]
+  @spec sort_by_timestamp(Repo.t, Enumerable.t) :: [{GitRef.t | GitTag.t, GitCommit.t}]
   def sort_by_timestamp(repo, references_or_tags) do
     commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
     Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
+  end
+
+  @spec sort_tree_entries_by_name(Enumerable.t) :: [{GitTreeEntry.t, GitCommit.t}]
+  def sort_tree_entries_by_name(tree_entries_commits) do
+    Enum.sort_by(tree_entries_commits, fn {tree_entry, _commit} -> tree_entry.name end)
   end
 
   @spec chunk_by_timestamp(Repo.t, Enumerable.t) :: Enumerable.t
@@ -400,8 +422,8 @@ defmodule GitGud.Web.CodebaseView do
     Enum.map(batch_commits_gpg_sign(repo, commits), fn {commit, author, committer, gpg_key} -> {commit, author, committer, gpg_key, aggregator[commit.oid] || 0} end)
   end
 
-  defp fetch_commit(repo, reference) do
-    case GitAgent.peel(repo, reference) do
+  defp fetch_commit(repo, obj) do
+    case GitAgent.peel(repo, obj, :commit) do
       {:ok, commit} -> commit
       {:error, _reason} -> nil
     end
@@ -409,8 +431,8 @@ defmodule GitGud.Web.CodebaseView do
 
   defp fetch_author(repo, %GitRef{} = reference) do
     case GitAgent.peel(repo, reference) do
-      {:ok, commit} ->
-        fetch_author(repo, commit)
+      {:ok, object} ->
+        fetch_author(repo, object)
       {:error, _reason} -> nil
     end
   end
@@ -442,7 +464,15 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp fetch_committer(repo, %GitRef{} = reference) do
-    case GitAgent.peel(repo, reference) do
+    case GitAgent.peel(repo, reference, :commit) do
+      {:ok, commit} ->
+        fetch_committer(repo, commit)
+      {:error, _reason} -> nil
+    end
+  end
+
+  defp fetch_committer(repo, %GitTag{} = tag) do
+    case GitAgent.peel(repo, tag, :commit) do
       {:ok, commit} ->
         fetch_committer(repo, commit)
       {:error, _reason} -> nil

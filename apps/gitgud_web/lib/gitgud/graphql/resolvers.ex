@@ -271,7 +271,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the type for a given Git `object`.
   """
-  @spec git_object_type(Repo.git_object, Absinthe.Resolution.t) :: atom
+  @spec git_object_type(GitAgent.git_object, Absinthe.Resolution.t) :: atom
   def git_object_type(%GitBlob{} = _object, _info), do: :git_blob
   def git_object_type(%GitCommit{} = _object, _info), do: :git_commit
   def git_object_type(%GitTag{} = _object, _info), do: :git_annotated_tag
@@ -286,7 +286,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the Git target for the given Git `reference` object.
   """
-  @spec git_reference_target(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
+  @spec git_reference_target(GitReference.t, %{}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
   def git_reference_target(reference, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     GitAgent.peel(ctx.repo, reference)
   end
@@ -411,7 +411,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the Git target for the given Git `tag` object.
   """
-  @spec git_tag_target(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.git_object} | {:error, term}
+  @spec git_tag_target(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
   def git_tag_target(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     GitAgent.peel(ctx.repo, tag)
   end

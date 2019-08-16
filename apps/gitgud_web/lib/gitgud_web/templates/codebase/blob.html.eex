@@ -17,9 +17,33 @@
 </nav>
 
 <div class="card blob">
-  <header class="card-header">
-    <p class="card-header-title"><%= Path.join(@tree_path) %></p>
-  </header>
+  <%= unless is_nil(@commit) do %>
+    <header class="card-header blob-commit">
+      <div class="card-header-title">
+        <div>
+          <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
+            <%= if Map.has_key?(committer, :id) do %>
+              <%= if Map.has_key?(author, :id) && committer.id != author.id do %>
+                <div class="avatar-stack">
+                  <a href="<%= Routes.user_path(@conn, :show, committer) %>"><%= gravatar(committer, size: 20) %></a>
+                  <a href="<%= Routes.user_path(@conn, :show, author) %>"><%= gravatar(author, size: 20) %></a>
+                </div>
+                <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer.login %></a>
+              <% else %>
+                <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="has-text-black"><%= committer %></a>
+              <% end %>
+            <% else %>
+              <span class="has-text-black"><%= committer.name %></span>
+            <% end %>
+          <% end %>
+          <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit)%>" class="has-text-grey-light"><%= commit_message_title(@repo, @commit) %></a>
+        </div>
+      </div>
+      <div class="card-header-icon">
+        <span class="has-text-grey-light"><%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %></span>
+      </div>
+    </header>
+  <% end %>
   <div class="card-content">
     <%= render "_blob_table.html", assigns %>
   </div>
