@@ -78,9 +78,26 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec breadcrump_action(atom) :: atom
-  def breadcrump_action(:blob), do: :tree
-  def breadcrump_action(action), do: action
+  @spec breadcrumb_action(atom) :: atom
+  def breadcrumb_action(:blob), do: :tree
+  def breadcrumb_action(action), do: action
+
+  @spec breadcrumb_tree?(Plug.Conn.t) :: boolean
+  def breadcrumb_tree?(conn) do
+    action = Phoenix.Controller.action_name(conn)
+    cond do
+      action == :tree -> true
+      action == :blob -> false
+      true ->
+        %{repo: repo, revision: revision, tree_path: tree_path} = conn.assigns
+        with {:ok, tree} <- GitAgent.tree(repo, revision),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, tree, Path.join(tree_path)) do
+          tree_entry.type == :tree
+        else
+          {:error, reason} -> raise reason
+        end
+   end
+  end
 
   @spec repo_head(Repo.t) :: GitRef.t | nil
   def repo_head(repo) do

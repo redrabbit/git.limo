@@ -2,12 +2,12 @@
   <%= with {:codebase, action} <- current_route(@conn) do %>
     <nav class="breadcrumb" aria-label="breadcrumbs">
       <ul>
-        <li><a href="<%= Routes.codebase_path(@conn, breadcrump_action(action), @repo.owner, @repo, @revision, []) %>"><%= @repo.name %></a></li>
+        <li><a href="<%= Routes.codebase_path(@conn, breadcrumb_action(action), @repo.owner, @repo, @revision, []) %>"><%= @repo.name %></a></li>
         <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
-          <li><a href="<%= Routes.codebase_path(@conn, breadcrump_action(action), @repo.owner, @repo, @revision, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
+          <li><a href="<%= Routes.codebase_path(@conn, breadcrumb_action(action), @repo.owner, @repo, @revision, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
         <% end %>
         <li class="is-active"><a href="#"><%= List.last(@tree_path) %></a></li>
-        <%= if action == :tree do %><li></li><% end %>
+        <%= if breadcrumb_tree?(@conn) do %><li></li><% end %>
       </ul>
     </nav>
   <% end %>
