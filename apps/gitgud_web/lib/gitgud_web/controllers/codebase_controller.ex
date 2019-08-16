@@ -9,6 +9,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.CommitQuery
 
   alias GitRekt.GitAgent
+  alias GitRekt.{GitBlob, GitTree}
 
   import GitRekt.Git, only: [oid_parse: 1]
 
@@ -123,8 +124,14 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, object, reference} <- GitAgent.revision(repo, revision),
            {:ok, tree} <- GitAgent.tree(repo, object),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, tree, Path.join(tree_path)),
-           {:ok, tree} <- GitAgent.tree_entry_target(repo, tree_entry), do:
-        render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
+           {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
+        case tree_entry_target do
+          %GitBlob{} ->
+            redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
+          %GitTree{} = tree ->
+            render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
+        end
+      end
     end || {:error, :not_found}
   end
 
