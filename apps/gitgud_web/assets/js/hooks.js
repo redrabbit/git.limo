@@ -20,6 +20,29 @@ export default () => {
     })
   })
 
+  document.querySelectorAll("nav.level .breadcrumb").forEach(breadcrumb => {
+    const level = breadcrumb.closest(".level")
+    const levelRight = level.querySelector(".level-right")
+    let fromIndex = 2
+    let first = true
+    let truncate = levelRight ? levelRight.offsetLeft + levelRight.offsetWidth - level.offsetWidth
+                              : breadcrumb.offsetLeft + breadcrumb.offsetWidth - level.offsetWidth
+    while(truncate > 0) {
+      const items = breadcrumb.querySelectorAll("ul li")
+      const item = items[fromIndex]
+      if(first) {
+        const oldWidth = item.offsetWidth
+        item.querySelector("a").innerHTML = "&hellip;"
+        first = false
+        truncate -= oldWidth - item.offsetWidth
+        fromIndex += 1
+      } else {
+        truncate -= item.offsetWidth
+        item.parentNode.removeChild(item)
+      }
+    }
+  })
+
   document.querySelectorAll("table.blob-table").forEach(table => {
     const lang = table.dataset.lang
     const langDetect = hljs.getLanguage(lang)
