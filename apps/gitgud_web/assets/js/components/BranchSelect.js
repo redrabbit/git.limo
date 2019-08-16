@@ -45,7 +45,6 @@ class BranchSelect extends React.Component {
                       oid
                       name
                       type
-                      url
                     }
                   }
                 }
@@ -60,7 +59,7 @@ class BranchSelect extends React.Component {
           if(error) {
             return <div>{error.message}</div>
           } else if(props) {
-            let edge = props.node.refs.edges.find(edge => edge.node.oid == this.props.oid)
+            const edge = props.node.refs.edges.find(edge => edge.node.oid == this.props.oid)
             return (
               <nav className="panel">
                 <div className="panel-heading">
@@ -80,7 +79,7 @@ class BranchSelect extends React.Component {
                 ).filter(edge =>
                   edge.node.name.includes(this.state.filter)
                 ).map(edge =>
-                  <a key={edge.node.oid} href={edge.node.url} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
+                  <a key={edge.node.oid} href={this.props.actionHref.replace("__rev__", edge.node.name)} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                 )}
                 <div className="panel-block">
                   {(() => {

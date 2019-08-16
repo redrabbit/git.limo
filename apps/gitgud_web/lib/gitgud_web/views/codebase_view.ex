@@ -15,6 +15,8 @@ defmodule GitGud.Web.CodebaseView do
 
   alias GitRekt.{GitCommit, GitTag, GitRef}
 
+  import Phoenix.Controller, only: [action_name: 1]
+
   import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Tag
 
@@ -29,7 +31,7 @@ defmodule GitGud.Web.CodebaseView do
     revision_name = revision_name(revision)
     revision_type = revision_type(revision)
     revision_href = revision_href(conn, revision)
-    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, branch_href: revision_href(conn, :branches), tag_href: revision_href(conn, :tags)], [class: "branch-select"], do: [
+    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, action_href: revision_action_href(conn), branch_href: revision_href(conn, :branches), tag_href: revision_href(conn, :tags)], [class: "branch-select"], do: [
       content_tag(:a, [class: "button", href: revision_href], do: [
         content_tag(:span, [], do: [
           "#{String.capitalize(to_string(revision_type))}: ",
@@ -198,6 +200,16 @@ defmodule GitGud.Web.CodebaseView do
 
   def revision_href(conn, revision_type) when is_atom(revision_type) do
     Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
+  end
+
+  defp revision_action_href(conn) do
+    %{repo: repo, tree_path: tree_path} = Map.take(conn.assigns, [:repo, :tree_path])
+    case action_name(conn) do
+      :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
+      :tree -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
+      :blob -> Routes.codebase_path(conn, :blob, repo.owner, repo, "__rev__", tree_path)
+      :history -> Routes.codebase_path(conn, :history, repo.owner, repo, "__rev__", tree_path)
+    end
   end
 
   def revision_href(conn, revision) do
