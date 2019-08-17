@@ -11,7 +11,7 @@
           <td><a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
           <td><a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="has-text-grey-light"><%= commit_message_title(@repo, commit) %></a></td>
           <td>
-            <div class="is-pulled-right">
+            <div class="has-text-right">
               <span class="has-text-grey-light"><%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %></a>
             </div>
           </td>

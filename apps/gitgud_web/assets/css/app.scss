@@ -363,6 +363,17 @@ table.tree-table {
       background-color: $light;
     }
   }
+
+  tbody {
+    tr {
+      td:first-child {
+        white-space:nowrap;
+      }
+      td:last-child {
+        white-space:nowrap;
+      }
+    }
+  }
 }
 
 table.blob-table {
