@@ -22,19 +22,23 @@ export default () => {
     const level = breadcrumb.closest(".level")
     const levelRight = level.querySelector(".level-right")
     let fromIndex = 2
-    let first = true
+    let ellipsis
     let truncate = levelRight ? levelRight.offsetLeft + levelRight.offsetWidth - level.offsetWidth
                               : breadcrumb.offsetLeft + breadcrumb.offsetWidth - level.offsetWidth
     while(truncate > 0) {
       const items = breadcrumb.querySelectorAll("ul li")
       const item = items[fromIndex]
-      if(first) {
+      if(!ellipsis) {
         const oldWidth = item.offsetWidth
-        item.querySelector("a").innerHTML = "&hellip;"
-        first = false
+        ellipsis = item.querySelector("a")
+        ellipsis.dataset.tooltip = ellipsis.text
+        ellipsis.innerHTML = "&hellip;"
+        ellipsis.classList.add("tooltip")
         truncate -= oldWidth - item.offsetWidth
         fromIndex += 1
       } else {
+        ellipsis.href = item.querySelector("a").href
+        ellipsis.dataset.tooltip = `${ellipsis.dataset.tooltip}/${item.querySelector("a").text}`
         truncate -= item.offsetWidth
         item.parentNode.removeChild(item)
       }
