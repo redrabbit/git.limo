@@ -131,10 +131,20 @@ defmodule GitRekt.WireProtocol do
   end
 
   defp exec_next(service, lines, acc \\ []) do
-    case apply(service.__struct__, :next, [service, lines]) do
-      {service, [], out} -> {service, acc ++ out}
-      {service, lines, out} -> exec_next(service, lines, acc ++ out)
-    end
+    old_service = service
+    event_time = System.monotonic_time(1_000_000)
+    result =
+      case apply(service.__struct__, :next, [service, lines]) do
+        {service, [], out} ->
+          if old_service.state not in [:buffer] do
+            latency = System.monotonic_time(1_000_000) - event_time
+            :telemetry.execute([:gitrekt, :wire_protocol, service_command(old_service)], %{latency: latency}, %{service: old_service})
+          end
+          {service, acc ++ out}
+        {service, lines, out} ->
+          exec_next(service, lines, acc ++ out)
+      end
+    result
   end
 
   defp exec_all(service, lines, acc \\ []) do
@@ -151,6 +161,9 @@ defmodule GitRekt.WireProtocol do
 
   defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
   defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
+
+  defp service_command(%{__struct__: GitRekt.WireProtocol.UploadPack}), do: :upload_pack
+  defp service_command(%{__struct__: GitRekt.WireProtocol.ReceivePack}), do: :receive_pack
 
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
