@@ -374,10 +374,24 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op) when is_reference(agent), do: call(op, agent)
-  defp exec(agent, op) when is_pid(agent), do: GenServer.call(agent, op)
+  defp exec(agent, op) when is_reference(agent), do: telemery_exec(op, fn -> call(op, agent) end)
+  defp exec(agent, op) when is_pid(agent), do: telemery_exec(op, fn -> GenServer.call(agent, op) end)
+  defp exec(agent, op), do: exec(GitRepo.get_agent(agent), op)
 
-  defp exec(agent, op), do: call(op, GitRepo.get_agent(agent))
+  defp telemery_exec(op, callback) do
+    {name, args} =
+      if is_atom(op) do
+        {op, []}
+      else
+        [name|args] = Tuple.to_list(op)
+        {name, args}
+      end
+    event_time = System.monotonic_time(1_000_000)
+    result = callback.()
+    latency = System.monotonic_time(1_000_000) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :call], %{latency: latency}, %{op: name, args: args})
+    result
+  end
 
   defp call(:empty?, handle) do
     {:ok, Git.repository_empty?(handle)}
@@ -820,17 +834,17 @@ defmodule GitRekt.GitAgent do
 
   defp zip_tree_entries_commits(tree_entries, commits, path, handle) do
     path_map = Map.new(tree_entries, &{Path.join(path, &1.name), &1})
-    {missing_entries, tree_entries_commits} = Enum.reduce_while(commits, {path_map, []}, &zip_tree_entries_commit(&1, &2, tree_entries, handle))
+    {missing_entries, tree_entries_commits} = Enum.reduce_while(commits, {path_map, []}, &zip_tree_entries_commit(&1, &2, handle))
     if Enum.empty?(missing_entries),
       do: {:ok, tree_entries_commits},
     else: {:ok, tree_entries_commits ++ Enum.map(missing_entries, fn {_path, tree_entry} -> {tree_entry, nil} end)}
   end
 
-  defp zip_tree_entries_commit(_commit, {map, acc}, _tree_entries, _handle) when map == %{} do
+  defp zip_tree_entries_commit(_commit, {map, acc}, _handle) when map == %{} do
     {:halt, {%{}, acc}}
   end
 
-  defp zip_tree_entries_commit(commit, {path_map, acc}, tree_entries, handle) do
+  defp zip_tree_entries_commit(commit, {path_map, acc}, handle) do
     entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end

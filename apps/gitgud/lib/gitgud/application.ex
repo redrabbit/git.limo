@@ -5,6 +5,8 @@ defmodule GitGud.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    :telemetry.attach("git-agent", [:gitrekt, :git_agent, :call], &GitGud.Telemetry.handle_event/4, %{})
+
     Supervisor.start_link([
       {GitGud.DB, []},
       {GitGud.SSHServer, []},
