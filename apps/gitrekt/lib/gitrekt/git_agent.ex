@@ -265,6 +265,12 @@ defmodule GitRekt.GitAgent do
   def tree_entries(agent, obj), do: exec(agent, {:tree_entries, obj})
 
   @doc """
+  Returns the Git tree entries for the given `obj` and `path`.
+  """
+  @spec tree_entries(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
+  def tree_entries(agent, obj, path), do: exec(agent, {:tree_entries, obj, path})
+
+  @doc """
   Returns the Git tree entries and their last commit for the given `obj`.
   """
   @spec tree_entries_with_commits(agent, GitCommit.t | GitTag.t | GitRef.t) :: {:ok, [{GitTreeEntry.t, GitCommit.t}]} | {:error, term}
@@ -461,6 +467,7 @@ defmodule GitRekt.GitAgent do
 
   defp call({:tree_entry_target, %GitTreeEntry{} = tree_entry}, handle), do: fetch_target(tree_entry, :undefined, handle)
   defp call({:tree_entries, obj}, handle), do: fetch_tree_entries(obj, handle)
+  defp call({:tree_entries, obj, path}, handle), do: fetch_tree_entries(obj, path, handle)
   defp call({:tree_entries_with_commits, obj}, handle) do
     with {:ok, tree_entries} <- fetch_tree_entries(obj, handle),
          {:ok, commits} <- fetch_tree_entries_commits(obj, handle), do:
@@ -773,19 +780,20 @@ defmodule GitRekt.GitAgent do
          {:ok, match?} <- Git.pathspec_match_tree(tree, pathspec) do
       match? && pathspec_match_commit_tree(commit, tree, pathspec, handle)
     else
-      {:error, _reason} -> false
+      {:error, _reason} ->
+        false
     end
   end
 
   defp pathspec_match_commit_tree(commit, tree, pathspec, handle) do
     with {:ok, stream} <- Git.commit_parents(commit),
-         {_oid, parent} <- Enum.at(stream, 0, :initial_commit),
+         {_oid, parent} <- Enum.at(stream, 0, {:error, :"commit has no parents"}),
          {:ok, _oid, parent_tree} <- Git.commit_tree(parent),
          {:ok, delta_count} <- pathspec_match_commit_diff(parent_tree, tree, pathspec, handle) do
       delta_count > 0
     else
-      :initial_commit -> false
-      {:error, _reason} -> false
+      {:error, _reason} ->
+        false
     end
   end
 
