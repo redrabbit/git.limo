@@ -10,7 +10,6 @@ defmodule GitGud.ReviewQuery do
 
   alias GitRekt.Git
   alias GitRekt.GitCommit
-  alias GitRekt.GitAgent
 
   alias GitGud.Repo
   alias GitGud.CommitLineReview
