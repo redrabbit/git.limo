@@ -47,11 +47,11 @@ defmodule GitGud.Commit do
     committer = extract_commit_committer(commit)
     %{
       parents: extract_commit_parents(commit),
-      message: commit["message"],
-      author_name: author["name"],
-      author_email: author["email"],
-      committer_name: committer["name"],
-      committer_email: committer["email"],
+      message: strip_utf8(commit["message"]),
+      author_name: strip_utf8(author["name"]),
+      author_email: strip_utf8(author["email"]),
+      committer_name: strip_utf8(committer["name"]),
+      committer_email: strip_utf8(committer["email"]),
       gpg_key_id: extract_commit_gpg_key_id(commit),
       committed_at: author["time"],
     }
@@ -106,5 +106,17 @@ defmodule GitGud.Commit do
       |> Map.fetch!(:sub_pack)
       |> Keyword.fetch!(:issuer)
     end
+  end
+
+  defp strip_utf8(str) do
+    strip_utf8_helper(str, [])
+  end
+
+  defp strip_utf8_helper(<<x :: utf8>> <> rest, acc), do: strip_utf8_helper(rest, [x|acc])
+  defp strip_utf8_helper(<<_x>> <> rest, acc), do: strip_utf8_helper(rest, acc)
+  defp strip_utf8_helper("", acc) do
+    acc
+    |> Enum.reverse()
+    |> List.to_string()
   end
 end
