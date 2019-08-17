@@ -7,6 +7,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const RelayCompilerWebpackPlugin = require('relay-compiler-webpack-plugin');
 
 module.exports = (env, options) => ({
+  stats: 'minimal',
   optimization: {
     minimizer: [
       new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: false }),
@@ -58,13 +59,5 @@ module.exports = (env, options) => ({
       schema: path.resolve(__dirname, '../priv/graphql/schema.json'),
       src: path.resolve(__dirname, './js'),
     })
-  ],
-  stats: {
-    assets: false,
-    builtAt: false,
-    children: false,
-    hash: false,
-    timings: false,
-    version: false
-  }
+  ]
 });
