@@ -517,7 +517,7 @@ defmodule GitRekt.GitAgent do
 
   defp call({:commit_gpg_signature, %GitCommit{commit: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
   defp call({:blob_content, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
-  defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
+  defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
 
