@@ -27,7 +27,7 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_reference
   connection node_type: :git_tag
   connection node_type: :git_tree_entry
-  connection node_type: :git_tree_entry_commit
+  connection node_type: :git_tree_entry_with_last_commit
   connection node_type: :search_result
 
   @desc "Represents an actor in a Git commit (ie. an author or committer)."
@@ -206,10 +206,16 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this reference."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
-    @desc "The tree entries and their last commit."
-    connection field :tree_entries_commits, node_type: :git_tree_entry_commit do
+    @desc "A tree entry and it's last commit."
+    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+      arg :path, :string, description: "The path of the tree entry."
+      resolve &Resolvers.git_tree_entry_with_last_commit/2
+    end
+
+    @desc "A list of tree entries and their last commit."
+    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
       arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_commits/2
+      resolve &Resolvers.git_tree_entries_with_last_commit/2
     end
 
     @desc "The HTTP URL for this reference."
@@ -247,10 +253,17 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
+
+    @desc "A tree entry and it's last commit."
+    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+      arg :path, :string, description: "The path of the tree entry."
+      resolve &Resolvers.git_tree_entry_with_last_commit/2
+    end
+
     @desc "The tree entries and their last commit."
-    connection field :tree_entries_commits, node_type: :git_tree_entry_commit do
+    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
       arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_commits/2
+      resolve &Resolvers.git_tree_entries_with_last_commit/2
     end
 
     @desc "A single commit line review."
@@ -336,10 +349,16 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this tag."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
+    @desc "A tree entry and it's last commit."
+    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+      arg :path, :string, description: "The path of the tree entry."
+      resolve &Resolvers.git_tree_entry_with_last_commit/2
+    end
+
     @desc "The tree entries and their last commit."
-    connection field :tree_entries_commits, node_type: :git_tree_entry_commit do
+    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
       arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_commits/2
+      resolve &Resolvers.git_tree_entries_with_last_commit/2
     end
   end
 
@@ -371,7 +390,7 @@ defmodule GitGud.GraphQL.Types do
     field :target, non_null(:git_object), resolve: &Resolvers.git_tree_entry_target/3
   end
 
-  object :git_tree_entry_commit do
+  object :git_tree_entry_with_last_commit do
     field :tree_entry, non_null(:git_tree_entry)
     field :commit, non_null(:git_commit)
   end
