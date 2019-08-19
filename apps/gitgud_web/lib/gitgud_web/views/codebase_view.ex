@@ -257,7 +257,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_entries(Repo.t, GitTree.t) :: [GitTree.t_entry]
+  @spec tree_entries(Repo.t, GitTree.t) :: [GitTreeEntry.t]
   def tree_entries(repo, tree) do
     case GitAgent.tree_entries(repo, tree) do
       {:ok, entries} -> entries
@@ -265,15 +265,30 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_entries_with_commits(Repo.t, GitTree.t, Path.t) :: [{GitTreeEntry.t, GitCommit.t}]
-  def tree_entries_with_commits(repo, revision, []) do
+  @spec tree_entries(Repo.t, GitAgent.git_revision, Path.t) :: [GitTreeEntry.t]
+  def tree_entries(repo, revision, [] = _path) do
+    case GitAgent.tree_entries(repo, revision) do
+      {:ok, entries} -> entries
+      {:error, _reason} -> []
+    end
+  end
+
+  def tree_entries(repo, revision, path) do
+    case GitAgent.tree_entries_by_path(repo, revision, Path.join(path)) do
+      {:ok, entries} -> entries
+      {:error, _reason} -> []
+    end
+  end
+
+  @spec tree_entries_with_commit(Repo.t, GitTree.t, Path.t) :: [{GitTreeEntry.t, GitCommit.t}]
+  def tree_entries_with_commit(repo, revision, []) do
     case GitAgent.tree_entries_by_path(repo, revision, :root, with_commits: true) do
       {:ok, entries} -> entries
       {:error, reason} -> raise reason
     end
   end
 
-  def tree_entries_with_commits(repo, revision, path) do
+  def tree_entries_with_commit(repo, revision, path) do
     case GitAgent.tree_entries_by_path(repo, revision, Path.join(path), with_commits: true) do
       {:ok, entries} -> entries
       {:error, reason} -> raise reason

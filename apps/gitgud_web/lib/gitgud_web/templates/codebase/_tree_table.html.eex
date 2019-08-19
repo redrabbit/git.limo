@@ -5,21 +5,11 @@
         <th colspan="3"><a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, Enum.drop(@tree_path, -1)) %>">..</a></th>
       </tr>
     <% end %>
-    <%= for {entry, commit} <- sort_tree_entries_by_name(tree_entries_with_commits(@repo, @revision, @tree_path)) do %>
+    <%= for entry <- tree_entries(@repo, @revision, @tree_path) do %>
       <tr>
-        <%= unless is_nil(commit) do %>
-          <td><a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a></td>
-          <td><a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="has-text-grey-light"><%= commit_message_title(@repo, commit) %></a></td>
-          <td>
-            <div class="has-text-right">
-              <span class="has-text-grey-light"><%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %></a>
-            </div>
-          </td>
-        <% else %>
-          <td colspan="3">
-            <a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a>
-          </td>
-        <% end %>
+        <td colspan="3">
+          <a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a>
+        </td>
       </tr>
     <% end %>
   <tbody>
