@@ -152,7 +152,8 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- GitAgent.attach(repo),
            {:ok, object, reference} <- GitAgent.revision(repo, revision),
-           {:ok, tree_entry, commit} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path), with_commit: true),
+           {:ok, commit} <- GitAgent.peel(repo, object, :commit),
+           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
            {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
         case tree_entry_target do
           %GitTree{} ->
