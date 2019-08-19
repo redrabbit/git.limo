@@ -6,10 +6,12 @@ import {camelCase, upperFirst} from "lodash"
 import hljs from "highlight.js"
 import "highlight.js/styles/github-gist.css"
 
+import moment from "moment"
+
 import LiveSocket from "phoenix_live_view"
 
 import * as factory from "./components"
-import {CommitLineReview} from "./components"
+import {CommitLineReview, TreeTable} from "./components"
 
 export default () => {
   document.querySelectorAll("article.message").forEach(flash => {
@@ -45,8 +47,27 @@ export default () => {
     }
   })
 
+  document.querySelectorAll(".tree-table").forEach(table => {
+    const {repoId, commitOid, treePath} = table.dataset
+    TreeTable.fetchTreeEntriesWithCommit(repoId, commitOid, treePath)
+      .then(response => {
+        response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
+          let td = table.querySelector(`tr td[data-oid="${edge.node.treeEntry.oid}"]`)
+          td.colSpan = 1
+          let tr = td.parentElement
+          td = tr.insertCell(1)
+          td.classList.add("has-text-grey")
+          td.innerHTML = edge.node.commit.message.split("\n", 1)[0].trim()
+          td = tr.insertCell(2)
+          td.classList.add("has-text-right")
+          td.classList.add("has-text-grey")
+          td.innerHTML = moment.utc(edge.node.commit.timestamp).fromNow()
+        })
+      })
+  })
+
   document.querySelectorAll("table.blob-table").forEach(table => {
-    const lang = table.dataset.lang
+    const {lang} = table.dataset
     const langDetect = hljs.getLanguage(lang)
     const highlight = (line) => {
       const result = langDetect ? hljs.highlight(lang, line.textContent, true, state) : hljs.highlightAuto(line.textContent)

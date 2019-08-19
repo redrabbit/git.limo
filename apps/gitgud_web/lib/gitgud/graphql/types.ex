@@ -377,6 +377,9 @@ defmodule GitGud.GraphQL.Types do
 
   @desc "Represents a Git tree entry."
   object :git_tree_entry do
+    @desc "The Git object ID."
+    field :oid, non_null(:git_oid)
+
     @desc "The entry file name."
     field :name, non_null(:string)
 

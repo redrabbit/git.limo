@@ -115,8 +115,9 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- GitAgent.attach(repo),
            {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree} <- GitAgent.tree(repo, object), do:
-        render(conn, "show.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], stats: stats(repo, reference || object))
+        render(conn, "show.html", repo: repo, revision: reference || object, commit: commit, tree: tree, tree_path: [], stats: stats(repo, reference || object))
     end || {:error, :not_found}
   end
 
@@ -124,6 +125,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, repo} <- GitAgent.attach(repo),
            {:ok, object, reference} <- GitAgent.revision(repo, revision),
+           {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
            {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
         case tree_entry_target do
@@ -136,7 +138,7 @@ defmodule GitGud.Web.CodebaseController do
               redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
             end
           %GitTree{} = tree ->
-            render(conn, "tree.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path)
+            render(conn, "tree.html", repo: repo, revision: reference || object, commit: commit, tree: tree, tree_path: tree_path)
         end
       end
     end || {:error, :not_found}

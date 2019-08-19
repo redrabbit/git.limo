@@ -463,7 +463,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree_entry_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_tree_entry_with_last_commit(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
-    case GitAgent.tree_entry_by_path(ctx.repo, revision, args[:path] || :root, with_commit: true) do
+    path = args[:path]
+    path = if path == "" || is_nil(path), do: :root, else: path
+    case GitAgent.tree_entry_by_path(ctx.repo, revision, path, with_commit: true) do
       {:ok, tree_entry, commit} ->
         {:ok, %{tree_entry: tree_entry, commit: commit}}
       {:error, reason} ->
@@ -476,7 +478,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree_entries_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_tree_entries_with_last_commit(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
-    case GitAgent.tree_entries_by_path(ctx.repo, revision, args[:path] || :root, with_commits: true) do
+    path = args[:path]
+    path = if path == "" || is_nil(path), do: :root, else: path
+    case GitAgent.tree_entries_by_path(ctx.repo, revision, path, with_commits: true) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
         Connection.from_slice(Enum.map(slice, fn {tree_entry, commit} -> %{tree_entry: tree_entry, commit: commit} end), offset, opts)

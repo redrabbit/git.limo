@@ -1,4 +1,4 @@
-<table class="table tree-table is-hoverable is-fullwidth has-outer-border">
+<table class="table tree-table is-hoverable is-fullwidth has-outer-border" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-tree-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
@@ -7,7 +7,7 @@
     <% end %>
     <%= for entry <- tree_entries(@repo, @revision, @tree_path) do %>
       <tr>
-        <td colspan="3">
+        <td colspan="3" data-oid="<%= oid_fmt(entry.oid) %>">
           <a href="<%= Routes.codebase_path(@conn, entry.type, @repo.owner, @repo, @revision, @tree_path ++ [entry.name]) %>"><%= entry %></a>
         </td>
       </tr>
