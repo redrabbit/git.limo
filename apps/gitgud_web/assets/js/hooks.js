@@ -64,8 +64,11 @@ export default () => {
           td.colSpan = 1
           let tr = td.parentElement
           td = tr.insertCell(1)
-          td.classList.add("has-text-grey")
-          td.innerHTML = commit.message.split("\n", 1)[0].trim()
+          let commitLink = document.createElement("a")
+          commitLink.href = commit.url
+          commitLink.classList.add("has-text-grey")
+          commitLink.innerHTML = commit.message.split("\n", 1)[0].trim()
+          td.append(commitLink)
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
           td.classList.add("has-text-grey")
@@ -74,7 +77,7 @@ export default () => {
           time.setAttribute("data", timestamp.format())
           time.dataset.tooltip = timestamp.format()
           time.innerHTML = timestamp.fromNow()
-          td.prepend(time)
+          td.append(time)
         })
       })
   })

@@ -321,17 +321,31 @@ textarea.textarea {
   }
 }
 
+.card.blob, .card.diff {
+  .card-content {
+    overflow-x: scroll;
+  }
+}
+
 .card.blob {
-  .card-header.blob-commit {
-    border-bottom: 1px solid $grey-lighter;
+  .card-header {
     .card-header-title {
       font-weight: 400;
     }
   }
 
   .card-content {
+    padding: 0.5rem 0;
+  }
+}
+
+.card.diff {
+  .card-header {
+    border-bottom: 1px solid $grey-lighter;
+  }
+
+  .card-content {
     padding: 0;
-    overflow-x: scroll;
   }
 }
 

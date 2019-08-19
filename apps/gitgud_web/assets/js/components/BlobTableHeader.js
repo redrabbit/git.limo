@@ -13,7 +13,7 @@ class BlobTableHeader extends React.Component {
     const timestamp = moment.utc(commit.timestamp)
     const {author, committer} = commit
     return (
-      <header className="card-header blob-commit">
+      <header className="card-header">
         <div className="card-header-title">
           {committer.login ? (
             author.login && author.login !== committer.login ? (
@@ -26,10 +26,10 @@ class BlobTableHeader extends React.Component {
             )
           ) : (
             <span className="has-text-black">{committer.name}</span>
-          )} &nbsp;<a href={commit.url} className="has-text-grey-light">{commit.message.split("\n", 1)[0].trim()}</a>
+          )} &nbsp;<a href={commit.url} className="has-text-grey">{commit.message.split("\n", 1)[0].trim()}</a>
         </div>
         <div className="card-header-icon">
-          <time className="tooltip has-text-grey-light" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+          <time className="tooltip has-text-grey" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
         </div>
       </header>
     )

@@ -75,7 +75,7 @@
 <%= for delta <- diff_deltas_with_reviews(@repo, @commit, @diff) do %>
   <div class="columns">
     <div class="column is-12">
-      <div class="card blob">
+      <div class="card diff">
         <header class="card-header">
           <p class="card-header-title"><%= delta.new_file.path %></p>
           <p class="card-header-icon buttons">

@@ -22,6 +22,7 @@ class TreeTable {
                       commit {
                         message
                         timestamp
+                        url
                       }
                     }
                   }
