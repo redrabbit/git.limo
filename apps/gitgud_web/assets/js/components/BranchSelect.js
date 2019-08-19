@@ -45,6 +45,11 @@ class BranchSelect extends React.Component {
                       oid
                       name
                       type
+                      target {
+                        ... on GitCommit {
+                          timestamp
+                        }
+                      }
                     }
                   }
                 }
@@ -78,7 +83,7 @@ class BranchSelect extends React.Component {
                   edge.node.type == this.state.type
                 ).filter(edge =>
                   edge.node.name.includes(this.state.filter)
-                ).map(edge =>
+                ).sort((a, b) => a.node.target.timestamp < b.node.target.timestamp).map(edge =>
                   <a key={edge.node.oid} href={this.props.actionHref.replace("__rev__", edge.node.name)} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                 )}
                 <div className="panel-block">
