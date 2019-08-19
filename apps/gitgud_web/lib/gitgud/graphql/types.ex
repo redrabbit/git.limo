@@ -27,6 +27,7 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_reference
   connection node_type: :git_tag
   connection node_type: :git_tree_entry
+  connection node_type: :git_tree_entry_commit
   connection node_type: :search_result
 
   @desc "Represents an actor in a Git commit (ie. an author or committer)."
@@ -240,6 +241,11 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
+    connection field :tree_entries_commits, node_type: :git_tree_entry_commit do
+      arg :path, :string
+      resolve &Resolvers.git_tree_entries_commits/2
+    end
+
     @desc "A single commit line review."
     field :line_review, non_null(:commit_line_review) do
       arg :blob_oid, non_null(:git_oid), description: "The OID of the blob."
@@ -350,6 +356,11 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The object the entry points to."
     field :target, non_null(:git_object), resolve: &Resolvers.git_tree_entry_target/3
+  end
+
+  object :git_tree_entry_commit do
+    field :tree_entry, non_null(:git_tree_entry)
+    field :commit, non_null(:git_commit)
   end
 
   @desc "Represents a Git blob."

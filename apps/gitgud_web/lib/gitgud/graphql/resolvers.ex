@@ -459,6 +459,20 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the tree entries and their associated commit for a given pathspec.
+  """
+  @spec git_tree_entries_commits(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_tree_entries_commits(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
+    case GitAgent.tree_entries_by_path(ctx.repo, revision, args[:path] || :root, with_commits: true) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(Enum.map(slice, fn {tree_entry, commit} -> %{tree_entry: tree_entry, commit: commit} end), offset, opts)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Returns the underlying Git object for a given Git `tree_entry` object.
   """
   @spec git_tree_entry_target(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
