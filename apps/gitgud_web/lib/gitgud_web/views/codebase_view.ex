@@ -265,36 +265,6 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec tree_entries(Repo.t, GitAgent.git_revision, Path.t) :: [GitTreeEntry.t]
-  def tree_entries(repo, revision, [] = _path) do
-    case GitAgent.tree_entries(repo, revision) do
-      {:ok, entries} -> entries
-      {:error, _reason} -> []
-    end
-  end
-
-  def tree_entries(repo, revision, path) do
-    case GitAgent.tree_entries_by_path(repo, revision, Path.join(path)) do
-      {:ok, entries} -> entries
-      {:error, _reason} -> []
-    end
-  end
-
-  @spec tree_entries_with_commit(Repo.t, GitTree.t, Path.t) :: [{GitTreeEntry.t, GitCommit.t}]
-  def tree_entries_with_commit(repo, revision, []) do
-    case GitAgent.tree_entries_by_path(repo, revision, :root, with_commits: true) do
-      {:ok, entries} -> entries
-      {:error, reason} -> raise reason
-    end
-  end
-
-  def tree_entries_with_commit(repo, revision, path) do
-    case GitAgent.tree_entries_by_path(repo, revision, Path.join(path), with_commits: true) do
-      {:ok, entries} -> entries
-      {:error, reason} -> raise reason
-    end
-  end
-
   @spec tree_readme(Repo.t, GitTree.t) :: binary | nil
   def tree_readme(repo, tree) do
     with {:ok, entry} <- GitAgent.tree_entry_by_path(repo, tree, "README.md"),
