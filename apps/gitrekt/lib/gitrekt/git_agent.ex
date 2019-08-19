@@ -774,10 +774,9 @@ defmodule GitRekt.GitAgent do
   end
 
   defp pathspec_match_commit(%GitCommit{commit: commit}, pathspec, handle) do
-    with {:ok, _oid, tree} <- Git.commit_tree(commit),
-         {:ok, match?} <- Git.pathspec_match_tree(tree, pathspec) do
-      match? && pathspec_match_commit_tree(commit, tree, pathspec, handle)
-    else
+    case Git.commit_tree(commit) do
+      {:ok, _oid, tree} ->
+        pathspec_match_commit_tree(commit, tree, pathspec, handle)
       {:error, _reason} ->
         false
     end
@@ -785,11 +784,16 @@ defmodule GitRekt.GitAgent do
 
   defp pathspec_match_commit_tree(commit, tree, pathspec, handle) do
     with {:ok, stream} <- Git.commit_parents(commit),
-         {_oid, parent} <- Enum.at(stream, 0, {:error, :"commit has no parents"}),
+         {_oid, parent} <- Enum.at(stream, 0, :match_tree),
          {:ok, _oid, parent_tree} <- Git.commit_tree(parent),
          {:ok, delta_count} <- pathspec_match_commit_diff(parent_tree, tree, pathspec, handle) do
       delta_count > 0
     else
+      :match_tree ->
+        case Git.pathspec_match_tree(tree, pathspec) do
+          {:ok, match?} -> match?
+          {:error, _reason} -> false
+        end
       {:error, _reason} ->
         false
     end
