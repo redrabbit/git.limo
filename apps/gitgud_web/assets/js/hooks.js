@@ -59,6 +59,7 @@ export default () => {
       .then(response => {
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
+          const timestamp = moment.utc(commit.timestamp)
           let td = table.querySelector(`tr td[data-oid="${treeEntry.oid}"]`)
           td.colSpan = 1
           let tr = td.parentElement
@@ -68,7 +69,12 @@ export default () => {
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
           td.classList.add("has-text-grey")
-          td.innerHTML = moment.utc(commit.timestamp).fromNow()
+          let time = document.createElement("time")
+          time.classList.add("tooltip")
+          time.setAttribute("data", timestamp.format())
+          time.dataset.tooltip = timestamp.format()
+          time.innerHTML = timestamp.fromNow()
+          td.prepend(time)
         })
       })
   })

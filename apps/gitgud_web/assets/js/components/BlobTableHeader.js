@@ -10,6 +10,7 @@ import environment from "../relay-environment"
 class BlobTableHeader extends React.Component {
   render() {
     const {commit} = this.props
+    const timestamp = moment.utc(commit.timestamp)
     const {author, committer} = commit
     return (
       <header className="card-header blob-commit">
@@ -28,7 +29,7 @@ class BlobTableHeader extends React.Component {
           )} &nbsp;<a href={commit.url} className="has-text-grey-light">{commit.message.split("\n", 1)[0].trim()}</a>
         </div>
         <div className="card-header-icon">
-          <span className="has-text-grey-light">{moment.utc(commit.timestamp).fromNow()}</span>
+          <time className="tooltip has-text-grey-light" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
         </div>
       </header>
     )
