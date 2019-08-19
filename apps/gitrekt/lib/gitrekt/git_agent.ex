@@ -65,6 +65,8 @@ defmodule GitRekt.GitAgent do
   @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
+  @type git_reference :: GitRef.t
+  @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
@@ -117,19 +119,19 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git reference.
   """
-  @spec head(agent) :: {:ok, GitRef.t} | {:error, term}
+  @spec head(agent) :: {:ok, git_reference} | {:error, term}
   def head(agent), do: exec(agent, :head)
 
   @doc """
   Returns all Git branches.
   """
-  @spec branches(agent) :: {:ok, [GitRef.t]} | {:error, term}
+  @spec branches(agent) :: {:ok, [git_reference]} | {:error, term}
   def branches(agent), do: exec(agent, {:references, "refs/heads/*"})
 
   @doc """
   Returns the Git branch with the given `name`.
   """
-  @spec branch(agent, binary) :: {:ok, GitRef.t} | {:error, term}
+  @spec branch(agent, binary) :: {:ok, git_reference} | {:error, term}
   def branch(agent, name), do: exec(agent, {:reference, "refs/heads/" <> name})
 
   @doc """
@@ -159,13 +161,13 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec references(agent, binary | :undefined) :: {:ok, [GitRef.t]} | {:error, term}
+  @spec references(agent, binary | :undefined) :: {:ok, [git_reference]} | {:error, term}
   def references(agent, glob \\ :undefined), do: exec(agent, {:references, glob})
 
   @doc """
   Returns the Git reference with the given `name`.
   """
-  @spec reference(agent, binary) :: {:ok, GitRef.t} | {:error, term}
+  @spec reference(agent, binary) :: {:ok, git_reference} | {:error, term}
   def reference(agent, name), do: exec(agent, {:reference, name})
 
   @doc """
@@ -177,7 +179,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git object matching the given `spec`.
   """
-  @spec revision(agent, binary) :: {:ok, git_object, GitRef.t | nil} | {:error, term}
+  @spec revision(agent, binary) :: {:ok, GitCommit.t | GitTag.t, git_reference | nil} | {:error, term}
   def revision(agent, spec), do: exec(agent, {:revision, spec})
 
   @doc """
@@ -229,58 +231,44 @@ defmodule GitRekt.GitAgent do
   def blob_size(agent, blob), do: exec(agent, {:blob_size, blob})
 
   @doc """
-  Returns the Git tree of the given `obj`.
+  Returns the Git tree of the given `revision`.
   """
-  @spec tree(agent, git_object) :: {:ok, GitTree.t} | {:error, term}
-  def tree(agent, obj), do: exec(agent, {:tree, obj})
+  @spec tree(agent, git_revision) :: {:ok, GitTree.t} | {:error, term}
+  def tree(agent, revision), do: exec(agent, {:tree, revision})
 
   @doc """
-  Returns the Git tree entry for the given `obj` and `oid`.
+  Returns the Git tree entries of the given `tree`.
   """
-  @spec tree_entry_by_id(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
-  def tree_entry_by_id(agent, obj, oid), do: exec(agent, {:tree_entry, obj, {:oid, oid}})
+  @spec tree_entries(agent, GitTree.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
+  def tree_entries(agent, tree), do: exec(agent, {:tree_entries, tree})
 
   @doc """
-  Returns the Git tree entry for the given `obj` and `path`.
+  Returns the Git tree entry for the given `revision` and `oid`.
   """
-  @spec tree_entry_by_path(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, GitTreeEntry.t} | {:error, term}
-  def tree_entry_by_path(agent, obj, path), do: exec(agent, {:tree_entry, obj, {:path, path}})
+  @spec tree_entry_by_id(agent, git_revision | GitTree.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
+  def tree_entry_by_id(agent, revision, oid), do: exec(agent, {:tree_entry, revision, {:oid, oid}})
 
   @doc """
-  Returns the Git tree entry and it's last commit for the given `obj` and `path`.
+  Returns the Git tree entry for the given `revision` and `path`.
   """
-  @spec tree_entry_with_commit(agent, GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, GitTreeEntry.t, GitCommit.t} | {:error, term}
-  def tree_entry_with_commit(agent, obj, path), do: exec(agent, {:tree_entry_with_commit, obj, path})
+  @spec tree_entry_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}} | {:error, term}
+  def tree_entry_by_path(agent, revision, path, opts \\ [])
+  def tree_entry_by_path(agent, revision, path, [with_commit: true] = _opts), do: exec(agent, {:tree_entry_with_commit, revision, path})
+  def tree_entry_by_path(agent, revision, path, _opts), do: exec(agent, {:tree_entry, revision, {:path, path}})
+
+  @doc """
+  Returns the Git tree entries for the given `revision` and `path`.
+  """
+  @spec tree_entries_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, [GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}]} | {:error, term}
+  def tree_entries_by_path(agent, revision, path \\ :root, opts \\ [])
+  def tree_entries_by_path(agent, revision, path, [with_commits: true] = _opts), do: exec(agent, {:tree_entries_with_commits, revision, path})
+  def tree_entries_by_path(agent, revision, path, _opts), do: exec(agent, {:tree_entries, revision, path})
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
   """
   @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
   def tree_entry_target(agent, tree_entry), do: exec(agent, {:tree_entry_target, tree_entry})
-
-  @doc """
-  Returns the Git tree entries of the given `obj`.
-  """
-  @spec tree_entries(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
-  def tree_entries(agent, obj), do: exec(agent, {:tree_entries, obj})
-
-  @doc """
-  Returns the Git tree entries for the given `obj` and `path`.
-  """
-  @spec tree_entries(agent, GitTree.t | GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
-  def tree_entries(agent, obj, path), do: exec(agent, {:tree_entries, obj, path})
-
-  @doc """
-  Returns the Git tree entries and their last commit for the given `obj`.
-  """
-  @spec tree_entries_with_commits(agent, GitCommit.t | GitTag.t | GitRef.t) :: {:ok, [{GitTreeEntry.t, GitCommit.t}]} | {:error, term}
-  def tree_entries_with_commits(agent, obj), do: exec(agent, {:tree_entries_with_commits, obj})
-
-  @doc """
-  Returns the Git tree entries and their last commit for the given `obj` and `path`.
-  """
-  @spec tree_entries_with_commits(agent, GitCommit.t | GitTag.t | GitRef.t, Path.t) :: {:ok, [{GitTreeEntry.t, GitCommit.t}]} | {:error, term}
-  def tree_entries_with_commits(agent, obj, path), do: exec(agent, {:tree_entries_with_commits, obj, path})
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
@@ -307,15 +295,15 @@ defmodule GitRekt.GitAgent do
   def diff_stats(agent, diff), do: exec(agent, {:diff_stats, diff})
 
   @doc """
-  Returns the Git commit history of the given `obj`.
+  Returns the Git commit history of the given `revision`.
   """
-  @spec history(agent, GitRef.t | git_object, keyword) :: {:ok, [GitCommit.t]} | {:error, term}
-  def history(agent, obj, opts \\ []), do: exec(agent, {:history, obj, opts})
+  @spec history(agent, git_revision, keyword) :: {:ok, [GitCommit.t]} | {:error, term}
+  def history(agent, revision, opts \\ []), do: exec(agent, {:history, revision, opts})
 
   @doc """
-  Returns the underlying Git commit of the given `obj`.
+  Peels the given `obj` until a Git object of the specified type is met.
   """
-  @spec peel(agent, GitRef.t | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
+  @spec peel(agent, git_reference | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
   def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
 
   #
@@ -480,17 +468,18 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call({:tree_entry_target, %GitTreeEntry{} = tree_entry}, handle), do: fetch_target(tree_entry, :undefined, handle)
-  defp call({:tree_entries, obj}, handle), do: fetch_tree_entries(obj, handle)
-  defp call({:tree_entries, obj, path}, handle), do: fetch_tree_entries(obj, path, handle)
-  defp call({:tree_entries_with_commits, obj}, handle) do
-    with {:ok, tree_entries} <- fetch_tree_entries(obj, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(obj, handle), do:
+  defp call({:tree_entries, tree}, handle), do: fetch_tree_entries(tree, handle)
+  defp call({:tree_entries, rev, :root}, handle), do: fetch_tree_entries(rev, handle)
+  defp call({:tree_entries, rev, path}, handle), do: fetch_tree_entries(rev, path, handle)
+  defp call({:tree_entries_with_commits, rev, :root}, handle) do
+    with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
       zip_tree_entries_commits(tree_entries, commits, "", handle)
   end
 
-  defp call({:tree_entries_with_commits, obj, path}, handle) do
-    with {:ok, tree_entries} <- fetch_tree_entries(obj, path, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(obj, path, handle), do:
+  defp call({:tree_entries_with_commits, rev, path}, handle) do
+    with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
       zip_tree_entries_commits(tree_entries, commits, path, handle)
   end
 
@@ -635,8 +624,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry(obj, spec, handle) do
-    case fetch_tree(obj, handle) do
+  defp fetch_tree_entry(rev, spec, handle) do
+    case fetch_tree(rev, handle) do
       {:ok, tree} ->
         fetch_tree_entry(tree, spec, handle)
       {:error, reason} ->
@@ -644,8 +633,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry_commit(obj, path, handle) do
-    case walk_history(obj, handle, pathspec: path) do
+  defp fetch_tree_entry_commit(rev, path, handle) do
+    case walk_history(rev, handle, pathspec: path) do
       {:ok, stream} ->
         stream = Stream.take(stream, 1)
         {:ok, List.first(Enum.to_list(stream))}
@@ -664,8 +653,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entries(obj, handle) do
-    case fetch_tree(obj, handle) do
+  defp fetch_tree_entries(rev, handle) do
+    case fetch_tree(rev, handle) do
       {:ok, tree} ->
         fetch_tree_entries(tree, handle)
       {:error, reason} ->
@@ -679,8 +668,8 @@ defmodule GitRekt.GitAgent do
      fetch_tree_entries(tree, handle)
   end
 
-  defp fetch_tree_entries(obj, path, handle) do
-    case fetch_tree(obj, handle) do
+  defp fetch_tree_entries(rev, path, handle) do
+    case fetch_tree(rev, handle) do
       {:ok, tree} ->
         fetch_tree_entries(tree, path, handle)
       {:error, reason} ->
@@ -688,13 +677,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entries_commits(obj, handle) do
-    walk_history(obj, handle, [])
-  end
-
-  defp fetch_tree_entries_commits(obj, path, handle) do
-    walk_history(obj, handle, pathspec: path)
-  end
+  defp fetch_tree_entries_commits(rev, handle), do: walk_history(rev, handle, [])
+  defp fetch_tree_entries_commits(rev, path, handle), do: walk_history(rev, handle, pathspec: path)
 
   defp fetch_diff(%GitTree{tree: tree1}, %GitTree{tree: tree2}, handle, opts) do
     case Git.diff_tree(handle, tree1, tree2, opts) do

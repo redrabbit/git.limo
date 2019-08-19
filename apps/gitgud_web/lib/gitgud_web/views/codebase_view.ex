@@ -253,14 +253,14 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec tree_entries_with_commits(Repo.t, GitTree.t, Path.t) :: [{GitTreeEntry.t, GitCommit.t}]
   def tree_entries_with_commits(repo, revision, []) do
-    case GitAgent.tree_entries_with_commits(repo, revision) do
+    case GitAgent.tree_entries_by_path(repo, revision, :root, with_commits: true) do
       {:ok, entries} -> entries
       {:error, reason} -> raise reason
     end
   end
 
   def tree_entries_with_commits(repo, revision, path) do
-    case GitAgent.tree_entries_with_commits(repo, revision, Path.join(path)) do
+    case GitAgent.tree_entries_by_path(repo, revision, Path.join(path), with_commits: true) do
       {:ok, entries} -> entries
       {:error, reason} -> raise reason
     end
