@@ -17,8 +17,6 @@ defmodule GitGud.Web do
 
       import Plug.Conn
 
-      import Phoenix.LiveView.Controller, only: [live_render: 3]
-
       import GitGud.Authorization, only: [authorized?: 3]
 
       import GitGud.GraphQL.Schema, only: [from_relay_id: 1, to_relay_id: 1, to_relay_id: 2]
@@ -39,7 +37,6 @@ defmodule GitGud.Web do
       alias GitGud.Web.Router.Helpers, as: Routes
 
       import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
-      import Phoenix.LiveView, only: [live_render: 2, live_render: 3]
 
       import GitGud.Authorization, only: [authorized?: 3]
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
@@ -65,7 +62,6 @@ defmodule GitGud.Web do
       import Plug.Conn
 
       import Phoenix.Controller
-      import Phoenix.LiveView.Router
 
       import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2]
     end

@@ -8,17 +8,10 @@ import "highlight.js/styles/github-gist.css"
 
 import moment from "moment"
 
-import LiveSocket from "phoenix_live_view"
-
 import * as factory from "./components"
 import {BlobTableHeader, TreeTable, CommitLineReview} from "./components"
 
 export default () => {
-  if(document.querySelector("[data-phx-view]")) {
-    let liveSocket = new LiveSocket("/live")
-    liveSocket.connect()
-  }
-
   document.querySelectorAll("[data-react-class]").forEach(e => {
     const targetId = document.getElementById(e.dataset.reactTargetId)
     const targetDiv = targetId ? targetId : e
