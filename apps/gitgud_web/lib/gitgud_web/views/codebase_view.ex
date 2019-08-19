@@ -10,6 +10,8 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.ReviewQuery
   alias GitGud.Commit
   alias GitGud.CommitQuery
+  alias GitGud.GPGKey
+  alias GitGud.GPGKeyQuery
 
   alias Phoenix.Param
 
@@ -134,7 +136,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_author(Repo.t, Commit.t | GitCommit.t, :with_committer) :: {User.t | map | nil, User.t | map | nil}
   def commit_author(repo, commit, :with_committer) do
     author = fetch_author(repo, commit)
-    author_user = UserQuery.by_email(author.email) || author
+    author_user = UserQuery.by_email(author.email, preload: [:emails]) || author
     committer = fetch_committer(repo, commit)
     if author.email == committer.email,
      do: {author_user, author_user},
@@ -198,8 +200,21 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec commit_gpg_key(Repo.t, Commit.t | GitCommit.t) :: GPGKey.t | nil
-  def commit_gpg_key(repo, commit) do
+  def commit_gpg_key(repo, %Commit{} = commit) do
     CommitQuery.gpg_signature(repo, commit)
+  end
+
+  def commit_gpg_key(repo, %GitCommit{} = commit) do
+    case GitAgent.commit_gpg_signature(repo, commit) do
+      {:ok, gpg_sig} ->
+        gpg_key_id =
+          gpg_sig
+          |> GPGKey.decode!()
+          |> GPGKey.parse!()
+          |> get_in([:sig, :sub_pack, :issuer])
+          |> GPGKeyQuery.by_key_id()
+      {:error, _reason} -> nil
+    end
   end
 
   @spec revision_oid(GitAgent.git_object) :: binary
@@ -345,10 +360,10 @@ defmodule GitGud.Web.CodebaseView do
     Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
   end
 
-  @spec sort_by_timestamp(Repo.t, Enumerable.t) :: [{GitRef.t | GitTag.t, GitCommit.t}]
-  def sort_by_timestamp(repo, references_or_tags) do
-    commits = Enum.map(references_or_tags, &fetch_commit(repo, &1))
-    Enum.sort_by(Enum.zip(references_or_tags, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
+  @spec sort_revisions_by_timestamp(Repo.t, Enumerable.t) :: [{GitRef.t | GitTag.t, GitCommit.t}]
+  def sort_revisions_by_timestamp(repo, revisions) do
+    commits = Enum.map(revisions, &fetch_commit(repo, &1))
+    Enum.sort_by(Enum.zip(revisions, commits), &commit_timestamp(repo, elem(&1, 1)), &compare_timestamps/2)
   end
 
   @spec sort_tree_entries_by_name(Enumerable.t) :: [{GitTreeEntry.t, GitCommit.t}]
@@ -408,7 +423,36 @@ defmodule GitGud.Web.CodebaseView do
       {_commit, _author, %User{}} -> true
       {_commit, _author, _committer} -> false
     end)
-    gpg_map = CommitQuery.gpg_signature(repo, Enum.map(commits, &elem(&1, 0)))
+    gpg_map =
+      cond do
+        Enum.all?(commits, fn
+          {%Commit{}, _author, _committer} -> true
+          {%GitCommit{}, _author, _committer} -> false
+        end) ->
+          CommitQuery.gpg_signature(repo, Enum.map(commits, &elem(&1, 0)))
+        Enum.all?(commits, fn
+          {%GitCommit{}, _author, _committer} -> true
+          {%Commit{}, _author, _committer} -> false
+        end) ->
+          commits_gpg_key_ids =
+            Map.new(commits, fn {commit, _author, committer} ->
+              case GitAgent.commit_gpg_signature(repo, commit) do
+                {:ok, gpg_sig} ->
+                  gpg_key_id =
+                    gpg_sig
+                    |> GPGKey.decode!()
+                    |> GPGKey.parse!()
+                    |> get_in([:sig, :sub_pack, :issuer])
+                  {commit.oid, gpg_key_id}
+                {:error, _reason} ->
+                  nil
+              end
+            end)
+          gpg_keys = GPGKeyQuery.by_key_id(Map.values(commits_gpg_key_ids))
+          Map.new(commits_gpg_key_ids, fn {oid, gpg_key_id} ->
+            {oid, Enum.find(gpg_keys, &(binary_part(&1.key_id, 20, -8) == gpg_key_id))}
+          end)
+      end
     Enum.map(batch, fn
       {commit, author, %User{} = committer} ->
         {commit, author, committer, gpg_map[commit.oid]}
@@ -502,7 +546,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp fetch_timestamp(_repo, %Commit{} = commit) do
-    commit.committed_at
+    DateTime.from_naive!(commit.committed_at, "Etc/UTC")
   end
 
   defp find_commit_timestamp({timestamp, _}, timestamp), do: true

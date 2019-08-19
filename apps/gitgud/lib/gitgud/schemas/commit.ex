@@ -102,9 +102,7 @@ defmodule GitGud.Commit do
       gpg_signature
       |> GPGKey.decode!()
       |> GPGKey.parse!()
-      |> Keyword.fetch!(:sig)
-      |> Map.fetch!(:sub_pack)
-      |> Keyword.fetch!(:issuer)
+      |> get_in([:sig, :sub_pack, :issuer])
     end
   end
 

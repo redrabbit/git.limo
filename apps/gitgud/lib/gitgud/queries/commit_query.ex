@@ -98,18 +98,18 @@ defmodule GitGud.CommitQuery do
       cond do
         Enum.all?(commits, &is_binary/1) ->
           commits
-        Enum.all?(commits, &is_map/1) ->
+        Enum.all?(commits, fn %Commit{} -> true end) ->
           Enum.map(commits, &(&1.oid))
       end
-    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid in ^oids and c.committer_email in g.emails, select: {c.oid, g})
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid in ^oids, select: {c.oid, g})
   end
 
   def gpg_signature_query(repo_id, oid) when is_binary(oid) do
-    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^oid and c.committer_email in g.emails, select: g)
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^oid, select: g)
   end
 
-  def gpg_signature_query(repo_id, commit) when is_map(commit) do
-    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^commit.oid and c.committer_email in g.emails, select: g)
+  def gpg_signature_query(repo_id, %Commit{} = commit) when is_map(commit) do
+    from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^commit.oid, select: g)
   end
 
   #

@@ -3,7 +3,7 @@
 <%= if Enum.empty?(@branches) do %>
   Nothing to see here.
 <% else %>
-  <%= with page <- paginate(@conn, sort_by_timestamp(@repo, @branches)) do %>
+  <%= with page <- paginate(@conn, sort_revisions_by_timestamp(@repo, @branches)) do %>
     <table class="table is-fullwidth">
       <tbody>
         <%= for {branch, {commit, author}} <- batch_branches(@repo, page.slice) do %>

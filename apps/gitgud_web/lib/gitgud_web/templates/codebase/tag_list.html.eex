@@ -3,7 +3,7 @@
 <%= if Enum.empty?(@tags) do %>
   Nothing to see here.
 <% else %>
-  <%= with page <- paginate(@conn, sort_by_timestamp(@repo, @tags)) do %>
+  <%= with page <- paginate(@conn, sort_revisions_by_timestamp(@repo, @tags)) do %>
     <table class="table is-fullwidth">
       <tbody>
         <%= for {tag, {commit, author}} <- batch_tags(@repo, page.slice) do %>

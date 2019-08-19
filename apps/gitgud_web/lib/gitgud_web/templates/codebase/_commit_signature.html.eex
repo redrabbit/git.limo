@@ -1,31 +1,33 @@
-<div class="popover">
-  <div class="popover-trigger">
-    <span class="icon is-small has-text-success">
-      <i class="fa fa-check"></i>
-    </span>
-  </div>
-  <div class="popover-content">
-    <div class="box signed-commit">
-      <header class="box-header">
-        <div class="box-header-title">This commit was signed with a <strong>verified signature</strong>.</div>
-        <div class="box-header-icon">
-          <span class="icon is-medium has-text-success">
-            <i class="fa fa-2x fa-check-square"></i>
-          </span>
+<%= if @committer.id == @gpg_key.user_id && Enum.any?(@committer.emails, &(&1.verified && &1.address in @gpg_key.emails)) do %>
+  <div class="popover">
+    <div class="popover-trigger">
+      <span class="icon is-small has-text-success">
+        <i class="fa fa-check"></i>
+      </span>
+    </div>
+    <div class="popover-content">
+      <div class="box signed-commit">
+        <header class="box-header">
+          <div class="box-header-title">This commit was signed with a <strong>verified signature</strong>.</div>
+          <div class="box-header-icon">
+            <span class="icon is-medium has-text-success">
+              <i class="fa fa-2x fa-check-square"></i>
+            </span>
+          </div>
+        </header>
+        <div class="box-content">
+          <div class="committer">
+            <figure class="is-pulled-left"><a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= gravatar(@committer, size: 36) %></a></figure>
+            <ul>
+              <li><strong><%= @committer.name %></strong></li>
+              <li><a href=""><%= @committer.login %></a></li>
+            </ul>
+          </div>
+          <p>GPG Key ID: <span class="gpg-key-id"><%= @gpg_key %></span></p>
+          <hr />
+          <a class="is-size-7">Learn about signing commits</a>
         </div>
-      </header>
-      <div class="box-content">
-        <div class="committer">
-          <figure class="is-pulled-left"><a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= gravatar(@committer, size: 36) %></a></figure>
-          <ul>
-            <li><strong><%= @committer.name %></strong></li>
-            <li><a href=""><%= @committer.login %></a></li>
-          </ul>
-        </div>
-        <p>GPG Key ID: <span class="gpg-key-id"><%= @gpg_key %></span></p>
-        <hr />
-        <a class="is-size-7">Learn about signing commits</a>
       </div>
     </div>
   </div>
-</div>
+<% end %>
