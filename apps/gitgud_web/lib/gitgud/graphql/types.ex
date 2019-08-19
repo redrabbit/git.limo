@@ -168,6 +168,12 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.repo_object/3
     end
 
+    @desc "Fetches a single Git commit by it revision spec"
+    field :revision, non_null(:git_commit) do
+      arg :spec, non_null(:string), description: "The revision spec."
+      resolve &Resolvers.repo_revision/3
+    end
+
     @desc "The HTTP URL for this repository."
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end

@@ -262,6 +262,19 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves a Git commit by revision spec for a given `repo`.
+  """
+  @spec repo_revision(Repo.t, %{spec: binary}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
+  def repo_revision(%Repo{} = repo, %{spec: spec} = _args, _info) do
+    case GitAgent.revision(repo, spec) do
+     {:ok, object, _reference} ->
+       GitAgent.peel(repo, object, :commit)
+     {:error, reason} ->
+       {:error, reason}
+    end
+  end
+
+  @doc """
   Resolves the type for a given Git `actor`.
   """
   @spec git_actor_type(User.t | map, Absinthe.Resolution.t) :: atom
