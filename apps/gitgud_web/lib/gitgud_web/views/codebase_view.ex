@@ -207,12 +207,11 @@ defmodule GitGud.Web.CodebaseView do
   def commit_gpg_key(repo, %GitCommit{} = commit) do
     case GitAgent.commit_gpg_signature(repo, commit) do
       {:ok, gpg_sig} ->
-        gpg_key_id =
-          gpg_sig
-          |> GPGKey.decode!()
-          |> GPGKey.parse!()
-          |> get_in([:sig, :sub_pack, :issuer])
-          |> GPGKeyQuery.by_key_id()
+        gpg_sig
+        |> GPGKey.decode!()
+        |> GPGKey.parse!()
+        |> get_in([:sig, :sub_pack, :issuer])
+        |> GPGKeyQuery.by_key_id()
       {:error, _reason} -> nil
     end
   end
@@ -435,7 +434,7 @@ defmodule GitGud.Web.CodebaseView do
           {%Commit{}, _author, _committer} -> false
         end) ->
           commits_gpg_key_ids =
-            Map.new(commits, fn {commit, _author, committer} ->
+            Map.new(commits, fn {commit, _author, _committer} ->
               case GitAgent.commit_gpg_signature(repo, commit) do
                 {:ok, gpg_sig} ->
                   gpg_key_id =
