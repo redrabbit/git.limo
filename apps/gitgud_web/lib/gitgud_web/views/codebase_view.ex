@@ -448,7 +448,11 @@ defmodule GitGud.Web.CodebaseView do
                   nil
               end
             end)
-          gpg_keys = GPGKeyQuery.by_key_id(Map.values(commits_gpg_key_ids))
+          gpg_keys =
+            commits_gpg_key_ids
+            |> Map.values()
+            |> Enum.uniq()
+            |> GPGKeyQuery.by_key_id()
           Map.new(commits_gpg_key_ids, fn {oid, gpg_key_id} ->
             {oid, Enum.find(gpg_keys, &(binary_part(&1.key_id, 20, -8) == gpg_key_id))}
           end)
