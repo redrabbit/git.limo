@@ -114,6 +114,12 @@ textarea.textarea {
   .timeline-item {
     padding-bottom: 0;
 
+    &:hover {
+      .timeline-marker {
+        background-color: $link;
+        border-color: $link;
+      }
+    }
     &.is-spacer {
       height: 0.8em;
     }

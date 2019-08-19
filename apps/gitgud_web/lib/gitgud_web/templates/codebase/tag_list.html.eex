@@ -15,7 +15,7 @@
               <%= if Map.has_key?(author, :id) do %>
                 <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
               <% else %>
-                <span class="has-text-black"><%= author.name %></span>
+                <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
               <% end %>
               tagged this <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %>
             </td>

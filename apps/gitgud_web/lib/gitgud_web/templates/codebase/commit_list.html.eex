@@ -13,7 +13,7 @@
   <div class="timeline commit-timeline">
     <%= for {date, commits} <- chunk_by_timestamp(@repo, batch_commits(@repo, page.slice)) do %>
       <div class="timeline-header">
-        <span class="tag"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></span>
+        <span class="tag is-white"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></span>
       </div>
       <%= for {commit, author, committer, gpg_key, comment_count} <- commits do %>
       <div class="timeline-item">
@@ -47,7 +47,7 @@
                 <%= render "_commit_signature.html", conn: @conn, committer: committer, gpg_key: gpg_key %>
                 <% end %>
                 <% else %>
-                <span class="has-text-black"><%= committer.name %></span>
+                <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
                 committed <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %>
                 <% end %>
               </div>

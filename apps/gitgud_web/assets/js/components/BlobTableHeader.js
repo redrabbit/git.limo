@@ -25,7 +25,7 @@ class BlobTableHeader extends React.Component {
               <a className="has-text-black" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={20} />{committer.login}</a>
             )
           ) : (
-            <span className="has-text-black">{committer.name}</span>
+              <a href={`mailto:${committer.email}`} class="tag tooltip has-text-black" data-tooltip={committer.email}>{committer.name}</a>
           )} &nbsp;<a href={commit.url} className="has-text-grey">{commit.message.split("\n", 1)[0].trim()}</a>
         </div>
         <div className="card-header-icon">
@@ -54,6 +54,7 @@ class BlobTableHeader extends React.Component {
                       }
                       ... on UnknownUser {
                         name
+                        email
                       }
                     }
                     author {
@@ -64,6 +65,7 @@ class BlobTableHeader extends React.Component {
                       }
                       ... on UnknownUser {
                         name
+                        email
                       }
                     }
                     url
