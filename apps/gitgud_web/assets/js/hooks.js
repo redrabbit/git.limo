@@ -9,7 +9,7 @@ import "highlight.js/styles/github-gist.css"
 import moment from "moment"
 
 import * as factory from "./components"
-import {BlobTableHeader, TreeTable, CommitLineReview} from "./components"
+import {BlobTableHeader, CommitLineReview, CommitSignature, TreeTable} from "./components"
 
 export default () => {
   document.querySelectorAll("[data-react-class]").forEach(e => {
@@ -57,14 +57,44 @@ export default () => {
     const {repoId, commitOid, treePath} = table.dataset
     TreeTable.fetchTreeEntriesWithCommit(repoId, commitOid, treePath)
       .then(response => {
+        const latestCommitEdge = response.node.object.treeEntriesWithLastCommit.edges.reduce((acc, edge) => {
+          if(edge.node.commit.timestamp > acc.node.commit.timestamp) {
+            return edge
+          } else {
+            return acc
+          }
+        })
+        const {commit} = latestCommitEdge.node
+        const timestamp = moment.utc(commit.timestamp)
+        let header = table.createTHead()
+        let tr = header.insertRow()
+        let td = tr.insertCell(0)
+        td.colSpan = 2
+        ReactDOM.render(React.createElement(CommitSignature, {author: commit.author, committer: commit.committer}), td)
+        let commitLink = document.createElement("a")
+        commitLink.href = commit.url
+        commitLink.classList.add("has-text-grey")
+        commitLink.innerHTML = commit.message.split("\n", 1)[0].trim()
+        td.innerHTML += "&nbsp;"
+        td.append(commitLink)
+        td = tr.insertCell(1)
+        td.classList.add("has-text-right")
+        td.classList.add("has-text-grey")
+        let time = document.createElement("time")
+        time.classList.add("tooltip")
+        time.setAttribute("data", timestamp.format())
+        time.dataset.tooltip = timestamp.format()
+        time.innerHTML = timestamp.fromNow()
+        td.append(time)
+
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
-          let td = table.querySelector(`tr td[data-oid="${treeEntry.oid}"]`)
+          td = table.querySelector(`tr td[data-oid="${treeEntry.oid}"]`)
           td.colSpan = 1
-          let tr = td.parentElement
+          tr = td.parentElement
           td = tr.insertCell(1)
-          let commitLink = document.createElement("a")
+          commitLink = document.createElement("a")
           commitLink.href = commit.url
           commitLink.classList.add("has-text-grey")
           commitLink.innerHTML = commit.message.split("\n", 1)[0].trim()
@@ -72,7 +102,7 @@ export default () => {
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
           td.classList.add("has-text-grey")
-          let time = document.createElement("time")
+          time = document.createElement("time")
           time.classList.add("tooltip")
           time.setAttribute("data", timestamp.format())
           time.dataset.tooltip = timestamp.format()

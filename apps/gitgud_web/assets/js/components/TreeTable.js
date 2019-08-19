@@ -22,6 +22,28 @@ class TreeTable {
                       commit {
                         message
                         timestamp
+                        committer {
+                          ... on User {
+                            login
+                            avatarUrl
+                            url
+                          }
+                          ... on UnknownUser {
+                            name
+                            email
+                          }
+                        }
+                        author {
+                          ... on User {
+                            login
+                            avatarUrl
+                            url
+                          }
+                          ... on UnknownUser {
+                            name
+                            email
+                          }
+                        }
                         url
                       }
                     }

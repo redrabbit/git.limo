@@ -335,6 +335,10 @@ textarea.textarea {
 
 .card.blob {
   .card-header {
+    background-color: $white-ter;
+    border-bottom: 1px solid $grey-lighter;
+    box-shadow: none;
+
     .card-header-title {
       font-weight: 400;
     }
@@ -378,8 +382,9 @@ table.commits-table {
 
 table.tree-table {
   thead {
-    td, th {
+    td {
       border-width: 0 0 1px;
+      padding: 0.75rem;
       background-color: $light;
     }
   }

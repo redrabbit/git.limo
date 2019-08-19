@@ -7,6 +7,8 @@ import {fetchQuery, graphql} from "react-relay";
 
 import environment from "../relay-environment"
 
+import CommitSignature from "./CommitSignature"
+
 class BlobTableHeader extends React.Component {
   render() {
     const {commit} = this.props
@@ -15,18 +17,8 @@ class BlobTableHeader extends React.Component {
     return (
       <header className="card-header">
         <div className="card-header-title">
-          {committer.login ? (
-            author.login && author.login !== committer.login ? (
-              <div className="avatar-stack">
-                <a className="has-text-black" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={20} />{committer.login}</a>
-                <a className="has-text-black" href={author.url}><img className="avatar is-small" src={author.avatarUrl} width={20} />{author.login}</a>
-              </div>
-            ) : (
-              <a className="has-text-black" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={20} />{committer.login}</a>
-            )
-          ) : (
-              <a href={`mailto:${committer.email}`} class="tag tooltip has-text-black" data-tooltip={committer.email}>{committer.name}</a>
-          )} &nbsp;<a href={commit.url} className="has-text-grey">{commit.message.split("\n", 1)[0].trim()}</a>
+          <CommitSignature author={author} committer={committer} />
+          &nbsp;<a href={commit.url} className="has-text-grey">{commit.message.split("\n", 1)[0].trim()}</a>
         </div>
         <div className="card-header-icon">
           <time className="tooltip has-text-grey" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
