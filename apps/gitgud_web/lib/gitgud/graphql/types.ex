@@ -256,7 +256,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "A tree entry and it's last commit."
     field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
-      arg :path, :string, description: "The path of the tree entry."
+      arg :path, non_null(:string), description: "The path of the tree entry."
       resolve &Resolvers.git_tree_entry_with_last_commit/2
     end
 
