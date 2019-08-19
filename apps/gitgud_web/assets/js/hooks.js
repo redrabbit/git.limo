@@ -11,9 +11,22 @@ import moment from "moment"
 import LiveSocket from "phoenix_live_view"
 
 import * as factory from "./components"
-import {CommitLineReview, TreeTable} from "./components"
+import {BlobTableHeader, TreeTable, CommitLineReview} from "./components"
 
 export default () => {
+  if(document.querySelector("[data-phx-view]")) {
+    let liveSocket = new LiveSocket("/live")
+    liveSocket.connect()
+  }
+
+  document.querySelectorAll("[data-react-class]").forEach(e => {
+    const targetId = document.getElementById(e.dataset.reactTargetId)
+    const targetDiv = targetId ? targetId : e
+    const reactProps = e.dataset.reactProps ? atob(e.dataset.reactProps) : "{}"
+    const reactElement = React.createElement(factory[upperFirst(camelCase(e.dataset.reactClass))], JSON.parse(reactProps))
+    ReactDOM.render(reactElement, targetDiv)
+  })
+
   document.querySelectorAll("article.message").forEach(flash => {
     flash.querySelector("button.delete").addEventListener("click", event => {
       flash.remove()
@@ -47,21 +60,22 @@ export default () => {
     }
   })
 
-  document.querySelectorAll(".tree-table").forEach(table => {
+  document.querySelectorAll("table.tree-table").forEach(table => {
     const {repoId, commitOid, treePath} = table.dataset
     TreeTable.fetchTreeEntriesWithCommit(repoId, commitOid, treePath)
       .then(response => {
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
-          let td = table.querySelector(`tr td[data-oid="${edge.node.treeEntry.oid}"]`)
+          const {treeEntry, commit} = edge.node
+          let td = table.querySelector(`tr td[data-oid="${treeEntry.oid}"]`)
           td.colSpan = 1
           let tr = td.parentElement
           td = tr.insertCell(1)
           td.classList.add("has-text-grey")
-          td.innerHTML = edge.node.commit.message.split("\n", 1)[0].trim()
+          td.innerHTML = commit.message.split("\n", 1)[0].trim()
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
           td.classList.add("has-text-grey")
-          td.innerHTML = moment.utc(edge.node.commit.timestamp).fromNow()
+          td.innerHTML = moment.utc(commit.timestamp).fromNow()
         })
       })
   })
@@ -91,17 +105,16 @@ export default () => {
     }
   })
 
-  document.querySelectorAll("[data-react-class]").forEach(e => {
-    const targetId = document.getElementById(e.dataset.reactTargetId)
-    const targetDiv = targetId ? targetId : e
-    const reactProps = e.dataset.reactProps ? atob(e.dataset.reactProps) : "{}"
-    const reactElement = React.createElement(factory[upperFirst(camelCase(e.dataset.reactClass))], JSON.parse(reactProps))
-    ReactDOM.render(reactElement, targetDiv)
-  })
-
-  if(document.querySelector("[data-phx-view]")) {
-    let liveSocket = new LiveSocket("/live")
-    liveSocket.connect()
+  const blob = document.getElementById("blob-commit")
+  if(blob) {
+    const {repoId, commitOid, blobPath} = blob.dataset
+    BlobTableHeader.fetchTreeEntryWithCommit(repoId, commitOid, blobPath)
+      .then(response => {
+        const {commit} = response.node.object.treeEntryWithLastCommit
+        const container = document.createElement("div")
+        blob.prepend(container)
+        ReactDOM.render(React.createElement(BlobTableHeader, {commit: commit}), container)
+      })
   }
 
   const diff = document.getElementById("diff-commit")
