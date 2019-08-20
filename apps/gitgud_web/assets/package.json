@@ -12,7 +12,7 @@
     "bulma-divider": "^0.2.0",
     "bulma-timeline": "^3.0.4",
     "bulma-tooltip": "^2.0.2",
-    "highlight.js": "^9.15.9",
+    "highlight.js": "^9.15.10",
     "moment": "^2.24.0",
     "phoenix": "file:../../../deps/phoenix",
     "phoenix_html": "file:../../../deps/phoenix_html",
@@ -36,10 +36,10 @@
     "node-sass": "^4.12.0",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "relay-compiler": "^5.0.0",
-    "relay-compiler-webpack-plugin": "^5.0.1",
+    "relay-compiler-webpack-plugin": "^5.1.1",
     "sass-loader": "^7.2.0",
     "uglifyjs-webpack-plugin": "^2.2.0",
-    "webpack": "^4.39.1",
-    "webpack-cli": "^3.3.6"
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
   }
 }
