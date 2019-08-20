@@ -13,7 +13,7 @@
                 <%= tag %>
               </a>
               <%= if Map.has_key?(author, :id) do %>
-                <a href="<%= Routes.user_path(@conn, :show, author) %>" class="has-text-black"><%= author %></a>
+                <a href="<%= Routes.user_path(@conn, :show, author) %>" class="tag user"><%= author %></a>
               <% else %>
                 <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
               <% end %>

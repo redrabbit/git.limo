@@ -7,14 +7,17 @@ class CommitSignature extends React.Component {
     if(committer.login) {
       if(author.login && author.login !== committer.login) {
         return (
-          <div className="avatar-stack">
-            <a className="has-text-black" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={20} />{committer.login}</a>
-            <a className="has-text-black" href={author.url}><img className="avatar is-small" src={author.avatarUrl} width={20} />{author.login}</a>
+          <div className="tag user is-white">
+            <div className="avatar-stack">
+              <a href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={24} /></a>
+              <a href={author.url}><img className="avatar is-small" src={author.avatarUrl} width={24} /></a>
+            </div>
+            <a href={committer.url}>{committer.login}</a>
           </div>
         )
       } else {
         return (
-          <a className="has-text-black" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={20} />{committer.login}</a>
+          <a className="tag user is-white" href={committer.url}><img className="avatar is-small" src={committer.avatarUrl} width={24} />{committer.login}</a>
         )
       }
     } else {

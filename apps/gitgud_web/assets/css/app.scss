@@ -283,6 +283,52 @@ textarea.textarea {
   }
 }
 
+.user.tag {
+  padding-left: 0;
+  vertical-align: middle;
+  color: $black;
+
+  a {
+    color: $black;
+  }
+
+  &.is-white {
+    .avatar-stack {
+      a {
+        background-color: $white-ter;
+      }
+    }
+  }
+
+  .avatar-stack {
+    height: 24px;
+    margin-right: 2px;
+
+    a {
+      background-color: $white;
+      padding-right: 2px;
+
+      &:first-child {
+        z-index: 9999;
+        background-color: transparent;
+        img.avatar {
+          margin-left: 0;
+          margin-right: 0;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+    }
+  }
+
+  > img.avatar {
+    margin-left: 0;
+    margin-right: 0.25rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
 .branch-select {
   .dropdown {
     .dropdown-menu {

@@ -10,7 +10,7 @@ alias GitGud.{User, Repo, Commit, Email, GPGKey}
 
 defimpl Phoenix.HTML.Safe, for: User do
   def to_iodata(user) do
-    Phoenix.HTML.Safe.to_iodata([gravatar(user, size: 20), raw(user.login)])
+    Phoenix.HTML.Safe.to_iodata([gravatar(user, size: 24), raw(user.login)])
   end
 end
 
