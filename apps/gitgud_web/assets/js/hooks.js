@@ -66,6 +66,7 @@ export default () => {
         })
         const {commit} = latestCommitEdge.node
         const timestamp = moment.utc(commit.timestamp)
+        const messageTitle = commit.message.split("\n", 1)[0].trim()
         let header = table.createTHead()
         let tr = header.insertRow()
         let td = tr.insertCell(0)
@@ -74,7 +75,7 @@ export default () => {
         let commitLink = document.createElement("a")
         commitLink.href = commit.url
         commitLink.classList.add("has-text-grey")
-        commitLink.innerHTML = commit.message.split("\n", 1)[0].trim()
+        commitLink.appendChild(document.createTextNode(messageTitle))
         td.innerHTML += "&nbsp;"
         td.append(commitLink)
         td = tr.insertCell(1)
@@ -89,6 +90,7 @@ export default () => {
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
+          const messageTitle = commit.message.split("\n", 1)[0].trim()
           td = table.querySelector(`tr td[data-oid="${treeEntry.oid}"]`)
           td.colSpan = 1
           tr = td.parentElement
@@ -96,7 +98,7 @@ export default () => {
           commitLink = document.createElement("a")
           commitLink.href = commit.url
           commitLink.classList.add("has-text-grey")
-          commitLink.innerHTML = commit.message.split("\n", 1)[0].trim()
+          commitLink.appendChild(document.createTextNode(messageTitle))
           td.append(commitLink)
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
