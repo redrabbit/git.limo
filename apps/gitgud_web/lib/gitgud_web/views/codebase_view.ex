@@ -579,30 +579,43 @@ defmodule GitGud.Web.CodebaseView do
   defp highlight_language(_extension), do: "plaintext"
 
   defp wrap_message(content, :pre) do
-    content_tag(:pre, String.trim(content))
+    content = String.trim(content)
+    if content != "", do: content_tag(:pre, String.trim(content))
   end
 
   defp wrap_message(content, :br) do
-    content
-    |> String.split("\n\n", trim: true)
-    |> Enum.map(&content_tag(:p, wrap_paragraph(&1)))
+    content = String.trim(content)
+    if content != "" do
+      content
+      |> String.split("\n\n", trim: true)
+      |> Enum.map(&content_tag(:p, wrap_paragraph(&1)))
+    end
   end
 
   defp wrap_message(content, max_line_length) do
-    content
-    |> String.split("\n\n", trim: true)
-    |> Enum.map(&content_tag(:p, wrap_paragraph(&1, max_line_length)))
+    content = String.trim(content)
+    if content != "" do
+      content
+      |> String.split("\n\n", trim: true)
+      |> Enum.map(&content_tag(:p, wrap_paragraph(&1, max_line_length)))
+    end
   end
 
   defp wrap_paragraph(content) do
-    content
-    |> String.split("\n", trim: true)
-    |> Enum.intersperse(tag(:br))
+    content = String.trim(content)
+    if content != "" do
+      content
+      |> String.split("\n", trim: true)
+      |> Enum.intersperse(tag(:br))
+    end
   end
 
   defp wrap_paragraph(content, max_line_length) do
-    [word|rest] = String.split(content, ~r/\s+/, trim: true)
-    Enum.intersperse(lines_assemble(rest, max_line_length, String.length(word), word, []), tag(:br))
+    content = String.trim(content)
+    if content != "" do
+      [word|rest] = String.split(content, ~r/\s+/, trim: true)
+      Enum.intersperse(lines_assemble(rest, max_line_length, String.length(word), word, []), tag(:br))
+    end
   end
 
   defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
