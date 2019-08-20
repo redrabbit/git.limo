@@ -26,6 +26,10 @@ export default () => {
     })
   })
 
+  document.querySelectorAll("pre code[class]").forEach(code => {
+    hljs.highlightBlock(code)
+  })
+
   document.querySelectorAll("nav.level .breadcrumb").forEach(breadcrumb => {
     const level = breadcrumb.closest(".level")
     const levelRight = level.querySelector(".level-right")
