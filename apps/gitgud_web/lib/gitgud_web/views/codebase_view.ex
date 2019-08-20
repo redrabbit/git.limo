@@ -391,13 +391,13 @@ defmodule GitGud.Web.CodebaseView do
   defp batch_commits_committers(repo, commits) do
     authors = Enum.map(commits, &fetch_author(repo, &1))
     authors_emails = Enum.map(authors, &(&1.email))
-    committers = Enum.map(commits, &{&1.oid, fetch_committer(repo, &1)})
-    committers = Enum.filter(committers, fn {_oid, committer} -> committer.email in authors_emails end)
+    all_committers = Map.new(commits, &{&1.oid, fetch_committer(repo, &1)})
+    committers = Enum.filter(all_committers, fn {_oid, committer} -> committer.email in authors_emails end)
     committers = Enum.into(committers, %{})
     users = query_users(authors ++ Map.values(committers))
     commits
     |> Enum.zip(authors)
-    |> Enum.map(fn {commit, author} -> {commit, author, Map.get(committers, commit.oid, author)} end)
+    |> Enum.map(fn {commit, author} -> {commit, author, Map.get(committers, commit.oid, all_committers[commit.oid] || author)} end)
     |> Enum.map(&zip_author(&1, users))
   end
 
