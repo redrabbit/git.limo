@@ -54,7 +54,7 @@ defmodule GitGud.Web.EmailView do
       hidden_input(form, :id, value: email.id),
       content_tag(:div, [class: "tags has-addons"], do: [
         content_tag(:span, [class: "tag"], do: "Unverified"),
-        submit(content_tag(:span, content_tag(:i, [], class: "fa fa-sync"), [class: "icon"]), [class: "button tag is-warning"])
+        submit(content_tag(:span, content_tag(:i, [], class: "fa fa-sync"), [class: "icon"]), [class: "button tag tooltip is-warning", data_tooltip: "Send verification email"])
       ])
     ]
   end
