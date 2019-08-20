@@ -86,7 +86,6 @@ export default () => {
         time.dataset.tooltip = timestamp.format()
         time.innerHTML = timestamp.fromNow()
         td.append(time)
-
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
@@ -109,6 +108,7 @@ export default () => {
           time.innerHTML = timestamp.fromNow()
           td.append(time)
         })
+        table.classList.remove("loading")
       })
   })
 
@@ -146,6 +146,7 @@ export default () => {
         const container = document.createElement("div")
         blob.prepend(container)
         ReactDOM.render(React.createElement(BlobTableHeader, {commit: commit}), container)
+        blob.classList.remove("loading")
       })
   }
 

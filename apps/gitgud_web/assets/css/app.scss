@@ -334,6 +334,10 @@ textarea.textarea {
 }
 
 .card.blob {
+  &.loading {
+    margin-top: 4.55rem;
+  }
+
   .card-header {
     background-color: $white-ter;
     border-bottom: 1px solid $grey-lighter;
@@ -381,6 +385,10 @@ table.commits-table {
 }
 
 table.tree-table {
+  &.loading {
+    margin-top: 4.64rem;
+  }
+
   thead {
     td {
       border-width: 0 0 1px;
