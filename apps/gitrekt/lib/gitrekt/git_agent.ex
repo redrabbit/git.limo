@@ -261,7 +261,7 @@ defmodule GitRekt.GitAgent do
   """
   @spec tree_entries_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, [GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}]} | {:error, term}
   def tree_entries_by_path(agent, revision, path \\ :root, opts \\ [])
-  def tree_entries_by_path(agent, revision, path, [with_commits: true] = _opts), do: exec(agent, {:tree_entries_with_commits, revision, path})
+  def tree_entries_by_path(agent, revision, path, [with_commit: true] = _opts), do: exec(agent, {:tree_entries_with_commit, revision, path})
   def tree_entries_by_path(agent, revision, path, _opts), do: exec(agent, {:tree_entries, revision, path})
 
   @doc """
@@ -471,13 +471,13 @@ defmodule GitRekt.GitAgent do
   defp call({:tree_entries, tree}, handle), do: fetch_tree_entries(tree, handle)
   defp call({:tree_entries, rev, :root}, handle), do: fetch_tree_entries(rev, handle)
   defp call({:tree_entries, rev, path}, handle), do: fetch_tree_entries(rev, path, handle)
-  defp call({:tree_entries_with_commits, rev, :root}, handle) do
+  defp call({:tree_entries_with_commit, rev, :root}, handle) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
          {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
       zip_tree_entries_commits(tree_entries, commits, "", handle)
   end
 
-  defp call({:tree_entries_with_commits, rev, path}, handle) do
+  defp call({:tree_entries_with_commit, rev, path}, handle) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
          {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
       zip_tree_entries_commits(tree_entries, commits, path, handle)
