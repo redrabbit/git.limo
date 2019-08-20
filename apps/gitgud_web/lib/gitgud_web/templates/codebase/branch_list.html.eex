@@ -9,7 +9,7 @@
         <%= for {branch, {commit, author}} <- batch_branches(@repo, page.slice) do %>
           <tr>
             <td>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary has-text-weight-medium" %>">
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary" %> has-text-weight-medium">
                 <%= branch %>
               </a>
               Updated <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %> by
