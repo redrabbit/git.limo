@@ -9,7 +9,7 @@
         <%= for {tag, {commit, author}} <- batch_tags(@repo, page.slice) do %>
           <tr>
             <td>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small is-light has-text-weight-medium">
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small">
                 <%= tag %>
               </a>
               <%= if Map.has_key?(author, :id) do %>
