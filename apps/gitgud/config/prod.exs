@@ -1,5 +1,13 @@
 use Mix.Config
 
+# Configure your database
+config :gitgud, GitGud.DB,
+  username: "postgres",
+  password: "postgres",
+  database: "gitgud_prod",
+  hostname: "localhost",
+  pool_size: 10
+
 # Configure your SSH server
 config :gitgud,
   ssh_port: 22,
