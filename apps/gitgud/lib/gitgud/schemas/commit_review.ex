@@ -51,8 +51,8 @@ defmodule GitGud.CommitReview do
   Returns a commit review changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
-  def changeset(%__MODULE__{} = commit_comment, params \\ %{}) do
-    commit_comment
+  def changeset(%__MODULE__{} = commit_review, params \\ %{}) do
+    commit_review
     |> cast(params, [:repo_id, :commit_oid])
     |> cast_assoc(:comments, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :commit_oid])
