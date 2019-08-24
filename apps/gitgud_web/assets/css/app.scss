@@ -16,6 +16,8 @@ $tag-radius: $radius-small;
 
 $navbar-item-img-max-height: 3rem;
 
+$desktop: 1012px + (2 * $gap);
+
 $widescreen-enabled: false;
 $fullhd-enabled: false;
 
@@ -167,6 +169,23 @@ textarea.textarea {
     5%, 95% { transform: translateY(0px); }
 }
 
+.issue-header {
+  width: 100%;
+
+  .button {
+    margin: 0 .5rem 0 0;
+  }
+
+  .title {
+    display: inline;
+  }
+
+  .issue-header-meta {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid $grey-lighter;
+  }
+}
+
 .box {
   .box-header {
     @extend .card-header;
@@ -295,6 +314,17 @@ textarea.textarea {
       a {
         background-color: $white-ter;
       }
+    }
+  }
+
+  &.is-small {
+    vertical-align: middle;
+    height: 1.2rem;
+    margin-top: -0.2rem;
+
+    img.avatar {
+      width: 1.2rem;
+      height: 1.2rem;
     }
   }
 
@@ -515,20 +545,39 @@ table.blob-table {
   }
 }
 
+.thread, .inline-comments {
+  .comment, .comment-form {
+    @extend .box;
+    margin: 1rem 0;
+  }
+
+  .comment {
+    header {
+      margin-bottom: .8rem;
+    }
+  }
+}
+
 .inline-comments {
   > header {
     margin: 0 1rem;
   }
 
   .comment, .comment-form {
-    @extend .box;
-    max-width: 780px;
+    max-width: 753px;
     margin: 1rem;
   }
+}
 
-  .comment {
-    header {
-      margin-bottom: .8rem;
+table.issues-table {
+  tr {
+    td.selection {
+      width: 0.75rem;
+      text-align: center;
+    }
+    td.status {
+      width: 0.75rem;
+      text-align: center;
     }
   }
 }

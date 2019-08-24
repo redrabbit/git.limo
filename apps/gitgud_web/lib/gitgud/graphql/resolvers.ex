@@ -15,6 +15,8 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.RepoQuery
   alias GitGud.Comment
   alias GitGud.CommentQuery
+  alias GitGud.Issue
+  alias GitGud.IssueQuery
   alias GitGud.CommitLineReview
   alias GitGud.CommitReview
   alias GitGud.ReviewQuery
@@ -38,6 +40,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%User{} = _node, _info), do: :user
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
+  def node_type(%Issue{} = _node, _info), do: :issue
   def node_type(%CommitLineReview{} = _node, _info), do: :commit_line_review
   def node_type(%CommitReview{} = _node, _info), do: :commit_review
   def node_type(_struct, _info), do: nil
@@ -62,6 +65,12 @@ defmodule GitGud.GraphQL.Resolvers do
   def node(%{id: id, type: :comment}, %{context: ctx} = info, opts) do
     if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :author)),
       do: {:ok, comment},
+    else: node(%{id: id}, info)
+  end
+
+  def node(%{id: id, type: :issue}, %{context: ctx} = info, opts) do
+    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [comments: :author])),
+      do: {:ok, issue},
     else: node(%{id: id}, info)
   end
 
@@ -199,6 +208,24 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec repo_description_html(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_description_html(repo, %{} = _args, _info) do
     markdown(repo.description)
+  end
+
+  @doc """
+  Resolves the list of issues of a given `repo`.
+  """
+  @spec repo_issues(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def repo_issues(repo, %{} = _args, _info) do
+    {:ok, IssueQuery.repo_issues(repo, preload: [:author, comments: :author])}
+  end
+
+  @doc """
+  Resolves a single issue of a given `repo`.
+  """
+  @spec repo_issue(Repo.t, %{number: number}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  def repo_issue(repo, %{number: number} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user], preload: [:author, comments: :author]),
+      do: {:ok, issue},
+    else: {:error, "there is no issue for the given args"}
   end
 
   @doc """
@@ -520,6 +547,20 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Creates a repository issue comment.
+  """
+  @spec create_issue_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
+  def create_issue_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if author = ctx[:current_user] do
+      if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+        Issue.add_comment(issue, author, body)
+      end
+    else
+      {:error, "Unauthorized"}
+    end
+  end
+
+  @doc """
   Creates a Git line commit review comment.
   """
   @spec create_commit_line_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
@@ -600,6 +641,14 @@ defmodule GitGud.GraphQL.Resolvers do
         {:error, "Unauthorized"}
       end
     end
+  end
+
+  @doc """
+  Returns the subscription topic for issue comment events.
+  """
+  @spec issue_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
+  def issue_comment_topic(%{id: id}, _info) do
+     {:ok, topic: "#{from_relay_id(id)}}"}
   end
 
   @doc """
@@ -696,13 +745,15 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
-  defp comment_subscription(%CommitLineReview{} = thread, action), do: {String.to_atom("commit_line_review_comment_#{action}"), comment_subscription_topic(thread)}
-  defp comment_subscription(%CommitReview{} = thread, action), do: {String.to_atom("commit_review_comment_#{action}"), comment_subscription_topic(thread)}
+  defp comment_subscription(%Issue{id: id}, action), do: {String.to_atom("issue_comment_#{action}"), id}
+  defp comment_subscription(%CommitLineReview{id: id}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), id}
+  defp comment_subscription(%CommitReview{id: id}, action), do: {String.to_atom("commit_review_comment_#{action}"), id}
 
   defp comment_subscriptions(thread, action), do: [{String.to_atom("comment_#{action}"), comment_subscription_topic(thread)}, comment_subscription(thread, action)]
 
   defp comment_subscription_topic(%Comment{id: id}), do: id
-  defp comment_subscription_topic(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), do: "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"
-  defp comment_subscription_topic(%CommitReview{repo_id: repo_id, commit_oid: commit_oid}), do: "#{repo_id}:#{oid_fmt(commit_oid)}"
+  defp comment_subscription_topic(%Issue{id: id}), do: "issue:#{id}"
+  defp comment_subscription_topic(%CommitLineReview{id: id}), do: "commit-line-review:#{id}"
+  defp comment_subscription_topic(%CommitReview{id: id}), do: "commit-review:#{id}"
   defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(from_relay_id(node_id, info, preload: []))
 end

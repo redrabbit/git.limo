@@ -59,7 +59,7 @@ class Comment extends React.Component {
                 </button>
               </div>
             }
-            <a className="tag user" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={24} />{comment.author.login}</a> <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+            <a className="tag user" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={24} />{comment.author.login}</a> commented <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
           </header>
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} ref={this.body} />
         </div>

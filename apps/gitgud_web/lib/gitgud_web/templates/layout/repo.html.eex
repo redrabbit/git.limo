@@ -21,12 +21,12 @@
           </a>
         <% end %>
       <% end %>
-      <li>
-        <a class="has-text-grey-light">
-          <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
-          <span>Issues</span>
-        </a>
-      </li>
+      <%= navigation_item @conn, :issue do %>
+          <a href="<%= Routes.issue_path(@conn, :index, @repo.owner, @repo) %>">
+            <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
+            <span>Issues</span>
+          </a>
+      <% end %>
       <li>
         <a class="has-text-grey-light">
           <span class="icon"><i class="fa fa-book" aria-hidden="true"></i></span>

@@ -134,6 +134,11 @@ defmodule GitGud.GraphQL.Types do
     @desc "The HTML formatted description of the repository."
     field :description_html, :string, resolve: &Resolvers.repo_description_html/3
 
+    @desc "A list of issues for this repository."
+    field :issues, list_of(:issue) do
+      resolve &Resolvers.repo_issues/3
+    end
+
     @desc "The owner of the repository."
     field :owner, non_null(:user), resolve: &Resolvers.repo_owner/3
 
@@ -177,6 +182,15 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The HTTP URL for this repository."
     field :url, non_null(:string), resolve: &Resolvers.url/3
+  end
+
+  @desc "An issue."
+  node object :issue do
+    @desc "The title of the issue."
+    field :title, non_null(:string)
+
+    @desc "A list of comments for this issue."
+    field :comments, list_of(:comment)
   end
 
   @desc "Represents a Git reference."

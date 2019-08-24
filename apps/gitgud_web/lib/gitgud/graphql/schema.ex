@@ -95,6 +95,13 @@ defmodule GitGud.GraphQL.Schema do
   The root query for implementing GraphQL mutations.
   """
   mutation do
+    @desc "Create a new issue comment"
+    field :create_issue_comment, type: :comment do
+      arg :id, non_null(:id), description: "The issue ID."
+      arg :body, non_null(:string), description: "The body of the comment."
+      resolve &Resolvers.create_issue_comment/3
+    end
+
     @desc "Create a new commit line review comment"
     field :create_commit_line_review_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."
@@ -131,6 +138,24 @@ defmodule GitGud.GraphQL.Schema do
   @desc """
   """
   subscription do
+    @desc "Subscribe to new issue comments"
+    field :issue_comment_create, :comment do
+      arg :id, non_null(:id), description: "The issue ID."
+      config &Resolvers.issue_comment_topic/2
+    end
+
+    @desc "Subscribe to issue comment updates"
+    field :issue_comment_update, :comment do
+      arg :id, non_null(:id), description: "The issue ID."
+      config &Resolvers.issue_comment_topic/2
+    end
+
+    @desc "Subscribe to issue comment deletes"
+    field :issue_comment_delete, :comment do
+      arg :id, non_null(:id), description: "The issue ID."
+      config &Resolvers.issue_comment_topic/2
+    end
+
     @desc "Subscribe to new line commit reviews"
     field :commit_line_review_create, :commit_line_review do
       arg :repo_id, non_null(:id), description: "The repository."

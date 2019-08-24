@@ -89,6 +89,11 @@ defmodule GitGud.Web.Router do
       get "/tree/:revision/*path", CodebaseController, :tree
       get "/blob/:revision/*path", CodebaseController, :blob
 
+      get "/issues", IssueController, :index
+      get "/issues/new", IssueController, :new
+      post "/issues", IssueController, :create
+      get "/issues/:number", IssueController, :show
+
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update
       delete "/settings", RepoController, :delete

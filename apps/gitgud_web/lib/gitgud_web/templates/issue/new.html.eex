@@ -1,0 +1,27 @@
+<h1 class="title">Create a new issue</h1>
+
+<%= form_for @changeset, Routes.issue_path(@conn, :create, @repo.owner, @repo), [as: :issue], fn f -> %>
+  <div class="field">
+    <%= label f, :title, class: "label" %>
+    <div class="control">
+      <%= text_input f, :title, class: "input" %>
+    </div>
+    <%= error_tag f, :title %>
+  </div>
+
+  <%= inputs_for f, :comments, fn fc -> %>
+    <div class="field">
+      <%= label fc, :body, class: "label" %>
+      <div class="control">
+        <%= textarea fc, :body, class: "textarea" %>
+      </div>
+      <%= error_tag fc, :body %>
+    </div>
+  <% end %>
+
+  <hr />
+
+  <div class="field">
+    <%= submit "Create issue", class: "button is-success" %>
+  </div>
+<% end %>

@@ -1,0 +1,56 @@
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="subtitle">Issues</h2>
+    </div>
+  </div>
+  <%= if authenticated?(@conn) do %>
+    <div class="level-right">
+      <div class="level-item">
+        <%= if GitGud.User.verified?(@current_user) do %>
+          <a class="button is-success" href="<%= Routes.issue_path(@conn, :new, @repo.owner, @repo) %>">New</a>
+        <% else %>
+          <a class="button is-success" disabled>New</a>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<%= unless Enum.empty?(@repo.issues) do %>
+  <table class="table issues-table is-fullwidth">
+    <thead>
+      <tr>
+        <td class="selection">
+          <label class="checkbox">
+            <input type="checkbox">
+          </label>
+        </td>
+        <td colspan="2">
+        </td>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for issue <- @repo.issues do %>
+        <tr>
+          <td class="selection">
+            <label class="checkbox">
+              <input type="checkbox">
+            </label>
+          </td>
+          <td class="status">
+            <%= status_icon(issue, class: "has-text-success") %>
+          </td>
+          <td>
+            <p class="has-text-weight-bold">
+              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
+            </p>
+            <small>
+              #<%= issue.number %> opened <%= datetime_format(issue.inserted_at, "{relative}") %> by <a href="<%= Routes.user_path(@conn, :show, issue.author) %>" class="has-text-black"><%= issue.author.login %></a>
+            </small>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
