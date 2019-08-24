@@ -217,6 +217,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   defp batch_resolve_objects(objs, delta_refs) do
     {delta_objs, delta_refs} = batch_resolve_delta_objects(objs, delta_refs)
     objs = Map.merge(objs, delta_objs) # TODO
+    delta_refs = Enum.reverse(delta_refs)
     cond do
       Enum.empty?(delta_refs) ->
         {objs, []}
