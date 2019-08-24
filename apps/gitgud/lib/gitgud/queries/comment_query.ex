@@ -72,6 +72,7 @@ defmodule GitGud.CommentQuery do
     preload(query, ^preload)
   end
 
+  defp thread_struct("issues_comments"), do: GitGud.Issue
   defp thread_struct("commit_line_reviews_comments"), do: GitGud.CommitLineReview
   defp thread_struct("commit_reviews_comments"), do: GitGud.CommitReview
 end

@@ -7,7 +7,7 @@ defmodule GitGud.DB.Migrations.AddCommentsTable do
       add :thread_table, :string, null: false
       add :author_id, references("users", on_delete: :delete_all), null: false
       add :parent_id, references("comments", on_delete: :nilify_all)
-      add :body, :string, null: false
+      add :body, :text, null: false
       timestamps()
     end
   end

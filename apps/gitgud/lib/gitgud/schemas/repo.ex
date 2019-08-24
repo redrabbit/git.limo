@@ -11,6 +11,7 @@ defmodule GitGud.Repo do
   alias GitRekt.Git
 
   alias GitGud.DB
+  alias GitGud.Issue
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.UserQuery
@@ -24,6 +25,7 @@ defmodule GitGud.Repo do
     field :name, :string
     field :public, :boolean, default: true
     field :description, :string
+    has_many :issues, Issue
     field :__agent__, :any, virtual: true
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
