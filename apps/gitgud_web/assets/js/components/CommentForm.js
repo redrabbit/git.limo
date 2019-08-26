@@ -29,6 +29,14 @@ class CommentForm extends React.Component {
             </div>
             {(() => {
               switch(this.props.action) {
+                case "new":
+                  return (
+                    <div className="field is-grouped is-grouped-right">
+                      <div className="control">
+                        <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+                      </div>
+                    </div>
+                  )
                 case "edit":
                   return (
                     <div className="field is-grouped is-grouped-right">
@@ -40,7 +48,7 @@ class CommentForm extends React.Component {
                       </div>
                     </div>
                   )
-                case "open":
+                case "reopen":
                   return (
                     <div className="field is-grouped is-grouped-right">
                       <div className="control">

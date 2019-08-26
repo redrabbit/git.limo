@@ -531,6 +531,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Returns `true` if the viewer can edit a given `issue`; otherwise, returns `false`.
+  """
+  @spec issue_editable(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
+  def issue_editable(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, authorized?(ctx[:current_user], issue, :admin)}
+  end
+
+  @doc """
   Returns `true` if the viewer can edit a given `comment`; otherwise, returns `false`.
   """
   @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
@@ -565,6 +573,30 @@ defmodule GitGud.GraphQL.Resolvers do
       end
     else
       {:error, "Unauthorized"}
+    end
+  end
+
+  @doc """
+  Closes a repository issue.
+  """
+  @spec close_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
+  def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+      if authorized?(ctx[:current_user], issue, :admin),
+       do: Issue.close(issue),
+     else: {:error, "Unauthorized"}
+    end
+  end
+
+  @doc """
+  Reopens a repository issue.
+  """
+  @spec reopen_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
+  def reopen_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+      if authorized?(ctx[:current_user], issue, :admin),
+       do: Issue.reopen(issue),
+     else: {:error, "Unauthorized"}
     end
   end
 

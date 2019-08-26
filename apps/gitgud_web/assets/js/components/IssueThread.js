@@ -25,7 +25,9 @@ class IssueThread extends React.Component {
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
-      comments: []
+      status: null,
+      comments: [],
+      editable: false
     }
   }
 
@@ -38,6 +40,8 @@ class IssueThread extends React.Component {
       query IssueThreadQuery($id: ID!) {
         node(id: $id) {
           ... on Issue {
+            status
+            editable
             comments {
               id
               author {
@@ -61,7 +65,7 @@ class IssueThread extends React.Component {
 
     fetchQuery(environment, query, variables)
       .then(response => {
-        this.setState({comments: response.node.comments})
+        this.setState({status: response.node.status, editable: response.node.editable, comments: response.node.comments})
         this.subscribeComments()
       })
   }
@@ -170,29 +174,63 @@ class IssueThread extends React.Component {
   }
 
   renderForm() {
-    return <CommentForm action="close" onSubmit={this.handleFormSubmit} onClose={this.handleClose} />
+    if(!this.state.editable) {
+      return <CommentForm action="new" onSubmit={this.handleFormSubmit} />
+    } else {
+      switch(this.state.status) {
+        case "open":
+          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onClose={this.handleClose} />
+        case "close":
+          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onReopen={this.handleReopen} />
+      }
+    }
   }
 
   handleFormSubmit(body) {
+    if(body != "") {
+      const variables = {
+        id: this.props.id,
+        body: body
+      }
+
+      const mutation = graphql`
+        mutation IssueThreadCreateCommentMutation($id: ID!, $body: String!) {
+          createIssueComment(id: $id, body: $body) {
+            id
+            author {
+              login
+              avatarUrl
+              url
+            }
+            editable
+            deletable
+            body
+            bodyHtml
+            insertedAt
+          }
+        }
+      `
+
+      commitMutation(environment, {
+        mutation,
+        variables,
+        onCompleted: (response, errors) => {
+          this.handleCommentCreate(response.createIssueComment)
+        }
+      })
+    }
+  }
+
+  handleClose() {
     const variables = {
       id: this.props.id,
-      body: body
     }
 
     const mutation = graphql`
-      mutation IssueThreadCreateCommentMutation($id: ID!, $body: String!) {
-        createIssueComment(id: $id, body: $body) {
-          id
-          author {
-            login
-            avatarUrl
-            url
-          }
+      mutation IssueThreadCloseMutation($id: ID!) {
+        closeIssue(id: $id) {
+          status
           editable
-          deletable
-          body
-          bodyHtml
-          insertedAt
         }
       }
     `
@@ -201,15 +239,32 @@ class IssueThread extends React.Component {
       mutation,
       variables,
       onCompleted: (response, errors) => {
-        this.handleCommentCreate(response.createIssueComment)
+        this.setState({status: response.closeIssue.status, editable: response.closeIssue.editable})
       }
     })
   }
 
-  handleClose() {
-  }
-
   handleReopen() {
+    const variables = {
+      id: this.props.id,
+    }
+
+    const mutation = graphql`
+      mutation IssueThreadReopenMutation($id: ID!) {
+        reopenIssue(id: $id) {
+          status
+          editable
+        }
+      }
+    `
+
+    commitMutation(environment, {
+      mutation,
+      variables,
+      onCompleted: (response, errors) => {
+        this.setState({status: response.reopenIssue.status, editable: response.reopenIssue.editable})
+      }
+    })
   }
 
   handleCommentCreate(comment) {

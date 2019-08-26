@@ -76,20 +76,32 @@ defmodule GitGud.Issue do
   end
 
   @doc """
+  Reopens the given `issue`.
+  """
+  @spec reopen(t) :: {:ok, t} | {:error, term}
+  def reopen(%__MODULE__{} = issue) do
+    DB.update(change(issue, status: "open"))
+  end
+
+  @doc """
+  Similar to `reopen/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec reopen!(t) :: t
+  def reopen!(%__MODULE__{} = issue) do
+    DB.update!(change(issue, status: "open"))
+  end
+
+  @doc """
   Adds a new comment.
   """
   @spec add_comment(t, User.t, binary) :: {:ok, Comment.t} | {:error, term}
-  def add_comment(%__MODULE__{status: "open"} = issue, author, body) do
+  def add_comment(%__MODULE__{} = issue, author, body) do
     case DB.transaction(insert_issue_comment(issue.repo_id, issue.id, author.id, body)) do
       {:ok, %{comment: comment}} ->
         {:ok, struct(comment, issue: issue, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
-  end
-
-  def add_comment(%__MODULE__{} = _issue, _author, _body) do
-    {:error, :closed_issue}
   end
 
   @doc """
@@ -103,6 +115,23 @@ defmodule GitGud.Issue do
     |> validate_required([:repo_id, :author_id, :title])
     |> assoc_constraint(:repo)
     |> assoc_constraint(:author)
+  end
+
+  #
+  # Protocols
+  #
+
+  defimpl GitGud.AuthorizationPolicies do
+    alias GitGud.Issue
+
+    # Owner can do everything
+    def can?(%Issue{author_id: user_id}, %User{id: user_id}, _action), do: true
+
+    # Everybody can read comments.
+    def can?(%Issue{}, _user, :read), do: true
+
+    # Everything-else is forbidden.
+    def can?(%Issue{}, _user, _actions), do: false
   end
 
   #

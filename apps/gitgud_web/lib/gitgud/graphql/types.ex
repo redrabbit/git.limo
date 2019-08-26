@@ -189,8 +189,14 @@ defmodule GitGud.GraphQL.Types do
     @desc "The title of the issue."
     field :title, non_null(:string)
 
+    @desc "The status of the issue."
+    field :status, non_null(:string)
+
     @desc "A list of comments for this issue."
     field :comments, list_of(:comment)
+
+    @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
+    field :editable, non_null(:boolean), resolve: &Resolvers.issue_editable/3
   end
 
   @desc "Represents a Git reference."
