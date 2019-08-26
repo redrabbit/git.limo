@@ -442,5 +442,8 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Returns `true` if the current viewer can edit the comment; otherwise, returns `false`."
     field :editable, non_null(:boolean), resolve: &Resolvers.comment_editable/3
+
+    @desc "Returns `true` if the current viewer can delete the comment; otherwise, returns `false`."
+    field :deletable, non_null(:boolean), resolve: &Resolvers.comment_deletable/3
   end
 end

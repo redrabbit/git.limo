@@ -74,7 +74,6 @@ defmodule GitGud.Comment do
     DB.delete!(comment)
   end
 
-
   @doc """
   Returns a comment changeset for the given `params`.
   """

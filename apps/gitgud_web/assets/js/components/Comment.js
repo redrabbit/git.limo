@@ -42,23 +42,26 @@ class Comment extends React.Component {
       return <CommentForm body={comment.body} action="edit" onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
     } else {
       const timestamp = moment.utc(comment.insertedAt)
+      const {editable=true, deletable=true} = this.props
       return (
         <div className="comment">
           <header className="comment-header">
-            {comment.editable &&
               <div className="buttons is-pulled-right">
-                <button className="button is-small" onClick={this.handleUpdateClick}>
-                  <span className="icon is-small">
-                    <i className="fa fa-pen"></i>
-                  </span>
-                </button>
-                <button className="button is-small" onClick={this.handleDeleteClick}>
-                  <span className="icon is-small">
-                    <i className="fa fa-trash"></i>
-                  </span>
-                </button>
+                {editable && comment.editable &&
+                  <button className="button is-small" onClick={this.handleUpdateClick}>
+                    <span className="icon is-small">
+                      <i className="fa fa-pen"></i>
+                    </span>
+                  </button>
+                }
+                {deletable && comment.deletable &&
+                  <button className="button is-small" onClick={this.handleDeleteClick}>
+                    <span className="icon is-small">
+                      <i className="fa fa-trash"></i>
+                    </span>
+                  </button>
+                }
               </div>
-            }
             <a className="tag user" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={24} />{comment.author.login}</a> commented <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
           </header>
           <div className="content" dangerouslySetInnerHTML={{ __html: comment.bodyHtml}} ref={this.body} />
@@ -89,6 +92,7 @@ class Comment extends React.Component {
             url
           }
           editable
+          deletable
           body
           bodyHtml
           insertedAt

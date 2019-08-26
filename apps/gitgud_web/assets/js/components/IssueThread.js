@@ -46,6 +46,7 @@ class IssueThread extends React.Component {
                 url
               }
               editable
+              deletable
               body
               bodyHtml
               insertedAt
@@ -82,6 +83,7 @@ class IssueThread extends React.Component {
             url
           }
           editable
+          deletable
           body
           bodyHtml
           insertedAt
@@ -143,19 +145,26 @@ class IssueThread extends React.Component {
   }
 
   render() {
-    return (
-      <div className="thread">
-        <header>
-          <h2 className="subtitle">{this.state.comments.length == 1 ? "1 comment" : `${this.state.comments.length} comments`}</h2>
-        </header>
-        {this.renderComments()}
-        {this.renderForm()}
-      </div>
-    )
+    let comments = Array.from(this.state.comments)
+    if(comments.length > 0) {
+      let firstComment = comments.shift()
+      return (
+        <div className="thread">
+          <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
+          <header>
+            <h2 className="subtitle">{comments.length == 1 ? "1 comment" : `${comments.length} comments`}</h2>
+          </header>
+          {this.renderComments(comments)}
+          {this.renderForm()}
+        </div>
+      )
+    } else {
+      return <div></div>
+    }
   }
 
-  renderComments() {
-    return this.state.comments.map((comment, index) =>
+  renderComments(comments) {
+    return comments.map((comment, index) =>
       <Comment key={index} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
     )
   }
@@ -180,6 +189,7 @@ class IssueThread extends React.Component {
             url
           }
           editable
+          deletable
           body
           bodyHtml
           insertedAt

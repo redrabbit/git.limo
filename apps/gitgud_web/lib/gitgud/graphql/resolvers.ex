@@ -535,7 +535,15 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-     {:ok, authorized?(ctx[:current_user], comment, :admin)}
+    {:ok, authorized?(ctx[:current_user], comment, :admin)}
+  end
+
+  @doc """
+  Returns `true` if the viewer can delete a given `comment`; otherwise, returns `false`.
+  """
+  @spec comment_deletable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
+  def comment_deletable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, authorized?(ctx[:current_user], comment, :admin)}
   end
 
   @doc """
