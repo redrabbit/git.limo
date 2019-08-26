@@ -19,12 +19,12 @@ class IssueThread extends React.Component {
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
-    this.handleFormCancel = this.handleFormCancel.bind(this)
+    this.handleClose = this.handleClose.bind(this)
+    this.handleReopen = this.handleReopen.bind(this)
     this.handleCommentCreate = this.handleCommentCreate.bind(this)
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
-      folded: true,
       comments: []
     }
   }
@@ -161,21 +161,7 @@ class IssueThread extends React.Component {
   }
 
   renderForm() {
-    if(this.state.folded) {
-      return (
-        <div className="comment-form">
-          <form>
-            <div className="field">
-              <div className="control">
-                <input name="comment[body]" className="input" placeholder="Leave a comment" onFocus={() => this.setState({folded: false})} />
-              </div>
-            </div>
-          </form>
-        </div>
-      )
-    } else {
-      return <CommentForm onSubmit={this.handleFormSubmit} onCancel={this.handleFormCancel} />
-    }
+    return <CommentForm action="close" onSubmit={this.handleFormSubmit} onClose={this.handleClose} />
   }
 
   handleFormSubmit(body) {
@@ -206,13 +192,14 @@ class IssueThread extends React.Component {
       variables,
       onCompleted: (response, errors) => {
         this.handleCommentCreate(response.createIssueComment)
-        this.setState({folded: true})
       }
     })
   }
 
-  handleFormCancel() {
-    this.setState({folded: true})
+  handleClose() {
+  }
+
+  handleReopen() {
   }
 
   handleCommentCreate(comment) {

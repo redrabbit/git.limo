@@ -27,21 +27,54 @@ class CommentForm extends React.Component {
                 <textarea name="comment[body]"className="textarea" placeholder="Leave a comment" value={this.state.body} onChange={event => this.setState({body: event.target.value})} ref={this.bodyInput} />
               </div>
             </div>
-            <div className="field is-grouped">
-              <div className="control">
-                <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
-              </div>
-              <div className="control">
-                {(() => {
-                  switch(this.props.action) {
-                    case "edit":
-                      return <button className="button is-link" type="submit" disabled={this.state.body === ""}>Update comment</button>
-                    default:
-                      return <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
-                  }
-                })()}
-              </div>
-            </div>
+            {(() => {
+              switch(this.props.action) {
+                case "edit":
+                  return (
+                    <div className="field is-grouped is-grouped-right">
+                      <div className="control">
+                        <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
+                      </div>
+                      <div className="control">
+                        <button className="button is-link" type="submit" disabled={this.state.body === ""}>Update comment</button>
+                      </div>
+                    </div>
+                  )
+                case "open":
+                  return (
+                    <div className="field is-grouped is-grouped-right">
+                      <div className="control">
+                        <button className="button" onClick={this.props.onReopen}>{this.state.body === "" ? "Reopen issue" : "Reopen and comment"}</button>
+                      </div>
+                      <div className="control">
+                        <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+                      </div>
+                    </div>
+                  )
+                case "close":
+                  return (
+                    <div className="field is-grouped is-grouped-right">
+                      <div className="control">
+                        <button className="button" onClick={this.props.onClose}>{this.state.body === "" ? "Close issue" : "Close and comment"}</button>
+                      </div>
+                      <div className="control">
+                        <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+                      </div>
+                    </div>
+                  )
+                default:
+                  return (
+                    <div className="field is-grouped is-grouped-right">
+                      <div className="control">
+                        <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
+                      </div>
+                      <div className="control">
+                        <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+                      </div>
+                    </div>
+                  )
+              }
+            })()}
           </form>
         </div>
       )
