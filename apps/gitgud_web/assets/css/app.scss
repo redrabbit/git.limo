@@ -34,6 +34,7 @@ $divider-thickness: $hr-height;
 @import "~bulma-divider/src/sass/index";
 @import "~bulma-tooltip/src/sass/index";
 @import "~bulma-timeline/src/sass/index";
+@import "~bulma-badge/src/sass/index";
 
 $fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
 
@@ -167,23 +168,6 @@ textarea.textarea {
 @keyframes slideDown {
     0%, 100% { transform: translateY(-100px); }
     5%, 95% { transform: translateY(0px); }
-}
-
-.issue-header {
-  width: 100%;
-
-  .button {
-    margin: 0 .5rem 0 0;
-  }
-
-  .title {
-    display: inline;
-  }
-
-  .issue-header-meta {
-    padding: 1.5rem 0;
-    border-bottom: 1px solid $grey-lighter;
-  }
 }
 
 .box {
@@ -549,6 +533,7 @@ table.blob-table {
   .comment, .comment-form {
     @extend .box;
     margin: 1rem 0;
+    max-width: 753px;
   }
 
   .comment {
@@ -564,7 +549,6 @@ table.blob-table {
   }
 
   .comment, .comment-form {
-    max-width: 753px;
     margin: 1rem;
   }
 }

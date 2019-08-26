@@ -27,11 +27,27 @@
           </label>
         </td>
         <td colspan="2">
+          <div class="field is-grouped">
+            <div class="control">
+              <%= if Map.get(@conn.query_params, "status", "open") == "open" do %>
+                <%= status_button("open", class: "is-small has-badge-rounded has-badge-success has-badge-outlined", data_badge: count_issues(@repo, "open")) %>
+              <% else %>
+                <%= status_button("open", class: "is-small is-outlined has-badge-rounded has-badge-success", data_badge: count_issues(@repo, "open")) %>
+              <% end %>
+            </div>
+            <div class="control">
+              <%= if Map.get(@conn.query_params, "status", "open") == "close" do %>
+                <%= status_button("close", class: "is-small has-badge-rounded has-badge-danger has-badge-outlined", data_badge: count_issues(@repo, "close")) %>
+              <% else %>
+                <%= status_button("close", class: "is-small is-outlined has-badge-rounded has-badge-danger", data_badge: count_issues(@repo, "close")) %>
+              <% end %>
+            </div>
+          </div>
         </td>
       </tr>
     </thead>
     <tbody>
-      <%= for issue <- @repo.issues do %>
+      <%= for issue <- filter_issues(@repo, @conn.query_params["status"] || "open") do %>
         <tr>
           <td class="selection">
             <label class="checkbox">

@@ -1,14 +1,10 @@
 <div class="columns">
   <div class="column is-12">
     <h1 class="title"><%= @issue.title %> <span class="has-text-grey-light">#<%= @issue.number %></span></h1>
-    <p>
-      <%= status_tag(@issue) %>
-      <a href="<%= Routes.user_path(@conn, :show, @issue.author) %>" class="has-text-black"><%= @issue.author.login %></a>&nbsp;opened this issue&nbsp;<%= datetime_format(@issue.inserted_at, "{relative}") %>
-    </p>
+    <%= status_tag(@issue) %>
+    <a href="<%= Routes.user_path(@conn, :show, @issue.author) %>" class="has-text-black"><%= @issue.author.login %></a>&nbsp;opened this issue&nbsp;<%= datetime_format(@issue.inserted_at, "{relative}") %>
   </div>
 </div>
-
-<hr />
 
 <div class="columns">
   <div class="column is-three-quarters">

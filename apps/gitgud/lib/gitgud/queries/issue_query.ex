@@ -49,6 +49,17 @@ defmodule GitGud.IssueQuery do
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, status], opts))
   end
 
+  def count_repo_issues(repo, opts \\ [])
+  def count_repo_issues(%Repo{id: repo_id} = _repo, opts) do
+    {status, opts} = Keyword.pop(opts, :status, :all)
+    DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
+  end
+
+  def count_repo_issues(repo_id, opts) do
+    {status, opts} = Keyword.pop(opts, :status, :all)
+    DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
+  end
+
   @doc """
   Returns a query for fetching a repository issue by its `id`.
   """
@@ -70,7 +81,13 @@ defmodule GitGud.IssueQuery do
   end
 
   def repo_issues_query(repo_id, status) do
-    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^status)
+    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
+  end
+
+  def count_repo_issues_query(repo_id, status) do
+    repo_id
+    |> repo_issues_query(status)
+    |> select([issue: e], count())
   end
 
   #

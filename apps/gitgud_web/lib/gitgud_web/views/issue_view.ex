@@ -3,34 +3,70 @@ defmodule GitGud.Web.IssueView do
   use GitGud.Web, :view
 
   alias GitGud.Issue
+  alias GitGud.IssueQuery
 
   import Phoenix.HTML.Tag
+  import Phoenix.HTML.Link
 
+  @spec status_tag(Issue.t | binary, keyword) :: binary
   def status_tag(issue, attrs \\ [])
-  def status_tag(%Issue{status: "open"} = issue, attrs) do
+  def status_tag(%Issue{status: status} = _issue, attrs), do: status_tag(status, attrs)
+  def status_tag("open", attrs) do
     content_tag(:p, Keyword.merge([class: "tag is-success"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end), do: [
       content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), class: "icon"),
       content_tag(:span, "Open")
     ])
   end
 
-  def status_tag(%Issue{status: "close"} = issue, attrs) do
+  def status_tag("close", attrs) do
     content_tag(:p, Keyword.merge([class: "tag is-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end), do: [
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
       content_tag(:span, "Closed")
     ])
   end
 
+  @spec status_tag(Issue.t | binary, keyword) :: binary
+  def status_button(issue, attrs \\ [])
+  def status_button(%Issue{status: status} = _issue, attrs), do: status_button(status, attrs)
+  def status_button("open", attrs) do
+    link(Keyword.merge([to: "?status=open", class: "button is-success"], attrs, fn
+      :to, _v1, v2 -> v2
+      _k, v1, v2 -> "#{v1} #{v2}" end), do: [
+      content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), class: "icon"),
+      content_tag(:span, "Open")
+    ])
+  end
+
+  def status_button("close", attrs) do
+    link(Keyword.merge([to: "?status=close", class: "button is-danger"], attrs, fn
+      :to, _v1, v2 -> v2
+      _k, v1, v2 -> "#{v1} #{v2}" end), do: [
+      content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
+      content_tag(:span, "Closed")
+    ])
+  end
+
   def status_icon(issue, attrs \\ [])
-  def status_icon(%Issue{status: "open"}, attrs) do
+  def status_icon(%Issue{status: status}, attrs), do: status_icon(status, attrs)
+  def status_icon("open", attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), Keyword.merge([class: "icon has-text-success"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
-  def status_icon(%Issue{status: "close"}, attrs) do
+
+  def status_icon("close", attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon has-text-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
-  def status_icon_with_color()
+  def count_issues(repo, status) do
+    if Ecto.assoc_loaded?(repo.issues),
+     do: Enum.count(filter_issues(repo, status)),
+   else: IssueQuery.count_repo_issues(repo, status: status)
+  end
+
+  def filter_issues(repo, "all"), do: repo.issues
+  def filter_issues(repo, status) do
+    Enum.filter(repo.issues, &(&1.status == to_string(status)))
+  end
 
   @spec title(atom, map) :: binary
   def title(:index, %{repo: repo}), do: "Issues · #{repo.owner.login}/#{repo.name}"
