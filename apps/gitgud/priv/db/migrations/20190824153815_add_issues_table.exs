@@ -13,6 +13,7 @@ defmodule GitGud.DB.Migrations.AddIssuesTable do
       add :title, :string, null: false
       add :status, :issues_statuses, null: false, default: "open"
       add :author_id, references("users", on_delete: :delete_all), null: false
+      add :events, {:array, :map}, null: false, default: []
       timestamps()
     end
 

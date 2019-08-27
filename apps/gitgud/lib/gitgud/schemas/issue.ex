@@ -21,6 +21,7 @@ defmodule GitGud.Issue do
     field :status, :string, default: "open"
     belongs_to :author, User
     many_to_many :comments, Comment, join_through: "issues_comments", join_keys: [thread_id: :id, comment_id: :id]
+    field :events, {:array, :map}
     timestamps()
   end
 
@@ -32,6 +33,7 @@ defmodule GitGud.Issue do
     author: User.t,
     repo_id: pos_integer,
     comments: [Comment.t],
+    events: [map],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
   }
@@ -63,32 +65,44 @@ defmodule GitGud.Issue do
   Closes the given `issue`.
   """
   @spec close(t) :: {:ok, t} | {:error, term}
-  def close(%__MODULE__{} = issue) do
-    DB.update(change(issue, status: "close"))
+  def close(%__MODULE__{} = issue, opts \\ []) do
+    issue
+    |> change(status: "close")
+    |> put_event(:close, opts)
+    |> DB.update()
   end
 
   @doc """
   Similar to `close/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec close!(t) :: t
-  def close!(%__MODULE__{} = issue) do
-    DB.update!(change(issue, status: "close"))
+  def close!(%__MODULE__{} = issue, opts \\ []) do
+    issue
+    |> change(status: "close")
+    |> put_event(:close, opts)
+    |> DB.update!()
   end
 
   @doc """
   Reopens the given `issue`.
   """
   @spec reopen(t) :: {:ok, t} | {:error, term}
-  def reopen(%__MODULE__{} = issue) do
-    DB.update(change(issue, status: "open"))
+  def reopen(%__MODULE__{} = issue, opts \\ []) do
+    issue
+    |> change(status: "open")
+    |> put_event(:reopen, opts)
+    |> DB.update()
   end
 
   @doc """
   Similar to `reopen/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec reopen!(t) :: t
-  def reopen!(%__MODULE__{} = issue) do
-    DB.update!(change(issue, status: "open"))
+  def reopen!(%__MODULE__{} = issue, opts \\ []) do
+    issue
+    |> change(status: "open")
+    |> put_event(:reopen, opts)
+    |> DB.update!()
   end
 
   @doc """
@@ -102,6 +116,17 @@ defmodule GitGud.Issue do
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Adds a new `event`.
+  """
+  @spec add_event(t, map) :: {:ok, t} | {:error, term}
+  def add_event(%__MODULE__{} = issue, type, data \\ %{}) do
+    issue
+    |> change()
+    |> put_event(type, data)
+    |> DB.update()
   end
 
   @doc """
@@ -137,6 +162,12 @@ defmodule GitGud.Issue do
   #
   # Helpers
   #
+
+  defp put_event(changeset, type, data) do
+    event = Map.merge(Map.new(data), %{type: type, timestamp: DateTime.utc_now()})
+    changeset
+    |> put_change(:events, get_field(changeset, :events, []) ++ [event])
+  end
 
   defp map_issue_params(issue_params) do
     issue_params =

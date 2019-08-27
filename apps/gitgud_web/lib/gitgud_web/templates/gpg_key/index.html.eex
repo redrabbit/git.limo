@@ -37,7 +37,7 @@
                 <label>Email addresses:</label>
                 <%= for email_address <- gpg_key.emails do %>
                   <%= if Enum.any?(@user.emails, &(&1.verified && &1.address == email_address)) do %>
-                    <span class="tag tooltip is-primary is-tooltip-bottom" data-tooltip="Verified email address"><%= email_address %></span>
+                    <span class="tag tooltip is-light is-tooltip-bottom" data-tooltip="Verified email address"><%= email_address %></span>
                   <% else %>
                     <span class="tag tooltip is-white is-tooltip-warning is-tooltip-bottom" data-tooltip="Unverified email address"><%= email_address %></span>
                   <% end %>

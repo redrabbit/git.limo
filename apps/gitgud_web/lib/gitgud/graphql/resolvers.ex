@@ -589,7 +589,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], issue, :admin),
-       do: Issue.close(issue),
+       do: Issue.close(issue, user_id: ctx[:current_user].id),
      else: {:error, "Unauthorized"}
     end
   end
@@ -601,7 +601,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def reopen_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], issue, :admin),
-       do: Issue.reopen(issue),
+       do: Issue.reopen(issue, user_id: ctx[:current_user].id),
      else: {:error, "Unauthorized"}
     end
   end
