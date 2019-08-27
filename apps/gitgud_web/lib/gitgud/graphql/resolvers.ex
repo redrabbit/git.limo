@@ -569,7 +569,13 @@ defmodule GitGud.GraphQL.Resolvers do
   def create_issue_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if author = ctx[:current_user] do
       if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
-        Issue.add_comment(issue, author, body)
+        case Issue.add_comment(issue, author, body) do
+          {:ok, comment} ->
+            publish(GitGud.Web.Endpoint, comment, issue_comment_create: issue.id)
+            {:ok, comment}
+          {:error, reason} ->
+            {:error, reason}
+        end
       end
     else
       {:error, "Unauthorized"}
@@ -688,7 +694,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec issue_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def issue_comment_topic(%{id: id}, _info) do
-     {:ok, topic: "#{from_relay_id(id)}}"}
+    {:ok, topic: from_relay_id(id)}
   end
 
   @doc """
@@ -696,7 +702,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_created(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
+    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   @doc """
@@ -704,7 +710,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
-     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
   @doc """
@@ -712,7 +718,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-     {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
+    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   @doc """
@@ -786,14 +792,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   defp comment_subscription(%Issue{id: id}, action), do: {String.to_atom("issue_comment_#{action}"), id}
-  defp comment_subscription(%CommitLineReview{id: id}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), id}
-  defp comment_subscription(%CommitReview{id: id}, action), do: {String.to_atom("commit_review_comment_#{action}"), id}
+  defp comment_subscription(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+  defp comment_subscription(%CommitReview{repo_id: repo_id, commit_oid: commit_oid}, action), do: {String.to_atom("commit_review_comment_#{action}"), "#{repo_id}:#{oid_fmt(commit_oid)}"}
 
   defp comment_subscriptions(thread, action), do: [{String.to_atom("comment_#{action}"), comment_subscription_topic(thread)}, comment_subscription(thread, action)]
 
   defp comment_subscription_topic(%Comment{id: id}), do: id
   defp comment_subscription_topic(%Issue{id: id}), do: "issue:#{id}"
-  defp comment_subscription_topic(%CommitLineReview{id: id}), do: "commit-line-review:#{id}"
-  defp comment_subscription_topic(%CommitReview{id: id}), do: "commit-review:#{id}"
+  defp comment_subscription_topic(%CommitLineReview{id: id}), do: "commit_line_review:#{id}"
+  defp comment_subscription_topic(%CommitReview{id: id}), do: "commit_review:#{id}"
   defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(from_relay_id(node_id, info, preload: []))
 end
