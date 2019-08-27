@@ -26,7 +26,7 @@ defmodule GitGud.Web.IssueController do
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name, "number" => issue_number} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if issue = IssueQuery.repo_issue(repo, String.to_integer(issue_number), preload: :author) do
+      if issue = IssueQuery.repo_issue(repo, String.to_integer(issue_number), viewer: current_user(conn)) do
         render(conn, "show.html", repo: repo, issue: issue)
       end
     end || {:error, :not_found}
