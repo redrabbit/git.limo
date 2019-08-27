@@ -192,11 +192,22 @@ defmodule GitGud.GraphQL.Types do
     @desc "The status of the issue."
     field :status, non_null(:string)
 
+    field :number, non_null(:integer)
+
+    field :author, non_null(:user)
+
     @desc "A list of comments for this issue."
     field :comments, list_of(:comment)
 
     @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
     field :editable, non_null(:boolean), resolve: &Resolvers.issue_editable/3
+
+    @desc "The creation timestamp of the comment."
+    field :inserted_at, non_null(:naive_datetime)
+
+    @desc "The last update timestamp of the comment."
+    field :updated_at, non_null(:naive_datetime)
+
   end
 
   @desc "Represents a Git reference."

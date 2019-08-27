@@ -54,6 +54,7 @@ class CommitReview extends React.Component {
                   url
                 }
                 editable
+                deletable
                 body
                 bodyHtml
                 insertedAt
@@ -97,6 +98,7 @@ class CommitReview extends React.Component {
             url
           }
           editable
+          deletable
           body
           bodyHtml
           insertedAt

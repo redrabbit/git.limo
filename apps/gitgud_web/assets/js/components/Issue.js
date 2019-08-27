@@ -5,10 +5,12 @@ import {fetchQuery, commitMutation, requestSubscription, graphql} from "react-re
 
 import environment from "../relay-environment"
 
+import moment from "moment"
+
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
 
-class IssueThread extends React.Component {
+class Issue extends React.Component {
   constructor(props) {
     super(props)
     this.fetchIssue = this.fetchIssue.bind(this)
@@ -16,6 +18,8 @@ class IssueThread extends React.Component {
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
+    this.renderStatus = this.renderStatus.bind(this)
+    this.renderThread = this.renderThread.bind(this)
     this.renderComments = this.renderComments.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
@@ -25,9 +29,13 @@ class IssueThread extends React.Component {
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
+      title: null,
+      author: null,
       status: null,
-      comments: [],
-      editable: false
+      number: null,
+      insertedAt: null,
+      editable: false,
+      comments: []
     }
   }
 
@@ -37,10 +45,17 @@ class IssueThread extends React.Component {
 
   fetchIssue() {
     const query = graphql`
-      query IssueThreadQuery($id: ID!) {
+      query IssueQuery($id: ID!) {
         node(id: $id) {
           ... on Issue {
+            title
+            number
             status
+            author {
+              login
+              url
+            }
+            insertedAt
             editable
             comments {
               id
@@ -65,7 +80,15 @@ class IssueThread extends React.Component {
 
     fetchQuery(environment, query, variables)
       .then(response => {
-        this.setState({status: response.node.status, editable: response.node.editable, comments: response.node.comments})
+        this.setState({
+          title: response.node.title,
+          number: response.node.number,
+          status: response.node.status,
+          author: response.node.author,
+          insertedAt: response.node.insertedAt,
+          editable: response.node.editable,
+          comments: response.node.comments
+        })
         this.subscribeComments()
       })
   }
@@ -78,7 +101,7 @@ class IssueThread extends React.Component {
 
   subscribeCommentCreate() {
     const subscription = graphql`
-      subscription IssueThreadCommentCreateSubscription($id: ID!) {
+      subscription IssueCommentCreateSubscription($id: ID!) {
         issueCommentCreate(id: $id) {
           id
           author {
@@ -108,7 +131,7 @@ class IssueThread extends React.Component {
 
   subscribeCommentUpdate() {
     const subscription = graphql`
-      subscription IssueThreadCommentUpdateSubscription($id: ID!) {
+      subscription IssueCommentUpdateSubscription($id: ID!) {
         issueCommentUpdate(id: $id) {
           id
           body
@@ -130,7 +153,7 @@ class IssueThread extends React.Component {
 
   subscribeCommentDelete() {
     const subscription = graphql`
-      subscription IssueThreadCommentDeleteSubscription($id: ID!) {
+      subscription IssueCommentDeleteSubscription($id: ID!) {
         issueCommentDelete(id: $id) {
           id
         }
@@ -149,22 +172,59 @@ class IssueThread extends React.Component {
   }
 
   render() {
-    let comments = Array.from(this.state.comments)
-    if(comments.length > 0) {
-      let firstComment = comments.shift()
+    const {title, number, insertedAt, author} = this.state
+    if(number) {
+      const timestamp = moment.utc(insertedAt)
       return (
-        <div className="thread">
-          <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
-          <header>
-            <h2 className="subtitle">{comments.length == 1 ? "1 comment" : `${comments.length} comments`}</h2>
-          </header>
-          {this.renderComments(comments)}
-          {this.renderForm()}
+        <div>
+          <div className="columns">
+            <div className="column is-12">
+              <h1 className="title">{title} <span className="has-text-grey-light">#{number}</span></h1>
+              {this.renderStatus()}
+              &nbsp;
+              <a href="{author.url}" className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+            </div>
+          </div>
+
+          <div className="columns">
+            <div className="column is-three-quarters">
+              <div className="thread">
+                {this.renderThread()}
+              </div>
+            </div>
+            <div className="column is-one-quarter">
+            </div>
+          </div>
         </div>
       )
     } else {
       return <div></div>
     }
+  }
+
+  renderStatus() {
+    const {status} = this.state
+    switch(status) {
+      case "open":
+        return <p className="tag is-success"><span className="icon"><i className="fa fa-exclamation-circle"></i></span><span>Open</span></p>
+      case "close":
+        return <p className="tag is-danger"><span className="icon"><i className="fa fa-check-circle"></i></span><span>Closed</span></p>
+    }
+  }
+
+  renderThread() {
+    let comments = this.state.comments.slice()
+    let firstComment = comments.shift()
+    return (
+      <div className="thread">
+        <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
+        <header>
+          <h2 className="subtitle">{comments.length == 1 ? "1 comment" : `${comments.length} comments`}</h2>
+        </header>
+        {this.renderComments(comments)}
+        {this.renderForm()}
+      </div>
+    )
   }
 
   renderComments(comments) {
@@ -174,10 +234,11 @@ class IssueThread extends React.Component {
   }
 
   renderForm() {
-    if(!this.state.editable) {
+    const {status, editable} = this.state
+    if(!editable) {
       return <CommentForm action="new" onSubmit={this.handleFormSubmit} />
     } else {
-      switch(this.state.status) {
+      switch(status) {
         case "open":
           return <CommentForm action="close" onSubmit={this.handleFormSubmit} onClose={this.handleClose} />
         case "close":
@@ -194,7 +255,7 @@ class IssueThread extends React.Component {
       }
 
       const mutation = graphql`
-        mutation IssueThreadCreateCommentMutation($id: ID!, $body: String!) {
+        mutation IssueCreateCommentMutation($id: ID!, $body: String!) {
           createIssueComment(id: $id, body: $body) {
             id
             author {
@@ -227,7 +288,7 @@ class IssueThread extends React.Component {
     }
 
     const mutation = graphql`
-      mutation IssueThreadCloseMutation($id: ID!) {
+      mutation IssueCloseMutation($id: ID!) {
         closeIssue(id: $id) {
           status
           editable
@@ -250,7 +311,7 @@ class IssueThread extends React.Component {
     }
 
     const mutation = graphql`
-      mutation IssueThreadReopenMutation($id: ID!) {
+      mutation IssueReopenMutation($id: ID!) {
         reopenIssue(id: $id) {
           status
           editable
@@ -279,4 +340,4 @@ class IssueThread extends React.Component {
   }
 }
 
-export default IssueThread
+export default Issue

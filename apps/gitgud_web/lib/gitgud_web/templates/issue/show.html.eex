@@ -1,17 +1,1 @@
-<div class="columns">
-  <div class="column is-12">
-    <h1 class="title"><%= @issue.title %> <span class="has-text-grey-light">#<%= @issue.number %></span></h1>
-    <%= status_tag(@issue) %>
-    <a href="<%= Routes.user_path(@conn, :show, @issue.author) %>" class="has-text-black"><%= @issue.author.login %></a>&nbsp;opened this issue&nbsp;<%= datetime_format(@issue.inserted_at, "{relative}") %>
-  </div>
-</div>
-
-<div class="columns">
-  <div class="column is-three-quarters">
-    <div class="thread">
-      <%= react_component("issue-thread", id: to_relay_id(@issue)) %>
-    </div>
-  </div>
-  <div class="column is-one-quarter">
-  </div>
-</div>
+<%= react_component("issue", id: to_relay_id(@issue)) %>

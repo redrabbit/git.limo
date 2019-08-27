@@ -69,7 +69,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :issue}, %{context: ctx} = info, opts) do
-    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [comments: :author])),
+    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:author, comments: :author])),
       do: {:ok, issue},
     else: node(%{id: id}, info)
   end
