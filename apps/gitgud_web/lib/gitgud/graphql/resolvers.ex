@@ -692,8 +692,8 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Returns the subscription topic for issue comment events.
   """
-  @spec issue_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
-  def issue_comment_topic(%{id: id}, _info) do
+  @spec issue_topic(map, map) :: {:ok, keyword} | {:error, term}
+  def issue_topic(%{id: id}, _info) do
     {:ok, topic: from_relay_id(id)}
   end
 

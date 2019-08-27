@@ -14,6 +14,7 @@ class Issue extends React.Component {
   constructor(props) {
     super(props)
     this.fetchIssue = this.fetchIssue.bind(this)
+    this.subscribeStatus = this.subscribeStatus.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
@@ -89,8 +90,29 @@ class Issue extends React.Component {
           editable: response.node.editable,
           comments: response.node.comments
         })
+        this.subscribeStatus()
         this.subscribeComments()
       })
+  }
+
+  subscribeStatus() {
+    const subscription = graphql`
+      subscription IssueStatusSubscription($id: ID!) {
+        issueStatus(id: $id) {
+          status
+        }
+      }
+    `
+
+    const variables = {
+      id: this.props.id,
+    }
+
+    return requestSubscription(environment, {
+      subscription,
+      variables,
+      onNext: response => this.setState({status: response.issueStatus.status})
+    })
   }
 
   subscribeComments() {
