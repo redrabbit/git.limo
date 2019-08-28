@@ -109,7 +109,7 @@ textarea.textarea {
   margin-bottom: 1.5rem;
 
   .timeline-header {
-    justify-content: end;
+    width: 100%;
   }
 
   .timeline-item {
@@ -551,6 +551,30 @@ table.blob-table {
   .comment, .comment-form {
     margin: 1rem;
   }
+}
+
+.thread .timeline, .inline-comments .timeline {
+  .timeline-header {
+    width: 100%;
+  }
+
+  .timeline-item {
+    padding-top: 0.2rem;
+    padding-bottom: 0;
+
+    .timeline-content {
+      width: 100%;
+
+      .comment, .comment-form {
+        position: relative;
+        margin: 0 0 0 -4rem;
+      }
+    }
+  }
+}
+
+.inline-comments .timeline {
+  padding: 0 1rem 1rem;
 }
 
 table.issues-table {

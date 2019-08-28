@@ -19,8 +19,8 @@ class Issue extends React.Component {
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
+    this.renderFeed = this.renderFeed.bind(this)
     this.renderStatus = this.renderStatus.bind(this)
-    this.renderThread = this.renderThread.bind(this)
     this.renderEvent = this.renderEvent.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
@@ -252,7 +252,7 @@ class Issue extends React.Component {
 
           <div className="columns">
             <div className="column is-three-quarters">
-              {this.renderThread()}
+              {this.renderFeed()}
             </div>
             <div className="column is-one-quarter">
             </div>
@@ -262,6 +262,45 @@ class Issue extends React.Component {
     } else {
       return <div></div>
     }
+  }
+
+  renderFeed() {
+    let comments = this.state.comments.slice()
+    let events = this.state.events.slice()
+    let firstComment = comments.shift()
+    let items = comments.map(comment => ({type: "comment", timestamp: new Date(comment.insertedAt).getTime(), comment: comment}))
+    items = items.concat(events.map(event => ({type: "event", timestamp: new Date(event.timestamp).getTime(), event: event})))
+    items.sort((a, b) => a.timestamp - b.timestamp)
+
+    return (
+      <div className="thread">
+        <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
+        <div className="timeline">
+          <div className="timeline-header">
+            {comments.length == 1 ? "1 comment" : `${comments.length} comments`}
+          </div>
+          {items.map((item, index) => {
+            switch(item.type) {
+              case "comment":
+                return (
+                  <div key={index} className="timeline-item">
+                    <div className="timeline-content">
+                      <Comment comment={item.comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+                    </div>
+                  </div>
+                )
+              case "event":
+                return this.renderEvent(item.event, index)
+            }
+          })}
+          <div className="timeline-item">
+            <div className="timeline-content">
+              {this.renderForm()}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   renderStatus() {
@@ -274,40 +313,31 @@ class Issue extends React.Component {
     }
   }
 
-  renderThread() {
-    let comments = this.state.comments.slice()
-    let events = this.state.events.slice()
-    let firstComment = comments.shift()
-    let items = comments.map(comment => ({type: "comment", timestamp: new Date(comment.insertedAt).getTime(), comment: comment}))
-    items = items.concat(events.map(event => ({type: "event", timestamp: new Date(event.timestamp).getTime(), event: event})))
-    items.sort((a, b) => a.timestamp - b.timestamp)
-
-    return (
-      <div className="thread">
-        <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
-        <header>
-          <h2 className="subtitle">{comments.length == 1 ? "1 comment" : `${comments.length} comments`}</h2>
-        </header>
-        {items.map((item, index) => {
-          switch(item.type) {
-            case "comment":
-              return <Comment key={index} comment={item.comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
-            case "event":
-              return <div key={index}>{this.renderEvent(item.event)}</div>
-          }
-        })}
-        {this.renderForm()}
-      </div>
-    )
-  }
-
-  renderEvent(event) {
+  renderEvent(event, index) {
     const timestamp = moment.utc(event.timestamp)
     switch(event.type) {
       case "close":
-        return <span><a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time></span>
+        return (
+          <div key={index} className="timeline-item">
+            <div className="timeline-marker is-icon is-danger">
+              <i className="fa fa-check"></i>
+            </div>
+            <div className="timeline-content">
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+            </div>
+          </div>
+        )
       case "reopen":
-        return <span><a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time></span>
+        return (
+          <div key={index} className="timeline-item">
+            <div className="timeline-marker is-icon is-success">
+              <i className="fa fa-redo"></i>
+            </div>
+            <div className="timeline-content">
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+            </div>
+          </div>
+        )
     }
   }
 

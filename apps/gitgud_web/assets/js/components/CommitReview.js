@@ -163,20 +163,31 @@ class CommitReview extends React.Component {
   }
 
   render() {
+    const {comments} = this.state
     return (
       <div className="thread">
-        <header>
-          <h2 className="subtitle">{this.state.comments.length == 1 ? "1 comment" : `${this.state.comments.length} comments`}</h2>
-        </header>
-        {this.renderComments()}
-        {this.renderForm()}
+        <div className="timeline">
+          <div className="timeline-header">
+            {comments.length == 1 ? "1 comment" : `${comments.length} comments`}
+          </div>
+          {this.renderComments()}
+          <div className="timeline-item">
+            <div className="timeline-content">
+              {this.renderForm()}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
 
   renderComments() {
     return this.state.comments.map((comment, index) =>
-      <Comment key={index} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+      <div key={index} className="timeline-item">
+        <div className="timeline-content">
+          <Comment comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+        </div>
+      </div>
     )
   }
 

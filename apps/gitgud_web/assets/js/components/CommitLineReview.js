@@ -224,15 +224,25 @@ class CommitLineReview extends React.Component {
   render() {
     return (
       <td colSpan={4}>
-        {this.renderComments()}
-        {this.renderForm()}
+        <div className="timeline">
+          {this.renderComments()}
+          <div className="timeline-item">
+            <div className="timeline-content">
+              {this.renderForm()}
+            </div>
+          </div>
+        </div>
       </td>
     )
   }
 
   renderComments() {
     return this.state.comments.map((comment, index) =>
-      <Comment key={index} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+      <div key={index} className="timeline-item">
+        <div className="timeline-content">
+          <Comment comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+        </div>
+      </div>
     )
   }
 
