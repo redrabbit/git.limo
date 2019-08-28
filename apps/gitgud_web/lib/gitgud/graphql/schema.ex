@@ -148,12 +148,17 @@ defmodule GitGud.GraphQL.Schema do
   @desc """
   """
   subscription do
-    @desc "Subscribe to issue status changes"
-    field :issue_status, :issue do
+    @desc "Subscribe to issue status updates"
+    field :issue_status_update, :issue do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
       trigger :close_issue, topic: &(&1.id)
       trigger :reopen_issue, topic: &(&1.id)
+    end
+
+    field :issue_event, :issue_event do
+      arg :id, non_null(:id), description: "The issue ID."
+      config &Resolvers.issue_topic/2
     end
 
     @desc "Subscribe to new issue comments"

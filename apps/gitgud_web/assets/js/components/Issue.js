@@ -14,14 +14,14 @@ class Issue extends React.Component {
   constructor(props) {
     super(props)
     this.fetchIssue = this.fetchIssue.bind(this)
-    this.subscribeStatus = this.subscribeStatus.bind(this)
+    this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
     this.renderStatus = this.renderStatus.bind(this)
     this.renderThread = this.renderThread.bind(this)
-    this.renderComments = this.renderComments.bind(this)
+    this.renderEvent = this.renderEvent.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
     this.handleClose = this.handleClose.bind(this)
@@ -36,7 +36,8 @@ class Issue extends React.Component {
       number: null,
       insertedAt: null,
       editable: false,
-      comments: []
+      comments: [],
+      events: []
     }
   }
 
@@ -71,6 +72,22 @@ class Issue extends React.Component {
               bodyHtml
               insertedAt
             }
+            events {
+              type
+              timestamp
+              ... on IssueCloseEvent {
+                user {
+                  login
+                  url
+                }
+              }
+              ... on IssueReopenEvent {
+                user {
+                  login
+                  url
+                }
+              }
+            }
           }
         }
       }
@@ -88,18 +105,32 @@ class Issue extends React.Component {
           author: response.node.author,
           insertedAt: response.node.insertedAt,
           editable: response.node.editable,
-          comments: response.node.comments
+          comments: response.node.comments,
+          events: response.node.events
         })
-        this.subscribeStatus()
+        this.subscribeEvents()
         this.subscribeComments()
       })
   }
 
-  subscribeStatus() {
+  subscribeEvents() {
     const subscription = graphql`
-      subscription IssueStatusSubscription($id: ID!) {
-        issueStatus(id: $id) {
-          status
+      subscription IssueEventSubscription($id: ID!) {
+        issueEvent(id: $id) {
+          type
+          timestamp
+          ... on IssueCloseEvent {
+            user {
+              login
+              url
+            }
+          }
+          ... on IssueReopenEvent {
+            user {
+              login
+              url
+            }
+          }
         }
       }
     `
@@ -111,7 +142,18 @@ class Issue extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => this.setState({status: response.issueStatus.status})
+      onNext: response => {
+        const event = response.issueEvent
+        console.log(event)
+        switch(event.type) {
+          case "close":
+            this.setState(state => ({status: "close", events: [...state.events, event]}))
+            break
+          case "reopen":
+            this.setState(state => ({status: "open", events: [...state.events, event]}))
+            break
+        }
+      }
     })
   }
 
@@ -210,9 +252,7 @@ class Issue extends React.Component {
 
           <div className="columns">
             <div className="column is-three-quarters">
-              <div className="thread">
-                {this.renderThread()}
-              </div>
+              {this.renderThread()}
             </div>
             <div className="column is-one-quarter">
             </div>
@@ -236,23 +276,39 @@ class Issue extends React.Component {
 
   renderThread() {
     let comments = this.state.comments.slice()
+    let events = this.state.events.slice()
     let firstComment = comments.shift()
+    let items = comments.map(comment => ({type: "comment", timestamp: new Date(comment.insertedAt).getTime(), comment: comment}))
+    items = items.concat(events.map(event => ({type: "event", timestamp: new Date(event.timestamp).getTime(), event: event})))
+    items.sort((a, b) => a.timestamp - b.timestamp)
+
     return (
       <div className="thread">
         <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
         <header>
           <h2 className="subtitle">{comments.length == 1 ? "1 comment" : `${comments.length} comments`}</h2>
         </header>
-        {this.renderComments(comments)}
+        {items.map((item, index) => {
+          switch(item.type) {
+            case "comment":
+              return <Comment key={index} comment={item.comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+            case "event":
+              return <div key={index}>{this.renderEvent(item.event)}</div>
+          }
+        })}
         {this.renderForm()}
       </div>
     )
   }
 
-  renderComments(comments) {
-    return comments.map((comment, index) =>
-      <Comment key={index} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
-    )
+  renderEvent(event) {
+    const timestamp = moment.utc(event.timestamp)
+    switch(event.type) {
+      case "close":
+        return <span><a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time></span>
+      case "reopen":
+        return <span><a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time></span>
+    }
   }
 
   renderForm() {

@@ -30,6 +30,16 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_tree_entry_with_last_commit
   connection node_type: :search_result
 
+  interface :issue_event do
+    @desc "The type of the event."
+    field :type, non_null(:string)
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime)
+
+    resolve_type &Resolvers.issue_event_type/2
+  end
+
   @desc "Represents an actor in a Git commit (ie. an author or committer)."
   interface :git_actor do
     @desc "The name of the Git actor."
@@ -199,6 +209,8 @@ defmodule GitGud.GraphQL.Types do
     @desc "A list of comments for this issue."
     field :comments, list_of(:comment)
 
+    field :events, list_of(:issue_event), resolve: &Resolvers.issue_events/3
+
     @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
     field :editable, non_null(:boolean), resolve: &Resolvers.issue_editable/3
 
@@ -207,7 +219,30 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The last update timestamp of the comment."
     field :updated_at, non_null(:naive_datetime)
+  end
 
+  object :issue_close_event do
+    interface :issue_event
+
+    @desc "The type of the event."
+    field :type, non_null(:string)
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime)
+
+    field :user, :user, resolve: &Resolvers.issue_event_user/3
+  end
+
+  object :issue_reopen_event do
+    interface :issue_event
+
+    @desc "The type of the event."
+    field :type, non_null(:string)
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime)
+
+    field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 
   @desc "Represents a Git reference."

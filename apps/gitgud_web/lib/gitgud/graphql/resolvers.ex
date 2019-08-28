@@ -538,6 +538,20 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, authorized?(ctx[:current_user], issue, :admin)}
   end
 
+  def issue_events(issue, _args, _info) do
+    {:ok, Enum.map(issue.events, &Map.new(&1, fn
+      {"timestamp", val} -> {:timestamp, NaiveDateTime.from_iso8601!(val)}
+      {key, val} -> {String.to_atom(key), val}
+    end))}
+  end
+
+  def issue_event_type(%{type: "close"}, _info), do: :issue_close_event
+  def issue_event_type(%{type: "reopen"}, _info), do: :issue_reopen_event
+
+  def issue_event_user(%{user_id: user_id}, _args, _info) do
+    {:ok, UserQuery.by_id(user_id)}
+  end
+
   @doc """
   Returns `true` if the viewer can edit a given `comment`; otherwise, returns `false`.
   """
@@ -588,9 +602,15 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec close_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
-      if authorized?(ctx[:current_user], issue, :admin),
-       do: Issue.close(issue, user_id: ctx[:current_user].id),
-     else: {:error, "Unauthorized"}
+      if authorized?(ctx[:current_user], issue, :admin) do
+       case Issue.close(issue, user_id: ctx[:current_user].id) do
+         {:ok, issue} ->
+           publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+           {:ok, issue}
+         {:error, reason} ->
+           {:error, reason}
+       end
+     end || {:error, "Unauthorized"}
     end
   end
 
@@ -600,9 +620,15 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec reopen_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def reopen_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
-      if authorized?(ctx[:current_user], issue, :admin),
-       do: Issue.reopen(issue, user_id: ctx[:current_user].id),
-     else: {:error, "Unauthorized"}
+      if authorized?(ctx[:current_user], issue, :admin) do
+        case Issue.reopen(issue, user_id: ctx[:current_user].id) do
+          {:ok, issue} ->
+            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+            {:ok, issue}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end || {:error, "Unauthorized"}
     end
   end
 

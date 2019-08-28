@@ -68,7 +68,7 @@ defmodule GitGud.Issue do
   def close(%__MODULE__{} = issue, opts \\ []) do
     issue
     |> change(status: "close")
-    |> put_event(:close, opts)
+    |> put_event("close", opts)
     |> DB.update()
   end
 
@@ -79,7 +79,7 @@ defmodule GitGud.Issue do
   def close!(%__MODULE__{} = issue, opts \\ []) do
     issue
     |> change(status: "close")
-    |> put_event(:close, opts)
+    |> put_event("close", opts)
     |> DB.update!()
   end
 
@@ -90,7 +90,7 @@ defmodule GitGud.Issue do
   def reopen(%__MODULE__{} = issue, opts \\ []) do
     issue
     |> change(status: "open")
-    |> put_event(:reopen, opts)
+    |> put_event("reopen", opts)
     |> DB.update()
   end
 
@@ -101,7 +101,7 @@ defmodule GitGud.Issue do
   def reopen!(%__MODULE__{} = issue, opts \\ []) do
     issue
     |> change(status: "open")
-    |> put_event(:reopen, opts)
+    |> put_event("reopen", opts)
     |> DB.update!()
   end
 
@@ -164,7 +164,7 @@ defmodule GitGud.Issue do
   #
 
   defp put_event(changeset, type, data) do
-    event = Map.merge(Map.new(data), %{type: type, timestamp: DateTime.utc_now()})
+    event = Map.merge(Map.new(data), %{type: type, timestamp: NaiveDateTime.utc_now()})
     changeset
     |> put_change(:events, get_field(changeset, :events, []) ++ [event])
   end
