@@ -13,6 +13,7 @@ import CommentForm from "./CommentForm"
 class Issue extends React.Component {
   constructor(props) {
     super(props)
+    this.titleInput = React.createRef()
     this.fetchIssue = this.fetchIssue.bind(this)
     this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
@@ -23,6 +24,7 @@ class Issue extends React.Component {
     this.renderStatus = this.renderStatus.bind(this)
     this.renderEvent = this.renderEvent.bind(this)
     this.renderForm = this.renderForm.bind(this)
+    this.handleTitleFormSubmit = this.handleTitleFormSubmit.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
     this.handleClose = this.handleClose.bind(this)
     this.handleReopen = this.handleReopen.bind(this)
@@ -31,6 +33,7 @@ class Issue extends React.Component {
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
       title: null,
+      titleEdit: false,
       author: null,
       status: null,
       number: null,
@@ -87,6 +90,14 @@ class Issue extends React.Component {
                   url
                 }
               }
+              ... on IssueTitleUpdateEvent {
+                oldTitle
+                newTitle
+                user {
+                  login
+                  url
+                }
+              }
             }
           }
         }
@@ -131,6 +142,14 @@ class Issue extends React.Component {
               url
             }
           }
+          ... on IssueTitleUpdateEvent {
+            oldTitle
+            newTitle
+            user {
+              login
+              url
+            }
+          }
         }
       }
     `
@@ -144,13 +163,15 @@ class Issue extends React.Component {
       variables,
       onNext: response => {
         const event = response.issueEvent
-        console.log(event)
         switch(event.type) {
           case "close":
             this.setState(state => ({status: "close", events: [...state.events, event]}))
             break
           case "reopen":
             this.setState(state => ({status: "open", events: [...state.events, event]}))
+            break
+          case "title_update":
+            this.setState(state => ({title: event.newTitle, events: [...state.events, event]}))
             break
         }
       }
@@ -236,14 +257,41 @@ class Issue extends React.Component {
   }
 
   render() {
-    const {title, number, insertedAt, author} = this.state
+    const {title, titleEdit, number, insertedAt, author} = this.state
     if(number) {
       const timestamp = moment.utc(insertedAt)
       return (
         <div>
           <div className="columns">
             <div className="column is-12">
-              <h1 className="title">{title} <span className="has-text-grey-light">#{number}</span></h1>
+              {titleEdit ? (
+                <div className="columns">
+                  <div className="column is-12">
+                    <form onSubmit={this.handleTitleFormSubmit}>
+                      <div className="field is-grouped">
+                        <p className="control is-expanded">
+                          <input type="text" className="input" name="title" defaultValue={title} ref={this.titleInput} />
+                        </p>
+                        <p className="control">
+                          <button type="submit" className="button is-link">Save</button>
+                        </p>
+                        <p className="control">
+                          <button type="reset" className="button" onClick={() => this.setState({titleEdit: false})}>Cancel</button>
+                        </p>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                <div className="field is-grouped">
+                  <div className="control is-expanded">
+                    <h1 className="title">{title} <span className="has-text-grey-light">#{number}</span></h1>
+                  </div>
+                  <div className="control">
+                    <button className="button" onClick={() => this.setState({titleEdit: true})}>Edit</button>
+                  </div>
+                </div>
+              )}
               {this.renderStatus()}
               &nbsp;
               <a href="{author.url}" className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
@@ -338,6 +386,18 @@ class Issue extends React.Component {
             </div>
           </div>
         )
+      case "title_update":
+        return (
+          <div key={index} className="timeline-item">
+            <div className="timeline-marker is-icon">
+              <i className="fa fa-pen"></i>
+            </div>
+            <div className="timeline-content">
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> changed the title <em><s>{event.oldTitle}</s></em> to <em>{event.newTitle}</em>
+              &nbsp;<time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+            </div>
+          </div>
+        )
     }
   }
 
@@ -353,6 +413,33 @@ class Issue extends React.Component {
           return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onReopen={this.handleReopen} />
       }
     }
+  }
+
+  handleTitleFormSubmit(event) {
+    const title = event.target.title.value
+    if(title != "") {
+      const variables = {
+        id: this.props.id,
+        title: title
+      }
+
+      const mutation = graphql`
+        mutation IssueUpdateTitleMutation($id: ID!, $title: String!) {
+          updateIssueTitle(id: $id, title: $title) {
+            title
+          }
+        }
+      `
+
+      commitMutation(environment, {
+        mutation,
+        variables,
+        onCompleted: (response, errors) => {
+          this.setState({title: response.updateIssueTitle.title, titleEdit: false})
+        }
+      })
+    }
+    event.preventDefault()
   }
 
   handleFormSubmit(body) {

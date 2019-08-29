@@ -245,6 +245,22 @@ defmodule GitGud.GraphQL.Types do
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 
+  object :issue_title_update_event do
+    interface :issue_event
+
+    @desc "The type of the event."
+    field :type, non_null(:string)
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime)
+
+    field :old_title, non_null(:string)
+
+    field :new_title, non_null(:string)
+
+    field :user, :user, resolve: &Resolvers.issue_event_user/3
+  end
+
   @desc "Represents a Git reference."
   object :git_reference do
     interface :git_tag

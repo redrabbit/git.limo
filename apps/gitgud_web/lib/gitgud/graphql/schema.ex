@@ -112,6 +112,12 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.reopen_issue/3
     end
 
+    field :update_issue_title, type: :issue do
+      arg :id, non_null(:id), description: "The issue ID."
+      arg :title, non_null(:string), description: "The new title."
+      resolve &Resolvers.update_issue_title/3
+    end
+
     @desc "Create a new commit line review comment"
     field :create_commit_line_review_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."

@@ -77,10 +77,10 @@ defmodule GitGud.Issue do
   """
   @spec close!(t) :: t
   def close!(%__MODULE__{} = issue, opts \\ []) do
-    issue
-    |> change(status: "close")
-    |> put_event("close", opts)
-    |> DB.update!()
+    case close(issue, opts) do
+      {:ok, issue} -> issue
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -99,10 +99,33 @@ defmodule GitGud.Issue do
   """
   @spec reopen!(t) :: t
   def reopen!(%__MODULE__{} = issue, opts \\ []) do
+    case reopen(issue, opts) do
+      {:ok, issue} -> issue
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
+  end
+
+  @doc """
+  Updates the title of the given `issue`.
+  """
+  @spec update_title(t, binary, keyword) :: {:ok, t} | {:error, term}
+  def update_title(%__MODULE__{} = issue, title, opts \\ []) do
+    old_title = issue.title
     issue
-    |> change(status: "open")
-    |> put_event("reopen", opts)
-    |> DB.update!()
+    |> changeset(%{title: title})
+    |> put_event("title_update", Keyword.merge([old_title: old_title, new_title: title], opts))
+    |> DB.update()
+  end
+
+  @doc """
+  Similar to `update_title/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_title!(t, binary, keyword) :: t
+  def update_title!(%__MODULE__{} = issue, title, opts \\ []) do
+    case update_title(issue, title, opts) do
+      {:ok, issue} -> issue
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -116,17 +139,6 @@ defmodule GitGud.Issue do
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
-  end
-
-  @doc """
-  Adds a new `event`.
-  """
-  @spec add_event(t, map) :: {:ok, t} | {:error, term}
-  def add_event(%__MODULE__{} = issue, type, data \\ %{}) do
-    issue
-    |> change()
-    |> put_event(type, data)
-    |> DB.update()
   end
 
   @doc """
