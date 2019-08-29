@@ -1,7 +1,7 @@
 defmodule GitGud.Umbrella.Mixfile do
   use Mix.Project
 
-  @version "0.2.7"
+  @version "0.2.8"
 
   def project do
     [apps_path: "apps",
