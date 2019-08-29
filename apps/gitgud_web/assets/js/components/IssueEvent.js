@@ -24,7 +24,7 @@ class IssueEvent extends React.Component {
               <i className="fa fa-check"></i>
             </div>
             <div className="timeline-content">
-              <a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
         )
@@ -35,7 +35,7 @@ class IssueEvent extends React.Component {
               <i className="fa fa-redo"></i>
             </div>
             <div className="timeline-content">
-              <a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
         )
@@ -47,7 +47,7 @@ class IssueEvent extends React.Component {
             </div>
             <div className="timeline-content">
               <a href={event.user.url} className="has-text-black">{event.user.login}</a> changed the title <em className="has-text-black"><s>{event.oldTitle}</s></em> to <em className="has-text-black">{event.newTitle}</em>
-              &nbsp;<time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+              &nbsp;<time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
         )

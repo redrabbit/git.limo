@@ -22,7 +22,7 @@ class BlobTableHeader extends React.Component {
           &nbsp;<a href={commit.url} className="has-text-grey">{messageTitle}</a>
         </div>
         <div className="card-header-icon">
-          <time className="tooltip has-text-grey" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+          <time className="tooltip has-text-grey" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
         </div>
       </header>
     )

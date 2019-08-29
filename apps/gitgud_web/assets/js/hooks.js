@@ -57,6 +57,14 @@ export default () => {
     }
   })
 
+
+  const datetimes = document.querySelectorAll("time[class=tooltip]")
+  setInterval(() => {
+    datetimes.forEach(datetime => {
+      datetime.textContent = moment.utc(new Date(datetime.getAttribute("datetime"))).fromNow()
+    })
+  }, 3000)
+
   document.querySelectorAll("table.tree-table").forEach(table => {
     const {repoId, commitOid, treePath} = table.dataset
     TreeTable.fetchTreeEntriesWithCommit(repoId, commitOid, treePath)
