@@ -9,12 +9,14 @@ import moment from "moment"
 
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
+import IssueEvent from "./IssueEvent"
 
 class Issue extends React.Component {
   constructor(props) {
     super(props)
     this.titleInput = React.createRef()
     this.fetchIssue = this.fetchIssue.bind(this)
+    this.formatTimestamp = this.formatTimestamp.bind(this)
     this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
@@ -22,7 +24,6 @@ class Issue extends React.Component {
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
     this.renderFeed = this.renderFeed.bind(this)
     this.renderStatus = this.renderStatus.bind(this)
-    this.renderEvent = this.renderEvent.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleTitleFormSubmit = this.handleTitleFormSubmit.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
@@ -31,6 +32,7 @@ class Issue extends React.Component {
     this.handleCommentCreate = this.handleCommentCreate.bind(this)
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
+    this.state = {}
     this.state = {
       title: null,
       titleEdit: false,
@@ -40,7 +42,8 @@ class Issue extends React.Component {
       insertedAt: null,
       editable: false,
       comments: [],
-      events: []
+      events: [],
+      timestamp: null
     }
   }
 
@@ -117,11 +120,17 @@ class Issue extends React.Component {
           insertedAt: response.node.insertedAt,
           editable: response.node.editable,
           comments: response.node.comments,
-          events: response.node.events
+          events: response.node.events,
+          timestamp: moment.utc(response.node.insertedAt).fromNow()
         })
+        this.interval = setInterval(this.formatTimestamp, 3000)
         this.subscribeEvents()
         this.subscribeComments()
       })
+  }
+
+  formatTimestamp() {
+    this.setState({timestamp: moment.utc(this.state.insertedAt).fromNow()})
   }
 
   subscribeEvents() {
@@ -294,7 +303,7 @@ class Issue extends React.Component {
               )}
               {this.renderStatus()}
               &nbsp;
-              <a href="{author.url}" className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
+              <a href="{author.url}" className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
 
@@ -338,7 +347,7 @@ class Issue extends React.Component {
                   </div>
                 )
               case "event":
-                return this.renderEvent(item.event, index)
+                return <IssueEvent key={index} event={item.event} />
             }
           })}
           <div className="timeline-item">
@@ -358,46 +367,6 @@ class Issue extends React.Component {
         return <p className="tag is-success"><span className="icon"><i className="fa fa-exclamation-circle"></i></span><span>Open</span></p>
       case "close":
         return <p className="tag is-danger"><span className="icon"><i className="fa fa-check-circle"></i></span><span>Closed</span></p>
-    }
-  }
-
-  renderEvent(event, index) {
-    const timestamp = moment.utc(event.timestamp)
-    switch(event.type) {
-      case "close":
-        return (
-          <div key={index} className="timeline-item">
-            <div className="timeline-marker is-icon is-danger">
-              <i className="fa fa-check"></i>
-            </div>
-            <div className="timeline-content">
-              <a href={event.user.url} className="has-text-black">{event.user.login}</a> closed this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
-            </div>
-          </div>
-        )
-      case "reopen":
-        return (
-          <div key={index} className="timeline-item">
-            <div className="timeline-marker is-icon is-success">
-              <i className="fa fa-redo"></i>
-            </div>
-            <div className="timeline-content">
-              <a href={event.user.url} className="has-text-black">{event.user.login}</a> reopened this issue <time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
-            </div>
-          </div>
-        )
-      case "title_update":
-        return (
-          <div key={index} className="timeline-item">
-            <div className="timeline-marker is-icon">
-              <i className="fa fa-pen"></i>
-            </div>
-            <div className="timeline-content">
-              <a href={event.user.url} className="has-text-black">{event.user.login}</a> changed the title <em><s>{event.oldTitle}</s></em> to <em>{event.newTitle}</em>
-              &nbsp;<time className="tooltip" date-time={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
-            </div>
-          </div>
-        )
     }
   }
 
