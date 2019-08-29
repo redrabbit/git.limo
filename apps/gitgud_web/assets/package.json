@@ -21,7 +21,7 @@
     "@babel/plugin-proposal-export-default-from": "^7.5.2",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-react": "^7.0.0",
-    "@fortawesome/fontawesome-pro": "^5.10.1",
+    "@fortawesome/fontawesome-pro": "^5.10.2",
     "babel-loader": "^8.0.6",
     "babel-plugin-relay": "^5.0.0",
     "bulma": "^0.7.5",
@@ -32,15 +32,15 @@
     "copy-webpack-plugin": "^5.0.4",
     "css-loader": "^3.2.0",
     "file-loader": "^4.2.0",
-    "graphql": "^14.4.2",
+    "graphql": "^14.5.4",
     "mini-css-extract-plugin": "^0.8.0",
     "node-sass": "^4.12.0",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "relay-compiler": "^5.0.0",
     "relay-compiler-webpack-plugin": "^5.1.1",
-    "sass-loader": "^7.2.0",
+    "sass-loader": "^7.3.1",
     "uglifyjs-webpack-plugin": "^2.2.0",
-    "webpack": "^4.39.2",
+    "webpack": "^4.39.3",
     "webpack-cli": "^3.3.7"
   }
 }
