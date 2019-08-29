@@ -9,7 +9,9 @@ A GitHub clone written in Elixir with almost no-dependencies.
 * [x] Fully integrated GraphQL API.
 * [x] Native (NIF) implementation of Git commands.
 * [x] Customizable Git storage backend.
-* [ ] Issue tracker, code review, continuous integration, ...
+* [x] Issue tracker.
+* [x] Code reviews.
+* [ ] Continuous integration.
 
 See the [Getting Started](http://almightycouch.com/gitgud/docs/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud/docs).
 
