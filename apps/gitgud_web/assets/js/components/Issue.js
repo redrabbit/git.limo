@@ -266,11 +266,12 @@ class Issue extends React.Component {
   }
 
   render() {
-    const {title, titleEdit, number, insertedAt, author} = this.state
+    const {title, titleEdit, number, insertedAt, author, editable} = this.state
     if(number) {
       const timestamp = moment.utc(insertedAt)
       return (
         <div>
+          {}
           <div className="columns">
             <div className="column is-12">
               {titleEdit ? (
@@ -296,9 +297,11 @@ class Issue extends React.Component {
                   <div className="control is-expanded">
                     <h1 className="title">{title} <span className="has-text-grey-light">#{number}</span></h1>
                   </div>
-                  <div className="control">
-                    <button className="button" onClick={() => this.setState({titleEdit: true})}>Edit</button>
-                  </div>
+                  {editable &&
+                    <div className="control">
+                      <button className="button" onClick={() => this.setState({titleEdit: true})}>Edit</button>
+                    </div>
+                  }
                 </div>
               )}
               {this.renderStatus()}

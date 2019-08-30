@@ -89,9 +89,11 @@ class CommentForm extends React.Component {
     } else {
       return (
         <div className="comment-form">
-          <div className="is-pulled-right">
-            <button className="delete" onClick={this.props.onCancel}>Cancel</button>
-          </div>
+          {!this.props.action &&
+            <div className="is-pulled-right">
+              <button className="delete" onClick={this.props.onCancel}>Cancel</button>
+            </div>
+          }
           You must <a href={`/login?redirect_to=${encodeURIComponent(window.location.pathname)}`}>login</a> in order to comment.
         </div>
       )
