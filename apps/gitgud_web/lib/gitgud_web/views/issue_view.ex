@@ -29,19 +29,21 @@ defmodule GitGud.Web.IssueView do
   def status_button(issue, attrs \\ [])
   def status_button(%Issue{status: status} = _issue, attrs), do: status_button(status, attrs)
   def status_button("open", attrs) do
-    link(Keyword.merge([to: "?status=open", class: "button is-success"], attrs, fn
+    {icon_attrs, attrs} = Keyword.pop(attrs, :icon, [])
+    link(Keyword.merge([to: "?status=open", class: "button"], attrs, fn
       :to, _v1, v2 -> v2
       _k, v1, v2 -> "#{v1} #{v2}" end), do: [
-      content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), class: "icon"),
+      content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), Keyword.merge([class: "icon"], icon_attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end)),
       content_tag(:span, "Open")
     ])
   end
 
   def status_button("close", attrs) do
-    link(Keyword.merge([to: "?status=close", class: "button is-danger"], attrs, fn
+    {icon_attrs, attrs} = Keyword.pop(attrs, :icon, [])
+    link(Keyword.merge([to: "?status=close", class: "button"], attrs, fn
       :to, _v1, v2 -> v2
       _k, v1, v2 -> "#{v1} #{v2}" end), do: [
-      content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
+      content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon"], icon_attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end)),
       content_tag(:span, "Closed")
     ])
   end
