@@ -12,7 +12,7 @@ defmodule GitGud.Web.IssueController do
   alias GitGud.Comment
 
   plug :ensure_authenticated when action in [:new, :create]
-  plug :put_layout, :repo when action not in [:new, :create]
+  plug :put_layout, :repo
 
   action_fallback GitGud.Web.FallbackController
 

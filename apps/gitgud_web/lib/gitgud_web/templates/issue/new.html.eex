@@ -1,4 +1,4 @@
-<h1 class="title">Create a new issue</h1>
+<h2 class="subtitle">Create a new issue</h2>
 
 <%= form_for @changeset, Routes.issue_path(@conn, :create, @repo.owner, @repo), [as: :issue], fn f -> %>
   <div class="field">
