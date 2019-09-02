@@ -270,7 +270,7 @@ defmodule GitGud.Web.CodebaseView do
     with {:ok, entry} <- GitAgent.tree_entry_by_path(repo, tree, "README.md"),
          {:ok, blob} <- GitAgent.tree_entry_target(repo, entry),
          {:ok, content} <- GitAgent.blob_content(repo, blob),
-         {:ok, html, []} <- Earmark.as_html(content) do
+         {:ok, html, _warnings} <- Earmark.as_html(content) do
       raw(html)
     else
       {:error, _reason} -> nil

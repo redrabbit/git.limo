@@ -12,8 +12,7 @@ defmodule GitGud.Web.Markdown do
   def markdown(nil), do: ""
   def markdown(content) do
     case Earmark.as_html(content) do
-      {:ok, html, []} -> raw(html)
+      {:ok, html, _warnings} -> raw(html)
     end
   end
 end
-
