@@ -18,6 +18,7 @@ defmodule GitGud.Web do
       import Plug.Conn
 
       import GitGud.Authorization, only: [authorized?: 3]
+      import GitGud.User, only: [verified?: 1]
 
       import GitGud.GraphQL.Schema, only: [from_relay_id: 1, to_relay_id: 1, to_relay_id: 2]
 
@@ -39,6 +40,8 @@ defmodule GitGud.Web do
       import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
 
       import GitGud.Authorization, only: [authorized?: 3]
+      import GitGud.User, only: [verified?: 1]
+
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 
       import GitGud.Web.AuthenticationPlug, only: [authenticated?: 1, authentication_token: 1, current_user: 1]

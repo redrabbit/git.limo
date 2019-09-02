@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <%= if authenticated?(@conn) do %>
+    <%= if authenticated?(@conn) && verified?(@current_user) do %>
       <%= tag :meta, name: "token", content: authentication_token(@conn) %>
     <% end %>
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
