@@ -113,7 +113,17 @@ defmodule GitGud.Auth do
       errors =
         case Map.get(params, error_param) do
           value when is_nil(value) or value == "" ->
-            [{error_field, {"can't be blank", [validation: :required]}}]
+            if reset_token = Map.get(params, "reset_token") do
+              user_id = data.user_id
+              case Phoenix.Token.verify(GitGud.Web.Endpoint, "reset-password", reset_token, max_age: 86400) do
+                {:ok, ^user_id} ->
+                  []
+                {:error, _reason} ->
+                  [{:password, {"invalid reset token", [validation: :password]}}]
+              end
+            else
+              [{error_field, {"can't be blank", [validation: :required]}}]
+            end
           value ->
             case check_pass(data, value) do
               {:ok, _user} -> []

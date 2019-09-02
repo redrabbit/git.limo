@@ -172,11 +172,11 @@ defmodule GitGud.Web.UserController do
     case Phoenix.Token.verify(conn, "reset-password", token, max_age: 86400) do
       {:ok, user_id} ->
         if user = UserQuery.by_id(user_id, preload: :auth) do
-          User.reset_password!(user)
+          changeset = Auth.password_changeset(user.auth, %{reset_token: token})
           conn
           |> put_session(:user_id, user_id)
-          |> put_flash(:info, "Password has been reset. Please set a new password below.")
-          |> redirect(to: Routes.user_path(conn, :edit_password))
+          |> put_flash(:info, "Please set a new password below.")
+          |> render("edit_password.html", user: user, changeset: changeset)
         else
           conn
           |> put_flash(:error, "Invalid password reset user.")

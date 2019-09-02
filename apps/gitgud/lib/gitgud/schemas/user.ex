@@ -127,22 +127,6 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Resets the given `user`'s password.
-  """
-  @spec reset_password(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def reset_password(%__MODULE__{} = user) do
-    DB.update(change(user, auth: change(user.auth, password_hash: nil)))
-  end
-
-  @doc """
-  Similar to `reset_password/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
-  """
-  @spec reset_password!(t) :: t
-  def reset_password!(%__MODULE__{} = user) do
-    DB.update!(change(user, auth: change(user.auth, password_hash: nil)))
-  end
-
-  @doc """
   Deletes the given `user`.
 
   User associations (emails, repositories, etc.) will automatically be deleted.
