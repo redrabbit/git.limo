@@ -264,7 +264,7 @@ defmodule GitGud.User do
 
   defp verify_oauth2_email(changeset) do
     if auth_changeset = get_change(changeset, :auth) do
-      emails = get_change(changeset, :emails)
+      emails = get_change(changeset, :emails, [])
       if email_changeset = !Enum.empty?(emails) && hd(emails) do
         providers = get_change(auth_changeset, :oauth2_providers)
         if provider_changeset = is_list(providers) && providers != [] && hd(providers) do

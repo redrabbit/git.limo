@@ -136,8 +136,9 @@ defmodule GitGud.Web.UserControllerTest do
         {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
           {start_link, _} = :binary.match(text, "http://")
           conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
-          assert get_flash(conn, :info) == "Password has been reset. Please set a new password below."
-          assert redirected_to(conn) == Routes.user_path(conn, :edit_password)
+          assert get_flash(conn, :info) == "Please set a new password below."
+          assert html_response(conn, 200) =~ ~s(<h1 class="title">Settings</h1>)
+          assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Password</h2>)
       after
         1_000 -> raise "email not delivered"
       end

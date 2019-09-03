@@ -10,7 +10,7 @@
       <li><%= navigation_item @conn, :user, [only: [:edit_profile, :update_profile]], :a, href: Routes.user_path(@conn, :edit_profile) do %>Profile<% end %></li>
       <li><%= navigation_item @conn, :email, [], :a, href: Routes.email_path(@conn, :index) do %>Emails<% end %></li>
       <li><%= navigation_item @conn, :oauth2, [], :a, href: Routes.oauth2_path(@conn, :index) do %>OAuth2.0<% end %></li>
-      <li><%= navigation_item @conn, :user, [only: [:edit_password, :update_password]], :a, href: Routes.user_path(@conn, :edit_password) do %>Password<% end %></li>
+      <li><%= navigation_item @conn, :user, [only: [:edit_password, :update_password, :verify_password_reset]], :a, href: Routes.user_path(@conn, :edit_password) do %>Password<% end %></li>
     </ul>
     <p class="menu-label">Public Keys</p>
     <ul class="menu-list">

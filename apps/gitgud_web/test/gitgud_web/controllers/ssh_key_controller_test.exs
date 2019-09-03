@@ -43,7 +43,7 @@ defmodule GitGud.Web.SSHKeyControllerTest do
       conn = get(conn, Routes.ssh_key_path(conn, :index))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">SSH keys</h2>)
       for ssh_key <- ssh_keys do
-        assert html_response(conn, 200) =~ ~s(<code>#{ssh_key.fingerprint}</code>)
+        assert html_response(conn, 200) =~ ~s(<code class=\"is-size-7\">#{ssh_key.fingerprint}</code>)
       end
     end
 

@@ -2,6 +2,7 @@ defmodule GitGud.SSHServerTest do
   use GitGud.DataCase
   use GitGud.DataFactory
 
+  alias GitRekt.Git
   alias GitRekt.GitAgent
 
   alias GitGud.User
@@ -61,13 +62,14 @@ defmodule GitGud.SSHServerTest do
       assert {:ok, ^readme_content} = GitAgent.blob_content(repo, blob)
     end
 
-    test "pushes repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
+    @tag :skip
+    test "pushes repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--quiet", "https://github.com/almightycouch/gitgud.git", workdir])
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, head} = GitAgent.head(repo)
-      output = GitRekt.Git.oid_fmt(head.oid) <> "\n"
+      output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
   end
@@ -75,10 +77,11 @@ defmodule GitGud.SSHServerTest do
   describe "when repository exists" do
     setup [:create_ssh_key, :create_repo, :clone_from_github, :create_workdir]
 
-    test "clones repository (~500 commits)", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
+    @tag :skip
+    test "clones repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
       assert {:ok, head} = GitAgent.head(repo)
-      output = GitRekt.Git.oid_fmt(head.oid) <> "\n"
+      output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
   end

@@ -13,18 +13,11 @@ defmodule GitGud.Web.UserController do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  @settings_actions [
-    :edit_profile,
-    :edit_password,
-    :update_profile,
-    :update_password
-  ]
-
-  plug :ensure_authenticated when action in @settings_actions
+  plug :ensure_authenticated when action in [:edit_profile, :edit_password, :update_profile, :update_password]
 
   plug :put_layout, :hero when action in [:new, :create, :reset_password, :send_password_reset]
   plug :put_layout, :user_profile when action == :show
-  plug :put_layout, :user_settings when action in @settings_actions
+  plug :put_layout, :user_settings when action in [:edit_profile, :edit_password, :update_profile, :update_password, :verify_password_reset]
 
   plug :scrub_params, "user" when action == :create
   plug :scrub_params, "profile" when action == :update_profile

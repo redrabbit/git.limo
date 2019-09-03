@@ -29,4 +29,14 @@ defmodule GitGud.Web.DateTimeFormatter do
       do: content_tag(:time, Timex.format!(date, "{relative}", :relative), date: date_str, data_tooltip: date_str, class: "tooltip"),
     else: content_tag(:time, Timex.format!(date, format), date: date_str)
   end
+
+  @doc """
+  Formats a date/time value using the given `format` string.
+  """
+  @spec datetime_format_str(Datetime.t, binary) :: binary
+  def datetime_format_str(datetime, format) do
+    if String.contains?(format, "{relative}"),
+      do: Timex.format!(datetime, "{relative}", :relative),
+    else: Timex.format!(datetime, format)
+  end
 end

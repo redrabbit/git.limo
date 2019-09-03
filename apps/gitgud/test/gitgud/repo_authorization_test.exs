@@ -1,4 +1,4 @@
-defmodule GitGud.AuthorizationTest do
+defmodule GitGud.RepoAuthorizationTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 

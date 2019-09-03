@@ -25,7 +25,7 @@ defmodule GitGud.Web.Mixfile do
   # Helpers
   #
 
-  defp elixirc_paths(:test), do: ["lib", "test/support", "../gitgud/test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
