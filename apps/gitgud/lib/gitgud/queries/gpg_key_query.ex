@@ -41,12 +41,21 @@ defmodule GitGud.GPGKeyQuery do
     from(g in GPGKey, as: :gpg_key, where: g.id == ^id)
   end
 
-  def gpg_key_query(key_id) when is_binary(key_id) do
-    from(g in GPGKey, as: :gpg_key, where: ^key_id == fragment("substring(?, 13, 8)", g.key_id))
+  def gpg_key_query(key_id) when is_binary(key_id) and byte_size(key_id) == 20 do
+    from(g in GPGKey, as: :gpg_key, where: g.key_id == ^key_id)
+  end
+
+  def gpg_key_query(key_id) when is_binary(key_id) and byte_size(key_id) == 8 do
+    from(g in GPGKey, as: :gpg_key, where: fragment("substring(?, 13, 8)", g.key_id) == ^key_id)
   end
 
   def gpg_keys_query(key_ids) when is_list(key_ids) do
-    from(g in GPGKey, as: :gpg_key, where: fragment("substring(?, 13, 8)", g.key_id) in ^key_ids)
+    cond do
+      Enum.all?(key_ids, &(byte_size(&1) == 20)) ->
+        from(g in GPGKey, as: :gpg_key, where: g.key_id in ^key_ids)
+      Enum.all?(key_ids, &(byte_size(&1) == 8)) ->
+        from(g in GPGKey, as: :gpg_key, where: fragment("substring(?, 13, 8)", g.key_id) in ^key_ids)
+    end
   end
 
   #
