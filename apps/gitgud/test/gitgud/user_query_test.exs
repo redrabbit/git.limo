@@ -15,7 +15,9 @@ defmodule GitGud.UserQueryTest do
   end
 
   test "gets multiple users by id", %{users: users} do
-    assert Enum.all?(UserQuery.by_id(Enum.map(users, &(&1.id))), &(&1.id in Enum.map(users, fn user -> user.id end)))
+    results = UserQuery.by_id(Enum.map(users, &(&1.id)))
+    assert Enum.count(results) == length(users)
+    assert Enum.all?(results, &(&1.id in Enum.map(users, fn user -> user.id end)))
   end
 
   test "gets single user by login", %{users: users} do
@@ -25,7 +27,9 @@ defmodule GitGud.UserQueryTest do
   end
 
   test "gets multiple users by login", %{users: users} do
-    assert Enum.all?(UserQuery.by_login(Enum.map(users, &(&1.login))), &(&1.id in Enum.map(users, fn user -> user.id end)))
+    results = UserQuery.by_login(Enum.map(users, &(&1.login)))
+    assert Enum.count(results) == length(users)
+    assert Enum.all?(results, &(&1.id in Enum.map(users, fn user -> user.id end)))
   end
 
   test "gets single user by email", %{users: users} do
@@ -35,7 +39,9 @@ defmodule GitGud.UserQueryTest do
   end
 
   test "gets multiple users by email", %{users: users} do
-    assert Enum.all?(UserQuery.by_email(Enum.map(users, &(hd(&1.emails).address))), &(&1.id in  Enum.map(users, fn user -> user.id end)))
+    results = UserQuery.by_email(Enum.map(users, &(hd(&1.emails).address)))
+    assert Enum.count(results) == length(users)
+    assert Enum.all?(results, &(&1.id in  Enum.map(users, fn user -> user.id end)))
   end
 
   #

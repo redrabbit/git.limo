@@ -16,7 +16,9 @@ defmodule GitGud.RepoQueryTest do
   end
 
   test "gets multiple repositories by id", %{repos: repos} do
-    assert Enum.all?(RepoQuery.by_id(Enum.map(repos, &(&1.id))), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+    results = RepoQuery.by_id(Enum.map(repos, &(&1.id)))
+    assert Enum.count(results) == length(repos)
+    assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
   end
 
   test "gets single user repository", %{repos: repos} do
@@ -29,17 +31,29 @@ defmodule GitGud.RepoQueryTest do
 
   test "gets multiple repositories from single user", %{repos: repos} do
     for {user, repos} <- Enum.group_by(repos, &(&1.owner)) do
-      assert Enum.all?(RepoQuery.user_repos(user.id), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
-      assert Enum.all?(RepoQuery.user_repos(user.login), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
-      assert Enum.all?(RepoQuery.user_repos(user), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+      results = RepoQuery.user_repos(user.id)
+      assert Enum.count(results) == length(repos)
+      assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+      results = RepoQuery.user_repos(user.login)
+      assert Enum.count(results) == length(repos)
+      assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+      results = RepoQuery.user_repos(user)
+      assert Enum.count(results) == length(repos)
+      assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
     end
   end
 
   test "gets multiple repositories from multiple users", %{repos: repos} do
     users = Enum.map(repos, &(&1.owner))
-    assert Enum.all?(RepoQuery.user_repos(Enum.map(users, &(&1.id))), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
-    assert Enum.all?(RepoQuery.user_repos(Enum.map(users, &(&1.login))), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
-    assert Enum.all?(RepoQuery.user_repos(users), fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+    results = RepoQuery.user_repos(Enum.map(users, &(&1.id)))
+    assert Enum.count(results) == length(repos)
+    assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+    results = RepoQuery.user_repos(Enum.map(users, &(&1.login)))
+    assert Enum.count(results) == length(repos)
+    assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+    results = RepoQuery.user_repos(users)
+    assert Enum.count(results) == length(repos)
+    assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
   end
 
   test "gets single repository by path", %{repos: repos} do
