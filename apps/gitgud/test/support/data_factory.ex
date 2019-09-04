@@ -88,6 +88,20 @@ defmodule GitGud.DataFactory do
     Map.put(ssh_key_strong(), :user_id, user_id)
   end
 
+  @doc """
+  Returns a map representing `GitGud.GPGKey` params.
+  """
+  def gpg_key(%User{id: user_id, name: name, emails: emails}) do
+    gpg_key(user_id, name, Enum.map(emails, &(&1.address)))
+  end
+
+  @doc """
+  Returns a map representing `GitGud.GPGKey` params.
+  """
+  def gpg_key(user_id, name, emails) do
+    %{data: make_gpg_key(name, emails), user_id: user_id}
+  end
+
   @doc false
   defmacro __using__(_opts) do
     quote do
@@ -105,5 +119,17 @@ defmodule GitGud.DataFactory do
     {rsa_priv, 0} = System.cmd("sh", ["-c", "openssl genrsa #{bit_size} 2>/dev/null"])
     {rsa_pubk, 0} = System.cmd("sh", ["-c", "echo \"#{rsa_priv}\" | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
     {rsa_pubk, rsa_priv}
+  end
+
+  defp make_gpg_key(name, emails) do
+    gen_key =
+    Enum.reduce(emails, "%no-protection\n%pubring -\nKey-Type: default\nSubkey-Type: default", fn email, acc ->
+      acc <> "\nName-Real: #{name}\nName-Email: #{email}"
+    end)
+
+    case System.cmd("sh", ["-c", "echo \"#{gen_key}\" | gpg --batch --gen-key --armor"]) do
+      {armor, 0} -> armor
+      {error, 1} -> raise "failed to generate GPG key: #{error}"
+    end
   end
 end
