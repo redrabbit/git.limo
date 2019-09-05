@@ -6,7 +6,6 @@ defmodule GitGud.Web.FormHelpers do
   `input_validations/2` to the HTML input target attributes.
   """
 
-  import Phoenix.HTML.Tag
   import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2]
 
   import GitGud.GraphQL.Schema, only: [to_relay_id: 1]
@@ -22,14 +21,7 @@ defmodule GitGud.Web.FormHelpers do
   def user_input(form, field, opts \\ []) do
     {reject, opts} = Keyword.pop(opts, :reject, [])
     react_component("user-input", [id: input_id(form, field), name: input_name(form, field), reject: Enum.map(reject, &to_relay_id/1)], opts, do: [
-      content_tag(:div, [class: "field is-grouped"], do: [
-        content_tag(:div, [class: "control is-expanded"], do: [
-          tag(:input, class: "input", readonly: true),
-        ]),
-        content_tag(:div, [class: "control"], do: [
-          content_tag(:button, "Add", class: "button is-success", disabled: true)
-        ])
-      ])
+      text_input(form, field, class: "input")
     ])
   end
 

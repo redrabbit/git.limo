@@ -23,7 +23,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
 
   test "creates repository maintainer with valid params", %{conn: conn, users: [user1, user2], repo: repo} do
     conn = Plug.Test.init_test_session(conn, user_id: user1.id)
-    conn = post(conn, Routes.maintainer_path(conn, :create, user1, repo), maintainer: %{user_id: to_string(user2.id)})
+    conn = post(conn, Routes.maintainer_path(conn, :create, user1, repo), maintainer: %{user_login: user2.login})
     assert get_flash(conn, :info) == "Maintainer '#{user2.login}' added."
     assert redirected_to(conn) == Routes.maintainer_path(conn, :index, user1, repo)
   end

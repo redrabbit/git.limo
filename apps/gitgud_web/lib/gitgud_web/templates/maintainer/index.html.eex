@@ -64,8 +64,15 @@
 
 <%= form_for @changeset, Routes.maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
   <div class="field">
-    <%= label f, :user_id, "Add maintainer", class: "label" %>
-    <%= user_input f, :user_id, reject: @repo.maintainers, class: "user-input" %>
-    <%= error_tag f, :user_id %>
+    <%= label f, :user_login, "Add maintainer", class: "label" %>
+    <div class="field is-grouped">
+      <div class="control is-expanded">
+        <%= user_input f, :user_login, reject: @repo.maintainers, class: "user-input" %>
+      </div>
+      <div class="control">
+        <button type="submit" class="button is-success">Add</button>
+      </div>
+    </div>
+    <%= error_tag f, :user_login %>
   </div>
 <% end %>
