@@ -191,7 +191,8 @@ defmodule GitGud.Repo do
   defimpl GitRekt.GitRepo do
     alias GitGud.Repo
 
-    def get_agent(%Repo{} = repo), do: repo.__agent__
+    def get_agent(%Repo{__agent__: nil}), do: {:error, :not_attached}
+    def get_agent(%Repo{__agent__: agent}), do: {:ok, agent}
 
     def put_agent(%Repo{__agent__: nil} = repo, :inproc) do
       case Git.repository_load(RepoStorage.init_param(repo)) do
@@ -203,15 +204,17 @@ defmodule GitGud.Repo do
     end
 
     def put_agent(%Repo{__agent__: nil} = repo, :shared) do
-      case GitAgent.start_link(RepoStorage.init_param(repo)) do
+      case RepoStorage.start_agent(repo) do
         {:ok, agent} ->
+          {:ok, struct(repo, __agent__: agent)}
+        {:error, {:already_started, agent}} ->
           {:ok, struct(repo, __agent__: agent)}
         {:error, reason} ->
           {:error, reason}
       end
     end
 
-    def put_agent(%Repo{} = repo, _mode), do: repo
+    def put_agent(%Repo{} = repo, _mode), do: {:ok, repo}
   end
 
   defimpl GitGud.AuthorizationPolicies do
