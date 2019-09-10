@@ -11,7 +11,6 @@ defmodule GitGud.Application do
 
     Supervisor.start_link([
       {GitGud.DB, []},
-      {GitGud.RepoStorage, []},
       {GitGud.SSHServer, []},
     ], strategy: :one_for_one, name: GitGud.Supervisor)
   end

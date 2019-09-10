@@ -3,12 +3,9 @@ defmodule GitGud.RepoStorage do
   Conveniences for storing Git objects and meta objects.
   """
 
-  use Supervisor
-
   alias Ecto.Multi
 
   alias GitRekt.Git
-  alias GitRekt.GitAgent
   alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
@@ -19,26 +16,6 @@ defmodule GitGud.RepoStorage do
   import Ecto.Query, only: [from: 2]
 
   @batch_insert_chunk_size 5_000
-
-  @doc """
-  Starts a repository storage supervisor as part of a supervision tree.
-  """
-  @spec start_link(keyword) :: Supervisor.on_start
-  def start_link(opts \\ []) do
-    Supervisor.start_link(__MODULE__, [], opts)
-  end
-
-  @doc """
-  Starts an agent for the given `repo`.
-  """
-  @spec start_agent(Repo.t) :: DynamicSupervisor.on_start_child
-  def start_agent(%Repo{} = repo) do
-    name = {:via, Registry, {GitGud.RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
-    DynamicSupervisor.start_child(GitGud.RepoStorage, %{
-      id: GitAgent,
-      start: {GitAgent, :start_link, [init_param(repo), [name: name]]}
-    })
-  end
 
   @doc """
   Initializes a new Git repository for the given `repo`.
@@ -116,19 +93,6 @@ defmodule GitGud.RepoStorage do
   def workdir(%Repo{} = repo) do
     repo = DB.preload(repo, :owner)
     Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner.login, repo.name])
-  end
-
-  #
-  # Callbacks
-  #
-
-  @impl true
-  def init([]) do
-    children = [
-      {DynamicSupervisor, strategy: :one_for_one, name: GitGud.RepoStorage},
-      {Registry, keys: :unique, name: GitGud.RepoRegistry}
-    ]
-    Supervisor.init(children, strategy: :one_for_one)
   end
 
   #

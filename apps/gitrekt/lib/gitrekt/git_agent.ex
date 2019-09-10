@@ -32,8 +32,8 @@ defmodule GitRekt.GitAgent do
   IO.puts message
   ```
 
-  Notice that we still used `GitRekt.Git.repository_open/1` to load our repository.
-  Now, instead of passing a `t:GitRekt.Git.repo/0` pointer we want to start a dedicated process for working with our repository:
+  Notice that we still use `GitRekt.Git.repository_open/1` in order to load our repository.
+  Now, instead of passing a `t:GitRekt.Git.repo/0` pointer we want to start a dedicated process for our repository:
 
   ```elixir
   alias GitRekt.Git
@@ -364,14 +364,7 @@ defmodule GitRekt.GitAgent do
 
   defp exec(agent, op) when is_reference(agent), do: telemery_exec(op, fn -> call(op, agent) end)
   defp exec(agent, op) when is_pid(agent), do: telemery_exec(op, fn -> GenServer.call(agent, op) end)
-  defp exec(agent, op) do
-    case GitRepo.get_agent(agent) do
-      {:ok, agent} ->
-        exec(agent, op)
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  defp exec(agent, op), do: exec(GitRepo.get_agent(agent), op)
 
   defp telemery_exec(op, callback) do
     {name, args} =
