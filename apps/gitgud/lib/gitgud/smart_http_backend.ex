@@ -86,33 +86,14 @@ defmodule GitGud.SmartHTTPBackend do
     |> halt()
   end
 
-  defp deflated?(conn), do: "gzip" in get_req_header(conn, "content-encoding")
-
-  defp inflate_body(conn, body) do
-    if deflated?(conn),
-      do: :zlib.gunzip(body),
-    else: body
-  end
-
-  defp read_body_full(conn, buffer \\ "") do
-    case read_body(conn) do
-      {:ok, body, conn} ->
-        {:ok, inflate_body(conn, buffer <> body), conn}
-      {:more, part, conn} ->
-        read_body_full(conn, buffer <> part)
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp git_info_refs(conn, repo, service) do
-    if authorized?(conn, repo, service) do
+  defp git_info_refs(conn, repo, exec) do
+    if authorized?(conn, repo, exec) do
       case GitAgent.attach(repo) do
         {:ok, repo} ->
-          refs = WireProtocol.reference_discovery(repo, service)
-          info = WireProtocol.encode(["# service=#{service}", :flush] ++ refs)
+          refs = WireProtocol.reference_discovery(repo, exec)
+          info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
           conn
-          |> put_resp_content_type("application/x-#{service}-advertisement")
+          |> put_resp_content_type("application/x-#{exec}-advertisement")
           |> send_resp(:ok, info)
         {:error, _reason} ->
           conn
@@ -136,13 +117,15 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_pack(conn, repo, service) do
-    if authorized?(conn, repo, service) do
-      with {:ok, body, conn} <- read_body_full(conn),
-           {:ok, repo} <- GitAgent.attach(repo) do
+  defp git_pack(conn, repo, exec) do
+    if authorized?(conn, repo, exec) do
+      with {:ok, repo} <- GitAgent.attach(repo),
+           service <- WireProtocol.new(repo.__agent__, exec, callback: {RepoStorage, :push, [repo]}),
+           service <- WireProtocol.skip(service),
+           {:ok, reply, conn} <- git_stream_pack(conn, service, []) do
         conn
-        |> put_resp_content_type("application/x-#{service}-result")
-        |> send_resp(:ok, git_exec(service, repo, body))
+        |> put_resp_content_type("application/x-#{exec}-result")
+        |> send_resp(:ok, reply)
       else
         {:error, reason} ->
           conn
@@ -152,10 +135,22 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_exec(exec, repo, data) do
-    repo.__agent__
-    |> WireProtocol.new(exec, callback: {RepoStorage, :push, [repo]})
-    |> WireProtocol.run(data, skip: 1)
-    |> elem(1)
+  defp git_stream_pack(conn, service, buffer) do
+    case read_body(conn) do
+      {:ok, body, conn} ->
+        {service, data} = WireProtocol.next(service, body)
+        if WireProtocol.done?(service) do
+          buffer = buffer ++ data
+          {_service, data} = WireProtocol.next(service)
+          {:ok, buffer ++ data, conn}
+        else
+          git_stream_pack(conn, service, buffer ++ data)
+        end
+      {:more, body, conn} ->
+        {service, data} = WireProtocol.next(service, body)
+        git_stream_pack(conn, service, buffer ++ data)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end
