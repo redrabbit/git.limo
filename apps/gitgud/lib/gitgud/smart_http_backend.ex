@@ -120,12 +120,12 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_pack(conn, repo, exec) do
     if authorized?(conn, repo, exec) do
       with {:ok, repo} <- GitAgent.attach(repo),
+           conn <- put_resp_content_type(conn, "application/x-#{exec}-result"),
+           conn <- send_chunked(conn, :ok),
            service <- WireProtocol.new(repo.__agent__, exec, callback: {RepoStorage, :push, [repo]}),
            service <- WireProtocol.skip(service),
-           {:ok, reply, conn} <- git_stream_pack(conn, service, []) do
-        conn
-        |> put_resp_content_type("application/x-#{exec}-result")
-        |> send_resp(:ok, reply)
+           {:ok, conn} <- git_stream_pack(conn, service) do
+        halt(conn)
       else
         {:error, reason} ->
           conn
@@ -135,20 +135,29 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_stream_pack(conn, service, buffer) do
+  defp git_stream_pack(conn, service) do
     case read_body(conn) do
       {:ok, body, conn} ->
         {service, data} = WireProtocol.next(service, body)
-        if WireProtocol.done?(service) do
-          buffer = buffer ++ data
-          {_service, data} = WireProtocol.next(service)
-          {:ok, buffer ++ data, conn}
-        else
-          git_stream_pack(conn, service, buffer ++ data)
+        case chunk(conn, data) do
+          {:ok, conn} ->
+            if WireProtocol.done?(service) do
+              {_service, data} = WireProtocol.next(service)
+              chunk(conn, data)
+            else
+              git_stream_pack(conn, service)
+            end
+          {:error, reason} ->
+            {:error, reason}
         end
       {:more, body, conn} ->
         {service, data} = WireProtocol.next(service, body)
-        git_stream_pack(conn, service, buffer ++ data)
+        case chunk(conn, data) do
+          {:ok, conn} ->
+            git_stream_pack(conn, service)
+          {:error, reason} ->
+            {:error, reason}
+        end
       {:error, reason} ->
         {:error, reason}
     end
