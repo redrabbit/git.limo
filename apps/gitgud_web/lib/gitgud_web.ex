@@ -9,9 +9,9 @@ defmodule GitGud.Web do
   """
 
   @doc false
-  def controller do
+  def controller(opts) do
     quote do
-      use Phoenix.Controller, namespace: GitGud.Web
+      use Phoenix.Controller, unquote(Keyword.merge(opts, namespace: GitGud.Web))
 
       alias GitGud.Web.Router.Helpers, as: Routes
 
@@ -28,9 +28,9 @@ defmodule GitGud.Web do
   end
 
   @doc false
-  def view do
+  def view(opts) do
     quote do
-      use Phoenix.View, root: "lib/gitgud_web/templates", namespace: GitGud.Web
+      use Phoenix.View, unquote(Keyword.merge(opts, root: "lib/gitgud_web/templates", namespace: GitGud.Web))
       use Phoenix.HTML
 
       use GitGud.Web.FormHelpers
@@ -58,7 +58,7 @@ defmodule GitGud.Web do
   end
 
   @doc false
-  def router do
+  def router(_opts) do
     quote do
       use Phoenix.Router
 
@@ -71,9 +71,9 @@ defmodule GitGud.Web do
   end
 
   @doc false
-  def channel do
+  def channel(opts) do
     quote do
-      use Phoenix.Channel
+      use Phoenix.Channel, unquote(opts)
 
       import GitGud.Web.Gettext
     end
@@ -81,6 +81,10 @@ defmodule GitGud.Web do
 
   @doc false
   defmacro __using__(which) when is_atom(which) do
-    apply(__MODULE__, which, [])
+    apply(__MODULE__, which, [[]])
+  end
+
+  defmacro __using__({which, opts}) when is_atom(which) and is_list(opts) do
+    apply(__MODULE__, which, [opts])
   end
 end

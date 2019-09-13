@@ -1,8 +1,6 @@
 defmodule GitGud.Web.OAuth2View do
   @moduledoc false
-  use GitGud.Web, :view
-
-  use Phoenix.Template, Phoenix.View.__template_options__(__MODULE__, root: "lib/gitgud_web/templates", namespace: GitGud.Web, path: "oauth2")
+  use GitGud.Web, {:view, path: "oauth2"}
 
   import Phoenix.HTML.Tag
 
