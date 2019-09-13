@@ -12,6 +12,7 @@ defmodule GitGud.ReviewQuery do
   alias GitRekt.GitCommit
 
   alias GitGud.Repo
+  alias GitGud.Comment
   alias GitGud.CommitLineReview
   alias GitGud.CommitReview
 
@@ -166,6 +167,18 @@ defmodule GitGud.ReviewQuery do
     query1 = from r in CommitReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
     query2 = from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
     from c in subquery(union_all(query1, ^query2)), select: count(c.id)
+  end
+
+  @doc """
+  Returns a query for fetching comments of a review.
+  """
+  @spec comments_query(CommitLineReview.t | CommitReview.t) :: Ecto.Query.t
+  def comments_query(%CommitLineReview{id: id}) do
+    from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
+  end
+
+  def comments_query(%CommitReview{id: id}) do
+    from c in Comment, join: t in "commit_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
   end
 
   #

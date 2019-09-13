@@ -10,6 +10,7 @@ defmodule GitGud.IssueQuery do
 
   alias GitGud.Repo
   alias GitGud.Issue
+  alias GitGud.Comment
 
   import Ecto.Query
 
@@ -76,6 +77,17 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number == ^number)
   end
 
+  @doc """
+  Returns a query for fetching all repository issue.
+  """
+  @spec repo_issues_query(pos_integer) :: Ecto.Query.t
+  def repo_issues_query(repo_id), do: repo_issues_query(repo_id, :all)
+
+  @doc """
+  Returns a query for fetching all repository issue with the given `status`.
+  """
+  @spec repo_issues_query(pos_integer, atom) :: Ecto.Query.t
+  def repo_issues_query(repo_id, status)
   def repo_issues_query(repo_id, :all) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
   end
@@ -84,10 +96,19 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
-  def count_repo_issues_query(repo_id, status) do
+  @spec count_repo_issues_query(pos_integer, atom) :: Ecto.Query.t
+  def count_repo_issues_query(repo_id, status \\ :all) do
     repo_id
     |> repo_issues_query(status)
     |> select([issue: e], count())
+  end
+
+  @doc """
+  Returns a query for fetching comments of an issue.
+  """
+  @spec comments_query(Issue.t) :: Ecto.Query.t
+  def comments_query(%Issue{id: id}) do
+    from c in Comment, join: t in "issues_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
   end
 
   #

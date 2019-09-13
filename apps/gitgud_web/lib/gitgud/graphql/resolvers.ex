@@ -69,19 +69,19 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :issue}, %{context: ctx} = info, opts) do
-    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:author, comments: :author])),
+    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :author)),
       do: {:ok, issue},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :commit_line_review}, %{context: ctx} = info, opts) do
-    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:repo, comments: :author])),
+    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :repo)),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :commit_review}, %{context: ctx} = info, opts) do
-    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [:repo, comments: :author])),
+    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :repo)),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
@@ -176,7 +176,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves all repositories for a given `user`.
+  Resolves all repositories for an user.
   """
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
@@ -211,11 +211,12 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the list of issues of a given `repo`.
+  Resolves issues for a repository.
   """
-  @spec repo_issues(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def repo_issues(repo, %{} = _args, _info) do
-    {:ok, IssueQuery.repo_issues(repo, preload: [:author, comments: :author])}
+  @spec repo_issues(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def repo_issues(args, %Absinthe.Resolution{source: repo, context: ctx} = _info) do
+    query = DBQueryable.query({IssueQuery, :repo_issues_query}, repo.id, viewer: ctx[:current_user], preload: :author)
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
@@ -223,7 +224,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issue(Repo.t, %{number: number}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_issue(repo, %{number: number} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user], preload: [:author, comments: :author]),
+    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user], preload: :author),
       do: {:ok, issue},
     else: {:error, "there is no issue for the given args"}
   end
@@ -406,17 +407,27 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
   def commit_line_review(commit, %{blob_oid: blob_oid, hunk: hunk, line: line} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
-    if line_review = ReviewQuery.commit_line_review(ctx.repo, commit, blob_oid, hunk, line, viewer: ctx[:current_user], preload: [comments: :author]),
+    if line_review = ReviewQuery.commit_line_review(ctx.repo, commit, blob_oid, hunk, line, viewer: ctx[:current_user]),
       do: {:ok, line_review},
     else: {:error, "there is no line review for the given args"}
+  end
+
+  @doc """
+  Resolves comments for a commit line review.
+  """
+  @spec commit_line_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def commit_line_review_comments(args, %Absinthe.Resolution{source: commit_line_review, context: ctx} = _info) do
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_line_review, viewer: ctx[:current_user], preload: [:author])
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
   Resolves the line reviews for a given Git `commit` object.
   """
   @spec commit_line_reviews(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, [CommitLineReview.t]} | {:error, term}
-  def commit_line_reviews(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, ReviewQuery.commit_line_reviews(ctx.repo, commit, viewer: ctx[:current_user], preload: [comments: :author])}
+  def commit_line_reviews(commit, %{} = args,  %Absinthe.Resolution{context: ctx} = _info) do
+    query = DBQueryable.query({ReviewQuery, :commit_line_reviews_query}, [ctx.repo.id, commit.oid], viewer: ctx[:current_user])
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
@@ -424,7 +435,16 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_review(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, CommitLineReview.t} | {:error, term}
   def commit_review(commit, %{} = _args,  %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, ReviewQuery.commit_review(ctx.repo, commit, viewer: ctx[:current_user], preload: [comments: :author])}
+    {:ok, ReviewQuery.commit_review(ctx.repo, commit, viewer: ctx[:current_user])}
+  end
+
+  @doc """
+  Resolves comments for a commit review.
+  """
+  @spec commit_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def commit_review_comments(args, %Absinthe.Resolution{source: commit_review, context: ctx} = _info) do
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_review, viewer: ctx[:current_user], preload: :author)
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   @doc """
@@ -536,6 +556,15 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec issue_editable(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def issue_editable(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, authorized?(ctx[:current_user], issue, :admin)}
+  end
+
+  @doc """
+  Resolves comments for an issue.
+  """
+  @spec issue_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def issue_comments(args, %Absinthe.Resolution{source: issue, context: ctx} = _info) do
+    query = DBQueryable.query({IssueQuery, :comments_query}, issue, viewer: ctx[:current_user], preload: :author)
+    Connection.from_query(query, &DB.all/1, args)
   end
 
   def issue_events(issue, _args, _info) do

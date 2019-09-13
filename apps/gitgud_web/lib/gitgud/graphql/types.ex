@@ -28,6 +28,9 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_tag
   connection node_type: :git_tree_entry
   connection node_type: :git_tree_entry_with_last_commit
+  connection node_type: :commit_line_review
+  connection node_type: :issue
+  connection node_type: :comment
   connection node_type: :search_result
 
   interface :issue_event do
@@ -145,8 +148,14 @@ defmodule GitGud.GraphQL.Types do
     field :description_html, :string, resolve: &Resolvers.repo_description_html/3
 
     @desc "A list of issues for this repository."
-    field :issues, list_of(:issue) do
-      resolve &Resolvers.repo_issues/3
+    connection field :issues, node_type: :issue do
+      resolve &Resolvers.repo_issues/2
+    end
+
+    @desc "Fetches a single issue by its number."
+    field :issue, non_null(:issue) do
+      arg :number, non_null(:integer), description: "The number of the issue."
+      resolve &Resolvers.repo_issue/3
     end
 
     @desc "The owner of the repository."
@@ -162,7 +171,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "Fetches a single Git reference by its name."
-    field :ref, :git_reference do
+    field :ref, non_null(:git_reference) do
       arg :name, non_null(:string), description: "The name of the reference."
       resolve &Resolvers.repo_ref/3
     end
@@ -173,7 +182,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "Fetches a single Git tag by its name."
-    field :tag, :git_tag do
+    field :tag, non_null(:git_tag) do
       arg :name, non_null(:string), description: "The name of the tag."
       resolve &Resolvers.repo_tag/3
     end
@@ -207,7 +216,9 @@ defmodule GitGud.GraphQL.Types do
     field :author, non_null(:user)
 
     @desc "A list of comments for this issue."
-    field :comments, list_of(:comment)
+    connection field :comments, node_type: :comment do
+      resolve &Resolvers.issue_comments/2
+    end
 
     field :events, list_of(:issue_event), resolve: &Resolvers.issue_events/3
 
@@ -289,7 +300,7 @@ defmodule GitGud.GraphQL.Types do
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
     @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
       arg :path, :string, description: "The path of the tree entry."
       resolve &Resolvers.git_tree_entry_with_last_commit/2
     end
@@ -337,7 +348,7 @@ defmodule GitGud.GraphQL.Types do
 
 
     @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
       arg :path, non_null(:string), description: "The path of the tree entry."
       resolve &Resolvers.git_tree_entry_with_last_commit/2
     end
@@ -357,7 +368,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "All commit line reviews."
-    field :line_reviews, list_of(:commit_line_review) do
+    connection field :line_reviews, node_type: :commit_line_review do
       resolve &Resolvers.commit_line_reviews/3
     end
 
@@ -385,7 +396,9 @@ defmodule GitGud.GraphQL.Types do
     field :line, non_null(:integer)
 
     @desc "A list of comments for this review."
-    field :comments, list_of(:comment)
+    connection field :comments, node_type: :comment do
+      resolve &Resolvers.commit_line_review_comments/2
+    end
 
     @desc "The repository this commit belongs to."
     field :repo, non_null(:repo)
@@ -397,7 +410,9 @@ defmodule GitGud.GraphQL.Types do
     field :commit_oid, non_null(:git_oid)
 
     @desc "A list of comments for this review."
-    field :comments, list_of(:comment)
+    connection field :comments, node_type: :comment do
+      resolve &Resolvers.commit_review_comments/2
+    end
 
     @desc "The repository this commit belongs to."
     field :repo, non_null(:repo)
@@ -432,7 +447,7 @@ defmodule GitGud.GraphQL.Types do
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
     @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, :git_tree_entry_with_last_commit do
+    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
       arg :path, :string, description: "The path of the tree entry."
       resolve &Resolvers.git_tree_entry_with_last_commit/2
     end
