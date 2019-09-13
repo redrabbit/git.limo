@@ -570,6 +570,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   for line <- File.stream!(highlight_languages) do
+
     [language|extensions] = String.split(String.trim(line), ~r/\s/, trim: true)
     for extension <- extensions do
       defp highlight_language("." <> unquote(extension)), do: unquote(language)

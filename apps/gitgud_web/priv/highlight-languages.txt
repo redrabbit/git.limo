@@ -20,9 +20,9 @@ clojure           clj boot cl2 cljc cljs cljs.hl cljsm cljx hic
 cmake             cmake cmake.in
 coffeescript      coffee _coffee cake cjsx iced
 coq               coq
-cpp               c cats  h idc cpp c++ cc cp cxx h h++ hh hpp hxx inc inl ipp tcc tpp
+cpp               c h idc cpp c++ cc cp cxx h++ hh hpp hxx inc inl ipp tcc tpp
 crystal           cr
-cs                cs cake csx
+cs                cs
 css               css
 d                 d di
 dart              dart
@@ -104,7 +104,7 @@ scilab            sci sce tst
 scss              scss sass
 shell             sh
 smali             smali
-smalltalk         st cs
+smalltalk         st
 sqf               sqf hqf
 sql               sql
 stan              stan
