@@ -104,7 +104,7 @@ defmodule GitRekt.Git do
   }
 
   @type revwalk       :: reference
-  @type revwalk_sort  :: :topsort | :timesort | :reversesort
+  @type revwalk_sort  :: :sort_topo | :sort_time | :sort_reverse
 
   @type pack          :: reference
 
