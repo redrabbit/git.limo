@@ -46,18 +46,22 @@ class CommitReview extends React.Component {
                 id
               }
               commitOid
-              comments {
-                id
-                author {
-                  login
-                  avatarUrl
-                  url
+              comments(first: 50) {
+                edges {
+                  node {
+                    id
+                    author {
+                      login
+                      avatarUrl
+                      url
+                    }
+                    editable
+                    deletable
+                    body
+                    bodyHtml
+                    insertedAt
+                  }
                 }
-                editable
-                deletable
-                body
-                bodyHtml
-                insertedAt
               }
             }
           }
@@ -72,7 +76,7 @@ class CommitReview extends React.Component {
           this.setState({
           repoId: response.node.repo.id,
           commitOid: response.node.commitOid,
-          comments: response.node.comments
+          comments: response.node.comments.edges.map(edge => edge.node)
           })
           this.subscribeComments()
         })

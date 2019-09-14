@@ -65,18 +65,22 @@ class Issue extends React.Component {
             }
             insertedAt
             editable
-            comments {
-              id
-              author {
-                login
-                avatarUrl
-                url
+            comments(first: 50) {
+              edges {
+                node {
+                  id
+                  author {
+                    login
+                    avatarUrl
+                    url
+                  }
+                  editable
+                  deletable
+                  body
+                  bodyHtml
+                  insertedAt
+                }
               }
-              editable
-              deletable
-              body
-              bodyHtml
-              insertedAt
             }
             events {
               type
@@ -119,7 +123,7 @@ class Issue extends React.Component {
           author: response.node.author,
           insertedAt: response.node.insertedAt,
           editable: response.node.editable,
-          comments: response.node.comments,
+          comments: response.node.comments.edges.map(edge => node),
           events: response.node.events,
           timestamp: moment.utc(response.node.insertedAt).fromNow()
         })

@@ -53,18 +53,22 @@ class CommitLineReview extends React.Component {
               blobOid
               hunk
               line
-              comments {
-                id
-                author {
-                  login
-                  avatarUrl
-                  url
+              comments(first: 50) {
+                edges {
+                  node {
+                    id
+                    author {
+                      login
+                      avatarUrl
+                      url
+                    }
+                    editable
+                    deletable
+                    body
+                    bodyHtml
+                    insertedAt
+                  }
                 }
-                editable
-                deletable
-                body
-                bodyHtml
-                insertedAt
               }
             }
           }
@@ -82,7 +86,7 @@ class CommitLineReview extends React.Component {
           blobOid: response.node.blobOid,
           hunk: response.node.hunk,
           line: response.node.line,
-          comments: response.node.comments
+          comments: response.node.comments.edges.map(edge => edge.node)
           })
           this.subscribeComments()
         })
