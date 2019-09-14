@@ -1,7 +1,11 @@
 import React from "react"
-import {QueryRenderer, graphql} from "react-relay"
+import {fetchQuery, graphql} from "react-relay"
 
 import environment from "../relay-environment"
+
+class SearchDropDown extends React.Component {
+
+}
 
 class Search extends React.Component {
   constructor(props) {
@@ -10,7 +14,45 @@ class Search extends React.Component {
     this.inputContainer = React.createRef()
     this.handleInputChange = this.handleInputChange.bind(this)
     this.renderSearchResult = this.renderSearchResult.bind(this)
-    this.state = {input: ""}
+    this.state = {input: "", results: []}
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if(this.state.input != prevState.input) {
+      const query = graphql`
+        query SearchQuery($input: String!) {
+          search(all: $input, first:10) {
+            edges {
+              node {
+                __typename
+                ... on User {
+                  id
+                  login
+                  name
+                  url
+                }
+                ... on Repo {
+                  id
+                  name
+                  owner {
+                    login
+                  }
+                  url
+                }
+              }
+            }
+          }
+        }
+      `
+      const variables = {
+        input: this.state.input
+      }
+
+      fetchQuery(environment, query, variables)
+        .then(response => {
+          this.setState({results: response.search.edges.map(edge => edge.node)})
+        })
+    }
   }
 
   render() {
@@ -32,71 +74,29 @@ class Search extends React.Component {
   renderDropdown() {
     return (
       <div className="dropdown-content">
-        <QueryRenderer
-          environment={environment}
-          query={graphql`
-            query SearchQuery($input: String!) {
-              search(all: $input, first:10) {
-                edges {
-                  node {
-                    __typename
-                    ... on User {
-                      id
-                      login
-                      name
-                      url
-                    }
-                    ... on Repo {
-                      id
-                      name
-                      owner {
-                        login
-                      }
-                      url
-                    }
-                  }
-                }
-              }
-            }
-          `}
-          variables={{
-            input: this.state.input
-          }}
-          render={({error, props}) => {
-            if(error) {
-              return <div>{error.message}</div>
-            } else if(props) {
-              return (
-                <div>
-                  {props.search.edges.map(this.renderSearchResult)}
-                </div>
-              )
-            }
-            return <div></div>
-          }}
-        />
+        {this.state.results.map(this.renderSearchResult)}
       </div>
     )
   }
 
   renderSearchResult(edge) {
-    switch(edge.node.__typename) {
+    switch(edge.__typename) {
       case "User":
         return (
-          <a key={edge.node.id} href={edge.node.url} className="dropdown-item">
+          <a key={edge.id} href={edge.url} className="dropdown-item">
             <span className="icon">
               <i className="fa fa-user"></i>
             </span>
-            {edge.node.login} <span className="has-text-grey">{edge.node.name}</span>
+            {edge.login} <span className="has-text-grey">{edge.name}</span>
           </a>
         )
       case "Repo":
         return (
-          <a key={edge.node.id} href={edge.node.url} className="dropdown-item">
+          <a key={edge.id} href={edge.url} className="dropdown-item">
             <span className="icon">
               <i className="fa fa-archive"></i>
             </span>
-            <span>{edge.node.owner.login} / {edge.node.name}</span>
+            <span>{edge.owner.login} / {edge.name}</span>
           </a>
         )
     }

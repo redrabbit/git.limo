@@ -1,5 +1,5 @@
 import React from "react"
-import {QueryRenderer, graphql} from "react-relay"
+import {fetchQuery, graphql} from "react-relay"
 
 import environment from "../relay-environment"
 
@@ -14,7 +14,35 @@ class UserInput extends React.Component {
     this.handleBlur = this.handleBlur.bind(this)
     this.handleInputChange = this.handleInputChange.bind(this)
     this.handleInputKeyDown = this.handleInputKeyDown.bind(this)
-    this.state = {user: "", input: ""}
+    this.state = {input: "", users: [], user: null}
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if(this.state.input != prevState.input) {
+      const query = graphql`
+        query UserInputQuery($input: String!) {
+          search(user: $input, first:10) {
+            edges {
+              node {
+                ... on User {
+                  id
+                  login
+                  name
+                }
+              }
+            }
+          }
+        }
+      `
+      const variables = {
+        input: this.state.input
+      }
+
+      fetchQuery(environment, query, variables)
+        .then(response => {
+          this.setState({users: response.search.edges.map(edge => edge.node)})
+        })
+    }
   }
 
   render() {
@@ -43,41 +71,9 @@ class UserInput extends React.Component {
   renderDropdown() {
     return (
       <div className="dropdown-content">
-        <QueryRenderer
-          environment={environment}
-          query={graphql`
-            query UserInputQuery($input: String!) {
-              search(user: $input, first:10) {
-                edges {
-                  node {
-                    ... on User {
-                      id
-                      login
-                      name
-                    }
-                  }
-                }
-              }
-            }
-          `}
-          variables={{
-            input: this.state.input
-          }}
-          render={({error, props}) => {
-            if(error) {
-              return <div>{error.message}</div>
-            } else if(props) {
-              return (
-                <div>
-                  {props.search.edges.filter(edge => !this.props.reject.includes(edge.node.id)).map((edge, i) =>
-                    <a key={i} className="dropdown-item" onClick={this.handleTagUser(edge.node)}>{edge.node.login} <span className="has-text-grey">{edge.node.name}</span></a>
-                  )}
-                </div>
-              )
-            }
-            return <div></div>
-          }}
-        />
+        {this.state.users.filter(user => !this.props.reject.includes(user.id)).map((user, i) =>
+          <a key={i} className="dropdown-item" onClick={this.handleTagUser(user)}>{user.login} <span className="has-text-grey">{user.name}</span></a>
+        )}
       </div>
     )
   }
@@ -90,7 +86,7 @@ class UserInput extends React.Component {
   }
 
   handleReset() {
-    this.setState({user: ""})
+    this.setState({user: null})
   }
 
   handleFocus(event) {
@@ -114,7 +110,7 @@ class UserInput extends React.Component {
     if(event.keyCode == 13) event.preventDefault()
     if(this.state.user) {
       if(event.keyCode == 8) {
-        this.setState({user: ""})
+        this.setState({user: null})
       } else {
         event.preventDefault()
       }
