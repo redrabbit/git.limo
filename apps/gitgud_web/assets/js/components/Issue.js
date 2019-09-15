@@ -123,7 +123,7 @@ class Issue extends React.Component {
           author: response.node.author,
           insertedAt: response.node.insertedAt,
           editable: response.node.editable,
-          comments: response.node.comments.edges.map(edge => node),
+          comments: response.node.comments.edges.map(edge => edge.node),
           events: response.node.events,
           timestamp: moment.utc(response.node.insertedAt).fromNow()
         })
