@@ -28,8 +28,8 @@ defmodule GitGud.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:ecto, "~> 3.1"},
-     {:ecto_sql, "~> 3.1"},
+    [{:ecto, "~> 3.2"},
+     {:ecto_sql, "~> 3.2"},
      {:postgrex, "~> 0.14"},
      {:phoenix, "~> 1.4", optional: true},
      {:phoenix_pubsub, "~> 1.1", optional: true},

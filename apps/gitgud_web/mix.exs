@@ -44,7 +44,7 @@ defmodule GitGud.Web.Mixfile do
      {:bamboo, "~> 1.2"},
      {:gettext, "~> 0.17"},
      {:timex, "~> 3.6"},
-     {:earmark, "~> 1.3"},
+     {:earmark, "~> 1.4"},
      {:gitgud, in_umbrella: true}]
   end
 
