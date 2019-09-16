@@ -7,6 +7,8 @@ defmodule GitGud.Web.UserSocket do
 
   alias GitGud.UserQuery
 
+  channel "issue:*", GitGud.Web.CommentThreadChannel
+
   def connect(params, sock) do
     if token = params["token"],
       do: authenticate_socket(sock, token),

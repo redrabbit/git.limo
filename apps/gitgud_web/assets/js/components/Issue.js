@@ -5,6 +5,10 @@ import {fetchQuery, commitMutation, requestSubscription, graphql} from "react-re
 
 import environment from "../relay-environment"
 
+import socket from "../socket"
+
+import {Presence} from "phoenix"
+
 import moment from "moment"
 
 import Comment from "./Comment"
@@ -18,21 +22,23 @@ class Issue extends React.Component {
     this.fetchIssue = this.fetchIssue.bind(this)
     this.formatTimestamp = this.formatTimestamp.bind(this)
     this.subscribeEvents = this.subscribeEvents.bind(this)
+    this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
     this.renderFeed = this.renderFeed.bind(this)
     this.renderStatus = this.renderStatus.bind(this)
+    this.renderPresences = this.renderPresences.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.handleTitleFormSubmit = this.handleTitleFormSubmit.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
     this.handleClose = this.handleClose.bind(this)
     this.handleReopen = this.handleReopen.bind(this)
+    this.handleTyping = this.handleTyping.bind(this)
     this.handleCommentCreate = this.handleCommentCreate.bind(this)
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
-    this.state = {}
     this.state = {
       title: null,
       titleEdit: false,
@@ -43,7 +49,10 @@ class Issue extends React.Component {
       editable: false,
       comments: [],
       events: [],
-      timestamp: null
+      timestamp: null,
+      channel: null,
+      presence: null,
+      presences: []
     }
   }
 
@@ -129,6 +138,7 @@ class Issue extends React.Component {
         })
         this.interval = setInterval(this.formatTimestamp, 3000)
         this.subscribeEvents()
+        this.subscribePresence()
         this.subscribeComments()
       })
   }
@@ -189,6 +199,16 @@ class Issue extends React.Component {
         }
       }
     })
+  }
+
+  subscribePresence() {
+    let channel = socket.channel(`issue:${this.state.number}`)
+    let presence = new Presence(channel)
+    presence.onSync(() => this.setState({presences: presence.list()}))
+    this.setState({channel: channel, presence: presence})
+    channel.join()
+    .receive("ok", resp => {})
+    .receive("error", resp => console.warn("Unable to join channel", resp))
   }
 
   subscribeComments() {
@@ -357,6 +377,7 @@ class Issue extends React.Component {
                 return <IssueEvent key={index} event={item.event} />
             }
           })}
+          {this.renderPresences()}
           <div className="timeline-item">
             <div className="timeline-content">
               {this.renderForm()}
@@ -377,16 +398,38 @@ class Issue extends React.Component {
     }
   }
 
+  renderPresences() {
+    const presences = this.state.presences.filter(({metas}) => metas.some(meta => meta.typing)).map(({user}) => user)
+    if(presences.length > 0) {
+      return (
+        <div className="timeline-item">
+          <div className="timeline-marker is-icon">
+            <i className="fa fa-i-cursor"></i>
+          </div>
+          <div className="timeline-content">
+            <span className="loading-ellipsis">
+              {presences.map((user, i) => [
+                i > 0 && (i+1 == presences.length ? " and " : ", "),
+                <a key={i} href={user.url} className="has-text-black">{user.login}</a>
+              ])}
+              {presences.length > 1 ? " are " : " is "} typing
+            </span>
+          </div>
+        </div>
+      )
+    }
+  }
+
   renderForm() {
     const {status, editable} = this.state
     if(!editable) {
-      return <CommentForm action="new" onSubmit={this.handleFormSubmit} />
+      return <CommentForm action="new" onTyping={this.handleTyping} onSubmit={this.handleFormSubmit} />
     } else {
       switch(status) {
         case "open":
-          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onClose={this.handleClose} />
+          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onTyping={this.handleTyping} onClose={this.handleClose} />
         case "close":
-          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onReopen={this.handleReopen} />
+          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onTyping={this.handleTyping} onReopen={this.handleReopen} />
       }
     }
   }
@@ -497,6 +540,14 @@ class Issue extends React.Component {
         this.setState({status: response.reopenIssue.status, editable: response.reopenIssue.editable})
       }
     })
+  }
+
+  handleTyping(isTyping) {
+    if(isTyping) {
+      this.state.channel.push("start_typing", {})
+    } else {
+      this.state.channel.push("stop_typing", {})
+    }
   }
 
   handleCommentCreate(comment) {

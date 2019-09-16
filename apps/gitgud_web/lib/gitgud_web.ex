@@ -75,6 +75,9 @@ defmodule GitGud.Web do
     quote do
       use Phoenix.Channel, unquote(opts)
 
+      alias GitGud.Web.Presence
+      alias GitGud.Web.Router.Helpers, as: Routes
+
       import GitGud.Web.Gettext
     end
   end

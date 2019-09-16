@@ -7,6 +7,7 @@ class CommentForm extends React.Component {
     super(props)
     this.bodyInput = React.createRef()
     this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleBodyChange = this.handleBodyChange.bind(this)
     this.state = {body: props.body || ""}
   }
 
@@ -24,7 +25,7 @@ class CommentForm extends React.Component {
           <form onSubmit={this.handleSubmit}>
             <div className="field">
               <div className="control">
-                <textarea name="comment[body]"className="textarea" placeholder="Leave a comment" value={this.state.body} onChange={event => this.setState({body: event.target.value})} ref={this.bodyInput} />
+                <textarea name="comment[body]"className="textarea" placeholder="Leave a comment" value={this.state.body} onChange={this.handleBodyChange} ref={this.bodyInput} />
               </div>
             </div>
             {(() => {
@@ -102,8 +103,18 @@ class CommentForm extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault()
+    this.props.onTyping(false)
     this.props.onSubmit(this.state.body)
     this.setState({body: ""})
+  }
+
+  handleBodyChange(event) {
+    if(event.target.value != "" && this.state.body == "") {
+      this.props.onTyping(true)
+    } else if(event.target.value == "" && this.state.body != "") {
+      this.props.onTyping(false)
+    }
+    this.setState({body: event.target.value})
   }
 }
 
