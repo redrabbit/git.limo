@@ -170,7 +170,7 @@ export default () => {
     CommitLineReview.subscribeNewLineReviews(repoId, commitOid, {
       onNext: response => {
         const {id, blobOid, hunk, line} = response.commitLineReviewCreate
-        let table = document.querySelector(`table.diff-table[data-blob-oid=${blobOid}]`)
+        let table = document.querySelector(`table.diff-table[data-blob-oid="${blobOid}"]`)
         let tr = table.querySelectorAll("tbody tr.hunk")[hunk]
         for(let i = 0; i <= line; i++) {
           tr = tr.nextElementSibling
