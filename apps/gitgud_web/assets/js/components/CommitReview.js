@@ -15,6 +15,7 @@ class CommitReview extends React.Component {
   constructor(props) {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
+    this.subscriptions = []
     this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
@@ -42,6 +43,10 @@ class CommitReview extends React.Component {
 
   componentDidMount() {
     this.fetchReview()
+  }
+
+  componentWillUnmount() {
+    this.subscriptions.forEach(subscription => subscription.dispose())
   }
 
   fetchReview() {
@@ -101,15 +106,13 @@ class CommitReview extends React.Component {
     let presence = new Presence(channel)
     presence.onSync(() => this.setState({presences: presence.list()}))
     this.setState({channel: channel, presence: presence})
-    channel.join()
-    .receive("ok", resp => {})
-    .receive("error", resp => console.warn("Unable to join channel", resp))
+    return channel.join()
   }
 
   subscribeComments() {
-    this.subscribeCommentCreate()
-    this.subscribeCommentUpdate()
-    this.subscribeCommentDelete()
+    this.subscriptions.push(this.subscribeCommentCreate())
+    this.subscriptions.push(this.subscribeCommentUpdate())
+    this.subscriptions.push(this.subscribeCommentDelete())
   }
 
   subscribeCommentCreate() {
@@ -304,14 +307,16 @@ class CommitReview extends React.Component {
   }
 
   handleCommentCreate(comment) {
-    this.setState(state => ({comments: state.comments.find(oldComment => oldComment.id == comment.id) ? state.comments : [...state.comments, comment]}))
+    this.setState(state => ({comments: state.comments.find(({id}) => id == comment.id) ? state.comments : [...state.comments, comment]}))
   }
 
   handleCommentUpdate(comment) {
     this.setState(state => ({comments: state.comments.map(oldComment => oldComment.id === comment.id ? {...oldComment, ...comment} : oldComment)}))
   }
   handleCommentDelete(comment) {
-    this.setState(state => ({comments: state.comments.filter(oldComment => oldComment.id !== comment.id)}))
+    if(this.state.comments.find(({id}) => id == comment.id)) {
+      this.setState(state => ({comments: state.comments.filter(({id}) => id !== comment.id)}))
+    }
   }
 }
 

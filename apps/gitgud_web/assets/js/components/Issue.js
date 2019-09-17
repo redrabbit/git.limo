@@ -21,8 +21,9 @@ class Issue extends React.Component {
     this.titleInput = React.createRef()
     this.fetchIssue = this.fetchIssue.bind(this)
     this.formatTimestamp = this.formatTimestamp.bind(this)
-    this.subscribeEvents = this.subscribeEvents.bind(this)
+    this.subscriptions = []
     this.subscribePresence = this.subscribePresence.bind(this)
+    this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
@@ -61,7 +62,12 @@ class Issue extends React.Component {
     this.fetchIssue()
   }
 
+  componentWillUnmount() {
+    this.subscriptions.forEach(subscription => subscription.dispose())
+  }
+
   fetchIssue() {
+    const {issueId} = this.props
     const query = graphql`
       query IssueQuery($id: ID!) {
         node(id: $id) {
@@ -124,7 +130,7 @@ class Issue extends React.Component {
       }
     `
     const variables = {
-      id: this.props.id
+      id: issueId
     }
 
     fetchQuery(environment, query, variables)
@@ -142,8 +148,8 @@ class Issue extends React.Component {
           timestamp: moment.utc(response.node.insertedAt).fromNow()
         })
         this.interval = setInterval(this.formatTimestamp, 3000)
-        this.subscribeEvents()
         this.subscribePresence()
+        this.subscribeEvents()
         this.subscribeComments()
       })
   }
@@ -152,7 +158,16 @@ class Issue extends React.Component {
     this.setState({timestamp: moment.utc(this.state.insertedAt).fromNow()})
   }
 
+  subscribePresence() {
+    let channel = socket.channel(`issue:${this.state.repoId}:${this.state.number}`)
+    let presence = new Presence(channel)
+    presence.onSync(() => this.setState({presences: presence.list()}))
+    this.setState({channel: channel, presence: presence})
+    return channel.join()
+  }
+
   subscribeEvents() {
+    const {issueId} = this.props
     const subscription = graphql`
       subscription IssueEventSubscription($id: ID!) {
         issueEvent(id: $id) {
@@ -183,7 +198,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: this.props.id,
+      id: issueId
     }
 
     return requestSubscription(environment, {
@@ -206,23 +221,14 @@ class Issue extends React.Component {
     })
   }
 
-  subscribePresence() {
-    let channel = socket.channel(`issue:${this.state.repoId}:${this.state.number}`)
-    let presence = new Presence(channel)
-    presence.onSync(() => this.setState({presences: presence.list()}))
-    this.setState({channel: channel, presence: presence})
-    channel.join()
-    .receive("ok", resp => {})
-    .receive("error", resp => console.warn("Unable to join channel", resp))
-  }
-
   subscribeComments() {
-    this.subscribeCommentCreate()
-    this.subscribeCommentUpdate()
-    this.subscribeCommentDelete()
+    this.subscriptions.push(this.subscribeCommentCreate())
+    this.subscriptions.push(this.subscribeCommentUpdate())
+    this.subscriptions.push(this.subscribeCommentDelete())
   }
 
   subscribeCommentCreate() {
+    const {issueId} = this.props
     const subscription = graphql`
       subscription IssueCommentCreateSubscription($id: ID!) {
         issueCommentCreate(id: $id) {
@@ -242,7 +248,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: this.props.id,
+      id: issueId
     }
 
     return requestSubscription(environment, {
@@ -253,6 +259,7 @@ class Issue extends React.Component {
   }
 
   subscribeCommentUpdate() {
+    const {issueId} = this.props
     const subscription = graphql`
       subscription IssueCommentUpdateSubscription($id: ID!) {
         issueCommentUpdate(id: $id) {
@@ -264,7 +271,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: this.props.id
+      id: issueId
     }
 
     return requestSubscription(environment, {
@@ -275,6 +282,7 @@ class Issue extends React.Component {
   }
 
   subscribeCommentDelete() {
+    const {issueId} = this.props
     const subscription = graphql`
       subscription IssueCommentDeleteSubscription($id: ID!) {
         issueCommentDelete(id: $id) {
@@ -284,7 +292,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: this.props.id
+      id: issueId
     }
 
     return requestSubscription(environment, {
@@ -440,10 +448,11 @@ class Issue extends React.Component {
   }
 
   handleTitleFormSubmit(event) {
+    const {issueId} = this.props
     const title = event.target.title.value
     if(title != "") {
       const variables = {
-        id: this.props.id,
+        id: issueId,
         title: title
       }
 
@@ -468,8 +477,9 @@ class Issue extends React.Component {
 
   handleFormSubmit(body) {
     if(body != "") {
+      const {issueId} = this.props
       const variables = {
-        id: this.props.id,
+        id: issueId,
         body: body
       }
 
@@ -502,8 +512,9 @@ class Issue extends React.Component {
   }
 
   handleClose() {
+    const {issueId} = this.props
     const variables = {
-      id: this.props.id,
+      id: issueId
     }
 
     const mutation = graphql`
@@ -525,8 +536,9 @@ class Issue extends React.Component {
   }
 
   handleReopen() {
+    const {issueId} = this.props
     const variables = {
-      id: this.props.id,
+      id: issueId
     }
 
     const mutation = graphql`
@@ -556,14 +568,16 @@ class Issue extends React.Component {
   }
 
   handleCommentCreate(comment) {
-    this.setState(state => ({comments: state.comments.find(oldComment => oldComment.id == comment.id) ? state.comments : [...state.comments, comment]}))
+    this.setState(state => ({comments: state.comments.find(({id}) => id == comment.id) ? state.comments : [...state.comments, comment]}))
   }
 
   handleCommentUpdate(comment) {
     this.setState(state => ({comments: state.comments.map(oldComment => oldComment.id === comment.id ? {...oldComment, ...comment} : oldComment)}))
   }
   handleCommentDelete(comment) {
-    this.setState(state => ({comments: state.comments.filter(oldComment => oldComment.id !== comment.id)}))
+    if(this.state.comments.find(({id}) => id == comment.id)) {
+      this.setState(state => ({comments: state.comments.filter(({id}) => id !== comment.id)}))
+    }
   }
 }
 
