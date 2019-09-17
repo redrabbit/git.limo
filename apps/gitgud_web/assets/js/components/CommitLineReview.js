@@ -383,7 +383,7 @@ class CommitLineReview extends React.Component {
   }
 
   destroyComponent() {
-    if(this.state.comments.length === 0) {
+    if(this.state.folded && this.state.comments.length === 0) {
       let node = ReactDOM.findDOMNode(this)
       let container = node.closest(".inline-comments")
       ReactDOM.unmountComponentAtNode(node.parentNode)
