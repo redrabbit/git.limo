@@ -5,6 +5,7 @@ defmodule GitGud.Web.CommentThreadPresence do
   alias GitGud.UserQuery
   alias GitGud.Web.Router.Helpers, as: Routes
 
+  def fetch(_topic, presences) when map_size(presences) == 0, do: presences
   def fetch(_topic, presences) do
     users = UserQuery.by_id(Map.keys(presences))
     for {key, presence} <- presences, into: %{} do
