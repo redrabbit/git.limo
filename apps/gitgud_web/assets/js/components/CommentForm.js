@@ -7,6 +7,7 @@ class CommentForm extends React.Component {
     super(props)
     this.bodyInput = React.createRef()
     this.handleSubmit = this.handleSubmit.bind(this)
+    this.handleCancel = this.handleCancel.bind(this)
     this.handleBodyChange = this.handleBodyChange.bind(this)
     this.state = {body: props.body || ""}
   }
@@ -75,7 +76,7 @@ class CommentForm extends React.Component {
                   return (
                     <div className="field is-grouped is-grouped-right">
                       <div className="control">
-                        <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
+                        <button className="button" type="reset" onClick={this.handleCancel}>Cancel</button>
                       </div>
                       <div className="control">
                         <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
@@ -103,16 +104,30 @@ class CommentForm extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault()
-    this.props.onTyping(false)
+    if(this.props.onTyping) {
+      this.props.onTyping(false)
+    }
     this.props.onSubmit(this.state.body)
     this.setState({body: ""})
   }
 
+  handleCancel(event) {
+    if(this.props.onTyping) {
+      if(this.state.body != "") {
+        this.props.onTyping(false)
+      }
+    }
+    this.props.onCancel()
+    this.setState({body: ""})
+  }
+
   handleBodyChange(event) {
-    if(event.target.value != "" && this.state.body == "") {
-      this.props.onTyping(true)
-    } else if(event.target.value == "" && this.state.body != "") {
-      this.props.onTyping(false)
+    if(this.props.onTyping) {
+      if(event.target.value != "" && this.state.body == "") {
+        this.props.onTyping(true)
+      } else if(event.target.value == "" && this.state.body != "") {
+        this.props.onTyping(false)
+      }
     }
     this.setState({body: event.target.value})
   }

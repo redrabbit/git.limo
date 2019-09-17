@@ -583,6 +583,10 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, UserQuery.by_id(user_id)}
   end
 
+  def issue_repo(issue, _args, _info) do
+    {:ok, RepoQuery.by_id(issue.repo_id)}
+  end
+
   @doc """
   Returns `true` if the viewer can edit a given `comment`; otherwise, returns `false`.
   """

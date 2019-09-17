@@ -35,11 +35,12 @@ class Issue extends React.Component {
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
     this.handleClose = this.handleClose.bind(this)
     this.handleReopen = this.handleReopen.bind(this)
-    this.handleTyping = this.handleTyping.bind(this)
+    this.handleFormTyping = this.handleFormTyping.bind(this)
     this.handleCommentCreate = this.handleCommentCreate.bind(this)
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
+      repoId: null,
       title: null,
       titleEdit: false,
       author: null,
@@ -65,6 +66,9 @@ class Issue extends React.Component {
       query IssueQuery($id: ID!) {
         node(id: $id) {
           ... on Issue {
+            repo {
+              id
+            }
             title
             number
             status
@@ -126,6 +130,7 @@ class Issue extends React.Component {
     fetchQuery(environment, query, variables)
       .then(response => {
         this.setState({
+          repoId: response.node.repo.id,
           title: response.node.title,
           number: response.node.number,
           status: response.node.status,
@@ -202,7 +207,7 @@ class Issue extends React.Component {
   }
 
   subscribePresence() {
-    let channel = socket.channel(`issue:${this.state.number}`)
+    let channel = socket.channel(`issue:${this.state.repoId}:${this.state.number}`)
     let presence = new Presence(channel)
     presence.onSync(() => this.setState({presences: presence.list()}))
     this.setState({channel: channel, presence: presence})
@@ -423,13 +428,13 @@ class Issue extends React.Component {
   renderForm() {
     const {status, editable} = this.state
     if(!editable) {
-      return <CommentForm action="new" onTyping={this.handleTyping} onSubmit={this.handleFormSubmit} />
+      return <CommentForm action="new" onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
     } else {
       switch(status) {
         case "open":
-          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onTyping={this.handleTyping} onClose={this.handleClose} />
+          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onClose={this.handleClose} />
         case "close":
-          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onTyping={this.handleTyping} onReopen={this.handleReopen} />
+          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onReopen={this.handleReopen} />
       }
     }
   }
@@ -542,7 +547,7 @@ class Issue extends React.Component {
     })
   }
 
-  handleTyping(isTyping) {
+  handleFormTyping(isTyping) {
     if(isTyping) {
       this.state.channel.push("start_typing", {})
     } else {

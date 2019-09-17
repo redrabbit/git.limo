@@ -230,6 +230,8 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The last update timestamp of the comment."
     field :updated_at, non_null(:naive_datetime)
+
+    field :repo, non_null(:repo), resolve: &Resolvers.issue_repo/3
   end
 
   object :issue_close_event do

@@ -7,6 +7,8 @@ defmodule GitGud.Web.UserSocket do
 
   alias GitGud.UserQuery
 
+  channel "commit_line_review:*", GitGud.Web.CommentThreadChannel
+  channel "commit_review:*", GitGud.Web.CommentThreadChannel
   channel "issue:*", GitGud.Web.CommentThreadChannel
 
   def connect(params, sock) do
