@@ -102,7 +102,7 @@ class Issue extends React.Component {
               }
             }
             events {
-              type
+              __typename
               timestamp
               ... on IssueCloseEvent {
                 user {
@@ -171,7 +171,7 @@ class Issue extends React.Component {
     const subscription = graphql`
       subscription IssueEventSubscription($id: ID!) {
         issueEvent(id: $id) {
-          type
+          __typename
           timestamp
           ... on IssueCloseEvent {
             user {
@@ -206,14 +206,14 @@ class Issue extends React.Component {
       variables,
       onNext: response => {
         const event = response.issueEvent
-        switch(event.type) {
-          case "close":
+        switch(event.__typename) {
+          case "IssueCloseEvent":
             this.setState(state => ({status: "close", events: [...state.events, event]}))
             break
-          case "reopen":
+          case "IssueReopenEvent":
             this.setState(state => ({status: "open", events: [...state.events, event]}))
             break
-          case "title_update":
+          case "IssueTitleUpdateEvent":
             this.setState(state => ({title: event.newTitle, events: [...state.events, event]}))
             break
         }

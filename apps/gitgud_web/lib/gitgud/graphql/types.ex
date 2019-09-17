@@ -34,9 +34,6 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :search_result
 
   interface :issue_event do
-    @desc "The type of the event."
-    field :type, non_null(:string)
-
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
@@ -159,7 +156,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "The owner of the repository."
-    field :owner, non_null(:user), resolve: &Resolvers.repo_owner/3
+    field :owner, non_null(:user)
 
     @desc "The Git HEAD reference for this repository."
     field :head, :git_reference, resolve: &Resolvers.repo_head/3
@@ -213,7 +210,7 @@ defmodule GitGud.GraphQL.Types do
 
     field :number, non_null(:integer)
 
-    field :author, non_null(:user)
+    field :author, non_null(:user), resolve: &Resolvers.issue_author/3
 
     @desc "A list of comments for this issue."
     connection field :comments, node_type: :comment do
@@ -237,9 +234,6 @@ defmodule GitGud.GraphQL.Types do
   object :issue_close_event do
     interface :issue_event
 
-    @desc "The type of the event."
-    field :type, non_null(:string)
-
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
@@ -249,9 +243,6 @@ defmodule GitGud.GraphQL.Types do
   object :issue_reopen_event do
     interface :issue_event
 
-    @desc "The type of the event."
-    field :type, non_null(:string)
-
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
@@ -260,9 +251,6 @@ defmodule GitGud.GraphQL.Types do
 
   object :issue_title_update_event do
     interface :issue_event
-
-    @desc "The type of the event."
-    field :type, non_null(:string)
 
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
@@ -511,7 +499,7 @@ defmodule GitGud.GraphQL.Types do
   @desc "Represents a comment."
   node object :comment do
     @desc "The author of the comment."
-    field :author, non_null(:user)
+    field :author, non_null(:user), resolve: &Resolvers.comment_author/3
 
     @desc "The body of the comment."
     field :body, non_null(:string)

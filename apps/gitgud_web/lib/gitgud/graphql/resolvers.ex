@@ -9,6 +9,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.Email
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
@@ -50,38 +51,40 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec node(map, Absinthe.Resolution.t, keyword) :: {:ok, map} | {:error, term}
   def node(node_type, info, opts \\ [])
-  def node(%{id: id, type: :user}, info, opts) do
-    if user = UserQuery.by_id(String.to_integer(id), preload: Keyword.get(opts, :preload, :public_email)),
+  def node(%{id: id, type: :user}, %{context: ctx} = info, opts) do
+    if user = UserQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:ok, user},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :repo}, %{context: ctx} = info, opts) do
-    if repo = RepoQuery.by_id(String.to_integer(id), viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, [owner: :public_email])),
+    if repo = RepoQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :comment}, %{context: ctx} = info, opts) do
-    if comment = CommentQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :author)),
+    if comment = CommentQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:ok, comment},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :issue}, %{context: ctx} = info, opts) do
-    if issue = IssueQuery.by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :author)),
+    if issue = IssueQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:ok, issue},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :commit_line_review}, %{context: ctx} = info, opts) do
-    if review = ReviewQuery.commit_line_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :repo)),
+    {preload, opts} = Keyword.pop(opts, :preload, :repo)
+    if review = ReviewQuery.commit_line_review_by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user], preload: preload)),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
 
   def node(%{id: id, type: :commit_review}, %{context: ctx} = info, opts) do
-    if review = ReviewQuery.commit_review_by_id(id, viewer: ctx[:current_user], preload: Keyword.get(opts, :preload, :repo)),
+    {preload, opts} = Keyword.pop(opts, :preload, :repo)
+    if review = ReviewQuery.commit_review_by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user], preload: preload)),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
@@ -114,8 +117,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves an user object by login.
   """
   @spec user(%{}, %{login: binary}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
-  def user(%{} = _root, %{login: login} = _args, _info) do
-    if user = UserQuery.by_login(login, preload: :public_email),
+  def user(%{} = _root, %{login: login} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    if user = UserQuery.by_login(login, viewer: ctx[:current_user]),
       do: {:ok, user},
     else: {:error, "this given login '#{login}' is not valid"}
   end
@@ -124,9 +127,9 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the public email for a given `user`.
   """
   @spec user_public_email(User.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
-  def user_public_email(%User{} = user, %{} = _args, _info) do
-    if email = user.public_email,
-      do: {:ok, email.address},
+  def user_public_email(%User{public_email_id: email_id} = _user, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    unless is_nil(email_id),
+      do: batch({__MODULE__, :batch_emails_by_ids, ctx[:current_user]}, email_id, fn emails -> {:ok, emails[email_id].address} end),
     else: {:ok, nil}
   end
 
@@ -143,18 +146,18 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def search(%{all: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    users = UserQuery.search(input, viewer: ctx[:current_user], preload: :public_email)
-    repos = RepoQuery.search(input, viewer: ctx[:current_user], preload: [owner: :public_email])
+    users = UserQuery.search(input, viewer: ctx[:current_user])
+    repos = RepoQuery.search(input, viewer: ctx[:current_user])
     Connection.from_list(users ++ repos, args)
   end
 
   def search(%{user: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user], preload: :public_email)
+    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
   def search(%{repo: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    query = DBQueryable.query({RepoQuery, :search_query}, input, viewer: ctx[:current_user], preload: [owner: :public_email])
+    query = DBQueryable.query({RepoQuery, :search_query}, input, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -170,7 +173,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def user_repo(%User{} = user, %{name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
+    if repo = RepoQuery.user_repo(user, name, viewer: ctx[:current_user]),
       do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository name '#{name}' is not valid"}
   end
@@ -180,7 +183,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
-    query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user], preload: [owner: :public_email])
+    query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user])
     Connection.from_query(query, fn query -> Enum.map(DB.all(query), &GitAgent.attach!/1) end, args)
   end
 
@@ -189,17 +192,9 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo(map, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def repo(%{owner: owner, name: name} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user], preload: [owner: :public_email]),
+    if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user]),
       do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository '#{owner}/#{name}' is not valid"}
-  end
-
-  @doc """
-  Resolves the owner for a given `repo`.
-  """
-  @spec repo_owner(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
-  def repo_owner(%Repo{} = repo, %{} = _args, _info) do
-    {:ok, repo.owner}
   end
 
   @doc """
@@ -215,7 +210,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issues(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_issues(args, %Absinthe.Resolution{source: repo, context: ctx} = _info) do
-    query = DBQueryable.query({IssueQuery, :repo_issues_query}, repo.id, viewer: ctx[:current_user], preload: :author)
+    query = DBQueryable.query({IssueQuery, :repo_issues_query}, repo.id, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -224,7 +219,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issue(Repo.t, %{number: number}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_issue(repo, %{number: number} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user], preload: :author),
+    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user]),
       do: {:ok, issue},
     else: {:error, "there is no issue for the given args"}
   end
@@ -417,7 +412,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def commit_line_review_comments(args, %Absinthe.Resolution{source: commit_line_review, context: ctx} = _info) do
-    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_line_review, viewer: ctx[:current_user], preload: [:author])
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_line_review, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -443,7 +438,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def commit_review_comments(args, %Absinthe.Resolution{source: commit_review, context: ctx} = _info) do
-    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_review, viewer: ctx[:current_user], preload: :author)
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_review, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -550,6 +545,10 @@ defmodule GitGud.GraphQL.Resolvers do
     GitAgent.blob_size(ctx.repo, blob)
   end
 
+  def issue_author(%Issue{author_id: user_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
+  end
+
   @doc """
   Returns `true` if the viewer can edit a given `issue`; otherwise, returns `false`.
   """
@@ -563,7 +562,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec issue_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def issue_comments(args, %Absinthe.Resolution{source: issue, context: ctx} = _info) do
-    query = DBQueryable.query({IssueQuery, :comments_query}, issue, viewer: ctx[:current_user], preload: :author)
+    query = DBQueryable.query({IssueQuery, :comments_query}, issue, viewer: ctx[:current_user])
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -579,12 +578,17 @@ defmodule GitGud.GraphQL.Resolvers do
   def issue_event_type(%{type: "reopen"}, _info), do: :issue_reopen_event
   def issue_event_type(%{type: "title_update"}, _info), do: :issue_title_update_event
 
-  def issue_event_user(%{user_id: user_id}, _args, _info) do
-    {:ok, UserQuery.by_id(user_id)}
+  def issue_event_user(%{user_id: user_id}, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
-  def issue_repo(issue, _args, _info) do
-    {:ok, RepoQuery.by_id(issue.repo_id)}
+  def issue_repo(issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, RepoQuery.by_id(issue.repo_id, viewer: ctx[:current_user])}
+  end
+
+
+  def comment_author(%Comment{author_id: user_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
   @doc """
@@ -692,7 +696,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
     if author = ctx[:current_user] do
-      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line)
+      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: ctx[:current_user])
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
         {:ok, line_review, comment} ->
           unless old_line_review do
@@ -734,7 +738,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+    if comment = CommentQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.update(comment, body: body) do
@@ -754,7 +758,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(from_relay_id(id), preload: :author) do
+    if comment = CommentQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.delete(comment) do
@@ -813,11 +817,20 @@ defmodule GitGud.GraphQL.Resolvers do
   def comment_deleted(%{id: id} = _args, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc false
-  @spec batch_users_by_email(any, [binary]) :: map
+  @spec batch_users_by_ids(User.t | nil, [pos_integer]) :: map
+  def batch_users_by_ids(viewer, user_ids) do
+    user_ids
+    |> Enum.uniq()
+    |> UserQuery.by_id(viewer: viewer)
+    |> Map.new(&{&1.id, &1})
+  end
+
+  @doc false
+  @spec batch_users_by_email(User.t | nil, [binary]) :: map
   def batch_users_by_email(viewer, emails) do
     emails
     |> Enum.uniq()
-    |> UserQuery.by_email(viewer: viewer, preload: [:public_email, :emails])
+    |> UserQuery.by_email(viewer: viewer, preload: [:emails])
     |> Enum.flat_map(&flatten_user_emails/1)
     |> Map.new()
   end
@@ -827,8 +840,17 @@ defmodule GitGud.GraphQL.Resolvers do
   def batch_repos_by_user_ids(viewer, user_ids) do
     user_ids
     |> Enum.uniq()
-    |> RepoQuery.user_repos(viewer: viewer, preload: [owner: :public_email])
+    |> RepoQuery.user_repos(viewer: viewer)
     |> Map.new(&{&1.owner_id, &1})
+  end
+
+  @doc false
+  @spec batch_emails_by_ids(User.t | nil, [pos_integer]) :: map
+  def batch_emails_by_ids(_viewer, email_ids) do
+    import Ecto.Query
+    from(e in Email, where: e.id in ^Enum.uniq(email_ids) and e.verified == true)
+    |> DB.all()
+    |> Map.new(&{&1.id, &1})
   end
 
   #

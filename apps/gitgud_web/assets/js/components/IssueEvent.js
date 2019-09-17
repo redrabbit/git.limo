@@ -16,8 +16,8 @@ class IssueEvent extends React.Component {
   render() {
     const {event} = this.props
     const timestamp = moment.utc(event.timestamp)
-    switch(event.type) {
-      case "close":
+    switch(event.__typename) {
+      case "IssueCloseEvent":
         return (
           <div className="timeline-item">
             <div className="timeline-marker is-icon is-danger">
@@ -28,7 +28,7 @@ class IssueEvent extends React.Component {
             </div>
           </div>
         )
-      case "reopen":
+      case "IssueReopenEvent":
         return (
           <div className="timeline-item">
             <div className="timeline-marker is-icon is-success">
@@ -39,7 +39,7 @@ class IssueEvent extends React.Component {
             </div>
           </div>
         )
-      case "title_update":
+      case "IssueTitleUpdateEvent":
         return (
           <div className="timeline-item">
             <div className="timeline-marker is-icon">
