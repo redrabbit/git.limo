@@ -1,11 +1,11 @@
-defmodule GitGud.Web.Presence do
+defmodule GitGud.Web.CommentThreadPresence do
   @moduledoc false
   use Phoenix.Presence, otp_app: :my_app, pubsub_server: GitGud.Web.PubSub
 
   alias GitGud.UserQuery
   alias GitGud.Web.Router.Helpers, as: Routes
 
-  def fetch(topic, presences) do
+  def fetch(_topic, presences) do
     users = UserQuery.by_id(Map.keys(presences))
     for {key, presence} <- presences, into: %{} do
       user = Enum.find(users, %{}, &(&1.id == String.to_integer(key)))

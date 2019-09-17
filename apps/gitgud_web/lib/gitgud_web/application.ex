@@ -8,7 +8,7 @@ defmodule GitGud.Web.Application do
     children = [
       supervisor(GitGud.Web.Endpoint, []),
       supervisor(Absinthe.Subscription, [GitGud.Web.Endpoint]),
-      GitGud.Web.Presence
+      GitGud.Web.CommentThreadPresence
     ]
 
     opts = [strategy: :one_for_one, name: GitGud.Web.Supervisor]
