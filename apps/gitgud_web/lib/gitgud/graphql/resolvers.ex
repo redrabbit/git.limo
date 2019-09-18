@@ -567,11 +567,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def issue_events(issue, _args, _info) do
-    {:ok, Enum.map(issue.events, &Map.new(&1, fn
-      {"timestamp", val} -> {:timestamp, NaiveDateTime.from_iso8601!(val)}
-      {key, val} when is_binary(key) -> {String.to_atom(key), val}
-      {key, val} -> {key, val}
-    end))}
+    {:ok, Enum.map(issue.events, &map_issue_event/1)}
   end
 
   def issue_event_type(%{type: "close"}, _info), do: :issue_close_event
@@ -642,13 +638,14 @@ defmodule GitGud.GraphQL.Resolvers do
   def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], issue, :admin) do
-       case Issue.close(issue, user_id: ctx[:current_user].id) do
-         {:ok, issue} ->
-           publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
-           {:ok, issue}
-         {:error, reason} ->
-           {:error, reason}
-       end
+        case Issue.close(issue, user_id: ctx[:current_user].id) do
+          {:ok, issue} ->
+            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
+            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+            {:ok, issue}
+          {:error, reason} ->
+            {:error, reason}
+        end
      end || {:error, "Unauthorized"}
     end
   end
@@ -662,6 +659,7 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.reopen(issue, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
+            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
@@ -680,6 +678,7 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.update_title(issue, title, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
+            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
@@ -869,6 +868,11 @@ defmodule GitGud.GraphQL.Resolvers do
         {:error, reason}
     end
   end
+
+  defp map_issue_event(event), do: Map.new(event, &map_issue_event_field/1)
+  defp map_issue_event_field({"timestamp", timestamp}), do: {:timestamp, NaiveDateTime.from_iso8601!(timestamp)}
+  defp map_issue_event_field({key, val}) when is_binary(key), do: {String.to_atom(key), val}
+  defp map_issue_event_field({key, val}), do: {key, val}
 
   defp slice_stream(stream, args) do
     stream = Enum.to_list(stream) # TODO

@@ -13,6 +13,7 @@ defmodule GitGud.Issue do
   alias GitGud.Comment
 
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   schema "issues" do
     belongs_to :repo, Repo
@@ -64,12 +65,17 @@ defmodule GitGud.Issue do
   @doc """
   Closes the given `issue`.
   """
-  @spec close(t) :: {:ok, t} | {:error, term}
+  @spec close(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def close(%__MODULE__{} = issue, opts \\ []) do
-    issue
-    |> change(status: "close")
-    |> put_event("close", opts)
-    |> DB.update()
+    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
+    event = Map.merge(Map.new(opts), %{type: "close", timestamp: NaiveDateTime.utc_now()})
+    case DB.update_all(query, set: [status: "close"], push: [events: event]) do
+      {1, [issue]} ->
+        {:ok, issue}
+      {0, nil} ->
+        changeset = change(issue, status: "close", events: issue.events ++ event)
+        {:error, %{changeset|action: :update}}
+    end
   end
 
   @doc """
@@ -88,10 +94,15 @@ defmodule GitGud.Issue do
   """
   @spec reopen(t) :: {:ok, t} | {:error, term}
   def reopen(%__MODULE__{} = issue, opts \\ []) do
-    issue
-    |> change(status: "open")
-    |> put_event("reopen", opts)
-    |> DB.update()
+    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
+    event = Map.merge(Map.new(opts), %{type: "reopen", timestamp: NaiveDateTime.utc_now()})
+    case DB.update_all(query, set: [status: "open"], push: [events: event]) do
+      {1, [issue]} ->
+        {:ok, issue}
+      {0, nil} ->
+        changeset = change(issue, status: "open", events: issue.events ++ event)
+        {:error, %{changeset|action: :update}}
+    end
   end
 
   @doc """
@@ -110,11 +121,15 @@ defmodule GitGud.Issue do
   """
   @spec update_title(t, binary, keyword) :: {:ok, t} | {:error, term}
   def update_title(%__MODULE__{} = issue, title, opts \\ []) do
-    old_title = issue.title
-    issue
-    |> changeset(%{title: title})
-    |> put_event("title_update", Keyword.merge([old_title: old_title, new_title: title], opts))
-    |> DB.update()
+    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
+    event = Map.merge(Map.new(Keyword.merge([old_title: issue.title, new_title: title], opts)), %{type: "title_update", timestamp: NaiveDateTime.utc_now()})
+    case DB.update_all(query, set: [title: title], push: [events: event]) do
+      {1, [issue]} ->
+        {:ok, issue}
+      {0, nil} ->
+        changeset = change(issue, title: title, events: issue.events ++ event)
+        {:error, %{changeset|action: :update}}
+    end
   end
 
   @doc """
@@ -174,12 +189,6 @@ defmodule GitGud.Issue do
   #
   # Helpers
   #
-
-  defp put_event(changeset, type, data) do
-    event = Map.merge(Map.new(data), %{type: type, timestamp: NaiveDateTime.utc_now()})
-    changeset
-    |> put_change(:events, get_field(changeset, :events, []) ++ [event])
-  end
 
   defp map_issue_params(issue_params) do
     issue_params =
