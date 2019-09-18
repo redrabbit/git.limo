@@ -518,5 +518,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Returns `true` if the current viewer can delete the comment; otherwise, returns `false`."
     field :deletable, non_null(:boolean), resolve: &Resolvers.comment_deletable/3
+
+    field :repo, non_null(:repo), resolve: &Resolvers.comment_repo/3
   end
 end

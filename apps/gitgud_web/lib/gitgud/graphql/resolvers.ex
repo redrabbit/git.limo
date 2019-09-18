@@ -34,6 +34,8 @@ defmodule GitGud.GraphQL.Resolvers do
   import GitGud.Authorization, only: [authorized?: 3]
   import GitGud.GraphQL.Schema, only: [from_relay_id: 1, from_relay_id: 3]
 
+  import GitGud.Web.Markdown
+
   @doc """
   Resolves a node object type.
   """
@@ -138,7 +140,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec user_bio_html(User.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def user_bio_html(user, %{} = _args, _info) do
-    markdown(user.bio)
+    {:ok, markdown(user.bio)}
   end
 
   @doc """
@@ -202,7 +204,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_description_html(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_description_html(repo, %{} = _args, _info) do
-    markdown(repo.description)
+    {:ok, markdown(repo.description)}
   end
 
   @doc """
@@ -603,12 +605,16 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, authorized?(ctx[:current_user], comment, :admin)}
   end
 
+  def comment_repo(%Comment{repo_id: repo_id}, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
+  end
+
   @doc """
   Resolves the HTML content of a given `comment`.
   """
   @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def comment_html(comment, %{} = _args, _info) do
-    markdown(comment.body)
+    {:ok, markdown(comment.body)}
   end
 
   @doc """
@@ -835,6 +841,15 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc false
+  @spec batch_repos_by_ids(Repo.t | nil, [pos_integer]) :: map
+  def batch_repos_by_ids(viewer, repo_ids) do
+    repo_ids
+    |> Enum.uniq()
+    |> RepoQuery.by_id(viewer: viewer)
+    |> Map.new(&{&1.id, &1})
+  end
+
+  @doc false
   @spec batch_repos_by_user_ids(User.t | nil, [pos_integer]) :: map
   def batch_repos_by_user_ids(viewer, user_ids) do
     user_ids
@@ -858,15 +873,6 @@ defmodule GitGud.GraphQL.Resolvers do
 
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})
-  end
-
-  defp markdown(content) do
-    case Earmark.as_html(content || "") do
-      {:ok, html, []} ->
-        {:ok, html}
-      {:error, reason} ->
-        {:error, reason}
-    end
   end
 
   defp map_issue_event(event), do: Map.new(event, &map_issue_event_field/1)
