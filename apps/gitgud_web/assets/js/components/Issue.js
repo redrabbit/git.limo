@@ -63,6 +63,7 @@ class Issue extends React.Component {
   }
 
   componentWillUnmount() {
+    this.channel.leave()
     this.subscriptions.forEach(subscription => subscription.dispose())
   }
 

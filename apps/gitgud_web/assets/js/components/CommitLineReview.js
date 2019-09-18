@@ -50,6 +50,7 @@ class CommitLineReview extends React.Component {
   }
 
   componentWillUnmount() {
+    this.state.channel.leave()
     this.subscriptions.forEach(subscription => subscription.dispose())
   }
 
@@ -354,16 +355,16 @@ class CommitLineReview extends React.Component {
   }
 
   handleFormCancel() {
-    if(!this.destroyComponent()) {
-      this.setState({folded: true})
-    }
+    this.setState({folded: true}, this.destroyComponent)
   }
 
   handleFormTyping(isTyping) {
-    if(isTyping) {
-      this.state.channel.push("start_typing", {})
-    } else {
-      this.state.channel.push("stop_typing", {})
+    if(this.state.channel) {
+      if(isTyping) {
+        this.state.channel.push("start_typing", {})
+      } else {
+        this.state.channel.push("stop_typing", {})
+      }
     }
   }
 
