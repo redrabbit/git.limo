@@ -22,12 +22,16 @@ defmodule GitGud.Web.CommentThreadChannel do
   end
 
   def handle_info(:after_join, socket) do
-    push(socket, "presence_state", filter_presence(CommentThreadPresence.list(socket), socket.assigns.current_user))
-    case CommentThreadPresence.track(socket, socket.assigns.current_user.id, %{typing: false}) do
-      {:ok, _presence} ->
-        {:noreply, socket}
-      {:error, reason} ->
-        {:stop, reason}
+    push(socket, "presence_state", filter_presence(CommentThreadPresence.list(socket), socket.assigns[:current_user]))
+    if current_user = socket.assigns[:current_user] do
+      case CommentThreadPresence.track(socket, current_user.id, %{typing: false}) do
+        {:ok, _presence} ->
+          {:noreply, socket}
+        {:error, reason} ->
+          {:stop, reason}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
@@ -50,7 +54,7 @@ defmodule GitGud.Web.CommentThreadChannel do
   end
 
   def handle_out("presence_diff", diff, socket) do
-    push(socket, "presence_diff", filter_presence_diff(diff, socket.assigns.current_user))
+    push(socket, "presence_diff", filter_presence_diff(diff, socket.assigns[:current_user]))
     {:noreply, socket}
   end
 
@@ -58,6 +62,7 @@ defmodule GitGud.Web.CommentThreadChannel do
   # Helpers
   #
 
+  def filter_presence(presence, nil), do: presence
   def filter_presence(presence, user) do
     presence
     |> Enum.reject(fn {id_str, _data} -> String.to_integer(id_str) == user.id end)
