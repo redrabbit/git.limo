@@ -6,7 +6,7 @@ import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 import GitGud.Web.Gravatar, only: [gravatar: 2]
 import GitGud.Web.GPGKeyView, only: [format_key_id: 1]
 
-alias GitGud.{User, Repo, Commit, Email, GPGKey}
+alias GitGud.{User, Repo, Issue, Commit, Email, GPGKey}
 
 defimpl Phoenix.HTML.Safe, for: User do
   def to_iodata(user) do
@@ -20,6 +20,10 @@ end
 
 defimpl Phoenix.Param, for: Repo do
   def to_param(repo), do: repo.name
+end
+
+defimpl Phoenix.Param, for: Issue do
+  def to_param(issue), do: to_string(issue.number)
 end
 
 defimpl Phoenix.Param, for: Commit do

@@ -97,12 +97,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "The bio email of the user."
     field :bio, :string
 
-    @desc "The bio email of the user."
-    field :bio, :string
-
-    @desc "The HTML formatted bio email of the user."
-    field :bio_html, :string, resolve: &Resolvers.user_bio_html/3
-
     @desc "The location of the user."
     field :location, :string
 
@@ -140,9 +134,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The description of the repository."
     field :description, :string
-
-    @desc "The HTML formatted description of the repository."
-    field :description_html, :string, resolve: &Resolvers.repo_description_html/3
 
     @desc "A list of issues for this repository."
     connection field :issues, node_type: :issue do
@@ -519,6 +510,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "Returns `true` if the current viewer can delete the comment; otherwise, returns `false`."
     field :deletable, non_null(:boolean), resolve: &Resolvers.comment_deletable/3
 
+    @desc "The repository this comment belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.comment_repo/3
   end
 end

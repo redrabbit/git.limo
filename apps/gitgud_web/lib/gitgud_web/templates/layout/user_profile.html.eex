@@ -7,7 +7,7 @@
       <h2 class="subtitle"><%= @user.login %></h2>
 
       <div class="content has-text-grey">
-        <%= markdown_safe(@user.bio) %>
+        <%= @user.bio %>
       </div>
 
       <hr />

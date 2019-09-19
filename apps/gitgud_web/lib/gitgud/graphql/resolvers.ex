@@ -136,14 +136,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the HTML content of a given `comment`.
-  """
-  @spec user_bio_html(User.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def user_bio_html(user, %{} = _args, _info) do
-    {:ok, markdown(user.bio)}
-  end
-
-  @doc """
   Resolves a list of users for a given search term.
   """
   @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
@@ -197,14 +189,6 @@ defmodule GitGud.GraphQL.Resolvers do
     if repo = RepoQuery.user_repo(owner, name, viewer: ctx[:current_user]),
       do: {:middleware, GitGud.GraphQL.RepoMiddleware, repo},
     else: {:error, "this given repository '#{owner}/#{name}' is not valid"}
-  end
-
-  @doc """
-  Resolves the HTML content of a given `comment`.
-  """
-  @spec repo_description_html(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def repo_description_html(repo, %{} = _args, _info) do
-    {:ok, markdown(repo.description)}
   end
 
   @doc """
@@ -605,7 +589,7 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, authorized?(ctx[:current_user], comment, :admin)}
   end
 
-  def comment_repo(%Comment{repo_id: repo_id}, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+  def comment_repo(%Comment{repo_id: repo_id} = _comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
   end
 
@@ -613,8 +597,8 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the HTML content of a given `comment`.
   """
   @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
-  def comment_html(comment, %{} = _args, _info) do
-    {:ok, markdown(comment.body)}
+  def comment_html(%Comment{repo_id: repo_id} = comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, markdown(comment.body, repo: GitAgent.attach!(repos[repo_id]))} end)
   end
 
   @doc """
