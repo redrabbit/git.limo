@@ -51,7 +51,7 @@ mix compile
 In order to provide SSH as a Git transport protocol, you must generate a valid SSH public key for the server:
 
 ```bash
-ssh-keygen -t rsa -f apps/gitgud/priv/ssh-keys/ssh_host_rsa_key
+ssh-keygen -m PEM -t rsa -f apps/gitgud/priv/ssh-keys/ssh_host_rsa_key
 ```
 
 ## Setup database
