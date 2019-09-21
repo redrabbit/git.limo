@@ -95,30 +95,33 @@ defmodule GitGud.GraphQL.Schema do
   The root query for implementing GraphQL mutations.
   """
   mutation do
-    @desc "Create a new issue comment"
+    @desc "Create a new issue comment."
     field :create_issue_comment, type: :comment do
       arg :id, non_null(:id), description: "The issue ID."
       arg :body, non_null(:string), description: "The body of the comment."
       resolve &Resolvers.create_issue_comment/3
     end
 
+    @desc "Close an issue."
     field :close_issue, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
       resolve &Resolvers.close_issue/3
     end
 
+    @desc "Reopens an issue."
     field :reopen_issue, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
       resolve &Resolvers.reopen_issue/3
     end
 
+    @desc "Updates the title of an issue."
     field :update_issue_title, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
       arg :title, non_null(:string), description: "The new title."
       resolve &Resolvers.update_issue_title/3
     end
 
-    @desc "Create a new commit line review comment"
+    @desc "Create a new commit line review comment."
     field :create_commit_line_review_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
@@ -129,7 +132,7 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.create_commit_line_review_comment/3
     end
 
-    @desc "Create a new commit review comment"
+    @desc "Create a new commit review comment."
     field :create_commit_review_comment, type: :comment do
       arg :repo_id, non_null(:id), description: "The repository ID."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
@@ -137,14 +140,14 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.create_commit_review_comment/3
     end
 
-    @desc "Update a comment"
+    @desc "Update a comment."
     field :update_comment, type: :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
       arg :body, non_null(:string), description: "The body of the comment."
       resolve &Resolvers.update_comment/3
     end
 
-    @desc "Delete a comment"
+    @desc "Delete a comment."
     field :delete_comment, type: :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
       resolve &Resolvers.delete_comment/3
@@ -154,7 +157,7 @@ defmodule GitGud.GraphQL.Schema do
   @desc """
   """
   subscription do
-    @desc "Subscribe to issue status updates"
+    @desc "Subscribe to issue status updates."
     field :issue_status_update, :issue do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
@@ -162,37 +165,38 @@ defmodule GitGud.GraphQL.Schema do
       trigger :reopen_issue, topic: &(&1.id)
     end
 
+    @desc "Subscribe to new issue events."
     field :issue_event, :issue_event do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
     end
 
-    @desc "Subscribe to new issue comments"
+    @desc "Subscribe to new issue comments."
     field :issue_comment_create, :comment do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
     end
 
-    @desc "Subscribe to issue comment updates"
+    @desc "Subscribe to issue comment updates."
     field :issue_comment_update, :comment do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
     end
 
-    @desc "Subscribe to issue comment deletes"
+    @desc "Subscribe to issue comment deletes."
     field :issue_comment_delete, :comment do
       arg :id, non_null(:id), description: "The issue ID."
       config &Resolvers.issue_topic/2
     end
 
-    @desc "Subscribe to new line commit reviews"
+    @desc "Subscribe to new line commit reviews."
     field :commit_line_review_create, :commit_line_review do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
       config &Resolvers.commit_line_review_created/2
     end
 
-    @desc "Subscribe to new line commit review comments"
+    @desc "Subscribe to new line commit review comments."
     field :commit_line_review_comment_create, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
@@ -202,7 +206,7 @@ defmodule GitGud.GraphQL.Schema do
       config &Resolvers.commit_line_review_comment_topic/2
     end
 
-    @desc "Subscribe to commit line review comment updates"
+    @desc "Subscribe to commit line review comment updates."
     field :commit_line_review_comment_update, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
@@ -212,7 +216,7 @@ defmodule GitGud.GraphQL.Schema do
       config &Resolvers.commit_line_review_comment_topic/2
     end
 
-    @desc "Subscribe to commit line review comment deletes"
+    @desc "Subscribe to commit line review comment deletes."
     field :commit_line_review_comment_delete, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
@@ -222,35 +226,35 @@ defmodule GitGud.GraphQL.Schema do
       config &Resolvers.commit_line_review_comment_topic/2
     end
 
-    @desc "Subscribe to new commit review comments"
+    @desc "Subscribe to new commit review comments."
     field :commit_review_comment_create, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
       config &Resolvers.commit_review_comment_topic/2
     end
 
-    @desc "Subscribe to commit review comment updates"
+    @desc "Subscribe to commit review comment updates."
     field :commit_review_comment_update, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
       config &Resolvers.commit_review_comment_topic/2
     end
 
-    @desc "Subscribe to commit review comment deletes"
+    @desc "Subscribe to commit review comment deletes."
     field :commit_review_comment_delete, :comment do
       arg :repo_id, non_null(:id), description: "The repository."
       arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
       config &Resolvers.commit_review_comment_topic/2
     end
 
-    @desc "Subscribe to comment updates"
+    @desc "Subscribe to comment updates."
     field :comment_update, :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
       config &Resolvers.comment_updated/2
       trigger :update_comment, topic: &(&1.id)
     end
 
-    @desc "Subscribe to comment deletions"
+    @desc "Subscribe to comment deletions."
     field :comment_delete, :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
       config &Resolvers.comment_deleted/2

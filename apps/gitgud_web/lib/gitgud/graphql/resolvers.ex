@@ -531,6 +531,10 @@ defmodule GitGud.GraphQL.Resolvers do
     GitAgent.blob_size(ctx.repo, blob)
   end
 
+  @doc """
+  Resolves the author for a given `comment`.
+  """
+  @spec issue_author(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
   def issue_author(%Issue{author_id: user_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
@@ -544,7 +548,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves comments for an issue.
+  Resolves comments for an `issue`.
   """
   @spec issue_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def issue_comments(args, %Absinthe.Resolution{source: issue, context: ctx} = _info) do
@@ -552,24 +556,43 @@ defmodule GitGud.GraphQL.Resolvers do
     Connection.from_query(query, &DB.all/1, args)
   end
 
+  @doc """
+  Resolves events for an `issue`.
+  """
+  @spec issue_events(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
   def issue_events(issue, _args, _info) do
     {:ok, Enum.map(issue.events, &map_issue_event/1)}
   end
 
-  def issue_event_type(%{type: "close"}, _info), do: :issue_close_event
-  def issue_event_type(%{type: "reopen"}, _info), do: :issue_reopen_event
-  def issue_event_type(%{type: "title_update"}, _info), do: :issue_title_update_event
+  @doc """
+  Resolves the type of a given issue `event`.
+  """
+  @spec issue_event_type(map, Absinthe.Resolution.t) :: atom
+  def issue_event_type(%{type: "close"} = _event, _info), do: :issue_close_event
+  def issue_event_type(%{type: "reopen"} = _event, _info), do: :issue_reopen_event
+  def issue_event_type(%{type: "title_update"} = _event, _info), do: :issue_title_update_event
 
-  def issue_event_user(%{user_id: user_id}, _args, %Absinthe.Resolution{context: ctx} = _info) do
+  @doc """
+  Resolves the user for a given issue `event`.
+  """
+  @spec issue_event_user(map, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def issue_event_user(%{user_id: user_id} = _event, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
+  @doc """
+  Resolves the repository for a given `issue`.
+  """
+  @spec issue_repo(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def issue_repo(issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, RepoQuery.by_id(issue.repo_id, viewer: ctx[:current_user])}
   end
 
-
-  def comment_author(%Comment{author_id: user_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
+  @doc """
+  Resolves the author for a given `comment`.
+  """
+  @spec comment_author(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def comment_author(%Comment{author_id: user_id} = _comment, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
@@ -589,6 +612,10 @@ defmodule GitGud.GraphQL.Resolvers do
     {:ok, authorized?(ctx[:current_user], comment, :admin)}
   end
 
+  @doc """
+  Resolves the repository for a given `comment`.
+  """
+  @spec comment_repo(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
   def comment_repo(%Comment{repo_id: repo_id} = _comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
   end

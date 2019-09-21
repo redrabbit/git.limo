@@ -199,8 +199,10 @@ defmodule GitGud.GraphQL.Types do
     @desc "The status of the issue."
     field :status, non_null(:string)
 
+    @desc "The number of the issue."
     field :number, non_null(:integer)
 
+    @desc "The author of the issue."
     field :author, non_null(:user), resolve: &Resolvers.issue_author/3
 
     @desc "A list of comments for this issue."
@@ -208,6 +210,7 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.issue_comments/2
     end
 
+    @desc "A list of events for this issue."
     field :events, list_of(:issue_event), resolve: &Resolvers.issue_events/3
 
     @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
@@ -219,6 +222,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The last update timestamp of the comment."
     field :updated_at, non_null(:naive_datetime)
 
+    @desc "The repository this issue belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.issue_repo/3
   end
 
@@ -228,6 +232,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
+    @desc "The user that closes the issue."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 
@@ -237,6 +242,7 @@ defmodule GitGud.GraphQL.Types do
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
+    @desc "The user that reopens the issue."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 
@@ -246,10 +252,13 @@ defmodule GitGud.GraphQL.Types do
     @desc "The timestamp of the event."
     field :timestamp, non_null(:naive_datetime)
 
+    @desc "The old title of the issue."
     field :old_title, non_null(:string)
 
+    @desc "The new title of the issue."
     field :new_title, non_null(:string)
 
+    @desc "The user that updates the title of the issue."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 
@@ -381,7 +390,7 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.commit_line_review_comments/2
     end
 
-    @desc "The repository this commit belongs to."
+    @desc "The repository this review belongs to."
     field :repo, non_null(:repo)
   end
 
@@ -395,7 +404,7 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.commit_review_comments/2
     end
 
-    @desc "The repository this commit belongs to."
+    @desc "The repository this review belongs to."
     field :repo, non_null(:repo)
   end
 
