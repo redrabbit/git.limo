@@ -51,6 +51,18 @@ class IssueEvent extends React.Component {
             </div>
           </div>
         )
+      case "IssueCommitReferenceEvent":
+        return (
+          <div className="timeline-item">
+            <div className="timeline-marker is-icon">
+              <i className="fa fa-code-commit"></i>
+            </div>
+            <div className="timeline-content">
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a> referenced this issue in commit <a href={event.commitUrl}><code className="has-text-link">{event.commitOid.slice(0, 7)}</code></a>
+              &nbsp;<time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+            </div>
+          </div>
+        )
     }
   }
 

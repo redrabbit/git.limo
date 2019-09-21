@@ -211,7 +211,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "A list of events for this issue."
-    field :events, list_of(:issue_event), resolve: &Resolvers.issue_events/3
+    field :events, list_of(:issue_event)
 
     @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
     field :editable, non_null(:boolean), resolve: &Resolvers.issue_editable/3
@@ -230,7 +230,7 @@ defmodule GitGud.GraphQL.Types do
     interface :issue_event
 
     @desc "The timestamp of the event."
-    field :timestamp, non_null(:naive_datetime)
+    field :timestamp, non_null(:naive_datetime), resolve: &Resolvers.issue_event_timestamp/3
 
     @desc "The user that closes the issue."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
@@ -240,7 +240,7 @@ defmodule GitGud.GraphQL.Types do
     interface :issue_event
 
     @desc "The timestamp of the event."
-    field :timestamp, non_null(:naive_datetime)
+    field :timestamp, non_null(:naive_datetime), resolve: &Resolvers.issue_event_timestamp/3
 
     @desc "The user that reopens the issue."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
@@ -250,15 +250,31 @@ defmodule GitGud.GraphQL.Types do
     interface :issue_event
 
     @desc "The timestamp of the event."
-    field :timestamp, non_null(:naive_datetime)
+    field :timestamp, non_null(:naive_datetime), resolve: &Resolvers.issue_event_timestamp/3
 
     @desc "The old title of the issue."
-    field :old_title, non_null(:string)
+    field :old_title, non_null(:string), resolve: &Resolvers.issue_event_field(&1, "old_title", &2, &3)
 
     @desc "The new title of the issue."
-    field :new_title, non_null(:string)
+    field :new_title, non_null(:string), resolve: &Resolvers.issue_event_field(&1, "new_title", &2, &3)
 
     @desc "The user that updates the title of the issue."
+    field :user, :user, resolve: &Resolvers.issue_event_user/3
+  end
+
+  object :issue_commit_reference_event do
+    interface :issue_event
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime), resolve: &Resolvers.issue_event_timestamp/3
+
+    @desc "The Git Object ID for the referenced commit."
+    field :commit_oid, non_null(:git_oid), resolve: &Resolvers.issue_commit_reference_event_oid/3
+
+    @desc "The HTTP URL for the referenced commit."
+    field :commit_url, non_null(:string), resolve: &Resolvers.issue_commit_reference_event_url/3
+
+    @desc "The user that pushed the commit."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 

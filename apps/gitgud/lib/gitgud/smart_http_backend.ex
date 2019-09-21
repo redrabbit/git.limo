@@ -122,7 +122,7 @@ defmodule GitGud.SmartHTTPBackend do
       with {:ok, repo} <- GitAgent.attach(repo),
            conn <- put_resp_content_type(conn, "application/x-#{exec}-result"),
            conn <- send_chunked(conn, :ok),
-           service <- WireProtocol.new(repo.__agent__, exec, callback: {RepoStorage, :push, [repo]}),
+           service <- WireProtocol.new(repo.__agent__, exec, callback: {RepoStorage, [conn.assigns.current_user, repo]}),
            service <- WireProtocol.skip(service),
            {:ok, conn} <- git_stream_pack(conn, service) do
         halt(conn)

@@ -130,7 +130,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @impl true
   def next(%__MODULE__{state: :done} = handle, []) do
     case odb_flush(handle) do
-      :ok ->
+      {:ok, _oids} ->
         if "report-status" in handle.caps,
           do: {handle, [], report_status(handle.cmds)},
         else: {handle, [], []}
@@ -147,17 +147,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   # Helpers
   #
 
-  defp odb_flush(%__MODULE__{cmds: []}), do: :ok
+  defp odb_flush(%__MODULE__{cmds: []}), do: {:ok, []}
   defp odb_flush(%__MODULE__{callback: nil} = handle) do
-    case apply_pack(handle) do
-      {:ok, _oids} -> apply_cmds(handle)
-      {:error, reason} -> {:error, reason}
-    end
+    with {:ok, oids} <- apply_pack(handle),
+          :ok <- apply_cmds(handle), do:
+      {:ok, oids}
   end
 
   defp odb_flush(%__MODULE__{callback: callback} = handle) do
-    {module, fun, args} = callback
-    apply(module, fun, args ++ [handle])
+    {module, args} = callback
+    apply(module, :push, args ++ [handle])
   end
 
   defp odb_object_match?({type, _oid}, type), do: true

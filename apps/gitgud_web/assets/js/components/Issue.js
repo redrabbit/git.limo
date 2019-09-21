@@ -41,7 +41,6 @@ class Issue extends React.Component {
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
-      repoId: null,
       title: null,
       titleEdit: false,
       author: null,
@@ -73,9 +72,6 @@ class Issue extends React.Component {
       query IssueQuery($id: ID!) {
         node(id: $id) {
           ... on Issue {
-            repo {
-              id
-            }
             title
             number
             status
@@ -125,6 +121,14 @@ class Issue extends React.Component {
                   url
                 }
               }
+              ... on IssueCommitReferenceEvent {
+                commitOid
+                commitUrl
+                user {
+                  login
+                  url
+                }
+              }
             }
           }
         }
@@ -137,7 +141,6 @@ class Issue extends React.Component {
     fetchQuery(environment, query, variables)
       .then(response => {
         this.setState({
-          repoId: response.node.repo.id,
           title: response.node.title,
           number: response.node.number,
           status: response.node.status,
@@ -160,7 +163,7 @@ class Issue extends React.Component {
   }
 
   subscribePresence() {
-    let channel = socket.channel(`issue:${this.state.repoId}:${this.state.number}`)
+    let channel = socket.channel(`issue:${this.props.issueId}`)
     let presence = new Presence(channel)
     presence.onSync(() => this.setState({presences: presence.list()}))
     this.setState({channel: channel, presence: presence})
@@ -194,6 +197,14 @@ class Issue extends React.Component {
               url
             }
           }
+          ... on IssueCommitReferenceEvent {
+            commitOid
+            commitUrl
+            user {
+              login
+              url
+            }
+          }
         }
       }
     `
@@ -216,6 +227,9 @@ class Issue extends React.Component {
             break
           case "IssueTitleUpdateEvent":
             this.setState(state => ({title: event.newTitle, events: [...state.events, event]}))
+            break
+          case "IssueCommitReferenceEvent":
+            this.setState(state => ({events: [...state.events, event]}))
             break
         }
       }

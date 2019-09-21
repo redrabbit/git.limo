@@ -86,8 +86,12 @@ defmodule GitGud.IssueQuery do
   @doc """
   Returns a query for fetching all repository issue with the given `status`.
   """
-  @spec repo_issues_query(pos_integer, atom) :: Ecto.Query.t
-  def repo_issues_query(repo_id, status)
+  @spec repo_issues_query(pos_integer, [pos_integer] | atom) :: Ecto.Query.t
+  def repo_issues_query(repo_id, numbers_or_status)
+  def repo_issues_query(repo_id, numbers) when is_list(numbers) do
+    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number in ^numbers)
+  end
+
   def repo_issues_query(repo_id, :all) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
   end

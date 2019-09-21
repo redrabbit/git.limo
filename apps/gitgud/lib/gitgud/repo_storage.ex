@@ -9,11 +9,17 @@ defmodule GitGud.RepoStorage do
   alias GitRekt.WireProtocol.ReceivePack
 
   alias GitGud.DB
-  alias GitGud.Commit
+
+  alias GitGud.User
   alias GitGud.Repo
 
+  alias GitGud.Issue
+  alias GitGud.IssueQuery
+
+  alias GitGud.Commit
+
   import Ecto.Changeset, only: [change: 2]
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, select: 3]
 
   @batch_insert_chunk_size 5_000
 
@@ -72,16 +78,16 @@ defmodule GitGud.RepoStorage do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
   """
-  @spec push(Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
-  def push(%Repo{} = repo, %ReceivePack{cmds: cmds} = receive_pack) do
-    with {:ok, objs} <- push_objects(receive_pack, repo.id),
-          :ok <- push_meta_objects(objs, repo.id),
-          :ok <- push_references(receive_pack),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})) do
-      if Application.get_application(:gitgud_web),
-        do: Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "repo:#{repo.id}", {:push, %{refs: cmds, oids: Map.keys(objs)}}),
-      else: :ok
-    end
+  @spec push(User.t, Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
+  def push(%User{} = user, %Repo{} = repo, %ReceivePack{} = receive_pack) do
+    DB.transaction(fn ->
+      with {:ok, objs} <- push_objects(receive_pack, repo.id),
+           {:ok, meta} <- push_meta_objects(objs, repo.id, user.id),
+            :ok <- push_references(receive_pack),
+           {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})),
+            :ok <- broadcast_events(repo, meta), do:
+        {:ok, Map.keys(objs)}
+    end)
   end
 
   @doc """
@@ -111,9 +117,12 @@ defmodule GitGud.RepoStorage do
     end
   end
 
-  defp push_meta_objects(objs, repo_id) do
-    case DB.transaction(write_git_meta_objects(objs, repo_id), timeout: :infinity) do
-      {:ok, _} -> :ok
+  defp push_meta_objects(objs, repo_id, user_id) do
+    case DB.transaction(write_git_meta_objects(objs, repo_id, user_id), timeout: :infinity) do
+      {:ok, multi_results} ->
+        {:ok, multi_results}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -127,31 +136,63 @@ defmodule GitGud.RepoStorage do
     |> Enum.reduce(Multi.new(), &write_git_objects_multi/2)
   end
 
-  defp write_git_meta_objects(objs, repo_id) do
+  defp write_git_meta_objects(objs, repo_id, user_id) do
     objs
     |> Enum.map(&map_git_meta_object(&1, repo_id))
     |> Enum.reject(&is_nil/1)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi/2)
+    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(&1, &2, repo_id, user_id))
   end
 
   defp write_git_objects_multi({objs, i}, multi) do
     Multi.insert_all(multi, {:chunk, i}, "git_objects", objs, on_conflict: {:replace, [:data]}, conflict_target: [:repo_id, :oid])
   end
 
-  defp write_git_meta_objects_multi({schema, {objs, i}}, multi) do
+  defp write_git_meta_objects_multi({Commit, {commits, i}}, multi, repo_id, user_id) do
+    multi
+    |> Multi.insert_all({Commit, {:chunk, i}}, Commit, commits)
+    |> reference_issues_multi(repo_id, commits, user_id: user_id)
+  end
+
+  defp write_git_meta_objects_multi({schema, {objs, i}}, multi, _repo_id, _user_id) do
     Multi.insert_all(multi, {schema, {:chunk, i}}, schema, objs)
   end
 
-  defp write_git_meta_objects_multi({schema, objs}, multi) when length(objs) > @batch_insert_chunk_size do
+  defp write_git_meta_objects_multi({schema, objs}, multi, repo_id, user_id) when length(objs) > @batch_insert_chunk_size do
     objs
     |> Enum.chunk_every(@batch_insert_chunk_size)
     |> Enum.with_index()
-    |> Enum.reduce(multi, &write_git_meta_objects_multi({schema, &1}, &2))
+    |> Enum.reduce(multi, &write_git_meta_objects_multi({schema, &1}, &2, repo_id, user_id))
   end
 
-  defp write_git_meta_objects_multi({schema, objs}, multi) do
+  defp write_git_meta_objects_multi({Commit, commits}, multi, repo_id, user_id) do
+    multi
+    |> Multi.insert_all({Commit, :all}, Commit, commits)
+    |> reference_issues_multi(repo_id, user_id, commits)
+  end
+
+  defp write_git_meta_objects_multi({schema, objs}, multi, _repo_id, _user_id) do
     Multi.insert_all(multi, {schema, :all}, schema, objs)
+  end
+
+  defp reference_issues_multi(multi, repo_id, user_id, commits) do
+    commits =
+      Enum.reduce(commits, %{}, fn commit, acc ->
+        refs = Regex.scan(~r/\B#([0-9]+)\b/, commit.message, capture: :all_but_first)
+        refs = List.flatten(refs)
+        refs = Enum.map(refs, &String.to_integer/1)
+        unless Enum.empty?(refs),
+          do: Map.put(acc, commit.oid, refs),
+        else: acc
+      end)
+
+    query = IssueQuery.repo_issues_query(repo_id, List.flatten(Enum.uniq(Map.values(commits))))
+    query = select(query, [issue: i], {i.id, i.number})
+    Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
+      oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end)
+      event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user_id, repo_id: repo_id, timestamp: NaiveDateTime.utc_now()}
+      Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+    end)
   end
 
   defp resolve_git_objects_postgres(receive_pack, repo_id) do
@@ -168,6 +209,14 @@ defmodule GitGud.RepoStorage do
     end)
     {new_objs, []} = ReceivePack.resolve_delta_objects(source_objs, delta_refs)
     Map.merge(objs, new_objs)
+  end
+
+  defp broadcast_events(_repo, meta) do
+    meta
+    |> Enum.filter(fn {{:issue_reference, _issue_id}, _val} -> true
+                      {_key, _val} -> false end)
+    |> Enum.map(fn {{:issue_reference, _issue_id}, {1, [issue]}} -> issue end)
+    |> Enum.each(&Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(&1.events), issue_event: &1.id))
   end
 
   defp map_git_object({oid, {obj_type, obj_data}}, repo_id) do

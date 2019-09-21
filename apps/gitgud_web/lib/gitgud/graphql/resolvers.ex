@@ -29,7 +29,7 @@ defmodule GitGud.GraphQL.Resolvers do
   import Absinthe.Subscription, only: [publish: 3]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
 
-  import GitRekt.Git, only: [oid_fmt: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   import GitGud.Authorization, only: [authorized?: 3]
   import GitGud.GraphQL.Schema, only: [from_relay_id: 1, from_relay_id: 3]
@@ -557,27 +557,36 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves events for an `issue`.
-  """
-  @spec issue_events(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, [map]} | {:error, term}
-  def issue_events(issue, _args, _info) do
-    {:ok, Enum.map(issue.events, &map_issue_event/1)}
-  end
-
-  @doc """
   Resolves the type of a given issue `event`.
   """
   @spec issue_event_type(map, Absinthe.Resolution.t) :: atom
-  def issue_event_type(%{type: "close"} = _event, _info), do: :issue_close_event
-  def issue_event_type(%{type: "reopen"} = _event, _info), do: :issue_reopen_event
-  def issue_event_type(%{type: "title_update"} = _event, _info), do: :issue_title_update_event
+  def issue_event_type(%{"type" => "close"} = _event, _info), do: :issue_close_event
+  def issue_event_type(%{"type" => "reopen"} = _event, _info), do: :issue_reopen_event
+  def issue_event_type(%{"type" => "title_update"} = _event, _info), do: :issue_title_update_event
+  def issue_event_type(%{"type" => "commit_reference"} = _event, _info), do: :issue_commit_reference_event
+
+  @doc """
+  Resolves the timestamp for a given issue `event`.
+  """
+  @spec issue_event_timestamp(map, %{}, Absinthe.Resolution.t) :: {:ok, NaiveDateTime.t} | {:error, term}
+  def issue_event_timestamp(%{"timestamp" => timestamp}, _args, _info), do: {:ok, NaiveDateTime.from_iso8601!(timestamp)}
+
+  def issue_event_field(issue_event, field, _args, _info), do: {:ok, issue_event[field]}
 
   @doc """
   Resolves the user for a given issue `event`.
   """
   @spec issue_event_user(map, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
-  def issue_event_user(%{user_id: user_id} = _event, _args, %Absinthe.Resolution{context: ctx} = _info) do
+  def issue_event_user(%{"user_id" => user_id} = _event, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
+  end
+
+  def issue_event_user(_event, _args, _info), do: {:ok, nil}
+
+  def issue_commit_reference_event_oid(%{"commit_hash" => hash}, _args, _info), do: {:ok, oid_parse(hash)}
+
+  def issue_commit_reference_event_url(%{"commit_hash" => hash, "repo_id" => repo_id}, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, repos[repo_id].owner, repos[repo_id], hash)} end)
   end
 
   @doc """
@@ -657,7 +666,6 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.close(issue, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
-            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
@@ -676,7 +684,6 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.reopen(issue, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
-            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
@@ -695,7 +702,6 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.update_title(issue, title, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
-            issue = struct(issue, events: Enum.map(issue.events, &map_issue_event/1))
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
@@ -885,11 +891,6 @@ defmodule GitGud.GraphQL.Resolvers do
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})
   end
-
-  defp map_issue_event(event), do: Map.new(event, &map_issue_event_field/1)
-  defp map_issue_event_field({"timestamp", timestamp}), do: {:timestamp, NaiveDateTime.from_iso8601!(timestamp)}
-  defp map_issue_event_field({key, val}) when is_binary(key), do: {String.to_atom(key), val}
-  defp map_issue_event_field({key, val}), do: {key, val}
 
   defp slice_stream(stream, args) do
     stream = Enum.to_list(stream) # TODO
