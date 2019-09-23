@@ -38,7 +38,7 @@ defmodule GitGud.IssueQuery do
   @doc """
   Returns all issues for the given `repo`.
   """
-  @spec repo_issues(Repo.t | pos_integer, keyword) :: Issue.t | nil
+  @spec repo_issues(Repo.t | pos_integer, keyword) :: [Issue.t]
   def repo_issues(repo, opts \\ [])
   def repo_issues(%Repo{id: repo_id} = _repo, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
@@ -50,6 +50,24 @@ defmodule GitGud.IssueQuery do
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, status], opts))
   end
 
+  @doc """
+  Returns all issues and their number of comments for the given `repo`.
+  """
+  @spec repo_issues_with_comments_count(Repo.t | pos_integer, keyword) :: [{Issue.t, pos_integer}]
+  def repo_issues_with_comments_count(%Repo{id: repo_id} = _repo, opts) do
+    {status, opts} = Keyword.pop(opts, :status, :all)
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
+  end
+
+  def repo_issues_with_comments_count(repo_id, opts) do
+    {status, opts} = Keyword.pop(opts, :status, :all)
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
+  end
+
+  @doc """
+  Returns the number of issues for the given `repo`.
+  """
+  @spec count_repo_issues(Repo.t | pos_integer, keyword) :: non_neg_integer | nil
   def count_repo_issues(repo, opts \\ [])
   def count_repo_issues(%Repo{id: repo_id} = _repo, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
@@ -78,13 +96,13 @@ defmodule GitGud.IssueQuery do
   end
 
   @doc """
-  Returns a query for fetching all repository issue.
+  Returns a query for fetching all repository issues.
   """
   @spec repo_issues_query(pos_integer) :: Ecto.Query.t
   def repo_issues_query(repo_id), do: repo_issues_query(repo_id, :all)
 
   @doc """
-  Returns a query for fetching all repository issue with the given `status`.
+  Returns a query for fetching all repository issues with the given `status`.
   """
   @spec repo_issues_query(pos_integer, [pos_integer] | atom) :: Ecto.Query.t
   def repo_issues_query(repo_id, numbers_or_status)
@@ -100,6 +118,20 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
+  @doc """
+  Returns a query for fetching all repository issues and their number of comments.
+  """
+  @spec repo_issues_with_comments_count_query(pos_integer, atom) :: Ecto.Query.t
+  def repo_issues_with_comments_count_query(repo_id, status) do
+    repo_issues_query(repo_id, status)
+    |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
+    |> group_by([issue: i], i.id)
+    |> select([issue: i, comment: c], {i, count(c)})
+  end
+
+  @doc """
+  Returns a query for counting the number of issues of a repository.
+  """
   @spec count_repo_issues_query(pos_integer, atom) :: Ecto.Query.t
   def count_repo_issues_query(repo_id, status \\ :all) do
     repo_id
@@ -110,9 +142,10 @@ defmodule GitGud.IssueQuery do
   @doc """
   Returns a query for fetching comments of an issue.
   """
-  @spec comments_query(Issue.t) :: Ecto.Query.t
-  def comments_query(%Issue{id: id}) do
-    from c in Comment, join: t in "issues_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
+  @spec comments_query(Issue.t | pos_integer) :: Ecto.Query.t
+  def comments_query(%Issue{id: issue_id} = _issue), do: comments_query(issue_id)
+  def comments_query(issue_id) when is_integer(issue_id) do
+    from c in Comment, as: :comment, join: t in "issues_comments", on: t.comment_id == c.id, where: t.thread_id == ^issue_id
   end
 
   #

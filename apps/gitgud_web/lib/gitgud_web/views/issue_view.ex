@@ -65,9 +65,9 @@ defmodule GitGud.Web.IssueView do
    else: IssueQuery.count_repo_issues(repo, status: status)
   end
 
-  def filter_issues(repo, "all"), do: repo.issues
-  def filter_issues(repo, status) do
-    Enum.filter(repo.issues, &(&1.status == to_string(status)))
+  def filter_issues(issues, "all"), do: issues
+  def filter_issues(issues, status) do
+    Enum.filter(issues, &(&1.status == to_string(status)))
   end
 
   @spec title(atom, map) :: binary

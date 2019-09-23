@@ -172,13 +172,14 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a query for fetching comments of a review.
   """
-  @spec comments_query(CommitLineReview.t | CommitReview.t) :: Ecto.Query.t
-  def comments_query(%CommitLineReview{id: id}) do
-    from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
+  @spec comments_query(CommitLineReview.t | CommitReview.t | {atom, pos_integer}) :: Ecto.Query.t
+  def comments_query(%{id: review_id, __struct__: struct} = _review), do: comments_query({struct, review_id})
+  def comments_query({CommitLineReview, review_id}) do
+    from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
   end
 
-  def comments_query(%CommitReview{id: id}) do
-    from c in Comment, join: t in "commit_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^id
+  def comments_query({CommitReview, review_id}) do
+    from c in Comment, join: t in "commit_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
   end
 
   #
