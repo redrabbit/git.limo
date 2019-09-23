@@ -47,11 +47,46 @@ defmodule GitGud.Web.Markdown do
   end
 
   defp transform_ast_node(content, opts) when is_binary(content) do
-    auto_link(
-      Regex.replace(~r/:([a-z0-1\+]+):/, content, &emojify_short_name/2),
-      Regex.scan(~r/\B(#[0-9]+)\b|\B(@[a-zA-Z0-9_-]+)\b|\b([a-f0-9]{7})\b/, content, capture: :first, return: :index),
+    transform_ast_node_text(
+      content,
+      Regex.scan(~r/\B(#[0-9]+)\b|\B(@[a-zA-Z0-9_-]+)\b|:([a-z0-1\+]+):|\b([a-f0-9]{7})\b/, content, capture: :first, return: :index),
       Keyword.get(opts, :repo)
     )
+  end
+
+  defp transform_ast_node_text(content, [], _repo), do: content
+  defp transform_ast_node_text(content, indexes, repo) do
+    {content, rest, _offset} =
+      Enum.reduce(List.flatten(indexes), {[], content, 0}, fn {idx, len}, {acc, rest, offset} ->
+        ofs = idx-offset
+        <<head::binary-size(ofs), rest::binary>> = rest
+        <<match::binary-size(len), rest::binary>> = rest
+        link =
+          case match do
+            "#" <> number ->
+              if issue = repo && IssueQuery.repo_issue(repo, String.to_integer(number)), do:
+                {"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue)}], ["##{number}"]}
+            "@" <> login ->
+              if user = UserQuery.by_login(login), do:
+                {"a", [{"href", Routes.user_path(GitGud.Web.Endpoint, :show, user)}, {"class", "has-text-black"}], ["@#{login}"]}
+            match ->
+              cond do
+                String.starts_with?(match, ":") && String.ends_with?(match, ":") ->
+                  emojify_short_name(match, String.slice(match, 1..-2))
+                byte_size(match) == 7 ->
+                  if repo do
+                    case GitAgent.revision(repo, match) do
+                      {:ok, commit, _ref} ->
+                        {"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner, repo, commit)}], [{"code", [{"class", "has-text-link"}], [match]}]}
+                      {:error, _reason} ->
+                        nil
+                    end
+                  end
+              end
+          end || match
+        {acc ++ [head, link], rest, idx+len}
+      end)
+    List.flatten(content, [rest])
   end
 
   defp emojify_short_name(match, short_name) do
@@ -60,33 +95,4 @@ defmodule GitGud.Web.Markdown do
    else: match
   end
 
-  defp auto_link(content, [], _repo), do: content
-  defp auto_link(content, indexes, repo) do
-    {content, rest, _offset} =
-      Enum.reduce(List.flatten(indexes), {[], content, 0}, fn {idx, len}, {acc, rest, offset} ->
-        {head, rest} = String.split_at(rest, idx - offset)
-        {link, rest} =
-          case String.split_at(rest, len) do
-            {"#" <> number, rest} ->
-              if issue = repo && IssueQuery.repo_issue(repo, String.to_integer(number)),
-               do: {{"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue)}], ["##{number}"]}, rest},
-             else: {"##{number}", rest}
-            {"@" <> login, rest} ->
-              if user = UserQuery.by_login(login),
-                do: {{"a", [{"href", Routes.user_path(GitGud.Web.Endpoint, :show, user)}, {"class", "has-text-black"}], ["@#{login}"]}, rest},
-              else: {"@#{login}", rest}
-            {hash, rest} ->
-              if repo do
-                case GitAgent.revision(repo, hash) do
-                  {:ok, commit, _ref} ->
-                    {{"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner, repo, commit)}], [{"code", [{"class", "has-text-link"}], [hash]}]}, rest}
-                  {:error, _reason} ->
-                    nil
-                end
-              end || {hash, rest}
-          end
-        {acc ++ [head, link], rest, idx+len}
-      end)
-    List.flatten(content, [rest])
-  end
 end
