@@ -3,7 +3,7 @@ defmodule GitGud.DBQueryable do
   Behaviour for implementing generic queries.
   """
 
-  import Ecto.Query, only: [offset: 2, limit: 2]
+  import Ecto.Query, only: [order_by: 2, offset: 2, limit: 2]
 
   @callback alter_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
 
@@ -24,9 +24,10 @@ defmodule GitGud.DBQueryable do
     exec_query(apply(module, function_name, List.wrap(args)), module, params)
   end
 
-  defp exec_query(query, module, {pagination, preloads, viewer}) do
+  defp exec_query(query, module, {sort, pagination, preloads, viewer}) do
     query
     |> alter(module, preloads, viewer)
+    |> order_by(^sort)
     |> paginate(pagination)
   end
 
@@ -44,10 +45,11 @@ defmodule GitGud.DBQueryable do
   end
 
   defp extract_opts(opts) do
+    {order_by, opts} = Keyword.pop(opts, :order_by)
     {offset, opts} = Keyword.pop(opts, :offset)
     {limit, opts} = Keyword.pop(opts, :limit)
     {preloads, opts} = Keyword.pop(opts, :preload, [])
     {viewer, opts} = Keyword.pop(opts, :viewer)
-    {{{offset, limit}, List.wrap(preloads), viewer}, opts}
+    {{order_by, {offset, limit}, List.wrap(preloads), viewer}, opts}
   end
 end

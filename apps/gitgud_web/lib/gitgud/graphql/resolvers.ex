@@ -398,7 +398,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def commit_line_review_comments(args, %Absinthe.Resolution{source: commit_line_review, context: ctx} = _info) do
-    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_line_review, viewer: ctx[:current_user])
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_line_review, viewer: ctx[:current_user], order_by: :inserted_at)
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -424,7 +424,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def commit_review_comments(args, %Absinthe.Resolution{source: commit_review, context: ctx} = _info) do
-    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_review, viewer: ctx[:current_user])
+    query = DBQueryable.query({ReviewQuery, :comments_query}, commit_review, viewer: ctx[:current_user], order_by: :inserted_at)
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -552,7 +552,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec issue_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def issue_comments(args, %Absinthe.Resolution{source: issue, context: ctx} = _info) do
-    query = DBQueryable.query({IssueQuery, :comments_query}, issue, viewer: ctx[:current_user])
+    query = DBQueryable.query({IssueQuery, :comments_query}, issue, viewer: ctx[:current_user], order_by: :inserted_at)
     Connection.from_query(query, &DB.all/1, args)
   end
 
