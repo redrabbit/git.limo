@@ -19,7 +19,6 @@ defmodule GitGud.Web.CodebaseView do
 
   import Phoenix.Controller, only: [action_name: 1]
 
-  import Phoenix.HTML, only: [raw: 1]
   import Phoenix.HTML.Tag
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
@@ -269,9 +268,8 @@ defmodule GitGud.Web.CodebaseView do
   def tree_readme(repo, tree) do
     with {:ok, entry} <- GitAgent.tree_entry_by_path(repo, tree, "README.md"),
          {:ok, blob} <- GitAgent.tree_entry_target(repo, entry),
-         {:ok, content} <- GitAgent.blob_content(repo, blob),
-         {:ok, html, _warnings} <- Earmark.as_html(content) do
-      raw(html)
+         {:ok, content} <- GitAgent.blob_content(repo, blob) do
+      markdown_safe(content)
     else
       {:error, _reason} -> nil
     end

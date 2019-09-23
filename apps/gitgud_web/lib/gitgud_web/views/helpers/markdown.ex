@@ -24,6 +24,10 @@ defmodule GitGud.Web.Markdown do
         ast
         |> transform_ast(opts)
         |> Floki.raw_html()
+      {:error, ast, _errors} ->
+        ast
+        |> transform_ast(opts)
+        |> Floki.raw_html()
     end
   end
 
