@@ -12,6 +12,7 @@ defmodule GitGud.Repo do
 
   alias GitGud.DB
   alias GitGud.Issue
+  alias GitGud.IssueLabel
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.UserQuery
@@ -44,6 +45,14 @@ defmodule GitGud.Repo do
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
     __agent__: GitAgent.agent | nil
+  }
+
+  @issue_labels %{
+    "bug" => "ee0701",
+    "question" => "cc317c",
+    "duplicate" => "cccccc",
+    "help wanted" => "33aa3f",
+    "invalid" => "e6e6e6"
   }
 
   @doc """
@@ -251,6 +260,7 @@ defmodule GitGud.Repo do
     Multi.new()
     |> Multi.insert(:repo, changeset)
     |> Multi.run(:maintainer, &create_maintainer/2)
+    |> Multi.run(:issue_labels, &create_issue_labels/2)
     |> Multi.run(:init, &init(&1, &2, bare?))
     |> DB.transaction()
   end
@@ -264,6 +274,16 @@ defmodule GitGud.Repo do
     if maintainers = changeset.params["maintainers"],
       do: put_assoc(changeset, :maintainers, maintainers),
     else: changeset
+  end
+
+  defp create_issue_labels(db, %{repo: repo}) do
+    Enum.reduce_while(@issue_labels, {:ok, []}, fn {name, color}, {:ok, acc} ->
+      changeset = IssueLabel.changeset(%IssueLabel{}, %{repo_id: repo.id, name: name, color: color})
+      case db.insert(changeset) do
+        {:ok, label} -> {:cont, {:ok, [label|acc]}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   defp update_and_rename(changeset) do

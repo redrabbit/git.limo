@@ -10,6 +10,7 @@ defmodule GitGud.Issue do
   alias GitGud.DB
   alias GitGud.Repo
   alias GitGud.User
+  alias GitGud.IssueLabel
   alias GitGud.Comment
 
   import Ecto.Changeset
@@ -21,6 +22,7 @@ defmodule GitGud.Issue do
     field :title, :string
     field :status, :string, default: "open"
     belongs_to :author, User
+    many_to_many :labels, IssueLabel, join_through: "issues_labels", join_keys: [issue_id: :id, label_id: :id]
     many_to_many :comments, Comment, join_through: "issues_comments", join_keys: [thread_id: :id, comment_id: :id]
     field :events, {:array, :map}
     timestamps()
@@ -33,6 +35,7 @@ defmodule GitGud.Issue do
     author_id: pos_integer,
     author: User.t,
     repo_id: pos_integer,
+    labels: [IssueLabel.t],
     comments: [Comment.t],
     events: [map],
     inserted_at: NaiveDateTime.t,
