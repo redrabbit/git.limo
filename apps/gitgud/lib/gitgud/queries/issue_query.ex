@@ -42,12 +42,14 @@ defmodule GitGud.IssueQuery do
   def repo_issues(repo, opts \\ [])
   def repo_issues(%Repo{id: repo_id} = _repo, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, status], opts))
+    {numbers, opts} = Keyword.pop(opts, :numbers)
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status], opts))
   end
 
   def repo_issues(repo_id, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, status], opts))
+    {numbers, opts} = Keyword.pop(opts, :numbers)
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status], opts))
   end
 
   @doc """

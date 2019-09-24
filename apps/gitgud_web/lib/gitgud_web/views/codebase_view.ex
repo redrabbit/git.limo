@@ -12,6 +12,8 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.CommitQuery
   alias GitGud.GPGKey
   alias GitGud.GPGKeyQuery
+  alias GitGud.Issue
+  alias GitGud.IssueQuery
 
   alias Phoenix.Param
 
@@ -19,6 +21,7 @@ defmodule GitGud.Web.CodebaseView do
 
   import Phoenix.Controller, only: [action_name: 1]
 
+  import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
@@ -172,24 +175,27 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_message_title(Repo.t, Commit.t | GitCommit.t) :: binary | nil
   def commit_message_title(repo, commit) do
     if message = commit_message(repo, commit) do
-      List.first(String.split(message, "\n", trim: true, parts: 2))
+      issues = find_issue_references(message, repo)
+      replace_issue_references(List.first(String.split(message, "\n", trim: true, parts: 2)), repo, issues)
     end
   end
 
   @spec commit_message_body(Repo.t, Commit.t | GitCommit.t) :: binary | nil
   def commit_message_body(repo, commit) do
     if message = commit_message(repo, commit) do
-      List.last(String.split(message, "\n", trim: true, parts: 2))
+      issues = find_issue_references(message, repo)
+      replace_issue_references(List.last(String.split(message, "\n", trim: true, parts: 2)), repo, issues)
     end
   end
 
   @spec commit_message_format(Repo.t, Commit.t | GitCommit.t, keyword) :: {binary, binary | nil} | nil
   def commit_message_format(repo, commit, opts \\ []) do
     if message = commit_message(repo, commit) do
+      issues = find_issue_references(message, repo)
       parts = String.split(message, "\n", trim: true, parts: 2)
       if length(parts) == 2,
-        do: {List.first(parts), wrap_message(List.last(parts), Keyword.get(opts, :wrap, :pre))},
-      else: {List.first(parts), nil}
+        do: {replace_issue_references(List.first(parts), repo, issues), wrap_message(List.last(parts), repo, issues, Keyword.get(opts, :wrap, :pre))},
+      else: {replace_issue_references(List.first(parts), repo, issues), nil}
     end
   end
 
@@ -577,39 +583,66 @@ defmodule GitGud.Web.CodebaseView do
 
   defp highlight_language(_extension), do: "plaintext"
 
-  defp wrap_message(content, :pre) do
-    content = String.trim(content)
-    if content != "", do: content_tag(:pre, String.trim(content))
+  defp find_issue_references(content, repo) do
+    numbers =
+      ~r/\B#([0-9]+)\b/
+      |> Regex.scan(content, capture: :all_but_first)
+      |> List.flatten()
+      |> Enum.map(&String.to_integer/1)
+      |> Enum.uniq()
+    IssueQuery.repo_issues(repo, numbers: numbers)
   end
 
-  defp wrap_message(content, :br) do
+  defp replace_issue_references(content, repo, issues) do
+    indexes = Regex.scan(~r/\B(#[0-9]+)\b/, content, capture: :all_but_first, return: :index)
+    {content, rest, _offset} =
+      Enum.reduce(List.flatten(indexes), {[], content, 0}, fn {idx, len}, {acc, rest, offset} ->
+        ofs = idx-offset
+        <<head::binary-size(ofs), rest::binary>> = rest
+        <<match::binary-size(len), rest::binary>> = rest
+        "#" <> number = match
+        number = String.to_integer(number)
+        if issue = Enum.find(issues, &(&1.repo_id == repo.id && &1.number == number)),
+          do: {acc ++ [head, link(match, to: Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue))], rest, idx+len},
+        else: {acc ++ [head, match], rest, idx+len}
+      end)
+    List.flatten(content, [rest])
+  end
+
+  defp wrap_message(content, repo, issues, :pre) do
+    content = String.trim(content)
+    if content != "", do: content_tag(:pre, replace_issue_references(String.trim(content), repo, issues))
+  end
+
+  defp wrap_message(content, repo, issues, :br) do
     content = String.trim(content)
     if content != "" do
       content
       |> String.split("\n\n", trim: true)
-      |> Enum.map(&content_tag(:p, wrap_paragraph(&1)))
+      |> Enum.map(&content_tag(:p, wrap_paragraph(&1, repo, issues)))
     end
   end
 
-  defp wrap_message(content, max_line_length) do
+  defp wrap_message(content, repo, issues, max_line_length) do
     content = String.trim(content)
     if content != "" do
       content
       |> String.split("\n\n", trim: true)
-      |> Enum.map(&content_tag(:p, wrap_paragraph(&1, max_line_length)))
+      |> Enum.map(&content_tag(:p, wrap_paragraph(&1, repo, issues, max_line_length)))
     end
   end
 
-  defp wrap_paragraph(content) do
+  defp wrap_paragraph(content, repo, issues) do
     content = String.trim(content)
     if content != "" do
       content
       |> String.split("\n", trim: true)
+      |> Enum.map(&replace_issue_references(&1, repo, issues))
       |> Enum.intersperse(tag(:br))
     end
   end
 
-  defp wrap_paragraph(content, max_line_length) do
+  defp wrap_paragraph(content, _repo, _issues, max_line_length) do
     content = String.trim(content)
     if content != "" do
       [word|rest] = String.split(content, ~r/\s+/, trim: true)

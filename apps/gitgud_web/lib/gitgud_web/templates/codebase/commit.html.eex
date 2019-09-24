@@ -3,7 +3,7 @@
     <div class="card">
       <%= with {message_title, message_body} <- commit_message_format(@repo, @commit) do %>
         <header class="card-header">
-          <p class="card-header-title"><%= message_title %></p>
+          <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
               <button class="button tooltip is-small is-white has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></button>
