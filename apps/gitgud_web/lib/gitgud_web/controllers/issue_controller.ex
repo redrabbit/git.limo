@@ -42,8 +42,8 @@ defmodule GitGud.Web.IssueController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       if User.verified?(user),
-       do: render(conn, "new.html", repo: repo, changeset: Issue.changeset(%Issue{comments: [%Comment{}]})),
-     else: {:error, :unauthorized}
+        do: render(conn, "new.html", repo: repo, changeset: Issue.changeset(%Issue{comments: [%Comment{}]}), labels: IssueQuery.repo_labels(repo)),
+      else: {:error, :unauthorized}
     end || {:error, :not_found}
   end
 
@@ -64,7 +64,7 @@ defmodule GitGud.Web.IssueController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("new.html", repo: repo, changeset: %{changeset|action: :insert})
+            |> render("new.html", repo: repo, changeset: %{changeset|action: :insert}, labels: IssueQuery.repo_labels(repo))
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

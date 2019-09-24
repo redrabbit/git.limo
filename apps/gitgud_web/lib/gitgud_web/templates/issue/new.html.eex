@@ -19,6 +19,16 @@
     </div>
   <% end %>
 
+  <div class="field">
+    <%= label f, :labels, class: "label" %>
+    <div class="control">
+      <div class="select is-multiple">
+        <%= multiple_select(f, :labels, Enum.map(@labels, &{&1.name, &1.id}), selected: []) %>
+      </div>
+    </div>
+    <%= error_tag f, :labels %>
+  </div>
+
   <hr />
 
   <div class="field">

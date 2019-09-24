@@ -166,6 +166,7 @@ defmodule GitGud.Issue do
   def changeset(%__MODULE__{} = issue, params \\ %{}) do
     issue
     |> cast(params, [:repo_id, :author_id, :title])
+    |> cast_assoc(:labels, with: &IssueLabel.changeset/2)
     |> cast_assoc(:comments, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :author_id, :title])
     |> assoc_constraint(:repo)

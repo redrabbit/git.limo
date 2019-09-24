@@ -10,6 +10,7 @@ defmodule GitGud.IssueQuery do
 
   alias GitGud.Repo
   alias GitGud.Issue
+  alias GitGud.IssueLabel
   alias GitGud.Comment
 
   import Ecto.Query
@@ -27,7 +28,7 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_issue(Repo.t | pos_integer, pos_integer, keyword) :: Issue.t | nil
   def repo_issue(repo, number, opts \\ [])
-  def repo_issue(%Repo{id: repo_id} = _repo, number, opts) do
+  def repo_issue(%Repo{id: repo_id}, number, opts) do
     DB.one(DBQueryable.query({__MODULE__, :repo_issue_query}, [repo_id, number], opts))
   end
 
@@ -40,7 +41,7 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_issues(Repo.t | pos_integer, keyword) :: [Issue.t]
   def repo_issues(repo, opts \\ [])
-  def repo_issues(%Repo{id: repo_id} = _repo, opts) do
+  def repo_issues(%Repo{id: repo_id}, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
     {numbers, opts} = Keyword.pop(opts, :numbers)
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status], opts))
@@ -56,7 +57,8 @@ defmodule GitGud.IssueQuery do
   Returns all issues and their number of comments for the given `repo`.
   """
   @spec repo_issues_with_comments_count(Repo.t | pos_integer, keyword) :: [{Issue.t, pos_integer}]
-  def repo_issues_with_comments_count(%Repo{id: repo_id} = _repo, opts) do
+  def repo_issues_with_comments_count(repo, opts \\ [])
+  def repo_issues_with_comments_count(%Repo{id: repo_id}, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
   end
@@ -66,12 +68,22 @@ defmodule GitGud.IssueQuery do
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
   end
 
+  @spec repo_labels(Repo.t | pos_integer, keyword) :: [IssueLabel.t]
+  def repo_labels(repo, opts \\ [])
+  def repo_labels(%Repo{id: repo_id}, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :repo_labels_query}, [repo_id], opts))
+  end
+
+  def repo_labels(repo_id, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :repo_labels_query}, [repo_id], opts))
+  end
+
   @doc """
   Returns the number of issues for the given `repo`.
   """
   @spec count_repo_issues(Repo.t | pos_integer, keyword) :: non_neg_integer | nil
   def count_repo_issues(repo, opts \\ [])
-  def count_repo_issues(%Repo{id: repo_id} = _repo, opts) do
+  def count_repo_issues(%Repo{id: repo_id}, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
     DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
   end
@@ -129,6 +141,10 @@ defmodule GitGud.IssueQuery do
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
     |> select([issue: i, comment: c], {i, count(c)})
+  end
+
+  def repo_labels_query(repo_id) do
+    from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end
 
   @doc """
