@@ -366,6 +366,37 @@ defmodule GitGud.Web.CodebaseView do
     |> order_commits_chunks()
   end
 
+  @spec find_issue_references(binary, Repo.t) :: [Issue.t]
+  def find_issue_references(content, repo) do
+    numbers =
+      ~r/\B#([0-9]+)\b/
+      |> Regex.scan(content, capture: :all_but_first)
+      |> List.flatten()
+      |> Enum.map(&String.to_integer/1)
+      |> Enum.uniq()
+    unless Enum.empty?(numbers),
+      do: IssueQuery.repo_issues(repo, numbers: numbers),
+    else: []
+  end
+
+  @spec replace_issue_references(binary, Repo.t, [Issue.t]) :: binary
+  def replace_issue_references(content, _repo, []), do: content
+  def replace_issue_references(content, repo, issues) do
+    indexes = Regex.scan(~r/\B(#[0-9]+)\b/, content, capture: :all_but_first, return: :index)
+    {content, rest, _offset} =
+      Enum.reduce(List.flatten(indexes), {[], content, 0}, fn {idx, len}, {acc, rest, offset} ->
+        ofs = idx-offset
+        <<head::binary-size(ofs), rest::binary>> = rest
+        <<match::binary-size(len), rest::binary>> = rest
+        "#" <> number = match
+        number = String.to_integer(number)
+        if issue = Enum.find(issues, &(&1.repo_id == repo.id && &1.number == number)),
+          do: {acc ++ [head, link(match, to: Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue))], rest, idx+len},
+        else: {acc ++ [head, match], rest, idx+len}
+      end)
+    List.flatten(content, [rest])
+  end
+
   @spec title(atom, map) :: binary
   def title(:show, %{repo: repo}) do
     if desc = repo.description,
@@ -582,32 +613,6 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp highlight_language(_extension), do: "plaintext"
-
-  defp find_issue_references(content, repo) do
-    numbers =
-      ~r/\B#([0-9]+)\b/
-      |> Regex.scan(content, capture: :all_but_first)
-      |> List.flatten()
-      |> Enum.map(&String.to_integer/1)
-      |> Enum.uniq()
-    IssueQuery.repo_issues(repo, numbers: numbers)
-  end
-
-  defp replace_issue_references(content, repo, issues) do
-    indexes = Regex.scan(~r/\B(#[0-9]+)\b/, content, capture: :all_but_first, return: :index)
-    {content, rest, _offset} =
-      Enum.reduce(List.flatten(indexes), {[], content, 0}, fn {idx, len}, {acc, rest, offset} ->
-        ofs = idx-offset
-        <<head::binary-size(ofs), rest::binary>> = rest
-        <<match::binary-size(len), rest::binary>> = rest
-        "#" <> number = match
-        number = String.to_integer(number)
-        if issue = Enum.find(issues, &(&1.repo_id == repo.id && &1.number == number)),
-          do: {acc ++ [head, link(match, to: Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue))], rest, idx+len},
-        else: {acc ++ [head, match], rest, idx+len}
-      end)
-    List.flatten(content, [rest])
-  end
 
   defp wrap_message(content, repo, issues, :pre) do
     content = String.trim(content)
