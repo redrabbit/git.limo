@@ -105,7 +105,7 @@ defmodule GitGud.Web.Markdown do
   end
 
 
-  defp find_issue_references(content, nil), do: []
+  defp find_issue_references(_content, nil), do: []
   defp find_issue_references(content, repo) do
     numbers =
       ~r/\B#([0-9]+)\b/
