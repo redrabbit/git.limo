@@ -18,12 +18,14 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.CommentQuery
   alias GitGud.Issue
   alias GitGud.IssueQuery
+  alias GitGud.IssueLabel
   alias GitGud.CommitLineReview
   alias GitGud.CommitReview
   alias GitGud.ReviewQuery
 
   alias Absinthe.Relay.Connection
 
+  alias GitGud.GraphQL.Schema
   alias GitGud.Web.Router.Helpers, as: Routes
 
   import Absinthe.Subscription, only: [publish: 3]
@@ -32,7 +34,6 @@ defmodule GitGud.GraphQL.Resolvers do
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   import GitGud.Authorization, only: [authorized?: 3]
-  import GitGud.GraphQL.Schema, only: [from_relay_id: 1, from_relay_id: 3]
 
   import GitGud.Web.Markdown
 
@@ -44,6 +45,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
   def node_type(%Issue{} = _node, _info), do: :issue
+  def node_type(%IssueLabel{} = _node, _info), do: :issue_label
   def node_type(%CommitLineReview{} = _node, _info), do: :commit_line_review
   def node_type(%CommitReview{} = _node, _info), do: :commit_review
   def node_type(_struct, _info), do: nil
@@ -72,7 +74,13 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :issue}, %{context: ctx} = info, opts) do
-    if issue = IssueQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
+    if issue = IssueQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user], preload: :labels)),
+      do: {:ok, issue},
+    else: node(%{id: id}, info)
+  end
+
+  def node(%{id: id, type: :issue_label}, %{context: _ctx} = info, _opts) do
+    if issue = DB.get(IssueLabel, String.to_integer(id)),
       do: {:ok, issue},
     else: node(%{id: id}, info)
   end
@@ -196,7 +204,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issues(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def repo_issues(args, %Absinthe.Resolution{source: repo, context: ctx} = _info) do
-    query = DBQueryable.query({IssueQuery, :repo_issues_query}, repo.id, viewer: ctx[:current_user])
+    query = DBQueryable.query({IssueQuery, :repo_issues_query}, repo.id, viewer: ctx[:current_user], preload: :labels)
     Connection.from_query(query, &DB.all/1, args)
   end
 
@@ -205,9 +213,13 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issue(Repo.t, %{number: number}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def repo_issue(repo, %{number: number} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user]),
+    if issue = IssueQuery.repo_issue(repo, number, viewer: ctx[:current_user], preload: :labels),
       do: {:ok, issue},
     else: {:error, "there is no issue for the given args"}
+  end
+
+  def repo_issue_labels(repo, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, IssueQuery.repo_labels(repo.id, viewer: ctx[:current_user])}
   end
 
   @doc """
@@ -563,6 +575,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def issue_event_type(%{"type" => "close"} = _event, _info), do: :issue_close_event
   def issue_event_type(%{"type" => "reopen"} = _event, _info), do: :issue_reopen_event
   def issue_event_type(%{"type" => "title_update"} = _event, _info), do: :issue_title_update_event
+  def issue_event_type(%{"type" => "labels_update"} = _event, _info), do: :issue_labels_update_event
   def issue_event_type(%{"type" => "commit_reference"} = _event, _info), do: :issue_commit_reference_event
 
   @doc """
@@ -582,6 +595,10 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def issue_event_user(_event, _args, _info), do: {:ok, nil}
+
+  def issue_labels_update_event_push_labels(%{"push" => ids}, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
+
+  def issue_labels_update_event_pull_labels(%{"pull" => ids}, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
 
   def issue_commit_reference_event_oid(%{"commit_hash" => hash}, _args, _info), do: {:ok, oid_parse(hash)}
 
@@ -643,7 +660,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec create_issue_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_issue_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     if author = ctx[:current_user] do
-      if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+      if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
         case Issue.add_comment(issue, author, body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, issue_comment_create: issue.id)
@@ -662,7 +679,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec close_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.close(issue, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
@@ -680,7 +697,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec reopen_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def reopen_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.reopen(issue, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
@@ -698,9 +715,26 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_issue_title(any, %{id: pos_integer, title: binary}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def update_issue_title(_parent, %{id: id, title: title} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
       if authorized?(ctx[:current_user], issue, :admin) do
         case Issue.update_title(issue, title, user_id: ctx[:current_user].id) do
+          {:ok, issue} ->
+            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+            {:ok, issue}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end || {:error, "Unauthorized"}
+    end
+  end
+
+  @spec update_issue_labels(any, %{id: pos_integer, label_id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
+  def update_issue_labels(_parent, %{id: id} = args, %Absinthe.Resolution{context: ctx} = _info) do
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
+      if authorized?(ctx[:current_user], issue, :admin) do
+        labels_push = Map.get(args, :push, [])
+        labels_pull = Map.get(args, :pull, [])
+        case Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: ctx[:current_user].id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
@@ -716,7 +750,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec create_commit_line_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
+    repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: ctx[:current_user])
     if author = ctx[:current_user] do
       old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: ctx[:current_user])
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
@@ -741,7 +775,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec create_commit_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_commit_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    repo = RepoQuery.by_id(from_relay_id(repo_id), viewer: ctx[:current_user])
+    repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: ctx[:current_user])
     if author = ctx[:current_user] do
       case CommitReview.add_comment(repo, commit_oid, author, body) do
         {:ok, comment} ->
@@ -760,7 +794,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.update(comment, body: body) do
@@ -780,7 +814,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(from_relay_id(id), viewer: ctx[:current_user]) do
+    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.delete(comment) do
@@ -799,7 +833,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec issue_topic(map, map) :: {:ok, keyword} | {:error, term}
   def issue_topic(%{id: id}, _info) do
-    {:ok, topic: from_relay_id(id)}
+    {:ok, topic: Schema.from_relay_id(id)}
   end
 
   @doc """
@@ -807,7 +841,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_created(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
+    {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   @doc """
@@ -815,7 +849,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_line_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
-    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+    {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
   @doc """
@@ -823,7 +857,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec commit_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
   def commit_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-    {:ok, topic: "#{from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
+    {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
   end
 
   @doc """
@@ -924,5 +958,5 @@ defmodule GitGud.GraphQL.Resolvers do
   defp comment_subscription_topic(%Issue{id: id}), do: "issue:#{id}"
   defp comment_subscription_topic(%CommitLineReview{id: id}), do: "commit_line_review:#{id}"
   defp comment_subscription_topic(%CommitReview{id: id}), do: "commit_review:#{id}"
-  defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(from_relay_id(node_id, info, preload: []))
+  defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(Schema.from_relay_id(node_id, info, preload: []))
 end

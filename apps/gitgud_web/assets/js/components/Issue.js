@@ -14,6 +14,7 @@ import moment from "moment"
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
 import IssueEvent from "./IssueEvent"
+import IssueLabelSelect from "./IssueLabelSelect"
 
 class Issue extends React.Component {
   constructor(props) {
@@ -34,6 +35,7 @@ class Issue extends React.Component {
     this.renderForm = this.renderForm.bind(this)
     this.handleTitleFormSubmit = this.handleTitleFormSubmit.bind(this)
     this.handleFormSubmit = this.handleFormSubmit.bind(this)
+    this.handleLabelsSelection = this.handleLabelsSelection.bind(this)
     this.handleClose = this.handleClose.bind(this)
     this.handleReopen = this.handleReopen.bind(this)
     this.handleFormTyping = this.handleFormTyping.bind(this)
@@ -41,15 +43,18 @@ class Issue extends React.Component {
     this.handleCommentUpdate = this.handleCommentUpdate.bind(this)
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.state = {
+      repoId: null,
+      repoLabels: [],
+      number: null,
       title: null,
       titleEdit: false,
       author: null,
       status: null,
-      number: null,
       insertedAt: null,
       editable: false,
       comments: [],
       events: [],
+      labels: [],
       timestamp: null,
       channel: null,
       presence: null,
@@ -72,6 +77,14 @@ class Issue extends React.Component {
       query IssueQuery($id: ID!) {
         node(id: $id) {
           ... on Issue {
+            repo {
+              id
+              issueLabels {
+                id
+                name
+                color
+              }
+            }
             title
             number
             status
@@ -98,6 +111,9 @@ class Issue extends React.Component {
                 }
               }
             }
+            labels {
+              id
+            }
             events {
               __typename
               timestamp
@@ -116,6 +132,14 @@ class Issue extends React.Component {
               ... on IssueTitleUpdateEvent {
                 oldTitle
                 newTitle
+                user {
+                  login
+                  url
+                }
+              }
+              ... on IssueLabelsUpdateEvent {
+                push
+                pull
                 user {
                   login
                   url
@@ -141,13 +165,16 @@ class Issue extends React.Component {
     fetchQuery(environment, query, variables)
       .then(response => {
         this.setState({
-          title: response.node.title,
+          repoId: response.node.repo.id,
+          repoLabels: response.node.repo.issueLabels,
           number: response.node.number,
+          title: response.node.title,
           status: response.node.status,
           author: response.node.author,
           insertedAt: response.node.insertedAt,
           editable: response.node.editable,
           comments: response.node.comments.edges.map(edge => edge.node),
+          labels: response.node.labels.map(label => label.id),
           events: response.node.events,
           timestamp: moment.utc(response.node.insertedAt).fromNow()
         })
@@ -197,6 +224,14 @@ class Issue extends React.Component {
               url
             }
           }
+          ... on IssueLabelsUpdateEvent {
+            push
+            pull
+            user {
+              login
+              url
+            }
+          }
           ... on IssueCommitReferenceEvent {
             commitOid
             commitUrl
@@ -227,6 +262,9 @@ class Issue extends React.Component {
             break
           case "IssueTitleUpdateEvent":
             this.setState(state => ({title: event.newTitle, events: [...state.events, event]}))
+            break
+          case "IssueLabelsUpdateEvent":
+            this.setState(state => ({labels: [...state.labels.filter(labelId => !event.pull.includes(labelId)), ...event.push], events: [...state.events, event]}))
             break
           case "IssueCommitReferenceEvent":
             this.setState(state => ({events: [...state.events, event]}))
@@ -323,7 +361,6 @@ class Issue extends React.Component {
       const timestamp = moment.utc(insertedAt)
       return (
         <div>
-          {}
           <div className="columns">
             <div className="column is-12">
               {titleEdit ? (
@@ -362,11 +399,16 @@ class Issue extends React.Component {
             </div>
           </div>
 
+          <hr />
+
           <div className="columns">
             <div className="column is-three-quarters">
               {this.renderFeed()}
             </div>
             <div className="column is-one-quarter">
+              <aside className="menu is-sticky">
+                <IssueLabelSelect labels={this.state.repoLabels} selectedLabels={this.state.labels} editable={editable} onSubmit={this.handleLabelsSelection} />
+              </aside>
             </div>
           </div>
         </div>
@@ -378,7 +420,16 @@ class Issue extends React.Component {
 
   renderFeed() {
     let comments = this.state.comments.slice()
-    let events = this.state.events.slice()
+    let events = this.state.events.slice().map(event => {
+      switch(event.__typename) {
+        case "IssueLabelsUpdateEvent":
+          const labelsPush = event.push.map(id => this.state.repoLabels.find(label => label.id == id))
+          const labelsPull = event.pull.map(id => this.state.repoLabels.find(label => label.id == id))
+          return {...event, push: labelsPush, pull: labelsPull}
+        default:
+          return event
+      }
+    })
     let firstComment = comments.shift()
     let items = comments.map(comment => ({type: "comment", timestamp: new Date(comment.insertedAt).getTime(), comment: comment}))
     items = items.concat(events.map(event => ({type: "event", timestamp: new Date(event.timestamp).getTime(), event: event})))
@@ -524,6 +575,33 @@ class Issue extends React.Component {
         }
       })
     }
+  }
+
+  handleLabelsSelection(push, pull) {
+    const {issueId} = this.props
+    const variables = {
+      id: issueId,
+      push: push,
+      pull: pull
+    }
+
+    const mutation = graphql`
+      mutation IssueUpdateLabelsMutation($id: ID!, $push: [ID], $pull: [ID]) {
+        updateIssueLabels(id: $id, push: $push, pull: $pull) {
+          labels {
+            id
+          }
+        }
+      }
+    `
+
+    commitMutation(environment, {
+      mutation,
+      variables,
+      onCompleted: (response, errors) => {
+        this.setState({labels: response.updateIssueLabels.labels.map(label => label.id)})
+      }
+    })
   }
 
   handleClose() {

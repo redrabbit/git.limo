@@ -30,6 +30,7 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :git_tree_entry_with_last_commit
   connection node_type: :commit_line_review
   connection node_type: :issue
+  connection node_type: :issue_label
   connection node_type: :comment
   connection node_type: :search_result
 
@@ -146,6 +147,8 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.repo_issue/3
     end
 
+    field :issue_labels, list_of(:issue_label), resolve: &Resolvers.repo_issue_labels/3
+
     @desc "The owner of the repository."
     field :owner, non_null(:user)
 
@@ -210,6 +213,8 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.issue_comments/2
     end
 
+    field :labels, list_of(:issue_label)
+
     @desc "A list of events for this issue."
     field :events, list_of(:issue_event)
 
@@ -224,6 +229,12 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The repository this issue belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.issue_repo/3
+  end
+
+  node object :issue_label do
+    field :name, non_null(:string)
+    field :description, :string
+    field :color, :string
   end
 
   object :issue_close_event do
@@ -259,6 +270,20 @@ defmodule GitGud.GraphQL.Types do
     field :new_title, non_null(:string), resolve: &Resolvers.issue_event_field(&1, "new_title", &2, &3)
 
     @desc "The user that updates the title of the issue."
+    field :user, :user, resolve: &Resolvers.issue_event_user/3
+  end
+
+  object :issue_labels_update_event do
+    interface :issue_event
+
+    @desc "The timestamp of the event."
+    field :timestamp, non_null(:naive_datetime), resolve: &Resolvers.issue_event_timestamp/3
+
+    field :push, list_of(:id), resolve: &Resolvers.issue_labels_update_event_push_labels/3
+
+    field :pull, list_of(:id), resolve: &Resolvers.issue_labels_update_event_pull_labels/3
+
+    @desc "The user that pushes the label."
     field :user, :user, resolve: &Resolvers.issue_event_user/3
   end
 

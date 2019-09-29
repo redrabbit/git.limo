@@ -136,6 +136,11 @@ textarea.textarea {
   font-family: $family-secondary;
 }
 
+.is-sticky {
+  top: 1rem;
+  position: sticky;
+}
+
 .avatar {
   margin: 0 2px;
   border-radius: 4px;
@@ -359,6 +364,40 @@ textarea.textarea {
   }
 }
 
+.issue-label {
+  @extend .is-small;
+  font-weight: bold;
+
+  &.is-active {
+    @extend .is-white;
+  }
+}
+
+.issue-label-select {
+  .menu-label button {
+    margin-top: -4px;
+  }
+
+  .issue-label {
+    width: 100%;
+    justify-content: flex-start;
+
+    &.edit.is-active {
+      flex-direction: row-reverse;
+    }
+
+    span.icon {
+      flex-grow: 1;
+      justify-content: flex-end;
+      padding-right: 0.25rem;
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 0.5rem;
+    }
+  }
+}
+
 .user-input {
   .dropdown {
     display: block;
@@ -548,8 +587,11 @@ table.blob-table {
 .thread, .inline-comments {
   .comment, .comment-form {
     @extend .box;
-    margin: 1rem 0;
     max-width: 753px;
+
+    &:not(:first-child) {
+      margin: 1rem 0;
+    }
   }
 
   .comment {

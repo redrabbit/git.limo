@@ -76,7 +76,7 @@ defmodule GitGud.Issue do
       {1, [issue]} ->
         {:ok, issue}
       {0, nil} ->
-        changeset = change(issue, status: "close", events: issue.events ++ event)
+        changeset = change(issue, status: "close", events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
     end
   end
@@ -103,7 +103,7 @@ defmodule GitGud.Issue do
       {1, [issue]} ->
         {:ok, issue}
       {0, nil} ->
-        changeset = change(issue, status: "open", events: issue.events ++ event)
+        changeset = change(issue, status: "open", events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
     end
   end
@@ -130,17 +130,53 @@ defmodule GitGud.Issue do
       {1, [issue]} ->
         {:ok, issue}
       {0, nil} ->
-        changeset = change(issue, title: title, events: issue.events ++ event)
+        changeset = change(issue, title: title, events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
     end
   end
 
   @doc """
-  Similar to `update_title/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `update_title/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec update_title!(t, binary, keyword) :: t
   def update_title!(%__MODULE__{} = issue, title, opts \\ []) do
     case update_title(issue, title, opts) do
+      {:ok, issue} -> issue
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
+  end
+
+  @doc """
+  Updates the labels of the given `issue`.
+  """
+  @spec update_labels(t, {[pos_integer], [pos_integer]}, keyword) :: {:ok, t} | {:error, term}
+  def update_labels(%__MODULE__{} = issue, {labels_push, labels_pull} = _changes, opts \\ []) do
+    multi = Multi.new()
+    multi =
+      unless Enum.empty?(labels_push),
+        do: Multi.insert_all(multi, :issue_labels_push, "issues_labels", Enum.map(labels_push, &Map.new(issue_id: issue.id, label_id: &1))),
+      else: multi
+    multi =
+      unless Enum.empty?(labels_pull),
+       do: Multi.delete_all(multi, :issue_labels_pull, from(l in "issues_labels", where: l.issue_id == ^issue.id and l.label_id in ^labels_pull)),
+     else: multi
+    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i, preload: :labels)
+    event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull], opts)), %{type: "labels_update", timestamp: NaiveDateTime.utc_now()})
+    multi = Multi.update_all(multi, :issue, query, push: [events: event])
+    case DB.transaction(multi) do
+      {:ok, %{issue: {1, [issue]}}} ->
+        {:ok, issue}
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Similar to `update_labels/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_labels!(t, {[pos_integer], [pos_integer]}, keyword) :: t
+  def update_labels!(%__MODULE__{} = issue, changes, opts \\ []) do
+    case update_labels(issue, changes, opts) do
       {:ok, issue} -> issue
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
@@ -166,7 +202,6 @@ defmodule GitGud.Issue do
   def changeset(%__MODULE__{} = issue, params \\ %{}) do
     issue
     |> cast(params, [:repo_id, :author_id, :title])
-    |> cast_assoc(:labels, with: &IssueLabel.changeset/2)
     |> cast_assoc(:comments, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :author_id, :title])
     |> assoc_constraint(:repo)

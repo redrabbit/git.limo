@@ -2,6 +2,8 @@ import React from "react"
 
 import moment from "moment"
 
+import IssueLabel from "./IssueLabel"
+
 class IssueEvent extends React.Component {
   constructor(props) {
     super(props)
@@ -47,6 +49,22 @@ class IssueEvent extends React.Component {
             </div>
             <div className="timeline-content">
               <a href={event.user.url} className="has-text-black">{event.user.login}</a> changed the title <em className="has-text-black"><s>{event.oldTitle}</s></em> to <em className="has-text-black">{event.newTitle}</em>
+              &nbsp;<time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+            </div>
+          </div>
+        )
+      case "IssueLabelsUpdateEvent":
+        const labels = [...event.push, ...event.pull]
+        return (
+          <div className="timeline-item">
+            <div className="timeline-marker is-icon">
+              <i className="fa fa-tag"></i>
+            </div>
+            <div className="timeline-content">
+              <a href={event.user.url} className="has-text-black">{event.user.login}</a>
+              {event.push.length > 0 && [" added", event.push.map((label, i) => <span key={i}> <IssueLabel {...label} /> </span>)]}
+              {event.push.length > 0 && event.pull.length > 0 && "and"}
+              {event.pull.length > 0 && [" removed", event.pull.map((label, i) => <span key={i}> <IssueLabel key={i} {...label} /> </span>)]}
               &nbsp;<time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
