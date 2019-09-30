@@ -186,7 +186,7 @@ defmodule GitGud.RepoStorage do
         else: acc
       end)
 
-    query = IssueQuery.repo_issues_query(repo_id, List.flatten(Enum.uniq(Map.values(commits))))
+    query = IssueQuery.repo_issues_query(repo_id, Enum.uniq(List.flatten(Map.values(commits))))
     query = select(query, [issue: i], {i.id, i.number})
     Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
       oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end)
