@@ -402,10 +402,9 @@ textarea.textarea {
 .issues-table {
   .issue-title {
     display: inline-flex;
-    .buttons {
-      .issue-label {
-        margin-left: .33rem;
-      }
+    flex-wrap: wrap;
+    &>:not(last-child) {
+      margin-right: .33rem;
     }
   }
 }
