@@ -57,12 +57,17 @@
           <%= status_icon(issue, class: "has-text-success") %>
         </td>
         <td>
-          <p class="has-text-weight-bold">
+          <div class="issue-title has-text-weight-bold">
             <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
-          </p>
-          <small>
+            <div class="buttons">
+              <%= for label <- issue.labels do %>
+                <%= react_component("IssueLabel", name: label.name, color: label.color) %>
+              <% end %>
+            </div>
+          </div>
+          <div class="issue-info">
             #<%= issue.number %> opened <%= datetime_format(issue.inserted_at, "{relative}") %> by <a href="<%= Routes.user_path(@conn, :show, issue.author) %>" class="has-text-black"><%= issue.author.login %></a>
-          </small>
+          </div>
         </td>
         <td class="has-text-right">
           <%= if comment_count > 1 do %>

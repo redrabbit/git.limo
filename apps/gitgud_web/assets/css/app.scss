@@ -367,6 +367,7 @@ textarea.textarea {
 .issue-label {
   @extend .is-small;
   font-weight: bold;
+  margin-top: -2px;
 
   &.is-active {
     @extend .is-white;
@@ -394,6 +395,17 @@ textarea.textarea {
 
     &:not(:last-child) {
       margin-bottom: 0.5rem;
+    }
+  }
+}
+
+.issues-table {
+  .issue-title {
+    display: inline-flex;
+    .buttons {
+      .issue-label {
+        margin-left: .33rem;
+      }
     }
   }
 }
