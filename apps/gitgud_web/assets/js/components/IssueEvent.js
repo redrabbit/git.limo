@@ -65,7 +65,7 @@ class IssueEvent extends React.Component {
               {event.push.length > 0 && [" added", event.push.map((label, i) => <span key={i}> <IssueLabel {...label} /> </span>)]}
               {event.push.length > 0 && event.pull.length > 0 && "and"}
               {event.pull.length > 0 && [" removed", event.pull.map((label, i) => <span key={i}> <IssueLabel key={i} {...label} /> </span>)]}
-              &nbsp;<time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+              <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
         )
