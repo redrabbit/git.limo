@@ -160,12 +160,12 @@ defmodule GitGud.Issue do
       unless Enum.empty?(labels_pull),
        do: Multi.delete_all(multi, :issue_labels_pull, from(l in "issues_labels", where: l.issue_id == ^issue.id and l.label_id in ^labels_pull)),
      else: multi
-    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i, preload: :labels)
+    query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull], opts)), %{type: "labels_update", timestamp: NaiveDateTime.utc_now()})
     multi = Multi.update_all(multi, :issue, query, push: [events: event])
     case DB.transaction(multi) do
       {:ok, %{issue: {1, [issue]}}} ->
-        {:ok, issue}
+        {:ok, DB.preload(issue, :labels)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
