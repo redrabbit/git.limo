@@ -79,9 +79,9 @@ export default () => {
         const {commit} = latestCommitEdge.node
         const timestamp = moment.utc(commit.timestamp)
         const messageTitle = commit.message.split("\n", 1)[0].trim()
-        let header = table.createTHead()
-        let tr = header.insertRow()
-        let td = tr.insertCell(0)
+        const thead = table.tHead
+        let tr = thead.rows[0]
+        let td = tr.cells[0]
         td.colSpan = 2
         ReactDOM.render(React.createElement(CommitSignature, {author: commit.author, committer: commit.committer}), td)
         let commitLink = document.createElement("a")
@@ -122,7 +122,6 @@ export default () => {
           time.innerHTML = timestamp.fromNow()
           td.append(time)
         })
-        table.classList.remove("loading")
       })
   })
 
@@ -158,9 +157,8 @@ export default () => {
       .then(response => {
         const {commit} = response.node.object.treeEntryWithLastCommit
         const container = document.createElement("div")
-        blob.prepend(container)
+        blob.replaceChild(container, blob.firstElementChild)
         ReactDOM.render(React.createElement(BlobTableHeader, {commit: commit}), container)
-        blob.classList.remove("loading")
       })
   }
 

@@ -16,7 +16,15 @@
   </div>
 </nav>
 
-<div id="blob-commit" class="card blob loading" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-blob-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
+<div id="blob-commit" class="card blob" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-blob-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
+  <header class="card-header">
+    <div class="card-header-title">
+      <span class="has-text-grey">
+        <span class="icon is-small"><i class="fa fa-spin fa-spinner-third"></i></span>
+        <span class="loading-ellipsis">Loading commits</span>
+      </span>
+    </div>
+  </header>
   <div class="card-content">
     <%= render "_blob_table.html", assigns %>
   </div>

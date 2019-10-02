@@ -1,4 +1,14 @@
-<table class="table tree-table loading is-hoverable is-fullwidth has-outer-border" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-tree-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
+<table class="table tree-table is-hoverable is-fullwidth has-outer-border" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-tree-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
+  <thead>
+    <tr>
+      <td colspan="3">
+        <span class="has-text-grey">
+          <span class="icon"><i class="fa fa-spin fa-spinner-third"></i></span>
+          <span class="loading-ellipsis">Loading commits</span>
+        </span>
+      </td>
+    </tr>
+  </thead>
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
