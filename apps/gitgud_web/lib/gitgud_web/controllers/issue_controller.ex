@@ -40,7 +40,7 @@ defmodule GitGud.Web.IssueController do
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
       if User.verified?(user),
         do: render(conn, "new.html", repo: repo, changeset: Issue.changeset(%Issue{comments: [%Comment{}]})),
       else: {:error, :unauthorized}
@@ -53,9 +53,16 @@ defmodule GitGud.Web.IssueController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "issue" => issue_params} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
       if User.verified?(user) do
-        case Issue.create(Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})) do
+        issue_params = Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})
+        issue_params = Map.update(issue_params, "labels", [], fn label_ids_str ->
+          Enum.map(label_ids_str, fn label_id_str ->
+            label_id = String.to_integer(label_id_str)
+            Enum.find(repo.issue_labels, &(&1.id == label_id))
+          end)
+        end)
+        case Issue.create(issue_params) do
           {:ok, issue} ->
             conn
             |> put_flash(:info, "Issue ##{issue.number} created.")

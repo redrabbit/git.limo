@@ -204,6 +204,7 @@ defmodule GitGud.Issue do
     |> cast(params, [:repo_id, :author_id, :title])
     |> cast_assoc(:comments, with: &Comment.changeset/2)
     |> validate_required([:repo_id, :author_id, :title])
+    |> put_labels()
     |> assoc_constraint(:repo)
     |> assoc_constraint(:author)
   end
@@ -228,6 +229,12 @@ defmodule GitGud.Issue do
   #
   # Helpers
   #
+
+  defp put_labels(changeset) do
+    if labels = changeset.params["labels"],
+      do: put_assoc(changeset, :labels, labels),
+    else: changeset
+  end
 
   defp map_issue_params(issue_params) do
     issue_params =
