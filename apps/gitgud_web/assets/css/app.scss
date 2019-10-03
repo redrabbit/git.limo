@@ -370,7 +370,7 @@ textarea.textarea {
   margin-top: -2px;
 
   &.is-active {
-    @extend .is-white;
+    border-color: $white;
   }
 }
 
@@ -382,6 +382,16 @@ textarea.textarea {
   .issue-label {
     width: 100%;
     justify-content: flex-start;
+
+    &.edit:not(.is-active) {
+      background-color: $white !important;
+      color: $dark !important;
+      border-color: $grey-lighter;
+
+      span.icon {
+        display: none;
+      }
+    }
 
     &.edit.is-active {
       flex-direction: row-reverse;

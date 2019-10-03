@@ -35,7 +35,7 @@ class IssueLabelSelect extends React.Component {
         <div className="issue-label-select">
           {this.renderMenuLabel()}
           <div className="field">
-            <div className="control">
+            <div className="control is-expanded">
               {labels.map((label, i) =>
                 <IssueLabel key={i} {...label} active={this.isActive(label.id)} edit={edit} onToggle={() => this.handleLabelToggle(label.id)}/>
               )}
@@ -49,7 +49,7 @@ class IssueLabelSelect extends React.Component {
         <div className="issue-label-select">
           {this.renderMenuLabel()}
           <div className="field">
-            <div className="control">
+            <div className="control is-expanded">
               {activeLabels.length > 0 ? activeLabels.map((label, i) => <IssueLabel key={i} {...label} active={true} />) : <p className="is-size-7">None yet</p>}
             </div>
           </div>

@@ -1,37 +1,47 @@
 <h2 class="subtitle">Create a new issue</h2>
 
 <%= form_for @changeset, Routes.issue_path(@conn, :create, @repo.owner, @repo), [as: :issue], fn f -> %>
-  <div class="field">
-    <%= label f, :title, class: "label" %>
-    <div class="control">
-      <%= text_input f, :title, class: "input" %>
-    </div>
-    <%= error_tag f, :title %>
-  </div>
-
-  <%= inputs_for f, :comments, fn fc -> %>
+<div class="columns">
+  <div class="column is-three-quarters">
     <div class="field">
-      <%= label fc, :body, class: "label" %>
+      <%= label f, :title, class: "label" %>
       <div class="control">
-        <%= textarea fc, :body, class: "textarea" %>
+        <%= text_input f, :title, class: "input" %>
       </div>
-      <%= error_tag fc, :body %>
+      <%= error_tag f, :title %>
     </div>
-  <% end %>
 
-  <div class="field">
-    <%= label f, :labels, class: "label" %>
-    <div class="control">
-      <div class="select is-multiple">
-        <%= multiple_select(f, :labels, Enum.map(@repo.issue_labels, &{&1.name, &1.id}), selected: []) %>
+    <%= inputs_for f, :comments, fn fc -> %>
+      <div class="field">
+        <%= label fc, :body, class: "label" %>
+        <div class="control">
+          <%= textarea fc, :body, class: "textarea" %>
+        </div>
+        <%= error_tag fc, :body %>
       </div>
-    </div>
-    <%= error_tag f, :labels %>
+    <% end %>
   </div>
-
-  <hr />
-
-  <div class="field">
-    <%= submit "Create issue", class: "button is-success" %>
+  <div class="column is-one-quarter">
+    <aside class="menu is-sticky">
+      <div class="issue-label-select">
+        <div class="menu-label">Labels</div>
+          <div class="field">
+            <div class="control is-expanded">
+              <div class="select is-multiple is-fullwidth">
+                <%= multiple_select(f, :labels, Enum.map(@repo.issue_labels, &[key: &1.name, value: &1.id, data_color: &1.color]), selected: []) %>
+              </div>
+            </div>
+            <%= error_tag f, :labels %>
+          </div>
+        </div>
+      </div>
   </div>
+</div>
+
+<hr />
+
+<div class="field">
+  <%= submit "Create issue", class: "button is-success" %>
+</div>
+
 <% end %>
