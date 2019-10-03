@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<div id="diff-commit" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
+<div id="diff" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
   <div class="column">
     <%= if stats = diff_stats(@repo, @diff) do %>
       <p>Showing <%= stats.files_changed %> changed files with <%= stats.insertions %> additions and <%= stats.deletions %> deletions.</p>
