@@ -23,6 +23,6 @@
         <% end %>
       </tbody>
     </table>
-    <%= pagination(page) %>
+    <%= pagination(@conn, page) %>
   <% end %>
 <% end %>

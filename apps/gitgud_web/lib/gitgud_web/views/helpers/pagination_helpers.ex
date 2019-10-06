@@ -57,27 +57,27 @@ defmodule GitGud.Web.PaginationHelpers do
   @doc """
   Renders a pagination widget for the given `page`.
   """
-  @spec pagination(map) :: binary
-  def pagination(%{previous?: false, next?: false} = _page), do: []
-  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next, current: _current} = page) do
+  @spec pagination(Plug.Connt.t, map) :: binary
+  def pagination(_conn, %{previous?: false, next?: false} = _page), do: []
+  def pagination(conn, %{previous?: previous?, previous: previous, next?: next?, next: next, current: _current} = page) do
     content_tag(:nav, [class: "pagination is-right", role: "navigation"], do: [
-      link("Previous", to: "?p=#{if previous?, do: previous, else: "#"}", class: "pagination-previous", disabled: !previous?),
-      link("Next", to: "?p=#{if next?, do: next, else: "#"}", class: "pagination-next", disabled: !next?),
-      pagination_list(page)
+      link("Previous", to: query_encode(conn, previous? && previous), class: "pagination-previous", disabled: !previous?),
+      link("Next", to: query_encode(conn, next? && next), class: "pagination-next", disabled: !next?),
+      pagination_list(conn, page)
     ])
   end
 
-  def pagination(%{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}) do
+  def pagination(conn, %{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}) do
     content_tag(:nav, [class: "", role: "navigation"], do: [
-      link("Previous", to: "?before=#{if previous?, do: before_cursor, else: "#"}", class: "pagination-previous", disabled: !previous?),
-      link("Next", to: "?after=#{if next?, do: after_cursor, else: "#"}", class: "pagination-next", disabled: !next?),
+      link("Previous", to: query_encode(conn, "before", previous? && before_cursor), class: "pagination-previous", disabled: !previous?),
+      link("Next", to: query_encode(conn, "after", next? && after_cursor), class: "pagination-next", disabled: !next?),
     ])
   end
 
-  def pagination(%{previous?: previous?, previous: previous, next?: next?, next: next}) do
+  def pagination(conn, %{previous?: previous?, previous: previous, next?: next?, next: next}) do
     content_tag(:nav, [class: "", role: "navigation"], do: [
-      link("Previous", to: "?p=#{if previous?, do: previous, else: "#"}", class: "pagination-previous", disabled: !previous?),
-      link("Next", to: "?p=#{if next?, do: next, else: "#"}", class: "pagination-next", disabled: !next?),
+      link("Previous", to: query_encode(conn, previous? && previous), class: "pagination-previous", disabled: !previous?),
+      link("Next", to: query_encode(conn, next? && next), class: "pagination-next", disabled: !next?),
     ])
   end
 
@@ -85,38 +85,38 @@ defmodule GitGud.Web.PaginationHelpers do
   # Helpers
   #
 
-  defp pagination_list(page) do
+  defp pagination_list(conn, page) do
     content_tag(:ul, [class: "pagination-list"], do: [
-      pagination_first(page),
-      pagination_previous(page),
-      pagination_current(page),
-      pagination_next(page),
-      pagination_last(page)
+      pagination_first(conn, page),
+      pagination_previous(conn, page),
+      pagination_current(conn, page),
+      pagination_next(conn, page),
+      pagination_last(conn, page)
     ])
   end
 
-  defp pagination_first(%{first: first, current: first}), do: []
-  defp pagination_first(%{first: first}) do
-    content_tag(:li, do: link(first, to: "?p=#{first}", class: "pagination-link"))
+  defp pagination_first(_conn, %{first: first, current: first}), do: []
+  defp pagination_first(conn, %{first: first}) do
+    content_tag(:li, do: link(first, to: query_encode(conn, first), class: "pagination-link"))
   end
 
-  defp pagination_previous(%{previous: previous, first: previous}), do: []
-  defp pagination_previous(%{previous: previous, first: first, last: last}) do
+  defp pagination_previous(_conn, %{previous: previous, first: previous}), do: []
+  defp pagination_previous(conn, %{previous: previous, first: first, last: last}) do
     i = max(5-(last-previous), 1)
     for p <- max(first+1, previous-i)..previous do
-      content_tag(:li, do: link(p, to: "?p=#{p}", class: "pagination-link"))
+      content_tag(:li, do: link(p, to: query_encode(conn, p), class: "pagination-link"))
     end |> pagination_ellipsis(if last > 7 && previous > 3, do: 0)
   end
 
-  defp pagination_current(%{current: current}) do
+  defp pagination_current(_conn, %{current: current}) do
     content_tag(:li, do: content_tag(:a, [class: "pagination-link is-current"], do: current))
   end
 
-  defp pagination_next(%{next: next, last: next}), do: []
-  defp pagination_next(%{next: next, last: last}) do
+  defp pagination_next(_conn, %{next: next, last: next}), do: []
+  defp pagination_next(conn, %{next: next, last: last}) do
     i = max(6-next, 1)
     for p <- next..min(last-1, next+i) do
-      content_tag(:li, do: link(p, to: "?p=#{p}", class: "pagination-link"))
+      content_tag(:li, do: link(p, to: query_encode(conn, p), class: "pagination-link"))
     end |> pagination_ellipsis(if last > 7 && last-next > 2, do: i)
   end
 
@@ -125,9 +125,9 @@ defmodule GitGud.Web.PaginationHelpers do
     List.replace_at(list, i, content_tag(:li, do: content_tag(:span, [class: "pagination-ellipsis"], do: "...")))
   end
 
-  defp pagination_last(%{last: last, current: last}), do: []
-  defp pagination_last(%{last: last}) do
-      content_tag(:li, do: link(last, to: "?p=#{last}", class: "pagination-link"))
+  defp pagination_last(_conn, %{last: last, current: last}), do: []
+  defp pagination_last(conn, %{last: last}) do
+      content_tag(:li, do: link(last, to: query_encode(conn, last), class: "pagination-link"))
   end
 
   defp slice(list, offset, limit) when is_list(list) do
@@ -135,6 +135,10 @@ defmodule GitGud.Web.PaginationHelpers do
     |> Enum.drop(offset)
     |> Enum.take(limit)
   end
+
+  defp query_encode(conn, val), do: query_encode(conn, "p", val)
+  defp query_encode(conn, key, nil), do: "?" <> URI.encode_query(Map.delete(conn.query_params, key))
+  defp query_encode(conn, key, val), do: "?" <> URI.encode_query(Map.put(conn.query_params, key, val))
 
   defp page_params(conn) do
     if page = conn.params["p"],

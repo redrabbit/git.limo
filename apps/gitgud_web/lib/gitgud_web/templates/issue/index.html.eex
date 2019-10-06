@@ -17,64 +17,67 @@
   <% end %>
 </div>
 
-<table class="table issues-table is-fullwidth">
-  <thead>
-    <tr>
-      <td class="selection">
-        <label class="checkbox">
-          <input type="checkbox">
-        </label>
-      </td>
-      <td colspan="3">
-        <div class="field is-grouped">
-          <div class="control">
-            <%= if Map.get(@conn.query_params, "status", "open") == "open" do %>
-              <%= status_button("open", class: "is-small has-text-grey-light has-badge-rounded has-badge-success is-static", data_badge: count_issues(@repo, "open")) %>
-            <% else %>
-              <%= status_button("open", class: "is-small has-badge-rounded has-badge-success has-badge-outlined",  icon: [class: "has-text-success"], data_badge: count_issues(@repo, "open")) %>
-            <% end %>
-          </div>
-          <div class="control">
-            <%= if Map.get(@conn.query_params, "status", "open") == "close" do %>
-              <%= status_button("close", class: "is-small has-text-grey-light has-badge-rounded has-badge-danger is-static", data_badge: count_issues(@repo, "close")) %>
-            <% else %>
-              <%= status_button("close", class: "is-small has-badge-rounded has-badge-danger has-badge-outlined", icon: [class: "has-text-danger"], data_badge: count_issues(@repo, "close")) %>
-            <% end %>
-          </div>
-        </div>
-      </td>
-    </tr>
-  </thead>
-  <tbody>
-    <%= for {issue, comment_count} <- @issues do %>
+<%= with page <- paginate(@conn, @issues) do %>
+  <table class="table issues-table is-fullwidth">
+    <thead>
       <tr>
         <td class="selection">
           <label class="checkbox">
             <input type="checkbox">
           </label>
         </td>
-        <td class="status">
-          <%= status_icon(issue, class: "has-text-success") %>
-        </td>
-        <td>
-          <div class="issue-title has-text-weight-bold">
-            <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
-            &nbsp;
-            <%= for label <- issue.labels, do: label_button(label) %>
+        <td colspan="3">
+          <div class="field is-grouped">
+            <div class="control">
+              <%= if Map.get(@conn.query_params, "status", "open") == "open" do %>
+                <%= status_button("open", class: "is-small has-text-grey-light has-badge-rounded has-badge-success is-static", data_badge: count_issues(@repo, "open")) %>
+              <% else %>
+                <%= status_button("open", class: "is-small has-badge-rounded has-badge-success has-badge-outlined",  icon: [class: "has-text-success"], data_badge: count_issues(@repo, "open")) %>
+              <% end %>
+            </div>
+            <div class="control">
+              <%= if Map.get(@conn.query_params, "status", "open") == "close" do %>
+                <%= status_button("close", class: "is-small has-text-grey-light has-badge-rounded has-badge-danger is-static", data_badge: count_issues(@repo, "close")) %>
+              <% else %>
+                <%= status_button("close", class: "is-small has-badge-rounded has-badge-danger has-badge-outlined", icon: [class: "has-text-danger"], data_badge: count_issues(@repo, "close")) %>
+              <% end %>
+            </div>
           </div>
-          <div class="issue-info">
-            #<%= issue.number %> opened <%= datetime_format(issue.inserted_at, "{relative}") %> by <a href="<%= Routes.user_path(@conn, :show, issue.author) %>" class="has-text-black"><%= issue.author.login %></a>
-          </div>
-        </td>
-        <td class="has-text-right">
-          <%= if comment_count > 1 do %>
-          <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>" class="button is-small is-white">
-            <span class="icon"><i class="fa fa-comment-alt"></i></span>
-            <span><%= comment_count-1 %></span>
-          </a>
-          <% end %>
         </td>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <%= for {issue, comment_count} <- page.slice do %>
+        <tr>
+          <td class="selection">
+            <label class="checkbox">
+              <input type="checkbox">
+            </label>
+          </td>
+          <td class="status">
+            <%= status_icon(issue, class: "has-text-success") %>
+          </td>
+          <td>
+            <div class="issue-title has-text-weight-bold">
+              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
+              &nbsp;
+              <%= for label <- issue.labels, do: label_button(label) %>
+            </div>
+            <div class="issue-info">
+              #<%= issue.number %> opened <%= datetime_format(issue.inserted_at, "{relative}") %> by <a href="<%= Routes.user_path(@conn, :show, issue.author) %>" class="has-text-black"><%= issue.author.login %></a>
+            </div>
+          </td>
+          <td class="has-text-right">
+            <%= if comment_count > 1 do %>
+            <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>" class="button is-small is-white">
+              <span class="icon"><i class="fa fa-comment-alt"></i></span>
+              <span><%= comment_count-1 %></span>
+            </a>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= pagination(@conn, page) %>
+<% end %>
