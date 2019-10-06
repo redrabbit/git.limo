@@ -85,7 +85,7 @@ defmodule GitGud.Web.IssueView do
   # Helpers
   #
 
-  defp color_brighness(<<r::binary-size(2), g::binary-size(2), b::binary-size(2)>> = color) do
+  defp color_brighness(<<r::binary-size(2), g::binary-size(2), b::binary-size(2)>>) do
     div((String.to_integer(r, 16) * 299) + (String.to_integer(g, 16) * 587) + (String.to_integer(b, 16) * 114), 1_000)
   end
 end
