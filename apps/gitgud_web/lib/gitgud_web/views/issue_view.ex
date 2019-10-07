@@ -9,9 +9,7 @@ defmodule GitGud.Web.IssueView do
   import Phoenix.HTML.Link
 
   def label_button(label) do
-    threshold = 130
-    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(:button, label.name, class: "button issue-label #{label_text_class} is-active", style: "background-color: ##{label.color}")
+    GitGud.Web.IssueLabelView.label_button(label)
   end
 
   @spec status_tag(Issue.t | binary, keyword) :: binary
@@ -31,7 +29,6 @@ defmodule GitGud.Web.IssueView do
     ])
   end
 
-  @spec status_tag(Issue.t | binary, keyword) :: binary
   def status_button(issue, attrs \\ [])
   def status_button(%Issue{status: status} = _issue, attrs), do: status_button(status, attrs)
   def status_button("open", attrs) do
@@ -80,12 +77,4 @@ defmodule GitGud.Web.IssueView do
   def title(:index, %{repo: repo}), do: "Issues · #{repo.owner.login}/#{repo.name}"
   def title(:show, %{repo: repo, issue: issue}), do: "#{issue.title} ##{issue.number} · #{repo.owner.login}/#{repo.name}"
   def title(:new, %{repo: repo}), do: "New issue · #{repo.owner.login}/#{repo.name}"
-
-  #
-  # Helpers
-  #
-
-  defp color_brighness(<<r::binary-size(2), g::binary-size(2), b::binary-size(2)>>) do
-    div((String.to_integer(r, 16) * 299) + (String.to_integer(g, 16) * 587) + (String.to_integer(b, 16) * 114), 1_000)
-  end
 end

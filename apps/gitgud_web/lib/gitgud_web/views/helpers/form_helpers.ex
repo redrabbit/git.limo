@@ -6,12 +6,15 @@ defmodule GitGud.Web.FormHelpers do
   `input_validations/2` to the HTML input target attributes.
   """
 
-  import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2]
+  import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2, input_value: 2]
 
   import GitGud.GraphQL.Schema, only: [to_relay_id: 1]
   import GitGud.Web.ReactComponents, only: [react_component: 4]
 
-  @basic_inputs_with_arity Enum.filter(Phoenix.HTML.Form.__info__(:functions), fn {name, _arity} -> String.ends_with?(to_string(name), "_input") end)
+  @basic_inputs_with_arity Enum.filter(Phoenix.HTML.Form.__info__(:functions), fn
+    {:color_input, _arity} -> false
+    {name, _arity} -> String.ends_with?(to_string(name), "_input")
+  end)
   @extra_inputs_with_arity Enum.flat_map([:checkbox, :date_select, :datetime_select, :textarea, :time_select], &[{&1, 2}, {&1, 3}])
   @multi_inputs_with_arity Enum.flat_map([:radio_button, :select, :multiple_select], &[{&1, 3}, {&1, 4}])
 
@@ -41,6 +44,11 @@ defmodule GitGud.Web.FormHelpers do
     end
   end
 
+  def color_input(form, field, opts \\ []) do
+    opts = Keyword.put_new(opts, :value, "#" <> input_value(form, field))
+    Phoenix.HTML.Form.color_input(form, field, input_options(form, field, opts))
+  end
+
   @doc """
   See `Phoenix.HTML.radio_button/4` for more details.
   """
@@ -64,7 +72,7 @@ defmodule GitGud.Web.FormHelpers do
 
   defmacro __using__(_opts) do
     quote do
-      import Phoenix.HTML.Form, except: unquote(@basic_inputs_with_arity ++ @extra_inputs_with_arity ++ @multi_inputs_with_arity)
+      import Phoenix.HTML.Form, except: unquote(@basic_inputs_with_arity ++ [{:color_input, 2}, {:color_input, 3}]++ @extra_inputs_with_arity ++ @multi_inputs_with_arity)
       import GitGud.Web.FormHelpers
     end
   end

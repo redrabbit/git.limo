@@ -129,6 +129,14 @@ defmodule GitGud.Repo do
     end
   end
 
+  def update_issue_labels(repo, params) do
+    DB.update(issue_labels_changeset(repo, Map.new(params)))
+  end
+
+  def update_issue_labels!(repo, params) do
+    DB.update!(issue_labels_changeset(repo, Map.new(params)))
+  end
+
   @doc """
   Deletes the given `repo`.
 
@@ -171,6 +179,12 @@ defmodule GitGud.Repo do
     |> validate_exclusion(:name, ["settings"])
     |> validate_maintainers()
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
+  end
+
+  def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) do
+    repo
+    |> cast(params, [])
+    |> cast_assoc(:issue_labels, with: &IssueLabel.changeset/2)
   end
 
   @doc """

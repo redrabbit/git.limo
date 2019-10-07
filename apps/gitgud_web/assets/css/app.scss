@@ -132,6 +132,16 @@ textarea.textarea {
   }
 }
 
+.color-picker {
+  margin-top: -2px;
+  .pickr {
+    @extend .is-small;
+    width: 70px;
+    font-weight: 500;
+    border-width: 0;
+  }
+}
+
 .title, .subtitle {
   font-family: $family-secondary;
 }

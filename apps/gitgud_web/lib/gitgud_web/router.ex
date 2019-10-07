@@ -92,6 +92,8 @@ defmodule GitGud.Web.Router do
       get "/issues", IssueController, :index
       get "/issues/new", IssueController, :new
       post "/issues", IssueController, :create
+      get "/issues/labels", IssueLabelController, :index
+      put "/issues/labels", IssueLabelController, :update
       get "/issues/:number", IssueController, :show
 
       get "/settings", RepoController, :edit

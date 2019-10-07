@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@absinthe/socket-relay": "^0.2.1",
+    "@simonwep/pickr": "^1.4.3",
     "highlight.js": "^9.15.10",
     "moment": "^2.24.0",
     "phoenix": "file:../../../deps/phoenix",

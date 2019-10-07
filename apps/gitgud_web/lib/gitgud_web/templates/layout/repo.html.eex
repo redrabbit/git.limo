@@ -6,46 +6,46 @@
     </ul>
   </nav>
 
-  <div class="tabs">
-    <ul>
-      <%= navigation_item @conn, :codebase do %>
-        <%= if assigns[:revision] do %>
-          <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
-            <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
-            <span>Code</span>
-          </a>
-        <% else %>
-          <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
-            <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
-            <span>Code</span>
-          </a>
+  <%= with {helper, action} <- current_route(@conn) do %>
+    <div class="tabs">
+      <ul>
+        <%= navigation_item @conn, :codebase do %>
+          <%= if assigns[:revision] do %>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
+              <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
+              <span>Code</span>
+            </a>
+          <% else %>
+            <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
+              <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
+              <span>Code</span>
+            </a>
+          <% end %>
         <% end %>
-      <% end %>
-      <%= navigation_item @conn, :issue do %>
+        <li<%= if helper in [:issue, :issue_label] do %> class="is-active"<% end %>>
           <a href="<%= Routes.issue_path(@conn, :index, @repo.owner, @repo) %>">
             <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
             <span>Issues</span>
             &nbsp;
             <span class="tag"><%= GitGud.Web.IssueView.count_issues(@repo, :open) %></span>
           </a>
-      <% end %>
-      <li>
-        <a class="has-text-grey-light">
-          <span class="icon"><i class="fa fa-book" aria-hidden="true"></i></span>
-          <span>Wiki</span>
-        </a>
-      </li>
-      <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :admin) do %>
-        <%= with {helper, action} <- current_route(@conn) do %>
-          <li<%= if helper in [:repo, :maintainer] && action in [:edit, :update] do %> class="is-active"<% end %>>
-            <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
-              <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
-              <span>Settings</span>
-            </a>
-          <% end %>
-      <% end %>
-    </ul>
-  </div>
+        </li>
+        <li>
+          <a class="has-text-grey-light">
+            <span class="icon"><i class="fa fa-book" aria-hidden="true"></i></span>
+            <span>Wiki</span>
+          </a>
+        </li>
+        <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :admin) do %>
+        <li<%= if helper in [:repo, :maintainer] && action in [:edit, :update] do %> class="is-active"<% end %>>
+          <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
+            <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
+            <span>Settings</span>
+          </a>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
 
   <%= render_inner_layout(@conn, assigns) %>
 <% end %>

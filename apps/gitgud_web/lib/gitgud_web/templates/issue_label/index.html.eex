@@ -1,0 +1,49 @@
+<h2 class="subtitle">Issue labels</h2>
+
+<%= if authenticated?(@conn) && authorized?(@current_user, @repo, :admin) do %>
+  <%= form_for @changeset, Routes.issue_label_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
+    <table class="table issue-label-table is-fullwidth">
+      <tbody>
+        <%= inputs_for f, :issue_labels, fn fl -> %>
+          <tr>
+            <td><%= label_button(fl.data) %></td>
+            <td>
+              <div class="field is-grouped is-pulled-right">
+                <div class="control">
+                  <div class="field color-picker has-addons">
+                    <div class="control">
+                      <%= text_input fl, :name, class: "input is-small" %>
+                    </div>
+                    <div class="control">
+                      <%= color_picker(fl.data) %>
+                      <%= color_input fl, :color, class: "button is-small" %>
+                    </div>
+                  </div>
+                </div>
+                <div class="control">
+                  <a class="delete" data-label-id="<%= input_id(fl, :id) %>"></a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <hr />
+
+    <div class="field">
+      <%= submit "Update labels", class: "button is-link" %>
+    </div>
+  <% end %>
+<% else %>
+    <table class="table is-fullwidth">
+      <tbody>
+        <%= for label <- @repo.issue_labels do %>
+          <tr>
+            <td><%= label_button(label) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+<% end %>
