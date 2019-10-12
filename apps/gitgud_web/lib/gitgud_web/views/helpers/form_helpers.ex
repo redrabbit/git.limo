@@ -44,11 +44,6 @@ defmodule GitGud.Web.FormHelpers do
     end
   end
 
-  def color_input(form, field, opts \\ []) do
-    opts = Keyword.put_new(opts, :value, "#" <> input_value(form, field))
-    Phoenix.HTML.Form.color_input(form, field, input_options(form, field, opts))
-  end
-
   @doc """
   See `Phoenix.HTML.radio_button/4` for more details.
   """
@@ -72,7 +67,7 @@ defmodule GitGud.Web.FormHelpers do
 
   defmacro __using__(_opts) do
     quote do
-      import Phoenix.HTML.Form, except: unquote(@basic_inputs_with_arity ++ [{:color_input, 2}, {:color_input, 3}]++ @extra_inputs_with_arity ++ @multi_inputs_with_arity)
+      import Phoenix.HTML.Form, except: unquote(@basic_inputs_with_arity ++ @extra_inputs_with_arity ++ @multi_inputs_with_arity)
       import GitGud.Web.FormHelpers
     end
   end

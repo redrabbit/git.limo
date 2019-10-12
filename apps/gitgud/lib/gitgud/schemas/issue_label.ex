@@ -36,18 +36,6 @@ defmodule GitGud.IssueLabel do
     label
     |> cast(params, [:repo_id, :name, :description, :color])
     |> validate_required([:repo_id, :name, :color])
-    |> parse_color()
     |> assoc_constraint(:repo)
-  end
-
-  #
-  # Helpers
-  #
-
-  defp parse_color(changeset) do
-    case get_change(changeset, :color) do
-      "#" <> color -> put_change(changeset, :color, color)
-      _color -> changeset
-    end
   end
 end

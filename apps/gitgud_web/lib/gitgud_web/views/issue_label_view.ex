@@ -11,7 +11,7 @@ defmodule GitGud.Web.IssueLabelView do
   def color_picker(label) do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(:a, "#" <> label.color, class: "button pickr is-hidden #{label_text_class}", style: "background-color: ##{label.color}")
+    content_tag(:a, "#" <> label.color, class: "button pickr #{label_text_class}", style: "background-color: ##{label.color}")
   end
 
   @spec title(atom, map) :: binary

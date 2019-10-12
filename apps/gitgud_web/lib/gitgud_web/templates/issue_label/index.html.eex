@@ -16,25 +16,37 @@
                     </div>
                     <div class="control">
                       <%= color_picker(fl.data) %>
-                      <%= color_input fl, :color, class: "button is-small" %>
+                      <%= hidden_input fl, :color, class: "button is-small" %>
                     </div>
                   </div>
                 </div>
                 <div class="control">
-                  <a class="delete" data-label-id="<%= input_id(fl, :id) %>"></a>
+                  <a class="button is-white is-inverted is-link is-small" data-label-id="<%= input_id(fl, :id) %>">
+                    <span class="icon">
+                      <i class="fa fa-times"></i>
+                    </span>
+                  </a>
                 </div>
               </div>
             </td>
           </tr>
         <% end %>
       </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">
+            <div class="field is-grouped">
+              <div class="control">
+                <%= submit "Update labels", class: "button is-small is-link has-text-weight-medium", disabled: true %>
+              </div>
+              <div class="control">
+                <button type="reset" class="button is-small is-light has-text-weight-medium" disabled>Reset</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tfoo>
     </table>
-
-    <hr />
-
-    <div class="field">
-      <%= submit "Update labels", class: "button is-link" %>
-    </div>
   <% end %>
 <% else %>
     <table class="table is-fullwidth">
