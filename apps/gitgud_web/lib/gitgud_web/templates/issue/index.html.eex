@@ -42,6 +42,14 @@
                 <%= status_button("close", class: "is-small has-badge-rounded has-badge-danger has-badge-outlined", icon: [class: "has-text-danger"], data_badge: count_issues(@repo, "close")) %>
               <% end %>
             </div>
+            <div class="control has-text-grey-light"></div>
+            <div class="control">
+              <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button is-white is-small">
+                Labels
+                &nbsp;
+                <span class="tag is-small"><%= Enum.count(@repo.issue_labels) %></span>
+              </a>
+            </div>
           </div>
         </td>
       </tr>

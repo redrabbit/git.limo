@@ -423,8 +423,8 @@ class Issue extends React.Component {
     let events = this.state.events.slice().map(event => {
       switch(event.__typename) {
         case "IssueLabelsUpdateEvent":
-          const labelsPush = event.push.map(id => this.state.repoLabels.find(label => label.id == id))
-          const labelsPull = event.pull.map(id => this.state.repoLabels.find(label => label.id == id))
+          const labelsPush = event.push.map(id => this.state.repoLabels.find(label => label.id == id)).filter(label => !!label)
+          const labelsPull = event.pull.map(id => this.state.repoLabels.find(label => label.id == id)).filter(label => !!label)
           return {...event, push: labelsPush, pull: labelsPull}
         default:
           return event
