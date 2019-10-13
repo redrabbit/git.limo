@@ -6,7 +6,7 @@ defmodule GitGud.Web.FormHelpers do
   `input_validations/2` to the HTML input target attributes.
   """
 
-  import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2, input_value: 2]
+  import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2]
 
   import GitGud.GraphQL.Schema, only: [to_relay_id: 1]
   import GitGud.Web.ReactComponents, only: [react_component: 4]

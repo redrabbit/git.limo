@@ -31,6 +31,13 @@ defmodule GitGud.Web.IssueLabelController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: [:issue_labels]) do
       if authorized?(user, repo, :admin) do
+        repo_params = Map.update!(repo_params, "issue_labels", fn labels ->
+          Map.new(labels, fn {index, label_param} ->
+            unless Map.has_key?(label_param, "id"),
+              do: {index, Map.put(label_param, "repo_id", repo.id)},
+            else: {index, label_param}
+          end)
+        end)
         case Repo.update_issue_labels(repo, repo_params) do
           {:ok, _repo} ->
             conn
