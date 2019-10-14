@@ -183,6 +183,7 @@ defmodule GitGud.Repo do
 
   def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
+    |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
     |> cast(params, [])
     |> cast_assoc(:issue_labels, with: &IssueLabel.changeset/2)
   end
