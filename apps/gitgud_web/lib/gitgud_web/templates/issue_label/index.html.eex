@@ -6,7 +6,7 @@
       <tbody>
         <%= inputs_for f, :issue_labels, fn fl -> %>
           <tr>
-            <td><%= label_button(fl.data) %></td>
+            <td><%= label_button(:p, fl.data) %></td>
             <td>
               <div class="field is-grouped is-pulled-right">
                 <div class="control">

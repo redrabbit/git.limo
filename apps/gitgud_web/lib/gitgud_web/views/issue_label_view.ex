@@ -4,19 +4,20 @@ defmodule GitGud.Web.IssueLabelView do
 
   alias GitGud.IssueLabel
 
-# def label_button(%IssueLabel{color: nil} = _label) do
-#   content_tag(:button, "new label", class: "button issue-label has-text-dark is-active", style: "background-color: #dddddd")
-# end
-
-  def label_button(%IssueLabel{} = label) do
-    threshold = 130
-    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(:button, label.name, class: "button issue-label #{label_text_class} is-active", style: "background-color: ##{label.color}")
+  def label_button(tag \\ :button, label)
+  def label_button(tag, %IssueLabel{color: nil} = _label) do
+    content_tag(tag, "new label", class: "button issue-label has-text-dark is-active", style: "background-color: #dddddd")
   end
 
-# def color_picker(%IssueLabel{color: nil} = _label) do
-#   content_tag(:a, "#dddddd", class: "button pickr has-text-dark", style: "background-color: #dddddd")
-# end
+  def label_button(tag, %IssueLabel{} = label) do
+    threshold = 130
+    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
+    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active", style: "background-color: ##{label.color}")
+  end
+
+  def color_picker(%IssueLabel{color: nil} = _label) do
+    content_tag(:a, "#dddddd", class: "button pickr has-text-dark", style: "background-color: #dddddd")
+  end
 
   def color_picker(%IssueLabel{color: color} = _label) do
     threshold = 130

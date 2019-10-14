@@ -89,7 +89,7 @@ export default () => {
           event.currentTarget.setAttribute("disabled", "")
           pickr.disable()
           button.setAttribute("disabled", "")
-          row.cells[0].querySelector("button").disabled = true
+          row.cells[0].querySelector(".issue-label").disabled = true
           row.cells[1].querySelectorAll("input").forEach(input => input.disabled = true)
         }
       })
@@ -98,7 +98,7 @@ export default () => {
     addButton.addEventListener("click", event => {
       let row = table.tBodies[0].insertRow(-1)
       let col = row.insertCell(0)
-      let label = document.createElement("button")
+      let label = document.createElement("p")
       label.classList.add("button")
       label.classList.add("issue-label")
       label.classList.add("is-active")
@@ -245,14 +245,14 @@ export default () => {
           let deleteButton = table.querySelector(`a[data-label-id="${id}"]`)
           deleteButton.removeAttribute("disabled")
           let row = deleteButton.closest("tr")
-          row.cells[0].querySelector("button").disabled = false
+          row.cells[0].querySelector(".issue-label").disabled = false
           row.cells[1].querySelectorAll("input").forEach(input => input.disabled = false)
           row.cells[1].querySelector(".pickr").removeAttribute("disabled")
           let pickr = pickrList[row.rowIndex]
           pickr.enable()
         } else if(id.endsWith("_name")) {
           let row = input.closest("tr")
-          row.cells[0].querySelector("button").innerHTML = input.value
+          row.cells[0].querySelector(".issue-label").innerHTML = input.value
         } else if(id.endsWith("_color")) {
           let row = input.closest("tr")
           let pickr = pickrList[row.rowIndex]
