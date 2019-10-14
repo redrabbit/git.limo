@@ -425,6 +425,12 @@ textarea.textarea {
   }
 }
 
+table {
+  td.is-fullwidth {
+    width: 100%;
+  }
+}
+
 .issues-table {
   .issue-title {
     display: inline-flex;

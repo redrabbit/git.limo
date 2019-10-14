@@ -12,10 +12,10 @@
       <%= for email <- @user.emails do %>
         <tr>
           <td>
-            <div class="field is-horizontal">
-              <div class="field-label"><%= email.address %></div>
-              <div class="field-body"><%= email_tags(@conn, @user, email) %></div>
-            </div>
+            <%= email.address %>
+          </td>
+          <td class="is-fullwidth">
+            <%= email_tags(@conn, @user, email) %>
           </td>
           <td class="is-narrow is-vcentered">
             <%= if email.id != @user.primary_email_id do %>
