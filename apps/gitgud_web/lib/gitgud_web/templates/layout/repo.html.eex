@@ -37,7 +37,7 @@
           </a>
         </li>
         <%= if authenticated?(@conn) && authorized?(@current_user, @repo, :admin) do %>
-        <li<%= if helper in [:repo, :maintainer] && action in [:edit, :update] do %> class="is-active"<% end %>>
+        <li<%= if (helper == :repo && action in [:edit, :update]) || helper == :maintainer do %> class="is-active"<% end %>>
           <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
             <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
             <span>Settings</span>
