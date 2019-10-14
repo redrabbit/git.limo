@@ -1,7 +1,6 @@
 export BlobTable from "./BlobTable"
 export BlobTableHeader from "./BlobTableHeader"
 export BranchSelect from "./BranchSelect"
-export CloneDropdown from "./CloneDropdown"
 export Comment from "./Comment"
 export CommentForm from "./CommentForm"
 export CommitLineReview from "./CommitLineReview"

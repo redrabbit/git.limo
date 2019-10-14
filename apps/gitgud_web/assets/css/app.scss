@@ -453,10 +453,15 @@ textarea.textarea {
   }
 }
 
-.clone-dropdown {
-  .dropdown {
-    .dropdown-menu {
-      width: 20rem;
+.clone-repo {
+  .http-clone, .ssh-clone {
+    width: 252px;
+
+  }
+  .http-clone-button, .ssh-clone-button {
+    @extend .is-light;
+    &.is-active {
+      @extend .is-success;
     }
   }
 }

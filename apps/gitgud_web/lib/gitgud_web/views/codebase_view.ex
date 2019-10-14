@@ -48,40 +48,6 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec clone_dropdown(Plug.Conn.t) :: binary
-  def clone_dropdown(conn) do
-    repo = Map.get(conn.assigns, :repo)
-    props = %{http_url: Routes.codebase_url(conn, :show, repo.owner, repo)}
-    props =
-      if user = current_user(conn),
-        do: Map.put(props, :ssh_url, "#{user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{repo.owner.login}/#{repo.name}"),
-      else: props
-    react_component("clone-dropdown", props, [class: "clone-dropdown"], do: [
-      content_tag(:div, [class: "dropdown is-right is-hoverable"], do: [
-        content_tag(:div, [class: "dropdown-trigger"], do: [
-          content_tag(:button, [class: "button is-success"], do: [
-            content_tag(:span, "Clone repository"),
-            content_tag(:span, [class: "icon is-small"], do: [
-              content_tag(:i, "", class: "fas fa-angle-down")
-            ])
-          ])
-        ]),
-        content_tag(:div, [class: "dropdown-menu"], do: [
-          content_tag(:div, [class: "dropdown-content"], do: [
-            content_tag(:div, [class: "dropdown-item"], do: [
-              content_tag(:div, [class: "field"], do: [
-                content_tag(:label, "Clone with HTTP", class: "label"),
-                content_tag(:div, [class: "control is-expanded"], do: [
-                  tag(:input, class: "input is-small", type: "text", readonly: true, value: props.http_url)
-                ])
-              ])
-            ])
-          ])
-        ])
-      ])
-    ])
-  end
-
   @spec breadcrumb_action(atom) :: atom
   def breadcrumb_action(:blob), do: :tree
   def breadcrumb_action(action), do: action

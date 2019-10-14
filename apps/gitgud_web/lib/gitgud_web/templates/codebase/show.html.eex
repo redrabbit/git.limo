@@ -43,7 +43,27 @@
       <p class="buttons has-addons"></p>
     </div>
     <div class="level-item">
-      <%= clone_dropdown(@conn) %>
+      <div class="field clone-repo has-addons">
+        <div class="control"><button class="button http-clone-button is-small is-active">HTTP</button></div>
+        <%= if authenticated?(@conn) do %>
+          <div class="control"><button class="button ssh-clone-button is-small">SSH</button></div>
+        <% end %>
+        <div class="control http-clone">
+          <input class="input is-small" type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" readonly />
+        </div>
+        <%= if authenticated?(@conn) do %>
+          <div class="control ssh-clone is-hidden">
+            <input class="input is-small" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}" %>" readonly />
+          </div>
+        <% end %>
+        <div class="control">
+          <button class="button clipboard-button tooltip is-small" data-tooltip="Copy to clipboard">
+            <span class="icon">
+              <i class="fa fa-clipboard"></i>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </nav>
