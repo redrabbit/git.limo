@@ -9,16 +9,20 @@ export default () => {
     httpCloneButton.addEventListener("click", event => {
       httpCloneButton.classList.add("is-active")
       httpCloneInput.parentNode.classList.remove("is-hidden")
-      sshCloneButton.classList.remove("is-active")
-      sshCloneInput.parentNode.classList.add("is-hidden")
+      if(sshCloneButton) {
+        sshCloneButton.classList.remove("is-active")
+        sshCloneInput.parentNode.classList.add("is-hidden")
+      }
     })
 
-    sshCloneButton.addEventListener("click", event => {
-      sshCloneButton.classList.add("is-active")
-      sshCloneInput.parentNode.classList.remove("is-hidden")
-      httpCloneButton.classList.remove("is-active")
-      httpCloneInput.parentNode.classList.add("is-hidden")
-    })
+    if(sshCloneButton) {
+      sshCloneButton.addEventListener("click", event => {
+        sshCloneButton.classList.add("is-active")
+        sshCloneInput.parentNode.classList.remove("is-hidden")
+        httpCloneButton.classList.remove("is-active")
+        httpCloneInput.parentNode.classList.add("is-hidden")
+      })
+    }
 
     clipboardButton.addEventListener("click", event => {
       let input = field.querySelector(".control:not(.is-hidden) input")
