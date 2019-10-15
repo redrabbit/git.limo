@@ -27,7 +27,7 @@ class UserInput extends React.Component {
                 ... on User {
                   id
                   login
-                  name
+                  avatarUrl
                 }
               }
             }
@@ -72,7 +72,11 @@ class UserInput extends React.Component {
     return (
       <div className="dropdown-content">
         {this.state.users.filter(user => !this.props.reject.includes(user.id)).map((user, i) =>
-          <a key={i} className="dropdown-item" onClick={this.handleTagUser(user)}>{user.login} <span className="has-text-grey">{user.name}</span></a>
+          <a key={i} className="dropdown-item" onClick={this.handleTagUser(user)}>
+            <span className="tag user is-white">
+              <img className="avatar is-small" src={user.avatarUrl} width={24} />{user.login}
+            </span>
+          </a>
         )}
       </div>
     )

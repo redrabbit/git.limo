@@ -10,7 +10,9 @@
   <tbody>
     <%= for maintainer <- @maintainers do %>
       <tr>
-        <td class="is-vcentered"><%= maintainer.user.login %></td>
+        <td class="is-vcentered">
+          <a href="<%= Routes.user_path(@conn, :show, maintainer.user) %>" class="tag user"><%= maintainer.user %></a>
+        </td>
         <%= if maintainer.user_id != @repo.owner_id do %>
           <td class="is-narrow">
             <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
