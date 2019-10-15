@@ -36,11 +36,15 @@ $divider-thickness: $hr-height;
 @import "~bulma-timeline/src/sass/index";
 @import "~bulma-badge/src/sass/index";
 
-$fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+//$fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
 
-@import "~@fortawesome/fontawesome-pro/scss/fontawesome";
-@import "~@fortawesome/fontawesome-pro/scss/brands";
-@import "~@fortawesome/fontawesome-pro/scss/solid";
+@import "~@fortawesome/fontawesome-free/scss/fontawesome";
+@import "~@fortawesome/fontawesome-free/scss/brands";
+@import "~@fortawesome/fontawesome-free/scss/solid";
+//@import "~@fortawesome/fontawesome-pro/scss/fontawesome";
+//@import "~@fortawesome/fontawesome-pro/scss/brands";
+//@import "~@fortawesome/fontawesome-pro/scss/solid";
 
 @import "components/_all";
 
