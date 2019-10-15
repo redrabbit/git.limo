@@ -26,6 +26,9 @@
         <div class="repo card">
           <header class="card-header">
             <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
+            <a class="card-header-icon has-text-grey" href="<%= Routes.codebase_path @conn, :show, @user, repo %>">
+              <small>Updated <%= datetime_format(repo.pushed_at, "{relative}") %></small>
+            </a>
           </header>
           <div class="card-content">
             <div class="content"><%= repo.description %></div>
