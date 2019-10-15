@@ -23,6 +23,8 @@ class Issue extends React.Component {
     this.fetchIssue = this.fetchIssue.bind(this)
     this.formatTimestamp = this.formatTimestamp.bind(this)
     this.subscriptions = []
+    this.channel = null
+    this.presence = null
     this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
@@ -56,8 +58,6 @@ class Issue extends React.Component {
       events: [],
       labels: [],
       timestamp: null,
-      channel: null,
-      presence: null,
       presences: []
     }
   }
@@ -67,8 +67,8 @@ class Issue extends React.Component {
   }
 
   componentWillUnmount() {
-    this.channel.leave()
     this.subscriptions.forEach(subscription => subscription.dispose())
+    this.channel.leave()
   }
 
   fetchIssue() {
@@ -190,11 +190,10 @@ class Issue extends React.Component {
   }
 
   subscribePresence() {
-    let channel = socket.channel(`issue:${this.props.issueId}`)
-    let presence = new Presence(channel)
-    presence.onSync(() => this.setState({presences: presence.list()}))
-    this.setState({channel: channel, presence: presence})
-    return channel.join()
+    this.channel = socket.channel(`issue:${this.props.issueId}`)
+    this.presence = new Presence(this.channel)
+    this.presence.onSync(() => this.setState({presences: this.presence.list()}))
+    return this.channel.join()
   }
 
   subscribeEvents() {
@@ -654,9 +653,9 @@ class Issue extends React.Component {
 
   handleFormTyping(isTyping) {
     if(isTyping) {
-      this.state.channel.push("start_typing", {})
+      this.channel.push("start_typing", {})
     } else {
-      this.state.channel.push("stop_typing", {})
+      this.channel.push("stop_typing", {})
     }
   }
 

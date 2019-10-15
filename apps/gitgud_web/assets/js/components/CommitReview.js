@@ -16,6 +16,8 @@ class CommitReview extends React.Component {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
     this.subscriptions = []
+    this.channel = null
+    this.presence = null
     this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
@@ -35,8 +37,6 @@ class CommitReview extends React.Component {
       repoId: this.props.repoId,
       commitOid: this.props.commitOid,
       comments: [],
-      channel: null,
-      presence: null,
       presences: []
     }
   }
@@ -46,8 +46,8 @@ class CommitReview extends React.Component {
   }
 
   componentWillUnmount() {
-    this.channel.leave()
     this.subscriptions.forEach(subscription => subscription.dispose())
+    this.channel.leave()
   }
 
   fetchReview() {
@@ -103,11 +103,10 @@ class CommitReview extends React.Component {
   }
 
   subscribePresence() {
-    let channel = socket.channel(`commit_review:${this.state.repoId}:${this.state.commitOid}`)
-    let presence = new Presence(channel)
-    presence.onSync(() => this.setState({presences: presence.list()}))
-    this.setState({channel: channel, presence: presence})
-    return channel.join()
+    this.channel = socket.channel(`commit_review:${this.state.repoId}:${this.state.commitOid}`)
+    this.presence = new Presence(this.channel)
+    this.presence.onSync(() => this.setState({presences: this.presence.list()}))
+    return this.channel.join()
   }
 
   subscribeComments() {
@@ -301,9 +300,9 @@ class CommitReview extends React.Component {
 
   handleFormTyping(isTyping) {
     if(isTyping) {
-      this.state.channel.push("start_typing", {})
+      this.channel.push("start_typing", {})
     } else {
-      this.state.channel.push("stop_typing", {})
+      this.channel.push("stop_typing", {})
     }
   }
 

@@ -16,6 +16,8 @@ class CommitLineReview extends React.Component {
     super(props)
     this.fetchReview = this.fetchReview.bind(this)
     this.subscriptions = []
+    this.channel = null
+    this.presence = null
     this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
@@ -39,8 +41,6 @@ class CommitLineReview extends React.Component {
       hunk: Number(this.props.hunk),
       line: Number(this.props.line),
       comments: [],
-      channel: null,
-      presence: null,
       presences: []
     }
   }
@@ -50,8 +50,8 @@ class CommitLineReview extends React.Component {
   }
 
   componentWillUnmount() {
-    this.state.channel.leave()
     this.subscriptions.forEach(subscription => subscription.dispose())
+    this.channel.leave()
   }
 
   fetchReview() {
@@ -133,11 +133,10 @@ class CommitLineReview extends React.Component {
   }
 
   subscribePresence() {
-    let channel = socket.channel(`commit_line_review:${this.state.repoId}:${this.state.commitOid}:${this.state.blobOid}:${this.state.hunk}:${this.state.line}`)
-    let presence = new Presence(channel)
-    presence.onSync(() => this.setState({presences: presence.list()}))
-    this.setState({channel: channel, presence: presence})
-    return channel.join()
+    this.channel = socket.channel(`commit_line_review:${this.state.repoId}:${this.state.commitOid}:${this.state.blobOid}:${this.state.hunk}:${this.state.line}`)
+    this.presence = new Presence(this.channel)
+    this.presence.onSync(() => this.setState({presences: this.presence.list()}))
+    return this.channel.join()
   }
 
   subscribeComments() {
@@ -359,11 +358,11 @@ class CommitLineReview extends React.Component {
   }
 
   handleFormTyping(isTyping) {
-    if(this.state.channel) {
+    if(this.channel) {
       if(isTyping) {
-        this.state.channel.push("start_typing", {})
+        this.channel.push("start_typing", {})
       } else {
-        this.state.channel.push("stop_typing", {})
+        this.channel.push("stop_typing", {})
       }
     }
   }
