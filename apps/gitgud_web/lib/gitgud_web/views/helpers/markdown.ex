@@ -25,11 +25,11 @@ defmodule GitGud.Web.Markdown do
       {:ok, ast, _warnings} ->
         ast
         |> transform_ast(opts)
-        |> Floki.raw_html()
+        |> Earmark.Transform.transform()
       {:error, ast, _errors} ->
         ast
         |> transform_ast(opts)
-        |> Floki.raw_html()
+        |> Earmark.Transform.transform()
     end
   end
 
