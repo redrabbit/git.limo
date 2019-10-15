@@ -28,7 +28,7 @@ class Search extends React.Component {
                 ... on User {
                   id
                   login
-                  name
+                  avatarUrl
                   url
                 }
                 ... on Repo {
@@ -84,17 +84,16 @@ class Search extends React.Component {
       case "User":
         return (
           <a key={edge.id} href={edge.url} className="dropdown-item">
-            <span className="icon">
-              <i className="fa fa-user"></i>
+            <span className="tag user is-white">
+              <img className="avatar is-small" src={edge.avatarUrl} width={24} />{edge.login}
             </span>
-            {edge.login} <span className="has-text-grey">{edge.name}</span>
           </a>
         )
       case "Repo":
         return (
           <a key={edge.id} href={edge.url} className="dropdown-item">
             <span className="icon">
-              <i className="fa fa-archive"></i>
+              <i className="fa fa-box-alt"></i>
             </span>
             <span>{edge.owner.login} / {edge.name}</span>
           </a>

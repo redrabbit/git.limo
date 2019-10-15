@@ -37,7 +37,7 @@ defimpl Phoenix.HTML.Safe, for: GitTreeEntry do
     Phoenix.HTML.Safe.to_iodata(
       case type do
         :commit ->
-          [content_tag(:span, content_tag(:i, [], class: "fa fa-archive"), class: "icon"), content_tag(:span, name)]
+          [content_tag(:span, content_tag(:i, [], class: "fa fa-box-alt"), class: "icon"), content_tag(:span, name)]
         :tree ->
           [content_tag(:span, content_tag(:i, [], class: "fa fa-folder"), class: "icon"), content_tag(:span, name)]
         :blob ->

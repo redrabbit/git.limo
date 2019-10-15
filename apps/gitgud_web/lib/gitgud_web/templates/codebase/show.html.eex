@@ -22,7 +22,7 @@
     </li>
     <li>
       <a class="has-text-grey-light">
-        <span class="icon"><i class="fa fa-users" aria-hidden="true"></i></span>
+        <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
         <span>Contributors&nbsp;&nbsp;<span class="tag">1</span></span>
       </a>
     </li>

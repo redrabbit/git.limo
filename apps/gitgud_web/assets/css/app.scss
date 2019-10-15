@@ -97,6 +97,18 @@ textarea.textarea {
   }
 }
 
+.breadcrumb {
+  display: inline-flex;
+  .icon {
+    @extend .has-text-grey-lighter;
+    padding-bottom: 0.5rem;
+
+    &:first-child {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
 .commit-parents {
   float: right;
   margin-right: -0.74rem;
