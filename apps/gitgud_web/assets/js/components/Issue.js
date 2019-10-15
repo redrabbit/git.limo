@@ -394,7 +394,7 @@ class Issue extends React.Component {
               )}
               {this.renderStatus()}
               &nbsp;
-              <a href="{author.url}" className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
+              <a href={author.url} className="has-text-black">{author.login}</a> opened this issue <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
             </div>
           </div>
 
