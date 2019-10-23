@@ -218,6 +218,10 @@ defmodule GitGud.GraphQL.Resolvers do
     else: {:error, "there is no issue for the given args"}
   end
 
+  @doc """
+  Resolvers the issue labels associated to a given `repo`.
+  """
+  @spec repo_issue_labels(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [IssueLabel.t]}
   def repo_issue_labels(repo, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, IssueQuery.repo_labels(repo.id, viewer: ctx[:current_user])}
   end
@@ -582,9 +586,13 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the timestamp for a given issue `event`.
   """
   @spec issue_event_timestamp(map, %{}, Absinthe.Resolution.t) :: {:ok, NaiveDateTime.t} | {:error, term}
-  def issue_event_timestamp(%{"timestamp" => timestamp}, _args, _info), do: {:ok, NaiveDateTime.from_iso8601!(timestamp)}
+  def issue_event_timestamp(%{"timestamp" => timestamp} = _event, _args, _info), do: {:ok, NaiveDateTime.from_iso8601!(timestamp)}
 
-  def issue_event_field(issue_event, field, _args, _info), do: {:ok, issue_event[field]}
+  @doc """
+  Resolves the `field` of a given issue `event`.
+  """
+  @spec issue_event_field(map, binary,  %{}, Absinthe.Resolution.t) :: {:ok, any}
+  def issue_event_field(event, field, _args, _info), do: {:ok, event[field]}
 
   @doc """
   Resolves the user for a given issue `event`.
@@ -596,12 +604,28 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def issue_event_user(_event, _args, _info), do: {:ok, nil}
 
-  def issue_labels_update_event_push_labels(%{"push" => ids}, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
+  @doc """
+  Resolves the push labels ids for a given issue `event.`
+  """
+  @spec issue_labels_update_event_push_labels(map, %{}, Absinthe.Resolution.t) :: {:ok, [binary]}
+  def issue_labels_update_event_push_labels(%{"push" => ids} = _event, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
 
-  def issue_labels_update_event_pull_labels(%{"pull" => ids}, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
+  @doc """
+  Resolves the pull labels ids for a given issue `event.`
+  """
+  @spec issue_labels_update_event_pull_labels(map, %{}, Absinthe.Resolution.t) :: {:ok, [binary]}
+  def issue_labels_update_event_pull_labels(%{"pull" => ids} = _event, _args, _info), do: {:ok, Enum.map(ids, &Schema.to_relay_id(:issue_label, &1))}
 
-  def issue_commit_reference_event_oid(%{"commit_hash" => hash}, _args, _info), do: {:ok, oid_parse(hash)}
+  @doc """
+  Resolves the commit OID for a given issue `event.`
+  """
+  @spec issue_commit_reference_event_oid(map, %{}, Absinthe.Resolution.t) :: {:ok, binary}
+  def issue_commit_reference_event_oid(%{"commit_hash" => hash} = _event, _args, _info), do: {:ok, oid_parse(hash)}
 
+  @doc """
+  Resolves the commit URL for a given issue `event.`
+  """
+  @spec issue_commit_reference_event_url(map, %{}, Absinthe.Resolution.t) :: {:ok, binary}
   def issue_commit_reference_event_url(%{"commit_hash" => hash, "repo_id" => repo_id}, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, repos[repo_id].owner, repos[repo_id], hash)} end)
   end
@@ -728,6 +752,9 @@ defmodule GitGud.GraphQL.Resolvers do
     end
   end
 
+  @doc """
+  Updates the label of an issue.
+  """
   @spec update_issue_labels(any, %{id: pos_integer, label_id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def update_issue_labels(_parent, %{id: id} = args, %Absinthe.Resolution{context: ctx} = _info) do
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do

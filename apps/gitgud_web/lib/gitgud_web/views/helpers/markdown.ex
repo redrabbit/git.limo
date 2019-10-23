@@ -33,6 +33,10 @@ defmodule GitGud.Web.Markdown do
     end
   end
 
+  @doc """
+  Renders a Markdown formatted `content` to HTML and marks it as *safe* for Phoenix to render.
+  """
+  @spec markdown_safe(binary | nil, keyword) :: binary | nil
   def markdown_safe(content, opts \\ [])
   def markdown_safe(nil, _opts), do: nil
   def markdown_safe(content, opts), do: raw(markdown(content, opts))

@@ -6,7 +6,7 @@ defmodule GitGud.Web.DateTimeFormatter do
   import Phoenix.HTML.Tag
 
   @doc """
-  Formats a date/time value using the given `format` string.
+  Renders a date/time widget using the given `format` string.
   """
   @spec datetime_format(DateTime.t, binary) :: binary
   def datetime_format(%DateTime{} = datetime, format) do

@@ -68,6 +68,9 @@ defmodule GitGud.IssueQuery do
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
   end
 
+  @doc """
+  Returns all issue labels for the given `repo`.
+  """
   @spec repo_labels(Repo.t | pos_integer, keyword) :: [IssueLabel.t]
   def repo_labels(repo, opts \\ [])
   def repo_labels(%Repo{id: repo_id}, opts) do
@@ -143,6 +146,10 @@ defmodule GitGud.IssueQuery do
     |> select([issue: i, comment: c], {i, count(c)})
   end
 
+  @doc """
+  Returns a query for fetching all issue labels of a repository.
+  """
+  @spec repo_labels_query(pos_integer) :: Ecto.Query.t
   def repo_labels_query(repo_id) do
     from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end

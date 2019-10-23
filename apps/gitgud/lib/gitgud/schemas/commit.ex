@@ -38,7 +38,7 @@ defmodule GitGud.Commit do
   }
 
   @doc """
-  Decodes the given *RAW* commit `data`.
+  Decodes the given Git commit `data`.
   """
   @spec decode!(binary) :: map
   def decode!(data) do

@@ -129,10 +129,18 @@ defmodule GitGud.Repo do
     end
   end
 
+  @doc """
+  Updates the given `repo` associated issues labels with the given `params`.
+  """
+  @spec update_issue_labels(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_issue_labels(repo, params) do
     DB.update(issue_labels_changeset(repo, Map.new(params)))
   end
 
+  @doc """
+  Similar to `update_issue_labels/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_issue_labels!(t, map|keyword) :: t
   def update_issue_labels!(repo, params) do
     DB.update!(issue_labels_changeset(repo, Map.new(params)))
   end
@@ -181,6 +189,10 @@ defmodule GitGud.Repo do
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
   end
 
+  @doc """
+  Returns a repository changeset for manipulating associated issue labels.
+  """
+  @spec issue_labels_changeset(t, map) :: Ecto.Changeset.t
   def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
     |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
