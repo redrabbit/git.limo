@@ -20,7 +20,7 @@
 <%= if Enum.empty?(@user.repos) do %>
   Nothing to see here.
 <% else %>
-  <%= for repo <- Enum.sort_by(@user.repos, &(&1.pushed_at)) do %>
+  <%= for repo <- Enum.sort_by(@user.repos, &(&1.pushed_at), &(NaiveDateTime.compare(&1, &2) == :gt)) do %>
     <div class="columns">
       <div class="column is-full">
         <div class="repo card">
