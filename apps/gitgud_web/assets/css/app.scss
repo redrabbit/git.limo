@@ -485,9 +485,13 @@ table {
     border-color: $grey-lighter;
     &:hover {
       border-color: $grey-lighter;
+      &.is-active {
+        border-color: #a4e3ba;
+      }
     }
     &.is-active {
       @extend .is-success;
+      border-color: #a4e3ba;
     }
   }
 }
