@@ -37,6 +37,13 @@ defmodule GitRekt.Packfile do
     unpack_obj_next(i, max, rest <> pack, [])
   end
 
+  @doc """
+  Returns the *PACK* version and the number of objects it contains.
+  """
+  @spec parse_header(binary) :: {2, non_neg_integer}
+  def parse_header("PACK" <> pack), do: parse_header(pack)
+  def parse_header(<<version::32, count::32, _rest::binary>> = _pack), do: {version, count}
+
   #
   # Helpers
   #
