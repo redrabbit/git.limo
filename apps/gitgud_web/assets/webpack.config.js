@@ -1,7 +1,7 @@
 const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const RelayCompilerWebpackPlugin = require('relay-compiler-webpack-plugin');
@@ -10,7 +10,7 @@ module.exports = (env, options) => ({
   stats: 'minimal',
   optimization: {
     minimizer: [
-      new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: false }),
+      new TerserPlugin(),
       new OptimizeCSSAssetsPlugin({})
     ]
   },

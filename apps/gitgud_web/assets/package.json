@@ -42,7 +42,7 @@
     "relay-compiler-webpack-plugin": "^6.1.0",
     "sass": "^1.23.1",
     "sass-loader": "^8.0.0",
-    "uglifyjs-webpack-plugin": "^2.2.0",
+    "terser-webpack-plugin": "^2.2.1",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9"
   }
