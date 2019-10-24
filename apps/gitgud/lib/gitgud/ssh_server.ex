@@ -16,6 +16,8 @@ defmodule GitGud.SSHServer do
   See `GitGud.Authorization` for more details.
   """
 
+  require Logger
+
   alias GitGud.Auth
   alias GitGud.User
   alias GitGud.UserQuery
@@ -31,13 +33,16 @@ defmodule GitGud.SSHServer do
   @behaviour :ssh_server_channel
   @behaviour :ssh_server_key_api
 
-  defstruct [:conn, :chan, :user, :repo, :service]
+  @max_request_size 10_485_760
+
+  defstruct [:conn, :chan, :user, :repo, :service, request_size: 0]
 
   @type t :: %__MODULE__{
     conn: :ssh_connection.ssh_connection_ref,
     chan: :ssh_connection.ssh_channel_id,
     user: User.t,
-    service: Module.t
+    service: Module.t,
+    request_size: non_neg_integer
   }
 
   @doc """
@@ -88,22 +93,6 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service} = state) do
-    {service, output} = WireProtocol.next(service, data)
-    :ssh_connection.send(conn, chan, output)
-    if WireProtocol.done?(service) do
-      {service, output} = WireProtocol.next(service)
-      :ssh_connection.send(conn, chan, output)
-      :ssh_connection.send_eof(conn, chan)
-      :ssh_connection.exit_status(conn, chan, 0)
-      :ssh_connection.close(conn, chan)
-      {:ok, %{state|service: service}}
-    else
-      {:ok, %{state|service: service}}
-    end
-  end
-
-  @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     [exec|args] = String.split(to_string(cmd))
     [repo|_args] = parse_args(user, args)
@@ -122,6 +111,30 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service, request_size: request_size} = state)  when request_size <= @max_request_size do
+    {service, output} = WireProtocol.next(service, data)
+    :ssh_connection.send(conn, chan, output)
+    if WireProtocol.done?(service) do
+      {service, output} = WireProtocol.next(service)
+      :ssh_connection.send(conn, chan, output)
+      :ssh_connection.send_eof(conn, chan)
+      :ssh_connection.exit_status(conn, chan, 0)
+      :ssh_connection.close(conn, chan)
+      {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
+    else
+      {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
+    end
+  end
+
+  @impl true
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, _data}}, %__MODULE__{chan: chan} = state) do
+    :ssh_connection.send(conn, chan, 1, "Request entity too large, aborting.\r\n")
+    :ssh_connection.send(conn, chan, 0, WireProtocol.encode([:flush]))
+    :ssh_connection.send_eof(conn, chan)
+    {:stop, chan, state}
+  end
+
+  @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:shell, chan, _reply}}, %__MODULE__{conn: conn, chan: chan} = state) do
     :ssh_connection.send(conn, chan, "You are not allowed to start a shell.\r\n")
     :ssh_connection.send_eof(conn, chan)
@@ -129,7 +142,8 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, _msg}, %__MODULE__{conn: conn} = state) do
+  def handle_ssh_msg({:ssh_cm, conn, msg}, %__MODULE__{conn: conn} = state) do
+    Logger.debug("ignoring SSH message #{inspect msg}")
     {:ok, state}
   end
 

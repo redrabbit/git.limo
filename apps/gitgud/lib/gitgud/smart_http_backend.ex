@@ -32,6 +32,8 @@ defmodule GitGud.SmartHTTPBackend do
   plug :match
   plug :dispatch
 
+  @max_request_size 10_485_760
+
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
@@ -127,15 +129,16 @@ defmodule GitGud.SmartHTTPBackend do
            {:ok, conn} <- git_stream_pack(conn, service) do
         halt(conn)
       else
-        {:error, reason} ->
+        {:error, _reason} ->
           conn
-          |> send_resp(:internal_server_error, reason)
+          |> send_resp(:internal_server_error, "Something went wrong")
           |> halt()
       end
     end
   end
 
-  defp git_stream_pack(conn, service) do
+  defp git_stream_pack(conn, service, request_size \\ 0)
+  defp git_stream_pack(conn, service, request_size) when request_size <= @max_request_size do
     case read_body(conn) do
       {:ok, body, conn} ->
         {service, data} = WireProtocol.next(service, body)
@@ -145,7 +148,7 @@ defmodule GitGud.SmartHTTPBackend do
               {_service, data} = WireProtocol.next(service)
               chunk(conn, data)
             else
-              git_stream_pack(conn, service)
+              git_stream_pack(conn, service, request_size + byte_size(body))
             end
           {:error, reason} ->
             {:error, reason}
@@ -154,12 +157,21 @@ defmodule GitGud.SmartHTTPBackend do
         {service, data} = WireProtocol.next(service, body)
         case chunk(conn, data) do
           {:ok, conn} ->
-            git_stream_pack(conn, service)
+            git_stream_pack(conn, service, request_size + byte_size(body))
           {:error, reason} ->
             {:error, reason}
         end
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp git_stream_pack(conn, service, _request_size) do
+#   error_status = :request_entity_too_large
+#   error_code = Plug.Conn.Status.code(error_status)
+#   error_body = Plug.Conn.Status.reason_phrase(error_code)
+    conn = chunk(conn, WireProtocol.encode([:flush]))
+    conn = halt(conn)
+    {:ok, conn}
   end
 end
