@@ -166,12 +166,11 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_stream_pack(conn, service, _request_size) do
+  defp git_stream_pack(conn, _service, _request_size) do
 #   error_status = :request_entity_too_large
 #   error_code = Plug.Conn.Status.code(error_status)
 #   error_body = Plug.Conn.Status.reason_phrase(error_code)
-    conn = chunk(conn, WireProtocol.encode([:flush]))
-    conn = halt(conn)
-    {:ok, conn}
+    {:ok, conn} = chunk(conn, WireProtocol.encode([:flush]))
+    {:ok, halt(conn)}
   end
 end
