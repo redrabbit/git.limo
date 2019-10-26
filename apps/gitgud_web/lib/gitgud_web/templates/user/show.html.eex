@@ -20,14 +20,18 @@
 <%= if Enum.empty?(@user.repos) do %>
   Nothing to see here.
 <% else %>
-  <%= for repo <- Enum.sort_by(@user.repos, &(&1.pushed_at), &(NaiveDateTime.compare(&1, &2) == :gt)) do %>
+  <%= for repo <- sort_user_repos(@user.repos) do %>
     <div class="columns">
       <div class="column is-full">
         <div class="repo card">
           <header class="card-header">
             <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
             <a class="card-header-icon has-text-grey" href="<%= Routes.codebase_path @conn, :show, @user, repo %>">
+            <%= if repo.pushed_at do %>
               <small>Updated <%= datetime_format(repo.pushed_at, "{relative}") %></small>
+            <% else %>
+              <small>Never updated</small>
+            <% end %>
             </a>
           </header>
           <div class="card-content">

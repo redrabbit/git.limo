@@ -9,6 +9,7 @@ defmodule GitGud.Web.DateTimeFormatter do
   Renders a date/time widget using the given `format` string.
   """
   @spec datetime_format(DateTime.t, binary) :: binary
+  def datetime_format(nil = _datetime, _format), do: nil
   def datetime_format(%DateTime{} = datetime, format) do
     datetime_str = DateTime.to_iso8601(datetime)
     if String.contains?(format, "{relative}"),
@@ -34,6 +35,7 @@ defmodule GitGud.Web.DateTimeFormatter do
   Formats a date/time value using the given `format` string.
   """
   @spec datetime_format_str(Datetime.t, binary) :: binary
+  def datetime_format_str(nil = _datetime, _format), do: nil
   def datetime_format_str(datetime, format) do
     if String.contains?(format, "{relative}"),
       do: Timex.format!(datetime, "{relative}", :relative),
