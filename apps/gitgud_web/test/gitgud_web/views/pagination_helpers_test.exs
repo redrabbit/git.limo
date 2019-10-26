@@ -46,7 +46,7 @@ defmodule GitGud.Web.PaginationHelpersTest do
     conn = get(conn, "/user/repo/tags?p=2")
     list = Enum.to_list(1..30)
     page = paginate(conn, list, 10)
-    html = pagination(page)
+    html = pagination(conn, page)
     assert to_string(to_iodata(html)) == ~s(<nav class="pagination is-right" role="navigation"><a class="pagination-previous" href="?p=1">Previous</a><a class="pagination-next" href="?p=3">Next</a><ul class="pagination-list"><li><a class="pagination-link" href="?p=1">1</a></li><li><a class="pagination-link is-current">2</a></li><li><a class="pagination-link" href="?p=3">3</a></li></ul></nav>)
   end
 end
