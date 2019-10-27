@@ -389,7 +389,7 @@ defmodule GitRekt.Git do
   Returns the abbreviated SHA `hash` for the given `oid`.
   """
   @spec oid_fmt_short(oid) :: binary
-  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..7)
+  def oid_fmt_short(oid), do: String.slice(oid_fmt(oid), 0..6)
 
   @doc """
   Returns the OID for the given SHA `hash`.
