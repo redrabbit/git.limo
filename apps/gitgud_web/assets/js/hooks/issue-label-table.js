@@ -89,7 +89,7 @@ export default () => {
           event.currentTarget.setAttribute("disabled", "")
           pickr.disable()
           button.setAttribute("disabled", "")
-          row.cells[0].querySelector(".issue-label").disabled = true
+          row.cells[0].querySelector(".issue-label").setAttribute("disabled", "")
           row.cells[1].querySelectorAll("input").forEach(input => input.disabled = true)
         }
       })
@@ -245,7 +245,7 @@ export default () => {
           let deleteButton = table.querySelector(`a[data-label-id="${id}"]`)
           deleteButton.removeAttribute("disabled")
           let row = deleteButton.closest("tr")
-          row.cells[0].querySelector(".issue-label").disabled = false
+          row.cells[0].querySelector(".issue-label").removeAttribute("disabled")
           row.cells[1].querySelectorAll("input").forEach(input => input.disabled = false)
           row.cells[1].querySelector(".pickr").removeAttribute("disabled")
           let pickr = pickrList[row.rowIndex]
