@@ -67,6 +67,7 @@ class Issue extends React.Component {
   }
 
   componentWillUnmount() {
+    clearInterval(this.interval)
     this.subscriptions.forEach(subscription => subscription.dispose())
     this.channel.leave()
   }

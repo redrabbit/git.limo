@@ -15,6 +15,10 @@ class IssueEvent extends React.Component {
     this.interval = setInterval(this.formatTimestamp, 3000)
   }
 
+  componentWillUnmount() {
+    clearInterval(this.interval)
+  }
+
   render() {
     const {event} = this.props
     const timestamp = moment.utc(event.timestamp)
