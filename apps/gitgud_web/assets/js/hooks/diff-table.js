@@ -38,7 +38,8 @@ export default () => {
               row.classList.add("inline-comments")
               ReactDOM.render(React.createElement(CommitLineReview, {...{repoId: repoId, commitOid: commitOid, blobOid: blobOid}, ...event.currentTarget.dataset}), row)
             }
-            tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']").focus()
+            let commentBody = tr.nextElementSibling.querySelector(".comment-form:last-child form [name='comment[body]']")
+            if(commentBody) commentBody.focus()
           })
           origin = td
         } else {
