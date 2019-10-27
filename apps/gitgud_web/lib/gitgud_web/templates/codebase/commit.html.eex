@@ -6,7 +6,7 @@
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
-              <button class="button tooltip is-small is-white has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></button>
+              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button tooltip is-small is-white has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></a>
               <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-code"></i>
