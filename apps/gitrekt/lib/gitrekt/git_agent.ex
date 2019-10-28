@@ -364,7 +364,14 @@ defmodule GitRekt.GitAgent do
 
   defp exec(agent, op) when is_reference(agent), do: telemery_exec(op, fn -> call(op, agent) end)
   defp exec(agent, op) when is_pid(agent), do: telemery_exec(op, fn -> GenServer.call(agent, op) end)
-  defp exec(agent, op), do: exec(GitRepo.get_agent(agent), op)
+  defp exec(repo, op) do
+    case GitRepo.get_agent(repo) do
+      {:ok, agent} ->
+        exec(agent, op)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   defp telemery_exec(op, callback) do
     {name, args} =
