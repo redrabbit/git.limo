@@ -2,14 +2,13 @@ defmodule GitRekt.GitAgent do
   @moduledoc ~S"""
   High-level API for running Git commands on a repository.
 
-  This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it works with
-  structs such as `GitRekt.GitRef`, `GitRekt.GitCommit`, `GitRekt.GitTree`, etc...
-
-  Additionally, it allows access to repositories from different processes simultaneously.
+  This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it functions take
+  and return structs such as `GitRekt.GitRef`, `GitRekt.GitCommit`, `GitRekt.GitTree`. Also, it allows multiple
+  processes to manipulate a single repository simultaneously.
 
   ## Example
 
-  Let's rewrite the example exposed in the `GitRekt.Git` module:
+  Let's start by rewriting the example exposed in the `GitRekt.Git` module:
 
   ```elixir
   alias GitRekt.Git
@@ -32,29 +31,51 @@ defmodule GitRekt.GitAgent do
   IO.puts message
   ```
 
-  Notice that we still use `GitRekt.Git.repository_open/1` in order to load our repository.
-  Now, instead of passing a `t:GitRekt.Git.repo/0` pointer we want to start a dedicated process for our repository:
+  So far, this look very similar to the original example. The real benefit of using `GitRekt.GitAgent` comes
+  when multiple processes need to manipulate a single Git repository simultaneously.
+
+  Let's refactor our code for that purpose:
 
   ```elixir
-  alias GitRekt.Git
   alias GitRekt.GitAgent
 
   # start a dedicated process for the repository
   {:ok, repo} = GitAgent.start_link("/tmp/my-repo")
 
-  spawn_link fn ->
-    # fetch HEAD
-    {:ok, head} = GitAgent.head(repo)
+  count_commits = fn revision ->
+    # fetch commit for given revision
+    {:ok, commit, _ref} = GitAgent.revision(repo, revision)
 
-    # fetch the commit history starting from HEAD
-    {:ok, history} = GitAgent.history(repo, head)
+    # walk history starting from commit
+    {:ok, history} = GitAgent.history(repo, commit)
 
-    IO.puts "#{Enum.count(history)} commits"
+    # retrieve number of ancestors
+    ancestor_cout = Enum.count(history)
+
+    {revision, ancestor_count}
   end
+
+  # simultaneously count the commit history from different revision points
+  ~w(master my-feature-branch v0.2.8)
+  |> Enum.map(&Task.async(fn -> count_commits.(&1) end))
+  |> Enum.map(&Task.await/1)
+  |> Enum.each(fn {revision, count} -> IO.puts "#{revision} has #{count} commits" end)
   ```
 
-  We swapped `GitRekt.Git.repository_open/1` with `start_link/1`, allowing multiple processes to access
-  the repository in a safe manner. Internally, this is done by serializing function calls via message passing.
+  By swapping `GitRekt.Git.repository_open/1` with `start_link/1`, we are not working with the underlying
+  `t:GitRekt.Git.repo/0` anymore. Instead we use a `PID` to serialize function calls via message passing. This
+  allow use to access the repository from multiple processes. In our example we start an asynchronous
+  task for counting the number of ancestor starting from each revision and collect the result afterwards.
+
+  Note that in the above example `history/2` returns a `t:Stream.t/0` struct. We could use `Stream.take/1` to
+  retrieve the last 30 commits without having the Git agent process to enumerate the entire stream.
+
+
+  ## Repository protocol
+  It's also possible to implement the `GitRekt.GitRepo` protocol for your own data structure. For example,
+  the `GitGud.Repo` schema implements this protocol and can be passed to `GitRekt.GitAgent` functions directly.
+
+  See `attach/2` for more details on how to attach a Git agent to a struct implementing `GitRekt.GitRepo`.
   """
   use GenServer
 
@@ -77,7 +98,7 @@ defmodule GitRekt.GitAgent do
   @doc ~S"""
   Attaches a Git agent to the given `repo`.
 
-  Once attached, a repo can be used to interact with the underlying Git repository:
+  Once attached, a repo can be used to interact directly with the underlying Git repository:
 
   ```elixir
   {:ok, repo} = GitRekt.GitAgent.attach(repo)
@@ -89,9 +110,6 @@ defmodule GitRekt.GitAgent do
   For example when you want to access a single repository from multiple processes simultaneously.
 
   For such cases, you can explicitly tell to load the agent in `:shared` mode.
-
-  In shared mode, `GitRekt.GitAgent` does not operate on the `t:GitRekt.Git.repo/0` pointer directly.
-  Instead it starts a dedicated process and executes commands via message passing.
   """
 
   @spec attach(GitRepo.t, :inproc | :shared) :: {:ok, any} | {:error, term}

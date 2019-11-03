@@ -1,6 +1,17 @@
 defmodule GitRekt.WireProtocol do
   @moduledoc """
   Conveniences for Git transport protocol and server side commands.
+
+  *This module implements version 2 of [Git's wire protocol](https://git-scm.com/docs/protocol-v2).*
+
+  It functions as a very basic finite-state machine by processing incoming client requests
+  and forwarding them to the underlying service implementation (respectively `receive-pack` and `upload-pack`).
+
+  The state machine is initialized by calling `new/2` with the Git repository and command to execute.
+  By passing incoming data to `next/2`, the underlying service transit to the next state. Once the client and the server
+  are done with exchanging Git objects, the service will reach the `:done` state.
+
+  When processing a entire (not chunked), one can use `run/2` to execute all the steps in a single call.
   """
 
   alias GitRekt.Git

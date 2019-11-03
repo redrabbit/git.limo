@@ -31,7 +31,7 @@ defmodule GitRekt.Git do
   ```
 
   First we open our repository using `repository_open/1`, passing the path of the Git repository.  We can fetch
-  a branch by passing the exact reference path to `reference_peel/2`. In our example, this allows us to access
+  a branch by passing the exact reference path to `reference_peel/2`. In our example, this allows us to retrieve
   the commit `master` is pointing to.
 
   This is one of many ways to fetch a given commit, `reference_lookup/2` and `reference_glob/2` offer similar
