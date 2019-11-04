@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/assets/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
 
-A GitHub clone written in Elixir with almost no-dependencies.
+A Git source code management tool written in Elixir.
 
 * [x] Git HTTP and SSH support.
 * [x] User authentication and permissions.
@@ -17,7 +17,7 @@ See the [Getting Started](http://almightycouch.com/gitgud/docs/getting-started.h
 
 ## Install dependencies
 
-First, ensure you have ~~Git and~~ [libgit2](https://libgit2.github.com) installed on your system:
+First, ensure you have [libgit2](https://libgit2.github.com) installed on your system:
 
 #### OSX
 ```bash
@@ -29,11 +29,11 @@ brew install libgit2
 sudo apt-get install libgit2-dev
 ```
 
-~~The former is necessary in temporarily because `git-upload-pack` and `git-receive-pack` server side commands use Erlang ports to execute the correspondent binaries. In future versions, those functions will be implemented natively and the dependency to Git will not be required anymore.~~
+You will also need [Node.js](https://nodejs.org/en/) to compile Web assets and [PostgreSQL](https://www.postgresql.org) to store your application data.
 
 ## Clone and compile
 
-First, clone the latest version of the project:
+Clone the latest version of the project:
 
 ```bash
 git clone https://github.com/almightycouch/gitgud.git
@@ -44,6 +44,14 @@ Download Hex dependencies and compile everything:
 ```bash
 mix deps.get
 mix compile
+```
+
+## Install Javascript dependencies
+
+Install all NPM packages required by Webpack to generate Web assets:
+
+```bash
+npm install --prefix apps/gitgud_web/assets
 ```
 
 ## Generate SSH public keys
@@ -62,11 +70,9 @@ The last step before running the server is to create and initialise the SQL data
 mix ecto.setup
 ```
 
-
-
 ## Run server
 
-Finally, start both HTTP (port 4000) and SSH (port 8989) endpoints by running following command:
+Finally, start both HTTP (port 4000) and SSH (port 8989) endpoints:
 
 ```bash
 mix phx.server
