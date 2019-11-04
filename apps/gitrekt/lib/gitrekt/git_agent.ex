@@ -31,7 +31,7 @@ defmodule GitRekt.GitAgent do
   IO.puts message
   ```
 
-  So far, this look very similar to the original example. The real benefit of using `GitRekt.GitAgent` comes
+  This look very similar to the original example. The real benefit of using `GitRekt.GitAgent` comes
   when multiple processes need to manipulate a single Git repository simultaneously.
 
   Let's refactor our code for that purpose:
@@ -70,10 +70,8 @@ defmodule GitRekt.GitAgent do
   Note that in the above example `history/2` returns a `t:Stream.t/0` struct. We could use `Stream.take/1` to
   retrieve the last 30 commits without having the Git agent process to enumerate the entire stream.
 
-
-  ## Repository protocol
-  It's also possible to implement the `GitRekt.GitRepo` protocol for your own data structure. For example,
-  the `GitGud.Repo` schema implements this protocol and can be passed to `GitRekt.GitAgent` functions directly.
+  So far we have used `GitRekt.GitAgent` functions by passing a `t:GitRekt.Git.repo/0` or a `PID` as first
+  argument. It's also possible to implement the `GitRekt.GitRepo` protocol for your own data structure.
 
   See `attach/2` for more details on how to attach a Git agent to a struct implementing `GitRekt.GitRepo`.
   """
