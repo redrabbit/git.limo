@@ -64,14 +64,14 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Maintainer,
           GitGud.Repo,
           GitGud.RepoQuery,
-          GitGud.RepoStorage,
           GitGud.ReviewQuery,
           GitGud.SSHKey,
           GitGud.User,
           GitGud.UserQuery
         ],
-        "Deployment": [
-          GitGud.ReleaseTasks
+        "Repository Management": [
+          GitGud.RepoStorage,
+          GitGud.RepoSupervisor,
         ],
         "Git Transfer Protocols": [
           GitGud.SSHServer,

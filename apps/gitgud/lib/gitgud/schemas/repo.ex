@@ -16,6 +16,7 @@ defmodule GitGud.Repo do
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.RepoSupervisor
   alias GitGud.RepoStorage
 
   import Ecto.Changeset
@@ -241,8 +242,7 @@ defmodule GitGud.Repo do
     end
 
     def put_agent(repo, :shared) do
-      via_registry = {:via, Registry, {GitGud.RepoRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
-      case GitAgent.start_link(RepoStorage.init_param(repo), name: via_registry) do
+      case RepoSupervisor.start_agent(repo) do
         {:ok, agent} ->
           {:ok, struct(repo, __agent__: agent)}
         {:error, {:already_started, agent}} ->

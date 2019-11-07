@@ -11,8 +11,8 @@ defmodule GitGud.Application do
 
     children = [
       {GitGud.DB, []},
+      {GitGud.RepoSupervisor, []},
       {GitGud.SSHServer, []},
-      {Registry, keys: :unique, name: GitGud.RepoRegistry}
     ]
     Supervisor.start_link(children, strategy: :one_for_one, name: GitGud.Supervisor)
   end
