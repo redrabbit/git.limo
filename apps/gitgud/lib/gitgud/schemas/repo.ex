@@ -241,8 +241,11 @@ defmodule GitGud.Repo do
     end
 
     def put_agent(repo, :shared) do
-      case GitAgent.start_link(RepoStorage.init_param(repo)) do
+      via_registry = {:via, Registry, {GitGud.RepoRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
+      case GitAgent.start_link(RepoStorage.init_param(repo), name: via_registry) do
         {:ok, agent} ->
+          {:ok, struct(repo, __agent__: agent)}
+        {:error, {:already_started, agent}} ->
           {:ok, struct(repo, __agent__: agent)}
         {:error, reason} ->
           {:error, reason}

@@ -9,9 +9,11 @@ defmodule GitGud.Application do
     :telemetry.attach("git-upload-pack", [:gitrekt, :wire_protocol, :upload_pack], &GitGud.Telemetry.handle_event/4, %{})
     :telemetry.attach("git-receive-pack", [:gitrekt, :wire_protocol, :receive_pack], &GitGud.Telemetry.handle_event/4, %{})
 
-    Supervisor.start_link([
+    children = [
       {GitGud.DB, []},
       {GitGud.SSHServer, []},
-    ], strategy: :one_for_one, name: GitGud.Supervisor)
+      {Registry, keys: :unique, name: GitGud.RepoRegistry}
+    ]
+    Supervisor.start_link(children, strategy: :one_for_one, name: GitGud.Supervisor)
   end
 end

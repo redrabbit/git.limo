@@ -81,6 +81,8 @@ defmodule GitRekt.GitAgent do
 
   require Logger
 
+  @default_mode :shared
+
   @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
@@ -111,7 +113,7 @@ defmodule GitRekt.GitAgent do
   """
 
   @spec attach(GitRepo.t, :inproc | :shared) :: {:ok, any} | {:error, term}
-  def attach(repo, mode \\ :inproc) do
+  def attach(repo, mode \\ @default_mode) do
     GitRepo.put_agent(repo, mode)
   end
 
@@ -119,7 +121,7 @@ defmodule GitRekt.GitAgent do
   Similar to `attach/2`, but raises an exception if an error occurs.
   """
   @spec attach!(GitRepo.t, :inproc | :shared) :: any
-  def attach!(repo, mode \\ :inproc) do
+  def attach!(repo, mode \\ @default_mode) do
     case attach(repo, mode) do
       {:ok, repo} -> repo
       {:error, reason} -> raise reason
