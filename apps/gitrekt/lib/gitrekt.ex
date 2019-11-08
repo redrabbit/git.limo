@@ -86,4 +86,16 @@ defmodule GitRekt do
       def inspect(diff, _opts), do: "<GitDiff:#{inspect diff.diff}>"
     end
   end
+
+  defmodule GitOdb do
+    @moduledoc """
+    Represents a Git ODB.
+    """
+    defstruct [:odb]
+    @type t :: %__MODULE__{odb: Git.odb}
+
+    defimpl Inspect do
+      def inspect(odb, _opts), do: "<GitOdb:#{inspect odb.odb}>"
+    end
+  end
 end

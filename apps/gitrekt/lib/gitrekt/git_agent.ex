@@ -75,12 +75,13 @@ defmodule GitRekt.GitAgent do
   """
   use GenServer
 
-  alias GitRekt.{Git, GitRepo, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
+  alias GitRekt.{Git, GitRepo, GitOdb, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
 
   require Logger
 
   @type agent :: Git.repo | GitRepo.t | pid
 
+  @type git_odb :: GitOdb.t
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
   @type git_reference :: GitRef.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
@@ -96,6 +97,30 @@ defmodule GitRekt.GitAgent do
   """
   @spec empty?(agent) :: {:ok, boolean} | {:error, term}
   def empty?(agent), do: exec(agent, :empty?)
+
+  @doc """
+  Returns the ODB.
+  """
+  @spec odb(agent) :: {:ok, git_odb}
+  def odb(agent), do: exec(agent, :odb)
+
+  @doc """
+  Return the raw data of the `odb` object with the given `oid`.
+  """
+  @spec odb_read(agent, git_odb, Git.oid) :: {:ok, map} | {:error, term}
+  def odb_read(agent, odb, oid), do: exec(agent, {:odb_read, odb, oid})
+
+  @doc """
+  Writes the given `data` into the `odb`.
+  """
+  @spec odb_write(agent, git_odb, binary, atom) :: {:ok, Git.oid} | {:error, term}
+  def odb_write(agent, odb, data, type), do: exec(agent, {:odb_write, odb, data, type})
+
+  @doc """
+  Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
+  """
+  @spec odb_object_exists?(agent, git_odb, Git.oid) :: boolean
+  def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})
 
   @doc """
   Returns the Git reference.
@@ -150,6 +175,16 @@ defmodule GitRekt.GitAgent do
   """
   @spec reference(agent, binary) :: {:ok, git_reference} | {:error, term}
   def reference(agent, name), do: exec(agent, {:reference, name})
+
+  @doc """
+  """
+  @spec reference_create(agent, binary, :atom, Git.oid | binary, boolean) :: :ok | {:error, term}
+  def reference_create(agent, name, type, target, force \\ false), do: exec(agent, {:reference_create, name, type, target, force})
+
+  @doc """
+  """
+  @spec reference_delete(agent, binary) :: :ok | {:error, term}
+  def reference_delete(agent, name), do: exec(agent, {:reference_delete, name})
 
   @doc """
   Returns the Git object with the given `oid`.
@@ -373,10 +408,32 @@ defmodule GitRekt.GitAgent do
     {:ok, Git.repository_empty?(handle)}
   end
 
+  defp call(:odb, handle) do
+    case Git.repository_get_odb(handle) do
+      {:ok, odb} ->
+        {:ok, resolve_odb(odb)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp call({:odb_read, %GitOdb{odb: odb}, oid}, _handle), do: Git.odb_read(odb, oid)
+  defp call({:odb_write, %GitOdb{odb: odb}, data, type}, _handle), do: Git.odb_write(odb, data, type)
+  defp call({:odb_object_exists, %GitOdb{odb: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
+
   defp call(:head, handle) do
     case Git.reference_resolve(handle, "HEAD") do
       {:ok, name, shorthand, oid} ->
         {:ok, resolve_reference({name, shorthand, :oid, oid})}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp call({:references, glob}, handle) do
+    case Git.reference_stream(handle, glob) do
+      {:ok, stream} ->
+        {:ok, Stream.map(stream, &resolve_reference/1)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -400,14 +457,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:references, glob}, handle) do
-    case Git.reference_stream(handle, glob) do
-      {:ok, stream} ->
-        {:ok, Stream.map(stream, &resolve_reference/1)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  defp call({:reference_create, name, type, target, force}, handle), do: Git.reference_create(handle, name, type, target, force)
+  defp call({:reference_delete, name}, handle), do: Git.reference_delete(handle, name)
 
   defp call({:revision, spec}, handle) do
     case Git.revparse_ext(handle, spec) do
@@ -506,6 +557,8 @@ defmodule GitRekt.GitAgent do
         {:error, reason}
     end
   end
+
+  defp resolve_odb(odb), do: %GitOdb{odb: odb}
 
   defp resolve_reference({nil, nil, :oid, _oid}), do: nil
   defp resolve_reference({name, nil, :oid, oid}) do
