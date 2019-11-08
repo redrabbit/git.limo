@@ -48,11 +48,11 @@ defmodule GitRekt.WireProtocol do
   end
 
   @doc """
-  Returns a new service object for the given `repo` and `executable`.
+  Returns a new service object for the given `agent` and `executable`.
   """
-  @spec new(Git.repo, binary, keyword) :: struct
-  def new(repo, executable, init_values \\ []) do
-    struct(exec_impl(executable), Keyword.put(init_values, :repo, repo))
+  @spec new(GitAgent.agent, binary, keyword) :: struct
+  def new(agent, executable, init_values \\ []) do
+    struct(exec_impl(executable), Keyword.put(init_values, :agent, agent))
   end
 
   @doc """

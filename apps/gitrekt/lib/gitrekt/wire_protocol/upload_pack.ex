@@ -6,14 +6,14 @@ defmodule GitRekt.WireProtocol.UploadPack do
   @behaviour GitRekt.WireProtocol
 
   alias GitRekt.Git
+  alias GitRekt.GitAgent
 
-  import GitRekt.Packfile, only: [create: 2]
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
-  defstruct [:repo, state: :disco, caps: [], wants: [], haves: []]
+  defstruct [:agent, state: :disco, caps: [], wants: [], haves: []]
 
   @type t :: %__MODULE__{
-    repo: Git.repo,
+    agent: GitAgent.agent,
     state: :disco | :upload_req | :upload_haves | :pack | :done,
     caps: [binary],
     wants: [Git.oid],
@@ -26,12 +26,12 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.repo, "git-upload-pack")}
+    {%{handle|state: :done}, lines, reference_discovery(handle.agent, "git-upload-pack")}
   end
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :upload_req}, lines, reference_discovery(handle.repo, "git-upload-pack")}
+    {%{handle|state: :upload_req}, lines, reference_discovery(handle.agent, "git-upload-pack")}
   end
 
   @impl true
@@ -65,18 +65,19 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, lines) do
-    {:ok, odb} = Git.repository_get_odb(handle.repo)
+    {:ok, odb} = GitAgent.odb(handle.agent)
     {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
-    {%{handle|haves: Enum.filter(parse_cmds(haves), &Git.odb_object_exists?(odb, &1))}, lines, []}
+    {%{handle|haves: Enum.filter(parse_cmds(haves), &GitAgent.odb_object_exists?(handle.agent, odb, &1))}, lines, []}
   end
 
   @impl true
   def next(%__MODULE__{state: :pack} = handle, []) do
     if Enum.empty?(handle.haves) do
-      {%{handle|state: :done}, [], [:nak, create(handle.repo, handle.wants)]}
+      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants)
+      {%{handle|state: :done}, [], [:nak, pack]}
     else
       haves = List.flatten(Enum.reverse(handle.haves))
-      pack = create(handle.repo, handle.wants ++ Enum.map(haves, &{&1, true}))
+      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants ++ Enum.map(haves, &{&1, true}))
       cond do
         "multi_ack" in handle.caps ->
           {%{handle|state: :done}, [], [{:ack, List.first(haves)}, pack]}

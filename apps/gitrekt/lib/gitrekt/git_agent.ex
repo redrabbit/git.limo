@@ -322,6 +322,11 @@ defmodule GitRekt.GitAgent do
   @spec peel(agent, git_reference | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
   def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
 
+  @doc """
+  """
+  @spec pack_create(agent, [Git.oid]) :: {:ok, binary} | {:error, term}
+  def pack_create(agent, oids), do: exec(agent, {:pack, oids})
+
   #
   # Callbacks
   #
@@ -548,6 +553,12 @@ defmodule GitRekt.GitAgent do
   defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
+
+  defp call({:pack_create, oids}, agent) do
+    with {:ok, walk} <- Git.revwalk_new(agent),
+          :ok <- walk_insert(walk, oid_mask(oids)),
+      do: Git.revwalk_pack(walk)
+  end
 
   defp call_stream(op, handle) do
     case call(op, handle) do
@@ -843,6 +854,21 @@ defmodule GitRekt.GitAgent do
   defp pathspec_match_commit_diff(old_tree, new_tree, pathspec, handle) do
     case Git.diff_tree(handle, old_tree, new_tree, pathspec: pathspec) do
       {:ok, diff} -> Git.diff_delta_count(diff)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp oid_mask(oids) do
+    Enum.map(oids, fn
+      {oid, hidden} when is_binary(oid) -> {oid, hidden}
+      oid when is_binary(oid) -> {oid, false}
+    end)
+  end
+
+  defp walk_insert(_walk, []), do: :ok
+  defp walk_insert(walk, [{oid, hide}|oids]) do
+    case Git.revwalk_push(walk, oid, hide) do
+      :ok -> walk_insert(walk, oids)
       {:error, reason} -> {:error, reason}
     end
   end

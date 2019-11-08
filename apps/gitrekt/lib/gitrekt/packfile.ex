@@ -12,16 +12,6 @@ defmodule GitRekt.Packfile do
   @type obj_list :: [obj]
 
   @doc """
-  Returns a *PACK* file for the given `oids` list.
-  """
-  @spec create(Git.repo, [Git.oid|{Git.oid, boolean}]) :: binary
-  def create(repo, oids) when is_list(oids) do
-    with {:ok, walk} <- Git.revwalk_new(repo),
-          :ok <- walk_insert(walk, oid_mask(oids)),
-         {:ok, pack} <- Git.revwalk_pack(walk), do: pack
-  end
-
-  @doc """
   Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
   @spec parse(binary) :: {obj_list, binary}
@@ -47,21 +37,6 @@ defmodule GitRekt.Packfile do
   #
   # Helpers
   #
-
-  defp walk_insert(_walk, []), do: :ok
-  defp walk_insert(walk, [{oid, hide}|oids]) do
-    case Git.revwalk_push(walk, oid, hide) do
-      :ok -> walk_insert(walk, oids)
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp oid_mask(oids) do
-    Enum.map(oids, fn
-      {oid, hidden} when is_binary(oid) -> {oid, hidden}
-      oid when is_binary(oid) -> {oid, false}
-    end)
-  end
 
   defp unpack(2 = _version, count, data) do
     unpack_obj_next(0, count, data, [])

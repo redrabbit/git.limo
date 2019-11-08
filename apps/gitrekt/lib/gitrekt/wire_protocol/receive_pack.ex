@@ -6,6 +6,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @behaviour GitRekt.WireProtocol
 
   alias GitRekt.Git
+  alias GitRekt.GitAgent
   alias GitRekt.Packfile
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
@@ -13,7 +14,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @null_oid String.duplicate("0", 40)
   @null_iter {0, 0, ""}
 
-  defstruct [:repo, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
+  defstruct [:agent, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
 
   @type callback :: {module, atom, [term]} | nil
 
@@ -24,7 +25,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   }
 
   @type t :: %__MODULE__{
-    repo: Git.repo,
+    agent: GitAgent.agent,
     callback: callback,
     state: :disco | :update_req | :pack | :buffer | :done,
     caps: [binary],
@@ -37,16 +38,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   Applies the given `receive_pack` *PACK* to the repository.
   """
   @spec apply_pack(t, :write | :write_dump) :: {:ok, [Git.oid] | map} | {:error, term}
-  def apply_pack(%__MODULE__{repo: repo} = receive_pack, mode \\ :write) do
-    case Git.repository_get_odb(repo) do
+  def apply_pack(%__MODULE__{agent: agent} = receive_pack, mode \\ :write) do
+    case GitAgent.odb(agent) do
       {:ok, odb} ->
         {objs, delta_refs} = resolve_pack(receive_pack)
         pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
         case mode do
           :write ->
-            {:ok, Enum.map(pack, &apply_pack_obj(odb, &1, mode))}
+            {:ok, Enum.map(pack, &apply_pack_obj(agent, odb, &1, mode))}
           :write_dump ->
-            {:ok, Map.new(pack, &apply_pack_obj(odb, &1, mode))}
+            {:ok, Map.new(pack, &apply_pack_obj(agent, odb, &1, mode))}
         end
       {:error, reason} -> {:error, reason}
     end
@@ -56,17 +57,17 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   Applies the given `receive_pack` commands to the repository.
   """
   @spec apply_cmds(t) :: :ok | {:error, term}
-  def apply_cmds(%__MODULE__{repo: repo, cmds: cmds} = _receive_pack) do
+  def apply_cmds(%__MODULE__{agent: agent, cmds: cmds} = _receive_pack) do
     Enum.each(cmds, fn
       {:create, new_oid, name} ->
-        :ok = Git.reference_create(repo, name, :oid, new_oid, false)
+        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, false)
       {:update, _old_oid, new_oid, name} ->
-        :ok = Git.reference_create(repo, name, :oid, new_oid, true)
+        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, true)
       {:delete, _old_oid, name} ->
-        :ok = Git.reference_delete(repo, name)
+        :ok = GitAgent.reference_delete(agent, name)
     end)
-    if Git.repository_empty?(repo),
-      do: Git.reference_create(repo, "HEAD", :symbolic, "refs/heads/master"),
+    if GitAgent.empty?(agent),
+      do: GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master"),
     else: :ok
   end
 
@@ -94,12 +95,12 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.repo, "git-receive-pack")}
+    {%{handle|state: :done}, lines, reference_discovery(handle.agent, "git-receive-pack")}
   end
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :update_req}, lines, reference_discovery(handle.repo, "git-receive-pack")}
+    {%{handle|state: :update_req}, lines, reference_discovery(handle.agent, "git-receive-pack")}
   end
 
   @impl true
@@ -197,20 +198,20 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
-  defp apply_pack_obj(odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, _cmds} = delta_ref}, mode) do
-    {:ok, obj_type, obj_data} = Git.odb_read(odb, base_oid)
-    apply_pack_obj(odb, resolve_delta_object({obj_type, obj_data}, delta_ref), mode)
+  defp apply_pack_obj(agent, odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, _cmds} = delta_ref}, mode) do
+    {:ok, obj_type, obj_data} = GitAgent.odb_read(agent, odb, base_oid)
+    apply_pack_obj(agent, odb, resolve_delta_object({obj_type, obj_data}, delta_ref), mode)
   end
 
-  defp apply_pack_obj(odb, {obj_type, obj_data}, :write) do
-    case Git.odb_write(odb, obj_data, obj_type) do
+  defp apply_pack_obj(agent, odb, {obj_type, obj_data}, :write) do
+    case GitAgent.odb_write(agent, odb, obj_data, obj_type) do
       {:ok, oid} -> oid
       {:error, reason} -> raise ArgumentError, message: reason
     end
   end
 
-  defp apply_pack_obj(odb, obj, :write_dump) do
-    {apply_pack_obj(odb, obj, :write), obj}
+  defp apply_pack_obj(agent, odb, obj, :write_dump) do
+    {apply_pack_obj(agent, odb, obj, :write), obj}
   end
 
   defp batch_resolve_objects(objs, delta_refs) do
