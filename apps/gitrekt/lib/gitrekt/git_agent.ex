@@ -72,16 +72,12 @@ defmodule GitRekt.GitAgent do
 
   So far we have used `GitRekt.GitAgent` functions by passing a `t:GitRekt.Git.repo/0` or a `PID` as first
   argument. It's also possible to implement the `GitRekt.GitRepo` protocol for your own data structure.
-
-  See `attach/2` for more details on how to attach a Git agent to a struct implementing `GitRekt.GitRepo`.
   """
   use GenServer
 
   alias GitRekt.{Git, GitRepo, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
 
   require Logger
-
-  @default_mode :shared
 
   @type agent :: Git.repo | GitRepo.t | pid
 
@@ -94,39 +90,6 @@ defmodule GitRekt.GitAgent do
   """
   @spec start_link(Path.t | {atom, [term]}, keyword) :: GenServer.on_start
   def start_link(arg, opts \\ []), do: GenServer.start_link(__MODULE__, arg, opts)
-
-  @doc ~S"""
-  Attaches a Git agent to the given `repo`.
-
-  Once attached, a repo can be used to interact directly with the underlying Git repository:
-
-  ```elixir
-  {:ok, repo} = GitRekt.GitAgent.attach(repo)
-  {:ok, head} = GitRekt.GitAgent.head(repo)
-  IO.puts "current branch: #{head.name}"
-  ```
-
-  Often times, it might be preferable to manipulate Git objects in a dedicated process.
-  For example when you want to access a single repository from multiple processes simultaneously.
-
-  For such cases, you can explicitly tell to load the agent in `:shared` mode.
-  """
-
-  @spec attach(GitRepo.t, :inproc | :shared) :: {:ok, any} | {:error, term}
-  def attach(repo, mode \\ @default_mode) do
-    GitRepo.put_agent(repo, mode)
-  end
-
-  @doc """
-  Similar to `attach/2`, but raises an exception if an error occurs.
-  """
-  @spec attach!(GitRepo.t, :inproc | :shared) :: any
-  def attach!(repo, mode \\ @default_mode) do
-    case attach(repo, mode) do
-      {:ok, repo} -> repo
-      {:error, reason} -> raise reason
-    end
-  end
 
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.

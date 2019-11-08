@@ -175,6 +175,40 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  """
+  @spec init_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
+  def init_agent(repo, mode \\ :inproc)
+  def init_agent(%__MODULE__{} = repo, :inproc) do
+    case Git.repository_load(RepoStorage.init_param(repo)) do
+      {:ok, agent} ->
+        {:ok, struct(repo, __agent__: agent)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  """
+  def init_agent(%__MODULE__{} = repo, :shared) do
+    case RepoSupervisor.start_agent(repo) do
+      {:ok, agent} ->
+        {:ok, struct(repo, __agent__: agent)}
+      {:error, {:already_started, agent}} ->
+        {:ok, struct(repo, __agent__: agent)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec init_agent!(t, :inproc | :shared) :: t
+  def init_agent!(%__MODULE__{} = repo, mode \\ :inproc) do
+    case init_agent(repo, mode) do
+      {:ok, repo} -> repo
+      {:error, reason} -> raise reason
+    end
+  end
+
+  @doc """
   Returns a repository changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
@@ -229,28 +263,8 @@ defmodule GitGud.Repo do
   defimpl GitRekt.GitRepo do
     alias GitGud.Repo
 
-    def get_agent(%Repo{__agent__: nil} = _repo), do: {:error, :not_loaded}
+    def get_agent(%Repo{__agent__: nil} = _repo), do: {:error, :not_initialized}
     def get_agent(%Repo{__agent__: agent}), do: {:ok, agent}
-
-    def put_agent(repo, :inproc) do
-      case Git.repository_load(RepoStorage.init_param(repo)) do
-        {:ok, agent} ->
-          {:ok, struct(repo, __agent__: agent)}
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-
-    def put_agent(repo, :shared) do
-      case RepoSupervisor.start_agent(repo) do
-        {:ok, agent} ->
-          {:ok, struct(repo, __agent__: agent)}
-        {:error, {:already_started, agent}} ->
-          {:ok, struct(repo, __agent__: agent)}
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
   end
 
   defimpl GitGud.AuthorizationPolicies do

@@ -7,9 +7,4 @@ defprotocol GitRekt.GitRepo do
   Returns the agent for the given `repo`.
   """
   def get_agent(repo)
-
-  @doc """
-  Puts the agent to the given `repo`.
-  """
-  def put_agent(repo, mode)
 end

@@ -3,10 +3,10 @@ defmodule GitGud.GraphQL.RepoMiddleware do
 
   @behaviour Absinthe.Middleware
 
-  alias GitRekt.GitAgent
+  alias GitGud.Repo
 
   def call(resolution, repo) do
-    case GitAgent.attach(repo) do
+    case Repo.init_agent(repo, :shared) do
       {:ok, repo} ->
         resolution
         |> Map.update!(:context, &Map.put(&1, :repo, repo))
