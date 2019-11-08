@@ -177,7 +177,7 @@ defmodule GitGud.Repo do
   @doc """
   """
   @spec init_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
-  def init_agent(repo, mode \\ :inproc)
+  def init_agent(repo, mode \\ :shared)
   def init_agent(%__MODULE__{} = repo, :inproc) do
     case Git.repository_load(RepoStorage.init_param(repo)) do
       {:ok, agent} ->

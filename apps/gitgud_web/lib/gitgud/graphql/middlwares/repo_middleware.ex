@@ -6,7 +6,7 @@ defmodule GitGud.GraphQL.RepoMiddleware do
   alias GitGud.Repo
 
   def call(resolution, repo) do
-    case Repo.init_agent(repo, :shared) do
+    case Repo.init_agent(repo) do
       {:ok, repo} ->
         resolution
         |> Map.update!(:context, &Map.put(&1, :repo, repo))

@@ -78,8 +78,8 @@ defmodule GitGud.RepoStorage do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
   """
-  @spec push(User.t, Repo.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
-  def push(%User{} = user, %Repo{} = repo, %ReceivePack{} = receive_pack) do
+  @spec push(Repo.t, User.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
+  def push(%Repo{} = repo, %User{} = user, %ReceivePack{} = receive_pack) do
     DB.transaction(fn ->
       with {:ok, objs} <- push_objects(receive_pack, repo.id),
            {:ok, meta} <- push_meta_objects(objs, repo.id, user.id),

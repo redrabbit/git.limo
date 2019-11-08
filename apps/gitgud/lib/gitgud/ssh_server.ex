@@ -99,7 +99,7 @@ defmodule GitGud.SSHServer do
     if authorized?(user, repo, exec) do
       case Repo.init_agent(repo) do
         {:ok, repo} ->
-          {service, output} = WireProtocol.next(WireProtocol.new(repo.__agent__, exec, callback: {RepoStorage, [user, repo]}))
+          {service, output} = WireProtocol.next(WireProtocol.new(repo, exec, callback: {RepoStorage, [repo, user]}))
           :ssh_connection.send(conn, chan, output)
           {:ok, %{state|repo: repo, service: service}}
         {:error, _reason} ->
