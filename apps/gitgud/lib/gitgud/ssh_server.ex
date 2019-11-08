@@ -33,8 +33,6 @@ defmodule GitGud.SSHServer do
   @behaviour :ssh_server_channel
   @behaviour :ssh_server_key_api
 
-  @max_request_size 10_485_760
-
   defstruct [:conn, :chan, :user, :repo, :service, request_size: 0]
 
   @type t :: %__MODULE__{
@@ -111,7 +109,7 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service, request_size: request_size} = state)  when request_size <= @max_request_size do
+  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service, request_size: request_size} = state) do
     {service, output} = WireProtocol.next(service, data)
     :ssh_connection.send(conn, chan, output)
     if WireProtocol.done?(service) do
@@ -124,14 +122,6 @@ defmodule GitGud.SSHServer do
     else
       {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
     end
-  end
-
-  @impl true
-  def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, _data}}, %__MODULE__{chan: chan} = state) do
-    :ssh_connection.send(conn, chan, 1, "Request entity too large, aborting.\r\n")
-    :ssh_connection.send(conn, chan, 0, WireProtocol.encode([:flush]))
-    :ssh_connection.send_eof(conn, chan)
-    {:stop, chan, state}
   end
 
   @impl true

@@ -33,8 +33,6 @@ defmodule GitGud.SmartHTTPBackend do
   plug :match
   plug :dispatch
 
-  @max_request_size 10_485_760
-
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
@@ -138,8 +136,7 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_stream_pack(conn, service, request_size \\ 0)
-  defp git_stream_pack(conn, service, request_size) when request_size <= @max_request_size do
+  defp git_stream_pack(conn, service, request_size \\ 0) do
     case read_body(conn) do
       {:ok, body, conn} ->
         {service, data} = WireProtocol.next(service, body)
@@ -165,13 +162,5 @@ defmodule GitGud.SmartHTTPBackend do
       {:error, reason} ->
         {:error, reason}
     end
-  end
-
-  defp git_stream_pack(conn, _service, _request_size) do
-#   error_status = :request_entity_too_large
-#   error_code = Plug.Conn.Status.code(error_status)
-#   error_body = Plug.Conn.Status.reason_phrase(error_code)
-    {:ok, conn} = chunk(conn, WireProtocol.encode([:flush]))
-    {:ok, halt(conn)}
   end
 end
