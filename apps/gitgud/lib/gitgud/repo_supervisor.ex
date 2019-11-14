@@ -9,7 +9,6 @@ defmodule GitGud.RepoSupervisor do
   alias GitGud.Repo
   alias GitGud.RepoStorage
 
-
   @doc """
   Starts the supervisor as part of a supervision tree.
   """
@@ -30,6 +29,12 @@ defmodule GitGud.RepoSupervisor do
       start: {GitAgent, :start_link, [RepoStorage.init_param(repo), [name: via_registry]]}
     })
   end
+
+  @doc """
+  Finds a repository in the registry.
+  """
+  @spec lookup(binary, binary) :: Repo.t | nil
+  def lookup(user_login, repo_name), do: lookup(Path.join(user_login, repo_name))
 
   @doc """
   Finds a repository in the registry.
