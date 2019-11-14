@@ -187,8 +187,6 @@ defmodule GitGud.Repo do
     end
   end
 
-  @doc """
-  """
   def init_agent(%__MODULE__{} = repo, :shared) do
     case RepoSupervisor.start_agent(repo) do
       {:ok, agent} ->
@@ -200,6 +198,9 @@ defmodule GitGud.Repo do
     end
   end
 
+  @doc """
+  Similar to `init_agent/2`, but raises an exception if an error occurs.
+  """
   @spec init_agent!(t, :inproc | :shared) :: t
   def init_agent!(%__MODULE__{} = repo, mode \\ :inproc) do
     case init_agent(repo, mode) do
