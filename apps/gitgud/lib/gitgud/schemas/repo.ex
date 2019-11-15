@@ -175,6 +175,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
+  Initializes a new agent for the given `repo`.
   """
   @spec init_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
   def init_agent(repo, mode \\ :shared)
@@ -200,7 +201,7 @@ defmodule GitGud.Repo do
   Similar to `init_agent/2`, but raises an exception if an error occurs.
   """
   @spec init_agent!(t, :inproc | :shared) :: t
-  def init_agent!(%__MODULE__{} = repo, mode \\ :inproc) do
+  def init_agent!(%__MODULE__{} = repo, mode \\ :shared) do
     case init_agent(repo, mode) do
       {:ok, repo} -> repo
       {:error, reason} -> raise reason
