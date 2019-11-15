@@ -8,6 +8,7 @@ defmodule GitGud.RepoSupervisor do
 
   alias GitGud.Repo
   alias GitGud.RepoStorage
+  alias GitGud.RepoPoolMonitor
 
   @doc """
   Starts the supervisor as part of a supervision tree.
@@ -21,13 +22,22 @@ defmodule GitGud.RepoSupervisor do
   @doc """
   Starts a `GitRekt.GitAgent` process for the given `repo`.
   """
-  @spec start_agent(Repo.t) :: DynamicSupervisor.on_start_child
+  @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
   def start_agent(repo) do
-    via_registry = {:via, Registry, {GitGud.GitAgentRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
-    DynamicSupervisor.start_child(GitGud.GitAgentSupervisor, %{
+    via_registry = {:via, Registry, {GitGud.RepoRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
+    child_spec = %{
       id: GitAgent,
-      start: {GitAgent, :start_link, [RepoStorage.init_param(repo), [name: via_registry]]}
-    })
+      start: {GitAgent, :start_link, [RepoStorage.init_param(repo), [name: via_registry]]},
+      restart: :temporary
+    }
+    case DynamicSupervisor.start_child(GitGud.RepoPool, child_spec) do
+      {:ok, pid} ->
+        {:ok, RepoPoolMonitor.monitor(pid)}
+      {:error, {:already_started, pid}} ->
+        {:ok, RepoPoolMonitor.monitor(pid)}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -41,7 +51,7 @@ defmodule GitGud.RepoSupervisor do
   """
   @spec lookup(Path.t) :: Repo.t | nil
   def lookup(path) do
-    case Registry.lookup(GitGud.GitAgentRegistry, path) do
+    case Registry.lookup(GitGud.RepoRegistry, path) do
       [{pid, repo}] -> struct(repo, __agent__: pid)
       [] -> nil
     end
@@ -54,8 +64,9 @@ defmodule GitGud.RepoSupervisor do
   @impl true
   def init([]) do
     children = [
-      {Registry, keys: :unique, name: GitGud.GitAgentRegistry},
-      {DynamicSupervisor, strategy: :one_for_one, name: GitGud.GitAgentSupervisor}
+      {Registry, keys: :unique, name: GitGud.RepoRegistry},
+      {DynamicSupervisor, strategy: :one_for_one, name: GitGud.RepoPool},
+      {RepoPoolMonitor, []}
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end

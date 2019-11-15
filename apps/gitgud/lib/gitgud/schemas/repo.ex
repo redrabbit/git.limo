@@ -191,8 +191,6 @@ defmodule GitGud.Repo do
     case RepoSupervisor.start_agent(repo) do
       {:ok, agent} ->
         {:ok, struct(repo, __agent__: agent)}
-      {:error, {:already_started, agent}} ->
-        {:ok, struct(repo, __agent__: agent)}
       {:error, reason} ->
         {:error, reason}
     end
