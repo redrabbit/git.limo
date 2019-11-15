@@ -16,7 +16,7 @@ defmodule GitGud.Repo do
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.UserQuery
-  alias GitGud.RepoSupervisor
+  alias GitGud.RepoPool
   alias GitGud.RepoStorage
 
   import Ecto.Changeset
@@ -188,7 +188,7 @@ defmodule GitGud.Repo do
   end
 
   def init_agent(%__MODULE__{} = repo, :shared) do
-    case RepoSupervisor.start_agent(repo) do
+    case RepoPool.start_agent(repo) do
       {:ok, agent} ->
         {:ok, struct(repo, __agent__: agent)}
       {:error, reason} ->

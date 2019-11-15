@@ -4,10 +4,7 @@ defmodule GitGud.RepoSupervisor do
   """
   use Supervisor
 
-  alias GitRekt.GitAgent
-
-  alias GitGud.Repo
-  alias GitGud.RepoStorage
+  alias GitGud.RepoPool
   alias GitGud.RepoPoolMonitor
 
   @doc """
@@ -19,44 +16,6 @@ defmodule GitGud.RepoSupervisor do
     Supervisor.start_link(__MODULE__, [], opts)
   end
 
-  @doc """
-  Starts a `GitRekt.GitAgent` process for the given `repo`.
-  """
-  @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
-  def start_agent(repo) do
-    via_registry = {:via, Registry, {GitGud.RepoRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
-    child_spec = %{
-      id: GitAgent,
-      start: {GitAgent, :start_link, [RepoStorage.init_param(repo), [name: via_registry]]},
-      restart: :temporary
-    }
-    case DynamicSupervisor.start_child(GitGud.RepoPool, child_spec) do
-      {:ok, pid} ->
-        {:ok, RepoPoolMonitor.monitor(pid)}
-      {:error, {:already_started, pid}} ->
-        {:ok, RepoPoolMonitor.monitor(pid)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Finds a repository in the registry.
-  """
-  @spec lookup(binary, binary) :: Repo.t | nil
-  def lookup(user_login, repo_name), do: lookup(Path.join(user_login, repo_name))
-
-  @doc """
-  Finds a repository in the registry.
-  """
-  @spec lookup(Path.t) :: Repo.t | nil
-  def lookup(path) do
-    case Registry.lookup(GitGud.RepoRegistry, path) do
-      [{pid, repo}] -> struct(repo, __agent__: pid)
-      [] -> nil
-    end
-  end
-
   #
   # Callbacks
   #
@@ -64,9 +23,9 @@ defmodule GitGud.RepoSupervisor do
   @impl true
   def init([]) do
     children = [
-      {Registry, keys: :unique, name: GitGud.RepoRegistry},
-      {DynamicSupervisor, strategy: :one_for_one, name: GitGud.RepoPool},
-      {RepoPoolMonitor, []}
+      {RepoPool, []},
+      {RepoPoolMonitor, []},
+      {Registry, keys: :unique, name: GitGud.RepoRegistry}
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end
