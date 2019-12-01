@@ -151,7 +151,7 @@ defmodule GitGud.RepoStorage do
   defp write_git_meta_objects_multi({Commit, {commits, i}}, multi, repo_id, user_id) do
     multi
     |> Multi.insert_all({Commit, {:chunk, i}}, Commit, commits)
-    |> reference_issues_multi(repo_id, commits, user_id: user_id)
+    |> reference_issues_multi(repo_id, user_id, commits)
   end
 
   defp write_git_meta_objects_multi({schema, {objs, i}}, multi, _repo_id, _user_id) do
