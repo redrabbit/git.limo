@@ -80,14 +80,12 @@ defmodule GitGud.RepoStorage do
   """
   @spec push(Repo.t, User.t, ReceivePack.t) :: {:ok, [ReceivePack.cmd], [Git.oid]} | {:error, term}
   def push(%Repo{} = repo, %User{} = user, %ReceivePack{} = receive_pack) do
-    DB.transaction(fn ->
-      with {:ok, objs} <- push_objects(receive_pack, repo.id),
-           {:ok, meta} <- push_meta_objects(objs, repo.id, user.id),
-            :ok <- push_references(receive_pack),
-           {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})),
-            :ok <- broadcast_events(repo, meta), do:
-        {:ok, Map.keys(objs)}
-    end)
+    with {:ok, objs} <- push_objects(receive_pack, repo.id),
+         {:ok, meta} <- push_meta_objects(objs, repo.id, user.id),
+          :ok <- push_references(receive_pack),
+         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})),
+          :ok <- broadcast_events(repo, meta), do:
+      {:ok, Map.keys(objs)}
   end
 
   @doc """
