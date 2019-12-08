@@ -60,7 +60,7 @@ defmodule GitGud.RepoPoolMonitor do
             [ref] == refs ->
               {:ok, timer} = :timer.exit_after(@idle_timeout, agent, :kill)
               Map.put(acc, agent, timer)
-            ref in refs ->
+            is_list(refs) && ref in refs ->
               Map.put(acc, agent, List.delete(refs, ref))
             true ->
               Map.put(acc, agent, refs)
