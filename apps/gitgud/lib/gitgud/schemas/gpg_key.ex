@@ -315,6 +315,8 @@ defmodule GitGud.GPGKey do
     parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
   end
 
+  defp parse_packet_sig_sub(_sub, acc), do: acc
+
   defp parse_packet_sig_sub_data(:creation_time = type, timestamp), do: {type, DateTime.from_unix!(:binary.decode_unsigned(timestamp))}
   defp parse_packet_sig_sub_data(type, timestamp) when type in [:expiration_time, :key_expiration_time], do: {type, :binary.decode_unsigned(timestamp)}
   defp parse_packet_sig_sub_data(:preferred_sym_algo = type, data), do: {type || :undefined, Enum.map(:binary.bin_to_list(data), &Map.get(@sym_key_algos, &1, :undefined))}
