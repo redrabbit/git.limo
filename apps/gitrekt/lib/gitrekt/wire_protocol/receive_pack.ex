@@ -67,7 +67,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
         :ok = GitAgent.reference_delete(agent, name)
     end)
     if GitAgent.empty?(agent),
-      do: GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master"),
+      do: GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", true),
     else: :ok
   end
 
