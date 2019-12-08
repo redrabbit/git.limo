@@ -116,12 +116,17 @@ defmodule GitGud.SSHServer do
       {service, output} = WireProtocol.next(service)
       :ssh_connection.send(conn, chan, output)
       :ssh_connection.send_eof(conn, chan)
-      :ssh_connection.exit_status(conn, chan, 0)
-      :ssh_connection.close(conn, chan)
       {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
     else
       {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
     end
+  end
+
+  @impl true
+  def handle_ssh_msg({:ssh_cm, conn, {:eof, chan}}, %__MODULE__{conn: conn, chan: chan} = state) do
+    :ssh_connection.exit_status(conn, chan, 0)
+    :ssh_connection.close(conn, chan)
+    {:ok, state}
   end
 
   @impl true
@@ -131,9 +136,8 @@ defmodule GitGud.SSHServer do
     {:stop, chan, state}
   end
 
-  @impl true
   def handle_ssh_msg({:ssh_cm, conn, msg}, %__MODULE__{conn: conn} = state) do
-    Logger.debug("ignoring SSH message #{inspect msg}")
+    Logger.warn("ignoring SSH message #{inspect msg}")
     {:ok, state}
   end
 
