@@ -300,19 +300,31 @@ defmodule GitGud.GPGKey do
 
   defp parse_packet_sig_sub("", acc), do: Enum.reverse(acc)
   defp parse_packet_sig_sub(<<255, len::32, data::binary-size(len), rest::binary>>, acc) do
-    <<t::8, data::binary>> = data
-    parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+    case data do
+      <<t::8, data::binary>> ->
+        parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+      _invalid ->
+        acc
+    end
   end
 
   defp parse_packet_sig_sub(<<len::8, data::binary-size(len), rest::binary>>, acc) when len < 192 do
-    <<t::8, data::binary>> = data
-    parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+    case data do
+      <<t::8, data::binary>> ->
+        parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+      _invalid ->
+        acc
+    end
   end
 
   defp parse_packet_sig_sub(<<len::8, len2::8, rest::binary>>, acc) when len < 224 do
     len = len + len2
-    <<t::8, data::binary-size(len), rest::binary>> = rest
-    parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+    case rest do
+      <<t::8, data::binary-size(len), rest::binary>> ->
+        parse_packet_sig_sub(rest, [parse_packet_sig_sub_data(@signature_sub_types[t], data)|acc])
+      _invalid ->
+        acc
+    end
   end
 
   defp parse_packet_sig_sub(_sub, acc), do: acc
