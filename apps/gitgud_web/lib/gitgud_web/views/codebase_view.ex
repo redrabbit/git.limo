@@ -419,20 +419,21 @@ defmodule GitGud.Web.CodebaseView do
           {%GitCommit{}, _author, _committer} -> true
           {%Commit{}, _author, _committer} -> false
         end) ->
-          commits_gpg_key_ids =
-            Map.new(commits, fn {commit, _author, _committer} ->
-              case GitAgent.commit_gpg_signature(repo, commit) do
-                {:ok, gpg_sig} ->
-                  gpg_key_id =
-                    gpg_sig
-                    |> GPGKey.decode!()
-                    |> GPGKey.parse!()
-                    |> get_in([:sig, :sub_pack, :issuer])
-                  {commit.oid, gpg_key_id}
-                {:error, _reason} ->
-                  nil
-              end
-            end)
+          commits_gpg_key_ids = Enum.map(commits, fn {commit, _author, _committer} ->
+            case GitAgent.commit_gpg_signature(repo, commit) do
+              {:ok, gpg_sig} ->
+                gpg_key_id =
+                  gpg_sig
+                  |> GPGKey.decode!()
+                  |> GPGKey.parse!()
+                  |> get_in([:sig, :sub_pack, :issuer])
+                {commit.oid, gpg_key_id}
+              {:error, _reason} ->
+                nil
+            end
+          end)
+          commits_gpg_key_ids = Enum.reject(commits_gpg_key_ids, &is_nil/1)
+          commits_gpg_key_ids = Enum.into(commits_gpg_key_ids, %{})
           gpg_keys =
             commits_gpg_key_ids
             |> Map.values()
