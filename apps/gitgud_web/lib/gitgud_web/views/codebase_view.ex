@@ -191,7 +191,7 @@ defmodule GitGud.Web.CodebaseView do
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
   @spec revision_name(GitAgent.git_object) :: binary
-  def revision_name(%GitCommit{oid: oid} = _object = _object), do: oid_fmt_short(oid)
+  def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
   def revision_name(%GitRef{name: name} = _object), do: name
   def revision_name(%GitTag{name: name} = _object), do: name
 
