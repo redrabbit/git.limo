@@ -5,7 +5,6 @@ defmodule GitGud.RepoSupervisor do
   use Supervisor
 
   alias GitGud.RepoPool
-  alias GitGud.RepoPoolMonitor
 
   @doc """
   Starts the supervisor as part of a supervision tree.
@@ -24,7 +23,6 @@ defmodule GitGud.RepoSupervisor do
   def init([]) do
     children = [
       {RepoPool, []},
-      {RepoPoolMonitor, []},
       {Registry, keys: :unique, name: GitGud.RepoRegistry}
     ]
     Supervisor.init(children, strategy: :one_for_one)

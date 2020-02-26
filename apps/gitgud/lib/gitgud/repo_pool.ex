@@ -6,9 +6,8 @@ defmodule GitGud.RepoPool do
 
   alias GitRekt.GitAgent
 
-  alias GitGud.RepoRegistry
   alias GitGud.RepoStorage
-  alias GitGud.RepoPoolMonitor
+  alias GitGud.RepoRegistry
 
   @doc """
   Starts the pool as part of a supervision tree.
@@ -31,9 +30,9 @@ defmodule GitGud.RepoPool do
     }
     case DynamicSupervisor.start_child(__MODULE__, child_spec) do
       {:ok, pid} ->
-        {:ok, RepoPoolMonitor.monitor(pid)}
+        {:ok, pid}
       {:error, {:already_started, pid}} ->
-        {:ok, RepoPoolMonitor.monitor(pid)}
+        {:ok, pid}
       {:error, reason} ->
         {:error, reason}
     end
@@ -51,7 +50,7 @@ defmodule GitGud.RepoPool do
   @spec lookup(Path.t) :: Repo.t | nil
   def lookup(path) do
     case Registry.lookup(GitGud.RepoRegistry, path) do
-      [{pid, repo}] -> struct(repo, __agent__: RepoPoolMonitor.monitor(pid))
+      [{pid, repo}] -> struct(repo, __agent__: pid)
       [] -> nil
     end
   end

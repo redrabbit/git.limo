@@ -79,6 +79,8 @@ defmodule GitRekt.GitAgent do
 
   require Logger
 
+  @idle_timeout 5_000
+
   @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_odb :: GitOdb.t
@@ -335,7 +337,7 @@ defmodule GitRekt.GitAgent do
   def init(arg) do
     case Git.repository_load(arg) do
       {:ok, handle} ->
-        {:ok, handle}
+        {:ok, handle, @idle_timeout}
       {:error, reason} ->
         {:stop, reason}
     end
@@ -343,17 +345,17 @@ defmodule GitRekt.GitAgent do
 
   @impl true
   def handle_call({:references, _glob} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle}
+    {:reply, call_stream(op, handle), handle, @idle_timeout}
   end
 
   @impl true
   def handle_call({:commit_parents, _commit} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle}
+    {:reply, call_stream(op, handle), handle, @idle_timeout}
   end
 
   @impl true
   def handle_call({:tree_entries, _tree} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle}
+    {:reply, call_stream(op, handle), handle, @idle_timeout}
   end
 
   @impl true
@@ -361,9 +363,9 @@ defmodule GitRekt.GitAgent do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
     case call_stream({:history, obj, opts}, handle) do
       {:ok, stream} ->
-        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, handle}
+        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, handle, @idle_timeout}
       {:error, reason} ->
-        {:reply, {:error, reason}, handle}
+        {:reply, {:error, reason}, handle, @idle_timeout}
     end
   end
 
@@ -371,12 +373,17 @@ defmodule GitRekt.GitAgent do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
     acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
-    {:reply, {Enum.to_list(chunk_stream), acc}, handle}
+    {:reply, {Enum.to_list(chunk_stream), acc}, handle, @idle_timeout}
   end
 
   @impl true
   def handle_call(op, _from, handle) do
-    {:reply, call(op, handle), handle}
+    {:reply, call(op, handle), handle, @idle_timeout}
+  end
+
+  @impl true
+  def handle_info(:timeout, handle) do
+    {:stop, :normal, handle}
   end
 
   #
