@@ -92,7 +92,7 @@ defmodule GitRekt.GitAgent do
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
   @spec start_link(Path.t | {atom, [term]}, keyword) :: GenServer.on_start
-  def start_link(arg, opts \\ []), do: GenServer.start_link(__MODULE__, arg, opts)
+  def start_link(path, opts \\ []), do: GenServer.start_link(__MODULE__, path, opts)
 
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.

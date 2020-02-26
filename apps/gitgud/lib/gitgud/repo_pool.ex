@@ -6,6 +6,7 @@ defmodule GitGud.RepoPool do
 
   alias GitRekt.GitAgent
 
+  alias GitGud.DB
   alias GitGud.RepoStorage
   alias GitGud.RepoRegistry
 
@@ -22,10 +23,10 @@ defmodule GitGud.RepoPool do
   """
   @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
   def start_agent(repo) do
-    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}", repo}}
+    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
     child_spec = %{
       id: GitAgent,
-      start: {GitAgent, :start_link, [RepoStorage.init_param(repo), [name: via_registry]]},
+      start: {GitAgent, :start_link, [repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem)), [name: via_registry]]},
       restart: :temporary
     }
     case DynamicSupervisor.start_child(__MODULE__, child_spec) do
@@ -41,16 +42,16 @@ defmodule GitGud.RepoPool do
   @doc """
   Finds a repository in the registry.
   """
-  @spec lookup(binary, binary) :: Repo.t | nil
+  @spec lookup(binary, binary) :: pid | nil
   def lookup(user_login, repo_name), do: lookup(Path.join(user_login, repo_name))
 
   @doc """
   Finds a repository in the registry.
   """
-  @spec lookup(Path.t) :: Repo.t | nil
+  @spec lookup(Path.t) :: pid | nil
   def lookup(path) do
     case Registry.lookup(GitGud.RepoRegistry, path) do
-      [{pid, repo}] -> struct(repo, __agent__: pid)
+      [{pid, _meta}] -> pid
       [] -> nil
     end
   end
@@ -63,4 +64,21 @@ defmodule GitGud.RepoPool do
   def init([]) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
+
+  #
+  # Helpers
+  #
+
+  defp postgres_url(conf) do
+    to_string(%URI{
+      scheme: "postgresql",
+      host: Keyword.get(conf, :hostname),
+      port: Keyword.get(conf, :port),
+      path: "/#{Keyword.get(conf, :database)}",
+      userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
+    })
+  end
+
+  defp repo_load_param(repo, :filesystem), do: RepoStorage.workdir(repo)
+  defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
 end

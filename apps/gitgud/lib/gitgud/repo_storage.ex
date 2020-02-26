@@ -37,12 +37,6 @@ defmodule GitGud.RepoStorage do
   end
 
   @doc """
-  Returns an initialization parameter for the given `repo`.
-  """
-  @spec init_param(Repo.t) :: term
-  def init_param(%Repo{} = repo), do: repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
-
-  @doc """
   Renames the given `repo`.
   """
   @spec rename(Repo.t, Repo.t) :: {:ok, Path.t} | {:error, term}
@@ -184,7 +178,7 @@ defmodule GitGud.RepoStorage do
         else: acc
       end)
 
-    query = IssueQuery.repo_issues_query(repo_id, Enum.uniq(List.flatten(Map.values(commits))))
+    query = IssueQuery.query(:repo_issues_query, [repo_id, Enum.uniq(List.flatten(Map.values(commits)))])
     query = select(query, [issue: i], {i.id, i.number})
     Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
       oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end)
@@ -236,17 +230,4 @@ defmodule GitGud.RepoStorage do
   end
 
   defp map_git_meta_object(_obj, _repo_id), do: nil
-
-  defp repo_load_param(repo, :filesystem), do: workdir(repo)
-  defp repo_load_param(repo, :postgres), do: {:postgres, [repo.id, postgres_url(DB.config())]}
-
-  defp postgres_url(conf) do
-    to_string(%URI{
-      scheme: "postgresql",
-      host: Keyword.get(conf, :hostname),
-      port: Keyword.get(conf, :port),
-      path: "/#{Keyword.get(conf, :database)}",
-      userinfo: Enum.join([Keyword.get(conf, :username, []), Keyword.get(conf, :password, [])], ":")
-    })
-  end
 end

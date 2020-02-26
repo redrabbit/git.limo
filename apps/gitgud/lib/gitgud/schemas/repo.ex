@@ -7,9 +7,6 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
-  alias GitRekt.GitAgent
-  alias GitRekt.Git
-
   alias GitGud.DB
   alias GitGud.Issue
   alias GitGud.IssueLabel
@@ -29,7 +26,6 @@ defmodule GitGud.Repo do
     field :description, :string
     has_many :issue_labels, IssueLabel, on_replace: :delete
     has_many :issues, Issue
-    field :__agent__, :any, virtual: true
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
     timestamps()
     field :pushed_at, :naive_datetime
@@ -46,7 +42,6 @@ defmodule GitGud.Repo do
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
-    __agent__: GitAgent.agent | nil
   }
 
   @issue_labels %{
@@ -74,9 +69,9 @@ defmodule GitGud.Repo do
   @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
     case create_and_init(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
-      {:ok, %{repo: repo, init: handle}} ->
+      {:ok, %{repo: repo, init: _handle}} ->
         owner = UserQuery.by_id(repo.owner_id)
-        {:ok, struct(repo, owner: owner, maintainers: [owner], __agent__: handle)}
+        {:ok, struct(repo, owner: owner, maintainers: [owner])}
       {:error, :repo, changeset, _changes} ->
         {:error, changeset}
       {:error, :init, reason, _changes} ->
@@ -175,40 +170,6 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Initializes a new agent for the given `repo`.
-  """
-  @spec init_agent(t, :inproc | :shared) :: {:ok, t} | {:error, term}
-  def init_agent(repo, mode \\ :shared)
-  def init_agent(%__MODULE__{} = repo, :inproc) do
-    case Git.repository_load(RepoStorage.init_param(repo)) do
-      {:ok, agent} ->
-        {:ok, struct(repo, __agent__: agent)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  def init_agent(%__MODULE__{} = repo, :shared) do
-    case RepoPool.start_agent(repo) do
-      {:ok, agent} ->
-        {:ok, struct(repo, __agent__: agent)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Similar to `init_agent/2`, but raises an exception if an error occurs.
-  """
-  @spec init_agent!(t, :inproc | :shared) :: t
-  def init_agent!(%__MODULE__{} = repo, mode \\ :shared) do
-    case init_agent(repo, mode) do
-      {:ok, repo} -> repo
-      {:error, reason} -> raise reason
-    end
-  end
-
-  @doc """
   Returns a repository changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
@@ -261,10 +222,7 @@ defmodule GitGud.Repo do
   #
 
   defimpl GitRekt.GitRepo do
-    alias GitGud.Repo
-
-    def get_agent(%Repo{__agent__: nil} = _repo), do: {:error, :not_initialized}
-    def get_agent(%Repo{__agent__: agent}), do: {:ok, agent}
+    def get_agent(repo), do: RepoPool.start_agent(repo)
   end
 
   defimpl GitGud.AuthorizationPolicies do
@@ -277,7 +235,7 @@ defmodule GitGud.Repo do
     def can?(%Repo{public: true}, _user, :read), do: true
 
     # Maintainers can perform action if he has granted permission to do so.
-    def can?(%Repo{} = repo, %User{} = user, action) do
+    def can?(repo, %User{} = user, action) do
       if maintainer = Repo.maintainer(repo, user) do
         cond do
           action == :read && maintainer.permission in ["read", "write", "admin"] ->

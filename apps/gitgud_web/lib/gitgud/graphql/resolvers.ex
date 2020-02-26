@@ -186,7 +186,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
     query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user])
-    Connection.from_query(query, fn query -> Enum.map(DB.all(query), &Repo.init_agent!/1) end, args)
+    Connection.from_query(query, &DB.all(&1), args)
   end
 
   @doc """
@@ -675,7 +675,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
   def comment_html(%Comment{repo_id: repo_id} = comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, markdown(comment.body, repo: Repo.init_agent!(repos[repo_id]))} end)
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, markdown(comment.body, repo: repos[repo_id])} end)
   end
 
   @doc """
