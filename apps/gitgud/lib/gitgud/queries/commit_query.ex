@@ -53,47 +53,36 @@ defmodule GitGud.CommitQuery do
     DB.one(DBQueryable.query({__MODULE__, :gpg_signature_query}, [repo, commit], opts))
   end
 
-  @doc """
-  Returns a query for fetching the commit with the given `oid`.
-  """
-  @spec commit_query(Repo.t | pos_integer, Git.oid) :: Ecto.Query
-  def commit_query(%Repo{id: repo_id}, oid), do: commit_query(repo_id, oid)
-  def commit_query(repo_id, oid) when is_integer(repo_id) and is_binary(oid) do
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def query(:commit_query, [%Repo{id: repo_id}, oid]), do: query(:commit_query, [repo_id, oid])
+  def query(:commit_query, [repo_id, oid]) when is_integer(repo_id) and is_binary(oid) do
     from(c in Commit, where: c.oid == ^oid)
   end
 
-  @doc """
-  Returns a query for counting the number of ancestors for the given `commit`.
-  """
-  @spec ancestors_count_query(Repo.t | pos_integer, Commit.t | Git.oid) :: Ecto.Query
-  def ancestors_count_query(%Repo{id: repo_id} = _repo, %Commit{oid: oid} = _commit), do: ancestors_count_query(repo_id, oid)
-  def ancestors_count_query(%Repo{id: repo_id}, oid), do: ancestors_count_query(repo_id, oid)
-  def ancestors_count_query(repo_id, %Commit{oid: oid}), do: ancestors_count_query(repo_id, oid)
-  def ancestors_count_query(repo_id, oid) when is_integer(repo_id) and is_binary(oid) do
+  def query(:ancestors_count_query, [%Repo{id: repo_id} = _repo, %Commit{oid: oid} = _commit]), do: query(:ancestors_count_query, [repo_id, oid])
+  def query(:ancestors_count_query, [%Repo{id: repo_id}, oid]), do: query(:ancestors_count_query, [repo_id, oid])
+  def query(:ancestors_count_query, [repo_id, %Commit{oid: oid}]), do: query(:ancestors_count_query, [repo_id, oid])
+  def query(:ancestors_count_query, [repo_id, oid]) when is_integer(repo_id) and is_binary(oid) do
     Commit
     |> join(:inner, [c], f in fragment("commits_dag_desc(?, ?)", ^repo_id, ^oid), on: c.oid == f.oid)
     |> select([c], count(c.oid))
   end
 
-  @doc """
-  Returns a query for fetching the commit history starting from the given `commit`.
-  """
-  @spec history_query(Repo.t | pos_integer, Commit.t | Git.oid) :: Ecto.Query
-  def history_query(%Repo{id: repo_id} = _repo, %Commit{oid: oid} = _commit), do: history_query(repo_id, oid)
-  def history_query(%Repo{id: repo_id}, oid), do: history_query(repo_id, oid)
-  def history_query(repo_id, %Commit{oid: oid}), do: history_query(repo_id, oid)
-  def history_query(repo_id, oid) when is_integer(repo_id) and is_binary(oid) do
+  def query(:history_query, [%Repo{id: repo_id} = _repo, %Commit{oid: oid} = _commit]), do: query(:history_query, [repo_id, oid])
+  def query(:history_query, [%Repo{id: repo_id}, oid]), do: query(:history_query, [repo_id, oid])
+  def query(:history_query, [repo_id, %Commit{oid: oid}]), do: query(:history_query, [repo_id, oid])
+  def query(:history_query, [repo_id, oid]) when is_integer(repo_id) and is_binary(oid) do
     Commit
     |> join(:inner, [c], f in fragment("commits_dag_desc(?, ?)", ^repo_id, ^oid), on: c.oid == f.oid)
     |> order_by([c], [desc: :committed_at])
   end
 
-  @doc """
-  Returns a query for fetching the GPG key associated to the given signed `commit`.
-  """
-  @spec gpg_signature_query(Repo.t | pos_integer, Commit.t | Git.oid | [Commit.t | Git.oid]) :: Ecto.Query
-  def gpg_signature_query(%Repo{id: repo_id} = _repo, commit), do: gpg_signature_query(repo_id, commit)
-  def gpg_signature_query(repo_id, commits) when is_list(commits) do
+  def query(:gpg_signature_query, [%Repo{id: repo_id} = _repo, commit]), do: query(:gpg_signature_query, [repo_id, commit])
+  def query(:gpg_signature_query, [repo_id, commits]) when is_list(commits) do
     oids =
       cond do
         Enum.all?(commits, &is_binary/1) ->
@@ -104,17 +93,13 @@ defmodule GitGud.CommitQuery do
     from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid in ^oids, select: {c.oid, g})
   end
 
-  def gpg_signature_query(repo_id, oid) when is_binary(oid) do
+  def query(:gpg_signature_query, [repo_id, oid]) when is_binary(oid) do
     from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^oid, select: g)
   end
 
-  def gpg_signature_query(repo_id, %Commit{} = commit) when is_map(commit) do
+  def query(:gpg_signature_query, [repo_id, %Commit{} = commit]) when is_map(commit) do
     from(c in Commit, join: g in GPGKey, on: c.gpg_key_id == fragment("substring(?, 13, 8)", g.key_id), where: c.repo_id == ^repo_id and c.oid == ^commit.oid, select: g)
   end
-
-  #
-  # Callbacks
-  #
 
   @impl true
   def alter_query(query, _preloads, _viewer), do: query

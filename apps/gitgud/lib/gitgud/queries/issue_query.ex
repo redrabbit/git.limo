@@ -96,86 +96,52 @@ defmodule GitGud.IssueQuery do
     DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
   end
 
-  @doc """
-  Returns a query for fetching a repository issue by its `id`.
-  """
-  @spec issue_query(pos_integer) :: Ecto.Query.t
-  def issue_query(id) do
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def query(:issue_query, [id]) do
     from(i in Issue, as: :issue, where: i.id == ^id)
   end
 
-  @doc """
-  Returns a query for fetching a repository issue by its `number`.
-  """
-  @spec repo_issue_query(pos_integer, pos_integer) :: Ecto.Query.t
-  def repo_issue_query(repo_id, number) when is_integer(number) do
+  def query(:repo_issue_query, [repo_id, number]) when is_integer(number) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number == ^number)
   end
 
-  @doc """
-  Returns a query for fetching all repository issues.
-  """
-  @spec repo_issues_query(pos_integer) :: Ecto.Query.t
-  def repo_issues_query(repo_id), do: repo_issues_query(repo_id, :all)
+  def query(:repo_issues_query, [repo_id]), do: query(:repo_issues_query, [repo_id, :all])
 
-  @doc """
-  Returns a query for fetching all repository issues with the given `status`.
-  """
-  @spec repo_issues_query(pos_integer, [pos_integer] | atom) :: Ecto.Query.t
-  def repo_issues_query(repo_id, numbers_or_status)
-  def repo_issues_query(repo_id, numbers) when is_list(numbers) do
+  def query(:repo_issues_query, [repo_id, numbers]) when is_list(numbers) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number in ^numbers)
   end
 
-  def repo_issues_query(repo_id, :all) do
+  def query(:repo_issues_query, [repo_id, :all]) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
   end
 
-  def repo_issues_query(repo_id, status) do
+  def query(:repo_issues_query, [repo_id, status]) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
-  @doc """
-  Returns a query for fetching all repository issues and their number of comments.
-  """
-  @spec repo_issues_with_comments_count_query(pos_integer, atom) :: Ecto.Query.t
-  def repo_issues_with_comments_count_query(repo_id, status) do
-    repo_issues_query(repo_id, status)
+  def query(:repo_issues_with_comments_count_query, [repo_id, status]) do
+    query(:repo_issues_query, [repo_id, status])
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
     |> select([issue: i, comment: c], {i, count(c)})
   end
 
-  @doc """
-  Returns a query for fetching all issue labels of a repository.
-  """
-  @spec repo_labels_query(pos_integer) :: Ecto.Query.t
-  def repo_labels_query(repo_id) do
+  def query(:repo_labels_query, [repo_id]) do
     from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end
 
-  @doc """
-  Returns a query for counting the number of issues of a repository.
-  """
-  @spec count_repo_issues_query(pos_integer, atom) :: Ecto.Query.t
-  def count_repo_issues_query(repo_id, status \\ :all) do
-    repo_id
-    |> repo_issues_query(status)
-    |> select([issue: e], count())
+  def query(:count_repo_issues_query, [repo_id, status]) do
+    select(query(:repo_issues_query, [repo_id, status]), [issue: e], count())
   end
 
-  @doc """
-  Returns a query for fetching comments of an issue.
-  """
-  @spec comments_query(Issue.t | pos_integer) :: Ecto.Query.t
-  def comments_query(%Issue{id: issue_id} = _issue), do: comments_query(issue_id)
-  def comments_query(issue_id) when is_integer(issue_id) do
+  def query(:comments_query, [%Issue{id: issue_id} = _issue]), do: query(:comments_query, [issue_id])
+  def query(:comments_query, [issue_id]) when is_integer(issue_id) do
     from c in Comment, as: :comment, join: t in "issues_comments", on: t.comment_id == c.id, where: t.thread_id == ^issue_id
   end
-
-  #
-  # Callbacks
-  #
 
   @impl true
   def alter_query(query, [], _viewer), do: query

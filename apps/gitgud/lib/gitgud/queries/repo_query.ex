@@ -68,41 +68,40 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns a query for fetching a repositories by `id`.
+  Returns a list of users matching the given `input`.
   """
-  @spec repo_query(pos_integer) :: Ecto.Query.t
-  @spec repo_query([pos_integer]) :: Ecto.Query.t
-  def repo_query(id) when is_list(id) do
+  @spec search(binary, keyword) :: [User.t]
+  def search(input, opts \\ []) do
+    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
+  end
+
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def query(:repo_query, [id]) when is_list(id) do
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id in ^id, preload: [owner: u])
   end
 
-  def repo_query(id) when is_integer(id) do
+  def query(:repo_query, [id]) when is_integer(id) do
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
   end
 
-  @doc """
-  Returns a query for fetching a single repository for the given `user` and `name`.
-  """
-  @spec user_repo_query(user_param, binary) :: Ecto.Query.t
-  def user_repo_query(user, name) do
-    where(user_repos_query(user), name: ^name)
+  def query(:user_repo_query, [user, name]) do
+    where(query(:user_repos_query, [user]), name: ^name)
   end
 
-  @doc """
-  Returns a query for fetching user repositories.
-  """
-  @spec user_repos_query(user_param) :: Ecto.Query.t
-  @spec user_repos_query([user_param]) :: Ecto.Query.t
-  def user_repos_query(%User{id: user_id} = _user), do: user_repos_query(user_id)
-  def user_repos_query(login) when is_binary(login) do
+  def query(:user_repos_query, [%User{id: user_id} = _user]), do: query(:user_repos_query, [user_id])
+  def query(:user_repos_query, [login]) when is_binary(login) do
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.login == ^login, preload: [owner: u])
   end
 
-  def user_repos_query(user_id) when is_integer(user_id) do
+  def query(:user_repos_query, [user_id]) when is_integer(user_id) do
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id == ^user_id, preload: [owner: u])
   end
 
-  def user_repos_query(users) when is_list(users) do
+  def query(:user_repos_query, [users]) when is_list(users) do
     cond do
       Enum.all?(users, &is_map/1) ->
         user_ids = Enum.map(users, &Map.fetch!(&1, :id))
@@ -114,26 +113,10 @@ defmodule GitGud.RepoQuery do
     end
   end
 
-  @doc """
-  Returns a list of users matching the given `input`.
-  """
-  @spec search(binary, keyword) :: [User.t]
-  def search(input, opts \\ []) do
-    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
-  end
-
-  @doc """
-  Returns a query for searching repositories.
-  """
-  @spec search_query(binary) :: Ecto.Query.t
-  def search_query(input) do
+  def query(:search_query, [input]) do
     term = "%#{input}%"
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: ilike(r.name, ^term), preload: [owner: u])
   end
-
-  #
-  # Callbacks
-  #
 
   @impl true
   def alter_query(query, preloads, nil) do

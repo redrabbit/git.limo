@@ -5,6 +5,7 @@ defmodule GitGud.DBQueryable do
 
   import Ecto.Query, only: [order_by: 2, offset: 2, limit: 2]
 
+  @callback query(name :: atom, args :: [term]) :: Ecto.Query.t
   @callback alter_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
 
   @doc """
@@ -21,7 +22,7 @@ defmodule GitGud.DBQueryable do
   #
 
   defp build_query({module, function_name}, args, params) do
-    exec_query(apply(module, function_name, List.wrap(args)), module, params)
+    exec_query(apply(module, :query, [function_name, List.wrap(args)]), module, params)
   end
 
   defp exec_query(query, module, {sort, pagination, preloads, viewer}) do

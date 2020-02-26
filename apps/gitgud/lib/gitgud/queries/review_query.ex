@@ -97,94 +97,59 @@ defmodule GitGud.ReviewQuery do
     DB.all(DBQueryable.query({__MODULE__, :commit_comment_count_query}, [repo_id, Enum.map(commits, &(&1.oid))]))
   end
 
-  @doc """
-  Returns a query for fetching a single commit line review.
-  """
-  @spec commit_line_review_query(pos_integer) :: Ecto.Query.t
-  def commit_line_review_query(id) do
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def query(:commit_line_review_query, [id]) do
     from(r in CommitLineReview, as: :review, where: r.id == ^id)
   end
 
-  @doc """
-  Returns a query for fetching a single commit line review.
-  """
-  @spec commit_line_review_query(pos_integer, pos_integer) :: Ecto.Query.t
-  def commit_line_review_query(repo_id, id) do
+  def query(:commit_line_review_query, [repo_id, id]) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.id == ^id)
   end
 
-  @doc """
-  Returns a query for fetching a single commit line review.
-  """
-  @spec commit_line_review_query(pos_integer, Git.oid, Git.oid, non_neg_integer, non_neg_integer) :: Ecto.Query.t
-  def commit_line_review_query(repo_id, commit_oid, blob_oid, hunk, line) do
+  def query(:commit_line_review_query, [repo_id, commit_oid, blob_oid, hunk, line]) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid and r.blob_oid == ^blob_oid and r.hunk == ^hunk and r.line == ^line)
   end
 
-  @doc """
-  Returns a query for fetching all commit line reviews.
-  """
-  @spec commit_line_reviews_query(pos_integer, Git.oid) :: Ecto.Query.t
-  def commit_line_reviews_query(repo_id, commit_oid) do
+  def query(:commit_line_reviews_query, [repo_id, commit_oid]) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
 
-  @doc """
-  Returns a query for fetching a single commit review.
-  """
-  @spec commit_review_query(pos_integer) :: Ecto.Query.t
-  def commit_review_query(id) do
+  def query(:commit_review_query, [id]) do
     from(r in CommitReview, as: :review, where: r.id == ^id)
   end
 
-  @doc """
-  Returns a query for fetching a single commit review.
-  """
-  @spec commit_review_query(pos_integer, pos_integer) :: Ecto.Query.t
-  def commit_review_query(repo_id, id) when is_integer(id) do
+  def query(:commit_review_query, [repo_id, id]) when is_integer(id) do
     from(r in CommitReview, as: :review, where: r.repo_id == ^repo_id and r.id == ^id)
   end
 
-  @doc """
-  Returns a query for fetching a single commit review.
-  """
-  @spec commit_review_query(pos_integer, Git.oid) :: Ecto.Query.t
-  def commit_review_query(repo_id, commit_oid) do
+  def query(:commit_review_query, [repo_id, commit_oid]) do
     from(r in CommitReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
 
-  @doc """
-  Returns a query for counting the number of reviews for a single commit or a list of commits.
-  """
-  @spec commit_comment_count_query(pos_integer, Git.oid) :: Ecto.Query.t
-  def commit_comment_count_query(repo_id, commit_oids) when is_list(commit_oids) do
+  def query(:commit_comment_count_query, [repo_id, commit_oids]) when is_list(commit_oids) do
     query1 = from r in CommitReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: %{commit_oid: r.commit_oid, count: count(c.id)}
     query2 = from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: %{commit_oid: r.commit_oid, count: count(c.id)}
     from c in subquery(union_all(query1, ^query2)), group_by: c.commit_oid, select: {c.commit_oid, sum(c.count)}
   end
 
-  def commit_comment_count_query(repo_id, commit_oid) do
+  def query(:commit_comment_count_query, [repo_id, commit_oid]) do
     query1 = from r in CommitReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
     query2 = from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: c
     from c in subquery(union_all(query1, ^query2)), select: count(c.id)
   end
 
-  @doc """
-  Returns a query for fetching comments of a review.
-  """
-  @spec comments_query(CommitLineReview.t | CommitReview.t | {atom, pos_integer}) :: Ecto.Query.t
-  def comments_query(%{id: review_id, __struct__: struct} = _review), do: comments_query({struct, review_id})
-  def comments_query({CommitLineReview, review_id}) do
+  def query(:comments_query, [%{id: review_id, __struct__: struct} = _review]), do: query(:comments_query, [{struct, review_id}])
+  def query(:comments_query, [{CommitLineReview, review_id}]) do
     from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
   end
 
-  def comments_query({CommitReview, review_id}) do
+  def query(:comments_query, [{CommitReview, review_id}]) do
     from c in Comment, join: t in "commit_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
   end
-
-  #
-  # Callbacks
-  #
 
   @impl true
   def alter_query(query, [], _viewer), do: query

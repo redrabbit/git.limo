@@ -80,75 +80,48 @@ defmodule GitGud.UserQuery do
     DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
   end
 
-  @doc """
-  Returns a query for fetching a single user by `id`.
-  """
-  @spec user_query(pos_integer) :: Ecto.Query.t
-  def user_query(id) when is_integer(id), do: user_query(:id, id)
+  #
+  # Callbacks
+  #
 
-  @doc """
-  Returns a query for fetching a single user by `key` and `val`.
-  """
-  @spec user_query(atom, term) :: Ecto.Query.t
-  def user_query(:email = _key, val) do
+  @impl true
+  def query(:user_query, [id]) when is_integer(id), do: query(:user_query, [:id, id])
+
+  def query(:user_query, [:email = _key, val]) do
     from(u in User, as: :user, join: e in assoc(u, :emails), where: e.verified == true and e.address == ^val)
   end
 
-  def user_query(key, val) do
+  def query(:user_query, [key, val]) do
     from(u in User, as: :user, where: ^List.wrap({key, val}))
   end
 
-  @doc """
-  Returns a query for fetching a single user by SSH `fingerprint`.
-  """
-  @spec user_ssh_key_query(binary) :: Ecto.Query.t
-  def user_ssh_key_query(fingerprint) do
+  def query(:user_ssh_key_query, [fingerprint]) do
     from(u in User, as: :user, join: s in assoc(u, :ssh_keys), where: s.fingerprint == ^fingerprint)
   end
 
-  @doc """
-  Returns a query for fetching a single user by authentication `token`.
-  """
-  @spec user_oauth_query(binary, binary) :: Ecto.Query.t
-  def user_oauth_query(provider, id) do
+  def query(:user_oauth_query, [provider, id]) do
     from(u in User, as: :user,
       join: a in assoc(u, :auth),
       join: p in assoc(a, :oauth2_providers), where: p.provider == ^provider and p.provider_id == ^id,
       preload: [auth: a])
   end
 
-  @doc """
-  Returns a query for fetching users by `ids`.
-  """
-  @spec users_query([pos_integer]) :: Ecto.Query.t
-  def users_query(ids) when is_list(ids) do
+  def query(:users_query, [ids]) when is_list(ids) do
     from(u in User, as: :user, where: u.id in ^ids)
   end
 
-  @doc """
-  Returns a query for fetching users by `key` and `vals`.
-  """
-  @spec users_query(atom, [binary]) :: Ecto.Query.t
-  def users_query(:login = _key, vals) when is_list(vals) do
+  def query(:users_query, [:login = _key, vals]) when is_list(vals) do
     from(u in User, as: :user, where: u.login in ^vals)
   end
 
-  def users_query(:email = _key, vals) when is_list(vals) do
+  def query(:users_query, [:email = _key, vals]) when is_list(vals) do
     from(u in User, as: :user, join: e in assoc(u, :emails), where: e.verified == true and e.address in ^vals)
   end
 
-  @doc """
-  Returns a query for searching users.
-  """
-  @spec search_query(binary) :: Ecto.Query.t
-  def search_query(input) do
+  def query(:search_query, [input]) do
     term = "%#{input}%"
     from(u in User, as: :user, where: ilike(u.login, ^term) and not is_nil(u.primary_email_id))
   end
-
-  #
-  # Callbacks
-  #
 
   @impl true
   def alter_query(query, [], _viewer), do: query
