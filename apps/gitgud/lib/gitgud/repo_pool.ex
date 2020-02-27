@@ -24,9 +24,10 @@ defmodule GitGud.RepoPool do
   @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
   def start_agent(repo) do
     via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
+    init_arg = repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem))
     child_spec = %{
       id: GitAgent,
-      start: {GitAgent, :start_link, [repo_load_param(repo, Application.get_env(:gitgud, :git_storage, :filesystem)), [name: via_registry]]},
+      start: {GitAgent, :start_link, [init_arg, [name: via_registry, idle_timeout: 3000]]},
       restart: :temporary
     }
     case DynamicSupervisor.start_child(__MODULE__, child_spec) do

@@ -79,8 +79,6 @@ defmodule GitRekt.GitAgent do
 
   require Logger
 
-  @idle_timeout 5_000
-
   @type agent :: Git.repo | GitRepo.t | pid
 
   @type git_odb :: GitOdb.t
@@ -88,11 +86,18 @@ defmodule GitRekt.GitAgent do
   @type git_reference :: GitRef.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
+  @default_config %{
+      idle_timeout: :infinity
+  }
+
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
   @spec start_link(Path.t | {atom, [term]}, keyword) :: GenServer.on_start
-  def start_link(path, opts \\ []), do: GenServer.start_link(__MODULE__, path, opts)
+  def start_link(init_arg, opts \\ []) do
+    {agent_opts, server_opts} = Keyword.split(opts, Map.keys(@default_config))
+    GenServer.start_link(__MODULE__, {init_arg, agent_opts}, server_opts)
+  end
 
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
@@ -334,56 +339,62 @@ defmodule GitRekt.GitAgent do
   #
 
   @impl true
-  def init(arg) do
+  def init({arg, opts}) do
     case Git.repository_load(arg) do
       {:ok, handle} ->
-        {:ok, handle, @idle_timeout}
+        config = Map.merge(@default_config, Map.new(opts))
+        {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
     end
   end
 
   @impl true
-  def handle_call({:references, _glob} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle, @idle_timeout}
+  def handle_call({:references, _glob} = op, _from, {handle, config} = state) do
+    {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:commit_parents, _commit} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle, @idle_timeout}
+  def handle_call({:commit_parents, _commit} = op, _from, {handle, config} = state) do
+    {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:tree_entries, _tree} = op, _from, handle) do
-    {:reply, call_stream(op, handle), handle, @idle_timeout}
+  def handle_call({:tree_entries, _tree} = op, _from, {handle, config} = state) do
+    {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:history, obj, opts}, _from, handle) do
+  def handle_call({:history, obj, opts}, _from, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
     case call_stream({:history, obj, opts}, handle) do
       {:ok, stream} ->
-        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, handle, @idle_timeout}
+        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, state, config.idle_timeout}
       {:error, reason} ->
-        {:reply, {:error, reason}, handle, @idle_timeout}
+        {:reply, {:error, reason}, state, config.idle_timeout}
     end
   end
 
-  def handle_call({:history_next, stream, chunk_size}, _from, handle) do
+  def handle_call({:history_next, stream, chunk_size}, _from, {_handle, config} = state) do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
     acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
-    {:reply, {Enum.to_list(chunk_stream), acc}, handle, @idle_timeout}
+    {:reply, {Enum.to_list(chunk_stream), acc}, state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call(op, _from, handle) do
-    {:reply, call(op, handle), handle, @idle_timeout}
+  def handle_call(op, _from, {handle, config} = state) do
+    {:reply, call(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_info(:timeout, handle) do
-    {:stop, :normal, handle}
+  def handle_info(:timeout, {_handle, %{idle_timeout: :infinity}} = state) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:timeout, state) do
+    {:stop, :normal, state}
   end
 
   #
