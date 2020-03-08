@@ -177,8 +177,9 @@ defmodule GitGud.Web.CodebaseController do
   defp stats(repo, revision) do
     with {:ok, branches} <- GitAgent.branches(repo),
          {:ok, tags} <- GitAgent.tags(repo),
-         {:ok, commit} <- GitAgent.peel(repo, revision, :commit) do
-      %{branches: Enum.count(branches), tags: Enum.count(tags), commits: CommitQuery.count_ancestors(repo.id, commit.oid)}
+         {:ok, commit} <- GitAgent.peel(repo, revision, :commit),
+         {:ok, history} <- GitAgent.history(repo, commit) do
+      %{branches: Enum.count(branches), tags: Enum.count(tags), commits: Enum.count(history)}
     else
       {:error, _reason} ->
         %{commits: 0, branches: 0, tags: 0}
