@@ -6,7 +6,6 @@ defmodule GitGud.Web.CodebaseController do
   use GitGud.Web, :controller
 
   alias GitGud.RepoQuery
-  alias GitGud.CommitQuery
 
   alias GitRekt.GitAgent
   alias GitRekt.{GitBlob, GitTree}

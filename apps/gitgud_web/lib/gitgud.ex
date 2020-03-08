@@ -1,12 +1,9 @@
 import Phoenix.HTML, only: [raw: 1]
-import Phoenix.HTML.Tag
-
-import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
 import GitGud.Web.Gravatar, only: [gravatar: 2]
 import GitGud.Web.GPGKeyView, only: [format_key_id: 1]
 
-alias GitGud.{User, Repo, Issue, Commit, Email, GPGKey}
+alias GitGud.{User, Repo, Issue, Email, GPGKey}
 
 defimpl Phoenix.HTML.Safe, for: User do
   def to_iodata(user) do
@@ -24,18 +21,6 @@ end
 
 defimpl Phoenix.Param, for: Issue do
   def to_param(issue), do: to_string(issue.number)
-end
-
-defimpl Phoenix.Param, for: Commit do
-  def to_param(%Commit{oid: oid}), do: oid_fmt(oid)
-end
-
-defimpl Phoenix.HTML.Safe, for: Commit do
-  def to_iodata(%Commit{oid: oid}) do
-    Phoenix.HTML.Safe.to_iodata([
-      content_tag(:span, oid_fmt_short(oid), class: "is-family-monospace")
-    ])
-  end
 end
 
 defimpl Phoenix.HTML.Safe, for: GPGKey do

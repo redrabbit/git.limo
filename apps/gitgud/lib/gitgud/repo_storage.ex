@@ -12,11 +12,10 @@ defmodule GitGud.RepoStorage do
 
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.GPGKey
 
   alias GitGud.Issue
   alias GitGud.IssueQuery
-
-  alias GitGud.Commit
 
   import Ecto.Changeset, only: [change: 2]
   import Ecto.Query, only: [from: 2, select: 3]
@@ -140,10 +139,8 @@ defmodule GitGud.RepoStorage do
     Multi.insert_all(multi, {:chunk, i}, "git_objects", objs, on_conflict: {:replace, [:data]}, conflict_target: [:repo_id, :oid])
   end
 
-  defp write_git_meta_objects_multi({Commit, {commits, i}}, multi, repo_id, user_id) do
-    multi
-    |> Multi.insert_all({Commit, {:chunk, i}}, Commit, commits)
-    |> reference_issues_multi(repo_id, user_id, commits)
+  defp write_git_meta_objects_multi({:commit, {commits, _i}}, multi, repo_id, user_id) do
+    reference_issues_multi(multi, repo_id, user_id, commits)
   end
 
   defp write_git_meta_objects_multi({schema, {objs, i}}, multi, _repo_id, _user_id) do
@@ -157,10 +154,8 @@ defmodule GitGud.RepoStorage do
     |> Enum.reduce(multi, &write_git_meta_objects_multi({schema, &1}, &2, repo_id, user_id))
   end
 
-  defp write_git_meta_objects_multi({Commit, commits}, multi, repo_id, user_id) do
-    multi
-    |> Multi.insert_all({Commit, :all}, Commit, commits)
-    |> reference_issues_multi(repo_id, user_id, commits)
+  defp write_git_meta_objects_multi({:commit, commits}, multi, repo_id, user_id) do
+    reference_issues_multi(multi, repo_id, user_id, commits)
   end
 
   defp write_git_meta_objects_multi({schema, objs}, multi, _repo_id, _user_id) do
@@ -226,8 +221,78 @@ defmodule GitGud.RepoStorage do
   defp map_git_object_db_type(:tag), do: 4
 
   defp map_git_meta_object({oid, {:commit, data}}, repo_id) do
-    {Commit, Map.merge(Commit.decode!(data), %{repo_id: repo_id, oid: oid})}
+      commit = extract_commit_props(data)
+      author = extract_commit_author(commit)
+      committer = extract_commit_committer(commit)
+      commit = %{
+        parents: extract_commit_parents(commit),
+        message: strip_utf8(commit["message"]),
+        author_name: strip_utf8(author["name"]),
+        author_email: strip_utf8(author["email"]),
+        committer_name: strip_utf8(committer["name"]),
+        committer_email: strip_utf8(committer["email"]),
+        gpg_key_id: extract_commit_gpg_key_id(commit),
+        committed_at: author["time"],
+      }
+    {:commit, Map.merge(commit, %{repo_id: repo_id, oid: oid})}
   end
 
   defp map_git_meta_object(_obj, _repo_id), do: nil
+
+  defp extract_commit_props(data) do
+    [header, message] = String.split(data, "\n\n", parts: 2)
+    header
+    |> String.split("\n", trim: true)
+    |> Enum.chunk_by(&String.starts_with?(&1, " "))
+    |> Enum.chunk_every(2)
+    |> Enum.flat_map(fn
+      [one] -> one
+      [one, two] ->
+        two = Enum.join(Enum.map(two, &String.trim_leading/1), "\n")
+        List.update_at(one, -1, &Enum.join([&1, two], "\n"))
+    end)
+    |> Enum.map(fn line ->
+      [key, val] = String.split(line, " ", parts: 2)
+      {key, String.trim_trailing(val)}
+    end)
+    |> List.insert_at(0, {"message", message})
+    |> Enum.reduce(%{}, fn {key, val}, acc -> Map.update(acc, key, val, &(List.wrap(val) ++ [&1])) end)
+  end
+
+  defp extract_commit_parents(commit) do
+    Enum.map(List.wrap(commit["parent"] || []), &Git.oid_parse/1)
+  end
+
+  defp extract_commit_author(commit) do
+    ~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/
+    |> Regex.named_captures(commit["author"])
+    |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
+  end
+
+  defp extract_commit_committer(commit) do
+    ~r/^(?<name>.+) <(?<email>.+)> (?<time>[0-9]+) (?<time_offset>[-\+][0-9]{4})$/
+    |> Regex.named_captures(commit["committer"])
+    |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
+  end
+
+  defp extract_commit_gpg_key_id(commit) do
+    if gpg_signature = commit["gpgsig"] do
+      gpg_signature
+      |> GPGKey.decode!()
+      |> GPGKey.parse!()
+      |> get_in([:sig, :sub_pack, :issuer])
+    end
+  end
+
+  defp strip_utf8(str) do
+    strip_utf8_helper(str, [])
+  end
+
+  defp strip_utf8_helper(<<x :: utf8>> <> rest, acc), do: strip_utf8_helper(rest, [x|acc])
+  defp strip_utf8_helper(<<_x>> <> rest, acc), do: strip_utf8_helper(rest, acc)
+  defp strip_utf8_helper("", acc) do
+    acc
+    |> Enum.reverse()
+    |> List.to_string()
+  end
 end

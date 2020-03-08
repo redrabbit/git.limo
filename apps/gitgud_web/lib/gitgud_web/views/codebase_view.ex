@@ -8,8 +8,6 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.ReviewQuery
-  alias GitGud.Commit
-  alias GitGud.CommitQuery
   alias GitGud.GPGKey
   alias GitGud.GPGKeyQuery
   alias GitGud.Issue
@@ -92,7 +90,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, Commit.t | GitCommit.t) :: User.t | map | nil
+  @spec commit_author(Repo.t, GitCommit.t) :: User.t | map | nil
   def commit_author(repo, commit) do
     if author = fetch_author(repo, commit) do
       if user = UserQuery.by_email(author.email),
@@ -101,7 +99,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_author(Repo.t, Commit.t | GitCommit.t, :with_committer) :: {User.t | map | nil, User.t | map | nil}
+  @spec commit_author(Repo.t, GitCommit.t, :with_committer) :: {User.t | map | nil, User.t | map | nil}
   def commit_author(repo, commit, :with_committer) do
     author = fetch_author(repo, commit)
     author_user = UserQuery.by_email(author.email, preload: [:emails]) || author
@@ -111,7 +109,7 @@ defmodule GitGud.Web.CodebaseView do
    else: {author_user, UserQuery.by_email(committer.email) || committer}
   end
 
-  @spec commit_committer(Repo.t, Commit.t | GitCommit.t) :: User.t | map | nil
+  @spec commit_committer(Repo.t, GitCommit.t) :: User.t | map | nil
   def commit_committer(repo, commit) do
     if committer = fetch_committer(repo, commit) do
       if user = UserQuery.by_email(committer.email),
@@ -120,8 +118,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_timestamp(Repo.t, Commit.t | GitCommit.t) :: DateTime.t | nil
-  def commit_timestamp(_repo, %Commit{} = commit), do: commit.committed_at
+  @spec commit_timestamp(Repo.t, GitCommit.t) :: DateTime.t | nil
   def commit_timestamp(repo, commit) do
     case GitAgent.commit_timestamp(repo, commit) do
       {:ok, timestamp} -> timestamp
@@ -129,8 +126,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(Repo.t, Commit.t | GitCommit.t) :: binary | nil
-  def commit_message(_repo, %Commit{} = commit), do: commit.message
+  @spec commit_message(Repo.t, GitCommit.t) :: binary | nil
   def commit_message(repo, commit) do
     case GitAgent.commit_message(repo, commit) do
       {:ok, message} -> message
@@ -138,7 +134,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message_title(Repo.t, Commit.t | GitCommit.t) :: binary | nil
+  @spec commit_message_title(Repo.t, GitCommit.t) :: binary | nil
   def commit_message_title(repo, commit) do
     if message = commit_message(repo, commit) do
       issues = find_issue_references(message, repo)
@@ -146,7 +142,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message_body(Repo.t, Commit.t | GitCommit.t) :: binary | nil
+  @spec commit_message_body(Repo.t, GitCommit.t) :: binary | nil
   def commit_message_body(repo, commit) do
     if message = commit_message(repo, commit) do
       issues = find_issue_references(message, repo)
@@ -154,7 +150,7 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message_format(Repo.t, Commit.t | GitCommit.t, keyword) :: {binary, binary | nil} | nil
+  @spec commit_message_format(Repo.t, GitCommit.t, keyword) :: {binary, binary | nil} | nil
   def commit_message_format(repo, commit, opts \\ []) do
     if message = commit_message(repo, commit) do
       issues = find_issue_references(message, repo)
@@ -165,14 +161,9 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_review(Repo.t, Commit.t | GitCommit.t) :: CommitReview.t | nil
+  @spec commit_review(Repo.t, GitCommit.t) :: CommitReview.t | nil
   def commit_review(repo, commit) do
     ReviewQuery.commit_review(repo, commit)
-  end
-
-  @spec commit_gpg_key(Repo.t, Commit.t | GitCommit.t) :: GPGKey.t | nil
-  def commit_gpg_key(repo, %Commit{} = commit) do
-    CommitQuery.gpg_signature(repo, commit)
   end
 
   def commit_gpg_key(repo, %GitCommit{} = commit) do
@@ -408,41 +399,29 @@ defmodule GitGud.Web.CodebaseView do
       {_commit, _author, %User{}} -> true
       {_commit, _author, _committer} -> false
     end)
-    gpg_map =
-      cond do
-        Enum.all?(commits, fn
-          {%Commit{}, _author, _committer} -> true
-          {%GitCommit{}, _author, _committer} -> false
-        end) ->
-          CommitQuery.gpg_signature(repo, Enum.map(commits, &elem(&1, 0)))
-        Enum.all?(commits, fn
-          {%GitCommit{}, _author, _committer} -> true
-          {%Commit{}, _author, _committer} -> false
-        end) ->
-          commits_gpg_key_ids = Enum.map(commits, fn {commit, _author, _committer} ->
-            case GitAgent.commit_gpg_signature(repo, commit) do
-              {:ok, gpg_sig} ->
-                gpg_key_id =
-                  gpg_sig
-                  |> GPGKey.decode!()
-                  |> GPGKey.parse!()
-                  |> get_in([:sig, :sub_pack, :issuer])
-                {commit.oid, gpg_key_id}
-              {:error, _reason} ->
-                nil
-            end
-          end)
-          commits_gpg_key_ids = Enum.reject(commits_gpg_key_ids, &is_nil/1)
-          commits_gpg_key_ids = Enum.into(commits_gpg_key_ids, %{})
-          gpg_keys =
-            commits_gpg_key_ids
-            |> Map.values()
-            |> Enum.uniq()
-            |> GPGKeyQuery.by_key_id()
-          Map.new(commits_gpg_key_ids, fn {oid, gpg_key_id} ->
-            {oid, Enum.find(gpg_keys, &(binary_part(&1.key_id, 20, -8) == gpg_key_id))}
-          end)
+    commits_gpg_key_ids = Enum.map(commits, fn {commit, _author, _committer} ->
+      case GitAgent.commit_gpg_signature(repo, commit) do
+        {:ok, gpg_sig} ->
+          gpg_key_id =
+            gpg_sig
+            |> GPGKey.decode!()
+            |> GPGKey.parse!()
+            |> get_in([:sig, :sub_pack, :issuer])
+          {commit.oid, gpg_key_id}
+        {:error, _reason} ->
+          nil
       end
+    end)
+    commits_gpg_key_ids = Enum.reject(commits_gpg_key_ids, &is_nil/1)
+    commits_gpg_key_ids = Enum.into(commits_gpg_key_ids, %{})
+    gpg_keys =
+      commits_gpg_key_ids
+      |> Map.values()
+      |> Enum.uniq()
+      |> GPGKeyQuery.by_key_id()
+    gpg_map = Map.new(commits_gpg_key_ids, fn {oid, gpg_key_id} ->
+      {oid, Enum.find(gpg_keys, &(binary_part(&1.key_id, 20, -8) == gpg_key_id))}
+    end)
     Enum.map(batch, fn
       {commit, author, %User{} = committer} ->
         {commit, author, committer, gpg_map[commit.oid]}
@@ -493,10 +472,6 @@ defmodule GitGud.Web.CodebaseView do
     fetch_author(repo, tag)
   end
 
-  defp fetch_author(_repo, %Commit{} = commit) do
-    %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
-  end
-
   defp fetch_committer(repo, %GitRef{} = reference) do
     case GitAgent.peel(repo, reference, :commit) do
       {:ok, commit} ->
@@ -524,19 +499,11 @@ defmodule GitGud.Web.CodebaseView do
     fetch_committer(repo, commit)
   end
 
-  defp fetch_committer(_repo, %Commit{} = commit) do
-    %{name: commit.author_name, email: commit.author_email, timestamp: commit.committed_at}
-  end
-
   defp fetch_timestamp(repo, %GitCommit{} = commit) do
     case GitAgent.commit_timestamp(repo, commit) do
       {:ok, timestamp} -> timestamp
       {:error, _reason} -> nil
     end
-  end
-
-  defp fetch_timestamp(_repo, %Commit{} = commit) do
-    DateTime.from_naive!(commit.committed_at, "Etc/UTC")
   end
 
   defp find_commit_timestamp({timestamp, _}, timestamp), do: true
