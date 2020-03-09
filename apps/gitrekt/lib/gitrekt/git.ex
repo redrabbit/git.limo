@@ -31,12 +31,94 @@ defmodule GitRekt.Git do
   ```
 
   First we open our repository using `repository_open/1`, passing the path of the Git repository.  We can fetch
-  a branch by passing the exact reference path to `reference_peel/2`. In our example, this allows us to retrieve
-  the commit `master` is pointing to.
+  a commit by passing the exact reference path to `reference_peel/2`. In our example, this allows us to retrieve
+  the commit *refs/heads/master* is pointing to.
 
   This is one of many ways to fetch a given commit, `reference_lookup/2` and `reference_glob/2` offer similar
   functionalities. There are other related functions such as `revparse_single/2` and `revparse_ext/2` which
   provide support for parsing [revspecs](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection).
+
+  In order to access the actual files and directories of a repository, we have to retrieve the Git tree object of
+  a given revision. Here we simply list files and folders at the root directory:
+
+  ```elixir
+  # fetch commit tree
+  {:ok, tree} = Git.commit_tree(commit)
+
+  # fetch tree entries at /
+  {:ok, tree_entries} = Git.tree_entries(tree)
+
+  for {mode, type, oid, name} <- tree_entries do
+    # fetch tree entry object by oid (blob or tree)
+    case Git.object_lookup(repo, oid) do
+      {:ok, :blob, blob} ->
+        # fetch blob size
+        {:ok, blob_size} = Git.blob_size(blob)
+        IO.puts "#{name} -- #{blob_size} bytes"
+      {:ok, :tree, tree} ->
+        # fetch number of sub entries
+        {:ok, count} <- Git.tree_count(tree)
+        IO.puts "#{name}/ -- #{count} items"
+    end
+  end
+  ```
+
+  Note that `tree_entries/1` and `tree_nth/2` return a tuple in the form of `{mode, type, oid, name}`. In order to
+  call blob and tree specific functions such as `blob_size/1`  and `tree_count/1`, we still need to lookup the Git object using `object_lookup/2`.
+
+  Here's an other example showing a convenient way to retrieve a tree entry by path:
+
+  ```elixir
+  # fetch commit tree
+  {:ok, tree} = Git.commit_tree(commit)
+
+  # fetch blob by path
+  {:ok, mode, :blob, oid, name} Git.tree_bypath(tree, "README.md")
+
+  # fetch blob object by oid
+  {:ok, :blob, blob} = Git.object_lookup(repo, oid)
+
+  # fetch blob content
+  {:ok, data} = Git.blob_content(blob)
+
+  IO.binwrite data
+  ```
+
+  Now that we know how to access files and directories, it might be interesting to the determine the changes
+  between two versions. In order to do so, we need to compare two tree objects from different revisions:
+
+  ```elixir
+  # fetch tree for tag v1.2
+  {:ok, v1_2, :commit, _oid} = Git.revparse_single(repo, "v1.2")
+  {:ok, v1_2_tree} = Git.commit_tree(v1_2)
+
+  # fetch tree for tag v1.3
+  {:ok, v1_3, :commit, _oid} = Git.revparse_single(repo, "v1.3")
+  {:ok, v1_3_tree} = Git.commit_tree(v1_3)
+
+  # fetch diff between v1.2 and v1.3
+  {:ok, diff} = Git.diff_tree(repo, v1_2_tree, v1_3_tree)
+
+  # format diff to string
+  {:ok, patch} = Git.diff_format(diff, :patch)
+
+  IO.puts patch
+  ```
+
+  Note that `diff_tree/4` takes options such as `:pathspec` allowing to filter changes based on a given path.
+
+  For example, we might want to see the different between two revision for a specific file. In this case we
+  could modify the above example as follow to print changes affecting *README.md*:
+
+  ```elixir
+  # fetch diff between v1.2 and v1.3 for README.md
+  {:ok, diff} = Git.diff_tree(repo, v1_2_tree, v1_3_tree, pathspec: "README.md")
+
+  # format diff to string
+  {:ok, patch} = Git.diff_format(diff, :patch)
+
+  IO.puts patch
+  ```
 
   ## Thread safety
 
