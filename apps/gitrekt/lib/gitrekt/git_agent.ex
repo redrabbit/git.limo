@@ -93,10 +93,10 @@ defmodule GitRekt.GitAgent do
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
   """
-  @spec start_link(Path.t | {atom, [term]}, keyword) :: GenServer.on_start
-  def start_link(init_arg, opts \\ []) do
+  @spec start_link(Path.t, keyword) :: GenServer.on_start
+  def start_link(path, opts \\ []) do
     {agent_opts, server_opts} = Keyword.split(opts, Map.keys(@default_config))
-    GenServer.start_link(__MODULE__, {init_arg, agent_opts}, server_opts)
+    GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
   @doc """
@@ -339,8 +339,8 @@ defmodule GitRekt.GitAgent do
   #
 
   @impl true
-  def init({arg, opts}) do
-    case Git.repository_load(arg) do
+  def init({path, opts}) do
+    case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
         {:ok, {handle, config}, config.idle_timeout}
