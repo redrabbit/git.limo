@@ -16,8 +16,6 @@ defmodule GitGud.SSHServer do
   See `GitGud.Authorization` for more details.
   """
 
-  require Logger
-
   alias GitGud.Auth
   alias GitGud.User
   alias GitGud.UserQuery
@@ -130,8 +128,7 @@ defmodule GitGud.SSHServer do
     {:stop, chan, state}
   end
 
-  def handle_ssh_msg({:ssh_cm, conn, msg}, %__MODULE__{conn: conn} = state) do
-    Logger.warn("ignoring SSH message #{inspect msg}")
+  def handle_ssh_msg({:ssh_cm, conn, _msg}, %__MODULE__{conn: conn} = state) do
     {:ok, state}
   end
 
