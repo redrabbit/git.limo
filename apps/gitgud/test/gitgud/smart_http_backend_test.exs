@@ -76,7 +76,7 @@ defmodule GitGud.SmartHTTPBackendTest do
     @tag :skip
     test "clones repository", %{user: user, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}", workdir])
-      assert {:ok, head} = GitAgent.git_head(repo)
+      assert {:ok, head} = GitAgent.head(repo)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
