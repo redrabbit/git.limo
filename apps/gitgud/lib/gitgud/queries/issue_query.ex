@@ -41,16 +41,12 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_issues(Repo.t | pos_integer, keyword) :: [Issue.t]
   def repo_issues(repo, opts \\ [])
-  def repo_issues(%Repo{id: repo_id}, opts) do
-    {status, opts} = Keyword.pop(opts, :status, :all)
-    {numbers, opts} = Keyword.pop(opts, :numbers)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status], opts))
-  end
-
+  def repo_issues(%Repo{id: repo_id}, opts), do: repo_issues(repo_id, opts)
   def repo_issues(repo_id, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
+    {labels, opts} = Keyword.pop(opts, :labels, [])
     {numbers, opts} = Keyword.pop(opts, :numbers)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status], opts))
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status, labels], opts))
   end
 
   @doc """
@@ -58,14 +54,11 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_issues_with_comments_count(Repo.t | pos_integer, keyword) :: [{Issue.t, pos_integer}]
   def repo_issues_with_comments_count(repo, opts \\ [])
-  def repo_issues_with_comments_count(%Repo{id: repo_id}, opts) do
-    {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
-  end
-
+  def repo_issues_with_comments_count(%Repo{id: repo_id}, opts), do: repo_issues_with_comments_count(repo_id, opts)
   def repo_issues_with_comments_count(repo_id, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status], opts))
+    {labels, opts} = Keyword.pop(opts, :labels, [])
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status, labels], opts))
   end
 
   @doc """
@@ -73,10 +66,7 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_labels(Repo.t | pos_integer, keyword) :: [IssueLabel.t]
   def repo_labels(repo, opts \\ [])
-  def repo_labels(%Repo{id: repo_id}, opts) do
-    DB.all(DBQueryable.query({__MODULE__, :repo_labels_query}, [repo_id], opts))
-  end
-
+  def repo_labels(%Repo{id: repo_id}, opts), do: repo_labels(repo_id, opts)
   def repo_labels(repo_id, opts) do
     DB.all(DBQueryable.query({__MODULE__, :repo_labels_query}, [repo_id], opts))
   end
@@ -86,14 +76,11 @@ defmodule GitGud.IssueQuery do
   """
   @spec count_repo_issues(Repo.t | pos_integer, keyword) :: non_neg_integer | nil
   def count_repo_issues(repo, opts \\ [])
-  def count_repo_issues(%Repo{id: repo_id}, opts) do
-    {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
-  end
-
+  def count_repo_issues(%Repo{id: repo_id}, opts), do: count_repo_issues(repo_id, opts)
   def count_repo_issues(repo_id, opts) do
     {status, opts} = Keyword.pop(opts, :status, :all)
-    DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status], opts))
+    {labels, opts} = Keyword.pop(opts, :labels, [])
+    DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status, labels], opts))
   end
 
   #
@@ -123,8 +110,24 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
+  def query(:repo_issues_query, [repo_id, status, []]), do: query(:repo_issues_query, [repo_id, status])
+  def query(:repo_issues_query, [repo_id, status, labels]) do
+    query(:repo_issues_query, [repo_id, status])
+    |> join(:inner, [issue: i], l in assoc(i, :labels), as: :labels)
+    |> group_by([issue: i], i.id)
+    |> having([issue: i, labels: l], fragment("array_agg(?) @> (?)::varchar[]", l.name, ^labels))
+  end
+
   def query(:repo_issues_with_comments_count_query, [repo_id, status]) do
     query(:repo_issues_query, [repo_id, status])
+    |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
+    |> group_by([issue: i], i.id)
+    |> select([issue: i, comment: c], {i, count(c)})
+  end
+
+  def query(:repo_issues_with_comments_count_query, [repo_id, status, []]), do: query(:repo_issues_with_comments_count_query, [repo_id, status])
+  def query(:repo_issues_with_comments_count_query, [repo_id, status, labels]) do
+    query(:repo_issues_query, [repo_id, status, labels])
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
     |> select([issue: i, comment: c], {i, count(c)})
@@ -136,6 +139,11 @@ defmodule GitGud.IssueQuery do
 
   def query(:count_repo_issues_query, [repo_id, status]) do
     select(query(:repo_issues_query, [repo_id, status]), [issue: e], count())
+  end
+
+  def query(:count_repo_issues_query, [repo_id, status, []]), do: query(:count_repo_issues_query, [repo_id, status])
+  def query(:count_repo_issues_query, [repo_id, status, labels]) do
+    select(query(:repo_issues_query, [repo_id, status, labels]), [issue: e], count())
   end
 
   def query(:comments_query, [%Issue{id: issue_id} = _issue]), do: query(:comments_query, [issue_id])

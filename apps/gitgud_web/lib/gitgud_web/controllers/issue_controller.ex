@@ -20,7 +20,8 @@ defmodule GitGud.Web.IssueController do
   def index(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
       status = String.to_atom(conn.query_params["status"] || "open")
-      issues = IssueQuery.repo_issues_with_comments_count(repo, status: status, preload: [:author, :labels], order_by: [desc: :number])
+      labels = conn.query_params["labels"] || []
+      issues = IssueQuery.repo_issues_with_comments_count(repo, status: status, labels: labels, preload: [:author, :labels], order_by: [desc: :number])
       render(conn, "index.html", repo: repo, issues: issues)
     end || {:error, :not_found}
   end
