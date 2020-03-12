@@ -11,7 +11,7 @@ class IssueLabel extends React.Component {
   }
 
   render() {
-    const {name, color, edit, active, onToggle} = this.props
+    const {name, description, color, edit, active, onToggle} = this.props
     const textClass = this.constructor.textClass(color)
     if(edit) {
       if(active) {
@@ -29,7 +29,7 @@ class IssueLabel extends React.Component {
         return <button className="button issue-label edit" onClick={onToggle}>{name}</button>
       }
     } else {
-      return <button className={`button ${textClass} issue-label is-active`} style={{backgroundColor: `#${color}`}} onClick={onToggle}>{name}</button>
+      return <button className={`button ${textClass} issue-label is-active tooltip`} style={{backgroundColor: `#${color}`}} data-tooltip={description} onClick={onToggle}>{name}</button>
     }
   }
 }

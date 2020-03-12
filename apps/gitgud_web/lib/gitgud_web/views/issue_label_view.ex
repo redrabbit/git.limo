@@ -9,10 +9,16 @@ defmodule GitGud.Web.IssueLabelView do
     content_tag(tag, "new label", class: "button issue-label has-text-dark is-active", style: "background-color: #dddddd")
   end
 
+  def label_button(tag, %IssueLabel{description: nil} = label) do
+    threshold = 130
+    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
+    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}")
+  end
+
   def label_button(tag, %IssueLabel{} = label) do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active", style: "background-color: ##{label.color}")
+    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}", data: [tooltip: label.description])
   end
 
   def color_picker(%IssueLabel{color: nil} = _label) do

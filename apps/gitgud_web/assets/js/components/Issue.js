@@ -83,6 +83,7 @@ class Issue extends React.Component {
               issueLabels {
                 id
                 name
+                description
                 color
               }
             }

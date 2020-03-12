@@ -8,9 +8,7 @@ defmodule GitGud.Web.IssueView do
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
-  def label_button(label) do
-    GitGud.Web.IssueLabelView.label_button(label)
-  end
+  import GitGud.Web.IssueLabelView, only: [label_button: 1]
 
   @spec status_tag(Issue.t | binary, keyword) :: binary
   def status_tag(issue, attrs \\ [])
