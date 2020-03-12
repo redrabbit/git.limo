@@ -713,7 +713,7 @@ defmodule GitGud.GraphQL.Resolvers do
             {:error, reason}
         end
      end || {:error, "Unauthorized"}
-    end
+   end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
@@ -731,7 +731,7 @@ defmodule GitGud.GraphQL.Resolvers do
             {:error, reason}
         end
       end || {:error, "Unauthorized"}
-    end
+    end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
@@ -749,7 +749,7 @@ defmodule GitGud.GraphQL.Resolvers do
             {:error, reason}
         end
       end || {:error, "Unauthorized"}
-    end
+    end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
@@ -769,7 +769,7 @@ defmodule GitGud.GraphQL.Resolvers do
             {:error, reason}
         end
       end || {:error, "Unauthorized"}
-    end
+    end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
