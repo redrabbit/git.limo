@@ -43,9 +43,9 @@ defmodule GitGud.IssueQuery do
   def repo_issues(repo, opts \\ [])
   def repo_issues(%Repo{id: repo_id}, opts), do: repo_issues(repo_id, opts)
   def repo_issues(repo_id, opts) do
+    {numbers, opts} = Keyword.pop(opts, :numbers)
     {status, opts} = Keyword.pop(opts, :status, :all)
     {labels, opts} = Keyword.pop(opts, :labels, [])
-    {numbers, opts} = Keyword.pop(opts, :numbers)
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status, labels], opts))
   end
 
@@ -110,7 +110,6 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
-  def query(:repo_issues_query, [repo_id, status, []]), do: query(:repo_issues_query, [repo_id, status])
   def query(:repo_issues_query, [repo_id, status, labels]) do
     query(:repo_issues_query, [repo_id, status])
     |> join(:inner, [issue: i], l in assoc(i, :labels), as: :labels)
@@ -118,19 +117,11 @@ defmodule GitGud.IssueQuery do
     |> having([issue: i, labels: l], fragment("array_agg(?) @> (?)::varchar[]", l.name, ^labels))
   end
 
-  def query(:repo_issues_with_comments_count_query, [repo_id, status]) do
-    query(:repo_issues_query, [repo_id, status])
+  def query(:repo_issues_with_comments_count_query, args) do
+    query(:repo_issues_query, args)
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
-    |> select([issue: i, comment: c], {i, count(c)})
-  end
-
-  def query(:repo_issues_with_comments_count_query, [repo_id, status, []]), do: query(:repo_issues_with_comments_count_query, [repo_id, status])
-  def query(:repo_issues_with_comments_count_query, [repo_id, status, labels]) do
-    query(:repo_issues_query, [repo_id, status, labels])
-    |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
-    |> group_by([issue: i], i.id)
-    |> select([issue: i, comment: c], {i, count(c)})
+    |> select([issue: i, comment: c], {i, count(c.id, :distinct)})
   end
 
   def query(:repo_labels_query, [repo_id]) do
