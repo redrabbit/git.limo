@@ -1,33 +1,36 @@
-<%= if @committer.id == @gpg_key.user_id && Enum.any?(@committer.emails, &(&1.verified && &1.address in @gpg_key.emails)) do %>
-  <div class="popover">
-    <div class="popover-trigger">
-      <span class="icon is-small has-text-success">
-        <i class="fa fa-check"></i>
-      </span>
-    </div>
-    <div class="popover-content">
-      <div class="box signed-commit">
-        <header class="box-header">
-          <div class="box-header-title">This commit was signed with a <strong>verified signature</strong>.</div>
-          <div class="box-header-icon">
-            <span class="icon is-medium has-text-success">
-              <i class="fa fa-2x fa-check-square"></i>
-            </span>
-          </div>
-        </header>
-        <div class="box-content">
-          <div class="committer">
-            <figure class="is-pulled-left"><a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= gravatar(@committer, size: 36) %></a></figure>
-            <ul>
-              <li><strong><%= @committer.name %></strong></li>
-              <li><a href=""><%= @committer.login %></a></li>
-            </ul>
-          </div>
-          <p>GPG Key ID: <span class="gpg-key-id"><%= @gpg_key %></span></p>
-          <hr />
-          <a class="is-size-7">Learn about signing commits</a>
-        </div>
+<%= cond do %>
+  <% @author == @committer && Map.has_key?(@author, :id) -> %>
+    <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
+    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <% end %>
+  <% Map.has_key?(@author, :id) && Map.has_key?(@committer, :id) -> %>
+    <div class="tag user">
+      <div class="avatar-stack">
+        <a href="<%= Routes.user_path(@conn, :show, @author) %>"><%= gravatar(@author, size: 24) %></a>
+        <a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= gravatar(@committer, size: 24) %></a>
       </div>
+      <a href="<%= Routes.user_path(@conn, :show, @author) %>"><%= @author.login %></a>
     </div>
-  </div>
+    authored and <a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= @committer.login %></a> committed
+    <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <% end %>
+  <% Map.has_key?(@author, :id) -> %>
+    <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
+    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+  <% Map.has_key?(@committer, :id) -> %>
+    <a href="<%= Routes.user_path(@conn, :show, @committer) %>" class="tag user"><%= @committer %></a>
+    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <% end %>
+  <% Map.take(@author, [:name, :email]) == Map.take(@committer, [:name, :email]) -> %>
+    <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a>
+    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+  <% true -> %>
+    <a href="mailto:<%= @author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @author.email %>"><%= @author.name %></a>
+    authored and <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a> committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
 <% end %>

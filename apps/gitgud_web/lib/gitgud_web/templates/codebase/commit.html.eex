@@ -36,26 +36,7 @@
             </div>
           </div>
           <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
-            <%= if Map.has_key?(committer, :id) do %>
-              <%= if Map.has_key?(author, :id) && committer.id != author.id do %>
-                <div class="tag user">
-                  <div class="avatar-stack">
-                    <a href="<%= Routes.user_path(@conn, :show, committer) %>"><%= gravatar(committer, size: 24) %></a>
-                    <a href="<%= Routes.user_path(@conn, :show, author) %>"><%= gravatar(author, size: 24) %></a>
-                  </div>
-                  <a href="<%= Routes.user_path(@conn, :show, committer) %>"><%= committer.login %></a>
-                </div>
-              <% else %>
-                <a href="<%= Routes.user_path(@conn, :show, committer) %>" class="tag user"><%= committer %></a>
-              <% end %>
-              committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-              <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
-                <%= render "_commit_signature.html", conn: @conn, committer: committer, gpg_key: gpg_key %>
-              <% end %>
-            <% else %>
-              <a href="mailto:<%= committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
-              committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-            <% end %>
+            <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: @commit, author: author, committer: committer %>
           <% end %>
           <%= if message_body do %>
             <div class="log-message"><%= message_body %></div>
