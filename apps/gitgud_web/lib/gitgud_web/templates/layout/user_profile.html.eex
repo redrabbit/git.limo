@@ -1,13 +1,13 @@
 <%= render_layout "app.html", assigns do %>
   <div class="columns">
     <div class="user-profile column is-one-quarter">
-      <%= gravatar(@user, size: 516) %>
-
-      <h1 class="title"><%= @user.name %></h1>
-      <h2 class="subtitle"><%= @user.login %></h2>
-
-      <div class="content has-text-grey">
-        <%= @user.bio %>
+      <div class="has-text-centered">
+        <%= gravatar(@user, size: 150) %>
+        <h1 class="title"><%= @user.login %></h1>
+        <h2 class="subtitle"><%= @user.name %></h2>
+        <div class="content has-text-grey">
+          <%= @user.bio %>
+        </div>
       </div>
 
       <hr />
