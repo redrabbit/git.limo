@@ -36,7 +36,7 @@
             </div>
           </div>
           <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
-            <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: @commit, author: author, committer: committer %>
+            <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: @commit, author: author, committer: committer, gpg_key: commit_gpg_key(@repo, @commit) %>
           <% end %>
           <%= if message_body do %>
             <div class="log-message"><%= message_body %></div>

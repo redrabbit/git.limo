@@ -137,16 +137,14 @@ defmodule GitGud.Web.CodebaseView do
   @spec commit_message_title(Repo.t, GitCommit.t) :: binary | nil
   def commit_message_title(repo, commit) do
     if message = commit_message(repo, commit) do
-      issues = find_issue_references(message, repo)
-      replace_issue_references(List.first(String.split(message, "\n", trim: true, parts: 2)), repo, issues)
+      List.first(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 
   @spec commit_message_body(Repo.t, GitCommit.t) :: binary | nil
   def commit_message_body(repo, commit) do
     if message = commit_message(repo, commit) do
-      issues = find_issue_references(message, repo)
-      replace_issue_references(List.last(String.split(message, "\n", trim: true, parts: 2)), repo, issues)
+      List.last(String.split(message, "\n", trim: true, parts: 2))
     end
   end
 

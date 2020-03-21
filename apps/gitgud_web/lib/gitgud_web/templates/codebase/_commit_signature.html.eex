@@ -2,8 +2,8 @@
   <% @author == @committer && Map.has_key?(@author, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
     committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
-      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <%= if assigns.gpg_key do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
   <% Map.has_key?(@author, :id) && Map.has_key?(@committer, :id) -> %>
     <div class="tag user">
@@ -15,8 +15,8 @@
     </div>
     authored and <a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= @committer.login %></a> committed
     <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
-      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <%= if assigns.gpg_key do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
   <% Map.has_key?(@author, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
@@ -24,8 +24,8 @@
   <% Map.has_key?(@committer, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @committer) %>" class="tag user"><%= @committer %></a>
     committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
-    <%= if gpg_key = commit_gpg_key(@repo, @commit) do %>
-      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: gpg_key %>
+    <%= if assigns.gpg_key do %>
+      <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
   <% Map.take(@author, [:name, :email]) == Map.take(@committer, [:name, :email]) -> %>
     <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a>

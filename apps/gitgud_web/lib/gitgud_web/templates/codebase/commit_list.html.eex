@@ -32,7 +32,7 @@
                 <p class="has-text-weight-bold">
                   <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@repo, commit) %></a>
                 </p>
-                <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: commit, author: author, committer: committer %>
+                <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: commit, author: author, committer: committer, gpg_key: gpg_key %>
               </div>
               <div class="column has-text-right">
                 <p class="buttons is-pulled-right">
