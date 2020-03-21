@@ -110,6 +110,10 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
+  def query(:repo_issues_query, [repo_id, status, []]) do
+    query(:repo_issues_query, [repo_id, status])
+  end
+
   def query(:repo_issues_query, [repo_id, status, labels]) do
     query(:repo_issues_query, [repo_id, status])
     |> join(:inner, [issue: i], l in assoc(i, :labels), as: :labels)
