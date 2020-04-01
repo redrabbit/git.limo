@@ -55,8 +55,8 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "renders profile", %{conn: conn, user: user} do
       conn = get(conn, Routes.user_path(conn, :show, user))
-      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
+      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
       assert html_response(conn, 200) =~ ~s(Nothing to see here.)
     end
 
@@ -157,8 +157,8 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "renders user profile", %{conn: conn, user: user, repos: repos} do
       conn = get(conn, Routes.user_path(conn, :show, user))
-      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.name}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.login}</h2>)
+      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
       for repo <- repos do
         assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
       end
