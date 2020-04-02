@@ -571,8 +571,7 @@ defmodule GitRekt.GitAgent do
   defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
-
-  defp call({:pack_create, oids}, agent) do
+  defp call({:pack, oids}, agent) do
     with {:ok, walk} <- Git.revwalk_new(agent),
           :ok <- walk_insert(walk, oid_mask(oids)),
       do: Git.revwalk_pack(walk)
