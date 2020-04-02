@@ -4,14 +4,16 @@ defmodule GitGud.DataFactory do
   """
 
   alias GitGud.User
+  alias GitGud.Repo
 
   import Faker.Name, only: [name: 0]
+  import Faker.Company, only: [catch_phrase: 0]
   import Faker.Internet, only: [user_name: 0]
-  import Faker.Lorem, only: [sentence: 1]
+  import Faker.Lorem, only: [sentence: 1, paragraph: 1]
   import Faker.Nato, only: [callsign: 0]
 
   @doc """
-  Returns a map representing `GitGud.User` registration params.
+  Returns a map representing `GitGud.User` registration changeset params.
   """
   def user do
     %{
@@ -23,14 +25,14 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.Repo` params.
+  Returns a map representing `GitGud.Repo` changeset params.
   """
   def repo do
     %{name: String.downcase(callsign()), description: sentence(2..8)}
   end
 
   @doc """
-  Returns a map representing `GitGud.Repo` params.
+  Returns a map representing `GitGud.Repo` changeset params.
   """
   def repo(%User{id: user_id}), do: repo(user_id)
   def repo(user_id) when is_integer(user_id) do
@@ -42,14 +44,14 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.Email` params.
+  Returns a map representing `GitGud.Email` changeset params.
   """
   def email do
     %{address: String.replace(Faker.Internet.email(), "'", "")}
   end
 
   @doc """
-  Returns a map representing `GitGud.Email` params.
+  Returns a map representing `GitGud.Email` changeset params.
   """
   def email(%User{id: user_id}), do: email(user_id)
   def email(user_id) do
@@ -57,7 +59,7 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.SSHKey` params.
+  Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key do
     {rsa_pub, rsa_priv} = make_ssh_pair(128)
@@ -65,7 +67,7 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.SSHKey` params.
+  Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key(%User{id: user_id}), do: ssh_key(user_id)
   def ssh_key(user_id) when is_integer(user_id) do
@@ -73,7 +75,7 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.SSHKey` params.
+  Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key_strong do
     {rsa_pub, rsa_priv} = make_ssh_pair(2048)
@@ -81,7 +83,7 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.SSHKey` params.
+  Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key_strong(%User{id: user_id}), do: ssh_key_strong(user_id)
   def ssh_key_strong(user_id) when is_integer(user_id) do
@@ -89,17 +91,33 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.GPGKey` params.
+  Returns a map representing `GitGud.GPGKey` changeset params.
   """
   def gpg_key(%User{id: user_id, name: name, emails: emails}) do
     gpg_key(user_id, name, Enum.map(emails, &(&1.address)))
   end
 
   @doc """
-  Returns a map representing `GitGud.GPGKey` params.
+  Returns a map representing `GitGud.GPGKey` changeset params.
   """
   def gpg_key(user_id, name, emails) do
     %{data: make_gpg_key(name, emails), user_id: user_id}
+  end
+
+  @doc """
+  Returns a map representing `GitGud.Issue` changeset params.
+  """
+  def issue(%Repo{id: repo_id}, %User{id: author_id}), do: issue(repo_id, author_id)
+  def issue(repo_id, author_id) do
+    %{repo_id: repo_id, author_id: author_id, title: catch_phrase(), comments: [comment(repo_id, author_id, "issue_comments")]}
+  end
+
+  @doc """
+  Returns a map representing `GitGud.Comment` changeset params.
+  """
+  def comment(%Repo{id: repo_id}, %User{id: author_id}, thread_table), do: comment(repo_id, author_id, thread_table)
+  def comment(repo_id, author_id, thread_table) do
+    %{repo_id: repo_id, author_id: author_id, thread_table: thread_table, body: paragraph(2..5)}
   end
 
   @doc false
