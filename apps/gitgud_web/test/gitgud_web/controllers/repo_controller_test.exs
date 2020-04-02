@@ -87,7 +87,7 @@ defmodule GitGud.Web.RepoControllerTest do
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Settings</h2>)
     end
 
-    test "deletes repositoriy", %{conn: conn, user: user, repo: repo} do
+    test "deletes repository", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = delete(conn, Routes.repo_path(conn, :delete, user, repo))
       assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' deleted."
