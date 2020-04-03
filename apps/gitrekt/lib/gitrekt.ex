@@ -7,8 +7,8 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git commit.
     """
-    defstruct [:oid, :commit]
-    @type t :: %__MODULE__{oid: Git.oid, commit: Git.commit}
+    defstruct [:oid, :__ref__]
+    @type t :: %__MODULE__{oid: Git.oid, __ref__: Git.commit}
 
     defimpl Inspect do
       def inspect(commit, _opts), do: "<GitCommit:#{Git.oid_fmt_short(commit.oid)}>"
@@ -31,8 +31,8 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git tag.
     """
-    defstruct [:oid, :name, :tag]
-    @type t :: %__MODULE__{oid: Git.oid, name: :binary, tag: Git.tag}
+    defstruct [:oid, :name, :__ref__]
+    @type t :: %__MODULE__{oid: Git.oid, name: :binary, __ref__: Git.tag}
 
     defimpl Inspect do
       def inspect(tag, _opts), do: "<GitTag:#{tag.name}>"
@@ -43,8 +43,8 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git blob.
     """
-    defstruct [:oid, :blob]
-    @type t :: %__MODULE__{oid: Git.oid, blob: Git.blob}
+    defstruct [:oid, :__ref__]
+    @type t :: %__MODULE__{oid: Git.oid, __ref__: Git.blob}
 
     defimpl Inspect do
       def inspect(blob, _opts), do: "<GitBlob:#{Git.oid_fmt_short(blob.oid)}>"
@@ -55,8 +55,8 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git tree.
     """
-    defstruct [:oid, :tree]
-    @type t :: %__MODULE__{oid: Git.oid, tree: Git.blob}
+    defstruct [:oid, :__ref__]
+    @type t :: %__MODULE__{oid: Git.oid, __ref__: Git.tree}
 
     defimpl Inspect do
       def inspect(tree, _opts), do: "<GitTree:#{Git.oid_fmt_short(tree.oid)}>"
@@ -79,11 +79,11 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git diff.
     """
-    defstruct [:diff]
-    @type t :: %__MODULE__{diff: Git.diff}
+    defstruct [:__ref__]
+    @type t :: %__MODULE__{__ref__: Git.diff}
 
     defimpl Inspect do
-      def inspect(diff, _opts), do: "<GitDiff:#{inspect diff.diff}>"
+      def inspect(diff, _opts), do: "<GitDiff:#{inspect diff.__ref__}>"
     end
   end
 
@@ -91,11 +91,11 @@ defmodule GitRekt do
     @moduledoc """
     Represents a Git ODB.
     """
-    defstruct [:odb]
-    @type t :: %__MODULE__{odb: Git.odb}
+    defstruct [:__ref__]
+    @type t :: %__MODULE__{__ref__: Git.odb}
 
     defimpl Inspect do
-      def inspect(odb, _opts), do: "<GitOdb:#{inspect odb.odb}>"
+      def inspect(odb, _opts), do: "<GitOdb:#{inspect odb.__ref__}>"
     end
   end
 end

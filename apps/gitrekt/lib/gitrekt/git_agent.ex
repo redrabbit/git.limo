@@ -440,9 +440,9 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:odb_read, %GitOdb{odb: odb}, oid}, _handle), do: Git.odb_read(odb, oid)
-  defp call({:odb_write, %GitOdb{odb: odb}, data, type}, _handle), do: Git.odb_write(odb, data, type)
-  defp call({:odb_object_exists, %GitOdb{odb: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
+  defp call({:odb_read, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_read(odb, oid)
+  defp call({:odb_write, %GitOdb{__ref__: odb}, data, type}, _handle), do: Git.odb_write(odb, data, type)
+  defp call({:odb_object_exists, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
 
   defp call(:head, handle) do
     case Git.reference_resolve(handle, "HEAD") do
@@ -503,8 +503,8 @@ defmodule GitRekt.GitAgent do
 
   defp call({:tree, obj}, handle), do: fetch_tree(obj, handle)
   defp call({:diff, obj1, obj2, opts}, handle), do: fetch_diff(obj1, obj2, handle, opts)
-  defp call({:diff_format, %GitDiff{diff: diff}, format}, _handle), do: Git.diff_format(diff, format)
-  defp call({:diff_deltas, %GitDiff{diff: diff}}, _handle) do
+  defp call({:diff_format, %GitDiff{__ref__: diff}, format}, _handle), do: Git.diff_format(diff, format)
+  defp call({:diff_deltas, %GitDiff{__ref__: diff}}, _handle) do
     case Git.diff_deltas(diff) do
       {:ok, deltas} ->
         {:ok, Enum.map(deltas, &resolve_diff_delta/1)}
@@ -513,7 +513,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:diff_stats, %GitDiff{diff: diff}}, _handle) do
+  defp call({:diff_stats, %GitDiff{__ref__: diff}}, _handle) do
     case Git.diff_stats(diff) do
       {:ok, files_changed, insertions, deletions} ->
         {:ok, resolve_diff_stats({files_changed, insertions, deletions})}
@@ -548,7 +548,7 @@ defmodule GitRekt.GitAgent do
   defp call({:author, obj}, _handle), do: fetch_author(obj)
   defp call({:committer, obj}, _handle), do: fetch_committer(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
-  defp call({:commit_parents, %GitCommit{commit: commit}}, _handle) do
+  defp call({:commit_parents, %GitCommit{__ref__: commit}}, _handle) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_commit_parent/1)}
@@ -557,7 +557,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_timestamp, %GitCommit{commit: commit}}, _handle) do
+  defp call({:commit_timestamp, %GitCommit{__ref__: commit}}, _handle) do
     case Git.commit_time(commit) do
       {:ok, time, _offset} ->
         DateTime.from_unix(time)
@@ -566,9 +566,9 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_gpg_signature, %GitCommit{commit: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
-  defp call({:blob_content, %GitBlob{blob: blob}}, _handle), do: Git.blob_content(blob)
-  defp call({:blob_size, %GitBlob{blob: blob}}, _handle), do: Git.blob_size(blob)
+  defp call({:commit_gpg_signature, %GitCommit{__ref__: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
+  defp call({:blob_content, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_content(blob)
+  defp call({:blob_size, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
   defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
   defp call({:pack, oids}, agent) do
@@ -586,7 +586,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp resolve_odb(odb), do: %GitOdb{odb: odb}
+  defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
 
   defp resolve_reference({nil, nil, :oid, _oid}), do: nil
   defp resolve_reference({name, nil, :oid, oid}) do
@@ -603,19 +603,19 @@ defmodule GitRekt.GitAgent do
   defp resolve_reference_type("refs/heads/"), do: :branch
   defp resolve_reference_type("refs/tags/"), do: :tag
 
-  defp resolve_object({blob, :blob, oid}), do: %GitBlob{oid: oid, blob: blob}
-  defp resolve_object({commit, :commit, oid}), do: %GitCommit{oid: oid, commit: commit}
-  defp resolve_object({tree, :tree, oid}), do: %GitTree{oid: oid, tree: tree}
+  defp resolve_object({blob, :blob, oid}), do: %GitBlob{oid: oid, __ref__: blob}
+  defp resolve_object({commit, :commit, oid}), do: %GitCommit{oid: oid, __ref__: commit}
+  defp resolve_object({tree, :tree, oid}), do: %GitTree{oid: oid, __ref__: tree}
   defp resolve_object({tag, :tag, oid}) do
     case Git.tag_name(tag) do
       {:ok, name} ->
-        %GitTag{oid: oid, name: name, tag: tag}
+        %GitTag{oid: oid, name: name, __ref__: tag}
       {:error, _reason} ->
-        %GitTag{oid: oid, tag: tag}
+        %GitTag{oid: oid, __ref__: tag}
     end
   end
 
-  defp resolve_commit_parent({oid, commit}), do: %GitCommit{oid: oid, commit: commit}
+  defp resolve_commit_parent({oid, commit}), do: %GitCommit{oid: oid, __ref__: commit}
 
   defp resolve_tree_entry({mode, type, oid, name}), do: %GitTreeEntry{oid: oid, name: name, mode: mode, type: type}
 
@@ -648,10 +648,10 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree(%GitCommit{commit: commit}, _handle) do
+  defp fetch_tree(%GitCommit{__ref__: commit}, _handle) do
     case Git.commit_tree(commit) do
       {:ok, oid, tree} ->
-        {:ok, %GitTree{oid: oid, tree: tree}}
+        {:ok, %GitTree{oid: oid, __ref__: tree}}
       {:error, reason} ->
         {:error, reason}
     end
@@ -666,7 +666,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree(%GitTag{tag: tag}, handle) do
+  defp fetch_tree(%GitTag{__ref__: tag}, handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
         fetch_tree(resolve_object({obj, obj_type, oid}), handle)
@@ -675,7 +675,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry(%GitTree{tree: tree}, {:oid, oid}, _handle) do
+  defp fetch_tree_entry(%GitTree{__ref__: tree}, {:oid, oid}, _handle) do
     case Git.tree_byid(tree, oid) do
       {:ok, mode, type, oid, name} ->
         {:ok, resolve_tree_entry({mode, type, oid, name})}
@@ -684,7 +684,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry(%GitTree{tree: tree}, {:path, path}, _handle) do
+  defp fetch_tree_entry(%GitTree{__ref__: tree}, {:path, path}, _handle) do
     case Git.tree_bypath(tree, path) do
       {:ok, mode, type, oid, name} ->
         {:ok, resolve_tree_entry({mode, type, oid, name})}
@@ -713,7 +713,7 @@ defmodule GitRekt.GitAgent do
   end
 
 
-  defp fetch_tree_entries(%GitTree{tree: tree}, _handle) do
+  defp fetch_tree_entries(%GitTree{__ref__: tree}, _handle) do
     case Git.tree_entries(tree) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_tree_entry/1)}
@@ -749,10 +749,10 @@ defmodule GitRekt.GitAgent do
   defp fetch_tree_entries_commits(rev, handle), do: walk_history(rev, handle, [])
   defp fetch_tree_entries_commits(rev, path, handle), do: walk_history(rev, handle, pathspec: path)
 
-  defp fetch_diff(%GitTree{tree: tree1}, %GitTree{tree: tree2}, handle, opts) do
+  defp fetch_diff(%GitTree{__ref__: tree1}, %GitTree{__ref__: tree2}, handle, opts) do
     case Git.diff_tree(handle, tree1, tree2, opts) do
       {:ok, diff} ->
-        {:ok, %GitDiff{diff: diff}}
+        {:ok, %GitDiff{__ref__: diff}}
       {:error, reason} ->
         {:error, reason}
     end
@@ -774,7 +774,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp fetch_target(%GitTag{} = tag, :tag, _handle), do: {:ok, tag}
-  defp fetch_target(%GitTag{tag: tag}, target, handle) do
+  defp fetch_target(%GitTag{__ref__: tag}, target, handle) do
     case Git.tag_peel(tag) do
       {:ok, obj_type, oid, obj} ->
         if target == :undefined,
@@ -808,26 +808,26 @@ defmodule GitRekt.GitAgent do
     {:error, "cannot peel #{inspect obj} to #{target}"}
   end
 
-  defp fetch_author(%GitCommit{commit: commit}) do
+  defp fetch_author(%GitCommit{__ref__: commit}) do
     with {:ok, name, email, time, _offset} <- Git.commit_author(commit),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_author(%GitTag{tag: tag}) do
+  defp fetch_author(%GitTag{__ref__: tag}) do
     with {:ok, name, email, time, _offset} <- Git.tag_author(tag),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_committer(%GitCommit{commit: commit}) do
+  defp fetch_committer(%GitCommit{__ref__: commit}) do
     with {:ok, name, email, time, _offset} <- Git.commit_committer(commit),
          {:ok, datetime} <- DateTime.from_unix(time), do:
       {:ok, %{name: name, email: email, timestamp: datetime}}
   end
 
-  defp fetch_message(%GitCommit{commit: commit}), do: Git.commit_message(commit)
-  defp fetch_message(%GitTag{tag: tag}), do: Git.tag_message(tag)
+  defp fetch_message(%GitCommit{__ref__: commit}), do: Git.commit_message(commit)
+  defp fetch_message(%GitTag{__ref__: tag}), do: Git.tag_message(tag)
 
   defp walk_history(obj, handle, opts) do
     {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
@@ -842,7 +842,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp pathspec_match_commit(%GitCommit{commit: commit}, pathspec, handle) do
+  defp pathspec_match_commit(%GitCommit{__ref__: commit}, pathspec, handle) do
     case Git.commit_tree(commit) do
       {:ok, _oid, tree} ->
         pathspec_match_commit_tree(commit, tree, pathspec, handle)
