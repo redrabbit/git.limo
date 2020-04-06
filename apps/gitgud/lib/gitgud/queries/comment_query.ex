@@ -9,6 +9,7 @@ defmodule GitGud.CommentQuery do
   alias GitGud.DBQueryable
 
   alias GitGud.Comment
+  alias GitGud.CommentRevision
 
   import Ecto.Query
 
@@ -16,7 +17,7 @@ defmodule GitGud.CommentQuery do
   Returns a comment for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: Comment.t | nil
-  def by_id(id, opts \\ []) do
+  def by_id(id, opts \\ []) when is_integer(id) do
     DB.one(DBQueryable.query({__MODULE__, :comment_query}, [id], opts))
   end
 
@@ -26,6 +27,14 @@ defmodule GitGud.CommentQuery do
   @spec thread(Comment.t) :: struct | nil
   def thread(%Comment{id: id, thread_table: table} = _comment, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :thread_query}, [id, table], opts))
+  end
+
+  def comment_revision(id, opts \\ []) when is_integer(id) do
+    DB.one(DBQueryable.query({__MODULE__, :revision_query}, [id], opts))
+  end
+
+  def comment_revisions(%Comment{id: id} = _comment, opts \\ []) do
+    DB.one(DBQueryable.query({__MODULE__, :revisions_query}, [id], opts))
   end
 
   #
@@ -39,6 +48,14 @@ defmodule GitGud.CommentQuery do
 
   def query(:thread_query, [id, table]) do
     from r in thread_struct(table), join: t in ^table, on: [comment_id: ^id], where: t.thread_id == r.id
+  end
+
+  def query(:revision_query, [id]) do
+    from(r in CommentRevision, as: :revision, where: r.id == ^id)
+  end
+
+  def query(:revisions_query, [id]) do
+    from(r in CommentRevision, as: :revision, where: r.comment_id == ^id)
   end
 
   @impl true

@@ -16,6 +16,7 @@ defmodule GitGud.GraphQL.Resolvers do
   alias GitGud.RepoQuery
   alias GitGud.Comment
   alias GitGud.CommentQuery
+  alias GitGud.CommentRevision
   alias GitGud.Issue
   alias GitGud.IssueQuery
   alias GitGud.IssueLabel
@@ -44,6 +45,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def node_type(%User{} = _node, _info), do: :user
   def node_type(%Repo{} = _node, _info), do: :repo
   def node_type(%Comment{} = _node, _info), do: :comment
+  def node_type(%CommentRevision{} = _node, _info), do: :comment_revision
   def node_type(%Issue{} = _node, _info), do: :issue
   def node_type(%IssueLabel{} = _node, _info), do: :issue_label
   def node_type(%CommitLineReview{} = _node, _info), do: :commit_line_review
@@ -70,6 +72,12 @@ defmodule GitGud.GraphQL.Resolvers do
   def node(%{id: id, type: :comment}, %{context: ctx} = info, opts) do
     if comment = CommentQuery.by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:ok, comment},
+    else: node(%{id: id}, info)
+  end
+
+  def node(%{id: id, type: :comment_revision}, %{context: ctx} = info, opts) do
+    if revision = CommentQuery.comment_revision(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
+      do: {:ok, revision},
     else: node(%{id: id}, info)
   end
 
@@ -673,9 +681,35 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the HTML content of a given `comment`.
   """
-  @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, integer} | {:error, term}
+  @spec comment_html(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def comment_html(%Comment{repo_id: repo_id} = comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, markdown(comment.body, repo: repos[repo_id])} end)
+  end
+
+  @doc """
+  Resolves revisions for a `comment`.
+  """
+  @spec comment_revisions(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def comment_revisions(args, %Absinthe.Resolution{source: comment, context: ctx} = _info) do
+    query = DBQueryable.query({CommentQuery, :revisions_query}, comment.id, viewer: ctx[:current_user], order_by: :inserted_at)
+    Connection.from_query(query, &DB.all/1, args)
+  end
+
+
+  @doc """
+  Resolves the author for a given comment `revision`.
+  """
+  @spec comment_revision_author(CommentRevision.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def comment_revision_author(%CommentRevision{author_id: user_id} = _revision, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
+  end
+
+  @doc """
+  Resolves the HTML content of a given comment `revision`.
+  """
+  @spec comment_revision_html(CommentRevision.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
+  def comment_revision_html(%CommentRevision{body: body} = _revision, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, markdown(body, repo: ctx[:repo])}
   end
 
   @doc """

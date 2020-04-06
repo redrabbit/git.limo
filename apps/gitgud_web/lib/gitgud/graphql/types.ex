@@ -32,6 +32,7 @@ defmodule GitGud.GraphQL.Types do
   connection node_type: :issue
   connection node_type: :issue_label
   connection node_type: :comment
+  connection node_type: :comment_revision
   connection node_type: :search_result
 
   interface :issue_event do
@@ -548,6 +549,11 @@ defmodule GitGud.GraphQL.Types do
     @desc "The HTML formatted body of the comment."
     field :body_html, non_null(:string), resolve: &Resolvers.comment_html/3
 
+    @desc "A list of update revisions for the comment."
+    connection field :revisions, node_type: :comment_revision do
+      resolve &Resolvers.comment_revisions/2
+    end
+
     @desc "The creation timestamp of the comment."
     field :inserted_at, non_null(:naive_datetime)
 
@@ -562,5 +568,20 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The repository this comment belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.comment_repo/3
+  end
+
+  @desc "Represents a comment revision."
+  node object :comment_revision do
+    @desc "The author of the revision."
+    field :author, non_null(:user), resolve: &Resolvers.comment_revision_author/3
+
+    @desc "The body of the revision."
+    field :body, non_null(:string)
+
+    @desc "The HTML formatted body of the revision."
+    field :body_html, non_null(:string), resolve: &Resolvers.comment_revision_html/3
+
+    @desc "The creation timestamp of the comment."
+    field :inserted_at, non_null(:naive_datetime)
   end
 end
