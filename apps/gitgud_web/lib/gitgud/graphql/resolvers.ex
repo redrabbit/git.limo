@@ -824,7 +824,7 @@ defmodule GitGud.GraphQL.Resolvers do
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user]) do
       if authorized?(ctx[:current_user], comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
-        case Comment.update(comment, body: body) do
+        case Comment.update_rev(comment, ctx[:current_user], body: body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :update))
             {:ok, comment}
