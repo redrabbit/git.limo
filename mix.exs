@@ -51,6 +51,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Auth,
           GitGud.Comment,
           GitGud.CommentQuery,
+          GitGud.CommentRevision,
           GitGud.Email,
           GitGud.Commit,
           GitGud.CommitLineReview,
