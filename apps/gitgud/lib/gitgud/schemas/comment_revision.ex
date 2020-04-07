@@ -5,9 +5,6 @@ defmodule GitGud.CommentRevision do
 
   use Ecto.Schema
 
-  import Ecto.Changeset
-
-  alias GitGud.DB
   alias GitGud.Comment
   alias GitGud.User
 
