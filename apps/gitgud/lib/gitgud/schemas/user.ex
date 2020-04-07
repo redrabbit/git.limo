@@ -73,7 +73,7 @@ defmodule GitGud.User do
   def create(params) do
     case create_with_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
       {:ok, %{user_with_primary_email: user}} ->
-        {:ok, user}
+        {:ok, put_in(user.auth.password, nil)}
       {:error, :user, changeset, _changes} ->
         {:error, changeset}
       {:error, :user_with_primary_email, changeset, _changes} ->

@@ -47,8 +47,8 @@ defmodule GitGud.Web.EmailControllerTest do
     assert redirected_to(conn) == Routes.email_path(conn, :index)
     receive do
       {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
-        {start_link, _} = :binary.match(text, "http://")
-        conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
+        [reset_url] = Regex.run(Regex.compile!("#{Regex.escape(GitGud.Web.Endpoint.url)}[^\\s]+"), text)
+        conn = get(conn, reset_url)
         assert get_flash(conn, :info) == "Email '#{email_address}' verified."
         assert redirected_to(conn) == Routes.email_path(conn, :index)
     after
@@ -109,4 +109,3 @@ defmodule GitGud.Web.EmailControllerTest do
     |> Map.update!(:user, &DB.preload(&1, :emails))
   end
 end
-

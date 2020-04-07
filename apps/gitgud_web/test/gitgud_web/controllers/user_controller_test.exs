@@ -134,8 +134,8 @@ defmodule GitGud.Web.UserControllerTest do
       assert redirected_to(conn) == Routes.session_path(conn, :new)
       receive do
         {:delivered_email, %Bamboo.Email{text_body: text, to: [{_name, ^email_address}]}} ->
-          {start_link, _} = :binary.match(text, "http://")
-          conn = get(conn, binary_part(text, start_link, byte_size(text) - start_link))
+          [reset_url] = Regex.run(Regex.compile!("#{Regex.escape(GitGud.Web.Endpoint.url)}[^\\s]+"), text)
+          conn = get(conn, reset_url)
           assert get_flash(conn, :info) == "Please set a new password below."
           assert html_response(conn, 200) =~ ~s(<h1 class="title">Settings</h1>)
           assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Password</h2>)
