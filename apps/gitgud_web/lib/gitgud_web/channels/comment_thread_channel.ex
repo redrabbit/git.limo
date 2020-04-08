@@ -11,11 +11,6 @@ defmodule GitGud.Web.CommentThreadChannel do
     {:ok, socket}
   end
 
-  def join("commit_review:" <> _commit_review, _params, socket) do
-    send(self(), :after_join)
-    {:ok, socket}
-  end
-
   def join("commit_line_review:" <> _commit_line_review, _params, socket) do
     send(self(), :after_join)
     {:ok, socket}

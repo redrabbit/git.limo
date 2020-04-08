@@ -139,14 +139,6 @@ defmodule GitGud.GraphQL.Schema do
       resolve &Resolvers.create_commit_line_review_comment/3
     end
 
-    @desc "Create a new commit review comment."
-    field :create_commit_review_comment, type: :comment do
-      arg :repo_id, non_null(:id), description: "The repository ID."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.create_commit_review_comment/3
-    end
-
     @desc "Update a comment."
     field :update_comment, type: :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
@@ -231,27 +223,6 @@ defmodule GitGud.GraphQL.Schema do
       arg :hunk, non_null(:integer), description: "The delta hunk index."
       arg :line, non_null(:integer), description: "The delta line index."
       config &Resolvers.commit_line_review_comment_topic/2
-    end
-
-    @desc "Subscribe to new commit review comments."
-    field :commit_review_comment_create, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      config &Resolvers.commit_review_comment_topic/2
-    end
-
-    @desc "Subscribe to commit review comment updates."
-    field :commit_review_comment_update, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      config &Resolvers.commit_review_comment_topic/2
-    end
-
-    @desc "Subscribe to commit review comment deletes."
-    field :commit_review_comment_delete, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      config &Resolvers.commit_review_comment_topic/2
     end
 
     @desc "Subscribe to comment updates."

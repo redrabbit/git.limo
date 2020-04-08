@@ -159,9 +159,9 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_review(Repo.t, GitCommit.t) :: CommitReview.t | nil
-  def commit_review(repo, commit) do
-    ReviewQuery.commit_review(repo, commit)
+  @spec commit_line_reviews(Repo.t, GitCommit.t) :: CommitLineReview.t | nil
+  def commit_line_reviews(repo, commit) do
+    ReviewQuery.commit_line_reviews(repo, commit)
   end
 
   def commit_gpg_key(repo, %GitCommit{} = commit) do
@@ -252,11 +252,14 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_deltas_with_reviews(Repo.t, GitCommit.t, GitDiff.t) :: [map] | nil
-  def diff_deltas_with_reviews(repo, commit, diff) do
-    commit_reviews = ReviewQuery.commit_line_reviews(repo, commit)
+  @spec diff_deltas_with_reviews(Repo.t, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
+  def diff_deltas_with_reviews(repo, %GitCommit{} = commit, diff) do
+    diff_deltas_with_reviews(repo, ReviewQuery.commit_line_reviews(repo, commit), diff)
+  end
+
+  def diff_deltas_with_reviews(repo, line_reviews, diff) when is_list(line_reviews) do
     Enum.map(diff_deltas(repo, diff), fn delta ->
-      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
           List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
@@ -265,11 +268,14 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec diff_deltas_with_comments(Repo.t, GitCommit.t, GitDiff.t) :: [map] | nil
-  def diff_deltas_with_comments(repo, commit, diff) do
-    commit_reviews = ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author])
+  @spec diff_deltas_with_comments(Repo.t, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
+  def diff_deltas_with_comments(repo, %GitCommit{} = commit, diff) do
+    diff_deltas_with_comments(repo, ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author]), diff)
+  end
+
+  def diff_deltas_with_comments(repo, line_reviews, diff) when is_list(line_reviews) do
     Enum.map(diff_deltas(repo, diff), fn delta ->
-      reviews = Enum.filter(commit_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
           List.update_at(hunks, review.hunk, &attach_review_comments_to_delta_line(&1, review.line, review.comments))

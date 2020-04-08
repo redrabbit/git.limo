@@ -404,11 +404,6 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.commit_line_reviews/3
     end
 
-    @desc "A single commit review."
-    field :review, :commit_review do
-      resolve &Resolvers.commit_review/3
-    end
-
     @desc "The HTTP URL for this commit."
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end
@@ -430,20 +425,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "A list of comments for this review."
     connection field :comments, node_type: :comment do
       resolve &Resolvers.commit_line_review_comments/2
-    end
-
-    @desc "The repository this review belongs to."
-    field :repo, non_null(:repo)
-  end
-
-  @desc "Represents a Git commit review."
-  node object :commit_review do
-    @desc "The OID of the commit."
-    field :commit_oid, non_null(:git_oid)
-
-    @desc "A list of comments for this review."
-    connection field :comments, node_type: :comment do
-      resolve &Resolvers.commit_review_comments/2
     end
 
     @desc "The repository this review belongs to."
