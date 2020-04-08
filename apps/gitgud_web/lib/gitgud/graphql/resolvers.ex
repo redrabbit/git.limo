@@ -337,14 +337,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the Git target for the given Git `object` object.
-  """
-  @spec git_object_target(GitAgent.git_object, %{}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
-  def git_object_target(object, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    GitAgent.peel(ctx.repo, object)
-  end
-
-  @doc """
   Resolves the commit history starting from the given Git `revision` object.
   """
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
@@ -461,6 +453,14 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_tag_message(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
   def git_tag_message(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     GitAgent.tag_message(ctx.repo, tag)
+  end
+
+  @doc """
+  Resolves the Git target for the given Git `tag` object.
+  """
+  @spec git_tag_target(GitTag.t, %{}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
+  def git_tag_target(tag, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    GitAgent.peel(ctx.repo, tag)
   end
 
   @doc """

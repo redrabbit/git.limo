@@ -58,9 +58,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "The Git object ID."
     field :oid, non_null(:git_oid)
 
-    @desc "The underlying Git object the object points to."
-    field :target, non_null(:git_object)
-
     resolve_type &Resolvers.git_object_type/2
   end
 
@@ -73,7 +70,7 @@ defmodule GitGud.GraphQL.Types do
     field :name, non_null(:string)
 
     @desc "The Git object the tag points to."
-    field :target, non_null(:git_object), resolve: &Resolvers.git_object_target/3
+    field :target, non_null(:git_object), resolve: &Resolvers.git_tag_target/3
 
     resolve_type &Resolvers.git_tag_type/2
   end
@@ -360,19 +357,13 @@ defmodule GitGud.GraphQL.Types do
     @desc "The author of the commit."
     field :author, non_null(:git_actor), resolve: &Resolvers.git_commit_author/3
 
-    @desc "The committer of the commit."
     field :committer, non_null(:git_actor), resolve: &Resolvers.git_commit_committer/3
-
-    @desc "The object the commit points to."
-    field :target, non_null(:git_object), resolve: &Resolvers.git_object_target/3
 
     @desc "The message of the commit."
     field :message, non_null(:string), resolve: &Resolvers.git_commit_message/3
 
     @desc "The timestamp of the commit."
     field :timestamp, non_null(:datetime), resolve: &Resolvers.git_commit_timestamp/3
-
-
 
     @desc "The linear commit history starting from this commit."
     connection field :history, node_type: :git_commit do
@@ -386,6 +377,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
+
 
     @desc "A tree entry and it's last commit."
     field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
@@ -457,7 +449,7 @@ defmodule GitGud.GraphQL.Types do
     field :message, non_null(:string), resolve: &Resolvers.git_tag_message/3
 
     @desc "The object the tag points to."
-    field :target, non_null(:git_object), resolve: &Resolvers.git_object_target/3
+    field :target, non_null(:git_object), resolve: &Resolvers.git_tag_target/3
 
     @desc "The linear commit history starting from this tag."
     connection field :history, node_type: :git_commit do
@@ -486,9 +478,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The Git object ID."
     field :oid, non_null(:git_oid)
-
-    @desc "The object the tree points to."
-    field :target, non_null(:git_object), resolve: &Resolvers.git_object_target/3
 
     @desc "A list of tree entries."
     connection field :entries, node_type: :git_tree_entry do
@@ -525,9 +514,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The Git object ID."
     field :oid, non_null(:git_oid)
-
-    @desc "The object the blob points to."
-    field :target, non_null(:git_object), resolve: &Resolvers.git_object_target/3
 
     @desc "The size in bytes of the blob."
     field :size, non_null(:integer), resolve: &Resolvers.git_blob_size/3
