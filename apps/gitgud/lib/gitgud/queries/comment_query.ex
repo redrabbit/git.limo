@@ -29,11 +29,21 @@ defmodule GitGud.CommentQuery do
     DB.one(DBQueryable.query({__MODULE__, :thread_query}, [id, table], opts))
   end
 
-  def comment_revision(id, opts \\ []) when is_integer(id) do
+  @doc """
+  Returns a comment revision for the given `id`.
+  """
+  @spec revision(pos_integer) :: CommentRevision.t | nil
+  def revision(id, opts \\ []) when is_integer(id) do
     DB.one(DBQueryable.query({__MODULE__, :revision_query}, [id], opts))
   end
 
-  def comment_revisions(%Comment{id: id} = _comment, opts \\ []) do
+  @doc """
+  Returns all the comment revision for the given `comment`.
+  """
+  @spec revisions(Comment.t | pos_integer) :: [CommentRevision.t]
+  def revisions(comment, opts \\ [])
+  def revisions(%Comment{id: id}, opts), do: revisions(id, opts)
+  def revisions(id, opts) do
     DB.one(DBQueryable.query({__MODULE__, :revisions_query}, [id], opts))
   end
 

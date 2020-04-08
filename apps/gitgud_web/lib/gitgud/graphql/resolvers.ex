@@ -74,7 +74,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def node(%{id: id, type: :comment_revision}, %{context: ctx} = info, opts) do
-    if revision = CommentQuery.comment_revision(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
+    if revision = CommentQuery.revision(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user])),
       do: {:ok, revision},
     else: node(%{id: id}, info)
   end
