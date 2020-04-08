@@ -103,6 +103,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the authenticated user.
+  """
+  @spec viewer(%{}, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def viewer(%{} = _root, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, ctx[:current_user]}
+  end
+
+  @doc """
   Resolves the URL of the given `resource`.
   """
   @spec url(map, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}

@@ -33,7 +33,10 @@
           <div class="navbar-end">
             <%= if authenticated?(@conn) do %>
               <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link"><%= gravatar(@current_user, size: 28) %> <%= @current_user.login %></a>
+                <a class="navbar-link">
+                  <%= gravatar(@current_user, id: "viewer-avatar", size: 28) %>
+                  <span id="viewer-login"><%= @current_user.login %></span>
+                </a>
                 <div class="navbar-dropdown is-right">
                   <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
                   <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>

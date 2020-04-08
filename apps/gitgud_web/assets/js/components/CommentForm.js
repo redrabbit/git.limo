@@ -1,6 +1,6 @@
 import React from "react"
 
-import {token} from "../auth"
+import {currentUser} from "../auth"
 
 class CommentForm extends React.Component {
   constructor(props) {
@@ -13,14 +13,14 @@ class CommentForm extends React.Component {
   }
 
   componentDidMount() {
-    if(token) {
+    if(currentUser) {
       this.bodyInput.current.focus()
       this.bodyInput.current.setSelectionRange(this.bodyInput.current.value.length, this.bodyInput.current.value.length);
     }
   }
 
   render() {
-    if(token) {
+    if(currentUser) {
       return (
         <div className="comment-form">
           <form onSubmit={this.handleSubmit}>

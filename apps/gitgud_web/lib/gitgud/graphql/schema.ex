@@ -64,6 +64,13 @@ defmodule GitGud.GraphQL.Schema do
     end
 
     @desc """
+    Returns the current authenticated user.
+    """
+    field :viewer, :user do
+      resolve &Resolvers.viewer/3
+    end
+
+    @desc """
     Perform a search across resources.
     """
     connection field :search, node_type: :search_result do
