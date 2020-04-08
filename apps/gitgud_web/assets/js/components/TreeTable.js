@@ -12,39 +12,41 @@ class TreeTable {
         node(id: $repoId) {
           ... on Repo {
             object(oid: $commitOid) {
-              ... on GitCommit {
-                treeEntriesWithLastCommit(first: 50, path: $treePath) {
-                  edges {
-                    node {
-                      treeEntry {
-                        oid
-                      }
-                      commit {
-                        message
-                        timestamp
-                        committer {
-                          ... on User {
-                            login
-                            avatarUrl
-                            url
-                          }
-                          ... on UnknownUser {
-                            name
-                            email
-                          }
+              target {
+                ... on GitCommit {
+                  treeEntriesWithLastCommit(first: 50, path: $treePath) {
+                    edges {
+                      node {
+                        treeEntry {
+                          oid
                         }
-                        author {
-                          ... on User {
-                            login
-                            avatarUrl
-                            url
+                        commit {
+                          message
+                          timestamp
+                          committer {
+                            ... on User {
+                              login
+                              avatarUrl
+                              url
+                            }
+                            ... on UnknownUser {
+                              name
+                              email
+                            }
                           }
-                          ... on UnknownUser {
-                            name
-                            email
+                          author {
+                            ... on User {
+                              login
+                              avatarUrl
+                              url
+                            }
+                            ... on UnknownUser {
+                              name
+                              email
+                            }
                           }
+                          url
                         }
-                        url
                       }
                     }
                   }

@@ -10,7 +10,7 @@ export default () => {
     const {repoId, commitOid, treePath} = table.dataset
     TreeTable.fetchTreeEntriesWithCommit(repoId, commitOid, treePath)
       .then(response => {
-        const latestCommitEdge = response.node.object.treeEntriesWithLastCommit.edges.reduce((acc, edge) => {
+        const latestCommitEdge = response.node.object.target.treeEntriesWithLastCommit.edges.reduce((acc, edge) => {
           if(edge.node.commit.timestamp > acc.node.commit.timestamp) {
             return edge
           } else {
@@ -40,7 +40,7 @@ export default () => {
         time.dataset.tooltip = timestamp.format()
         time.innerHTML = timestamp.fromNow()
         td.append(time)
-        response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
+        response.node.object.target.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
           const messageTitle = commit.message.split("\n", 1)[0].trim()
