@@ -1,8 +1,8 @@
 #include "repository.h"
 #include "object.h"
 #include "oid.h"
-#include "oid.h"
 #include "config.h"
+#include "index.h"
 #include "geef.h"
 #include <string.h>
 #include <git2.h>
@@ -141,7 +141,6 @@ geef_repository_workdir(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	memcpy(bin.data, path, len);
 	return enif_make_binary(env, &bin);
-
 }
 
 ERL_NIF_TERM
@@ -159,7 +158,6 @@ geef_repository_is_bare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return atoms.true;
 
 	return atoms.false;
-
 }
 
 ERL_NIF_TERM
@@ -177,7 +175,6 @@ geef_repository_is_empty(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return atoms.true;
 
 	return atoms.false;
-
 }
 
 ERL_NIF_TERM
@@ -218,6 +215,27 @@ geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_resource(odb);
 
 	return enif_make_tuple2(env, atoms.ok, term_odb);
+}
+
+ERL_NIF_TERM
+geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_repository *repo;
+	geef_index *index;
+	ERL_NIF_TERM term_index;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+		return enif_make_badarg(env);
+
+	index = enif_alloc_resource(geef_index_type, sizeof(geef_index));
+
+	if (git_repository_index(&index->index, repo->repo) < 0)
+		return geef_error(env);
+
+	term_index = enif_make_resource(env, index);
+	enif_release_resource(index);
+
+	return enif_make_tuple2(env, atoms.ok, term_index);
 }
 
 ERL_NIF_TERM

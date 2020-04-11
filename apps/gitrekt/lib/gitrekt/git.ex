@@ -241,13 +241,21 @@ defmodule GitRekt.Git do
   @spec repository_get_workdir(repo) :: Path.t
   def repository_get_workdir(_repo) do
       raise Code.LoadError, file: @nif_path_lib
-    end
+  end
 
   @doc """
   Returns the ODB for the given `repository`.
   """
   @spec repository_get_odb(repo) :: {:ok, odb} | {:error, term}
   def repository_get_odb(_repo) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Returns the index for the given `repository`.
+  """
+  @spec repository_get_index(repo) :: {:ok, index} | {:error, term}
+  def repository_get_index(_repo) do
     raise Code.LoadError, file: @nif_path_lib
   end
 
