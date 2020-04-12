@@ -5,12 +5,11 @@
 
 int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *err, ERL_NIF_TERM term)
 {
-	const ERL_NIF_TERM *time_tuple, *time, *tuple;
+	const ERL_NIF_TERM *tuple;
 	ErlNifBinary name, email;
 	git_signature *sig;
 	git_time_t gtime;
 	int offset, arity;
-	unsigned int secs, megasecs;
 
 	memset(&name, 0, sizeof(ErlNifBinary));
 	memset(&email, 0, sizeof(ErlNifBinary));
@@ -21,10 +20,10 @@ int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *e
 	if (arity != 4)
 		goto on_badarg;
 
-	if (!enif_inspect_binary(env, tuple[1], &name))
+	if (!enif_inspect_binary(env, tuple[0], &name))
 		goto on_badarg;
 
-	if (!enif_inspect_binary(env, tuple[2], &email))
+	if (!enif_inspect_binary(env, tuple[1], &email))
 		goto on_badarg;
 
 	if (!geef_terminate_binary(&name))
@@ -33,38 +32,11 @@ int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *e
 	if (!geef_terminate_binary(&email))
 		goto on_oom;
 
-	/*
-	 * Now that we have the name and e-mail, we need to extract
-	 * the time tuple. This is quite annoying as the time is yet
-	 * another tuple.
-	 */
-	if (!enif_get_tuple(env, tuple[3], &arity, &time_tuple))
+	if (!enif_get_uint(env, tuple[2], &gtime))
 		goto on_badarg;
 
-	if (arity != 2)
+	if (!enif_get_int(env, tuple[3], &offset))
 		goto on_badarg;
-
-	/*
-	 * The first element of the time is an erlang timestamp, which
-	 * separates megasecs out, for whatever reason
-	 */
-	if (!enif_get_tuple(env, time_tuple[0], &arity, &time))
-		goto on_badarg;
-
-	if (arity != 3)
-		goto on_badarg;
-
-	if (!enif_get_uint(env, time[0], &megasecs))
-		goto on_badarg;
-	if (!enif_get_uint(env, time[1], &secs))
-		goto on_badarg;
-
-	if (!enif_get_int(env, time_tuple[1], &offset))
-		goto on_badarg;
-
-	gtime = megasecs * 1000000 + secs;
-
-	/* Finally we have all the data */
 
 	if (git_signature_new(&sig, (char *)name.data, (char *)email.data, gtime, offset) < 0) {
 		enif_release_binary(&name);
@@ -129,10 +101,10 @@ geef_signature_default(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	if (git_signature_default(&sig, repo->repo) < 0)
 		return geef_error(env);
-	
+
 	error = geef_signature_to_erl(&name, &email, &time, &offset, env, sig);
 	git_signature_free(sig);
-	
+
 	if (error < 0)
 		return geef_oom(env);
 

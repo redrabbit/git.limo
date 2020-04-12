@@ -125,6 +125,7 @@ geef_commit_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return err;
 	}
 
+
 	if (enif_compare(argv[4], atoms.undefined)) {
 		if (!enif_inspect_binary(env, argv[4], &bin))
 		     return enif_make_badarg(env);
