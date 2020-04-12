@@ -134,6 +134,8 @@ defmodule GitGud.Umbrella.Mixfile do
           GitRekt.GitDiff,
           GitRekt.GitTree,
           GitRekt.GitTreeEntry,
+          GitRekt.GitIndex,
+          GitRekt.GitIndexEntry,
           GitRekt.Git,
           GitRekt.Packfile,
           GitRekt.WireProtocol,

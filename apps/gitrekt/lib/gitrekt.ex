@@ -75,6 +75,58 @@ defmodule GitRekt do
     end
   end
 
+  defmodule GitIndex do
+    @moduledoc """
+    Represents a Git index.
+    """
+    defstruct [:__ref__]
+    @type t :: %__MODULE__{__ref__: Git.index}
+
+    defimpl Inspect do
+      def inspect(index, _opts), do: "<GitIndex:#{inspect index.__ref__}>"
+    end
+  end
+
+  defmodule GitIndexEntry do
+    @moduledoc """
+    Represents a Git index entry.
+    """
+    @enforce_keys [:mode, :oid, :path, :file_size]
+    defstruct [
+      ctime: :undefined,
+      mtime: :undefined,
+      dev: :undefined,
+      ino: :undefined,
+      mode: nil,
+      uid: :undefined,
+      gid: :undefined,
+      file_size: 0,
+      oid: nil,
+      flags: :undefined,
+      flags_extended: :undefined,
+      path: nil
+    ]
+    @type t :: %__MODULE__{
+      ctime: pos_integer | :undefined,
+      mtime: pos_integer | :undefined,
+      dev: pos_integer | :undefined,
+      ino: pos_integer | :undefined,
+      mode: pos_integer,
+      uid: pos_integer | :undefined,
+      gid: pos_integer | :undefined,
+      file_size: non_neg_integer,
+      oid: binary,
+      flags: pos_integer | :undefined,
+      flags_extended: pos_integer | :undefined,
+      path: binary
+    }
+
+    defimpl Inspect do
+      def inspect(index_entry, _opts), do: "<GitIndexEntry:#{index_entry.path}>"
+    end
+  end
+
+
   defmodule GitDiff do
     @moduledoc """
     Represents a Git diff.

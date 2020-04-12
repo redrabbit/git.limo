@@ -75,7 +75,7 @@ defmodule GitRekt.GitAgent do
   """
   use GenServer
 
-  alias GitRekt.{Git, GitRepo, GitOdb, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitDiff}
+  alias GitRekt.{Git, GitRepo, GitOdb, GitCommit, GitRef, GitTag, GitBlob, GitTree, GitTreeEntry, GitIndex, GitIndexEntry, GitDiff}
 
   require Logger
 
@@ -130,7 +130,7 @@ defmodule GitRekt.GitAgent do
   def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})
 
   @doc """
-  Returns the Git reference.
+  Returns the Git reference for `HEAD`.
   """
   @spec head(agent) :: {:ok, git_reference} | {:error, term}
   def head(agent), do: exec(agent, :head)
@@ -242,6 +242,12 @@ defmodule GitRekt.GitAgent do
   def commit_gpg_signature(agent, commit), do: exec(agent, {:commit_gpg_signature, commit})
 
   @doc """
+  Creates a commit with the given `tree_oid` and `parents_oid`.
+  """
+  @spec commit_create(agent, binary, map, map, binary, Git.oid, [Git.oid]) :: {:ok, Git.oid} | {:error, term}
+  def commit_create(agent, update_ref \\ :undefined, author, committer, message, tree_oid, parents_oids), do: exec(agent, {:commit_create, update_ref, author, committer, message, tree_oid, parents_oids})
+
+  @doc """
   Returns the content of the given `blob`.
   """
   @spec blob_content(agent, GitBlob.t) :: {:ok, binary} | {:error, term}
@@ -292,6 +298,36 @@ defmodule GitRekt.GitAgent do
   """
   @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
   def tree_entry_target(agent, tree_entry), do: exec(agent, {:tree_entry_target, tree_entry})
+
+  @doc """
+  Returns the Git index of the repository.
+  """
+  @spec index(agent) :: {:ok, GitIndex.t} | {:error, term}
+  def index(agent), do: exec(agent, :index)
+
+  @doc """
+  Adds `index_entry` to the gieven `index`.
+  """
+  @spec index_add(agent, GitIndex.t, GitIndexEntry.t) :: :ok | {:error, term}
+  def index_add(agent, index, index_entry), do: exec(agent, {:index_add, index, index_entry})
+
+  @doc """
+  Adds an index entry to the given `index`.
+  """
+  @spec index_add(agent, GitIndex.t, Git.oid, Path.t, non_neg_integer, pos_integer, keyword) :: :ok | {:error, term}
+  def index_add(agent, index, oid, path, file_size, mode, opts \\ []), do: exec(agent, {:index_add, index, oid, path, file_size, mode, opts})
+
+  @doc """
+  Reads the given `tree` into the given `index`.
+  """
+  @spec index_read_tree(agent, GitIndex.t, GitTree.t) :: :ok | {:error, term}
+  def index_read_tree(agent, index, tree), do: exec(agent, {:index_read_tree, index, tree})
+
+  @doc """
+  Writes the given `index` as a tree.
+  """
+  @spec index_write_tree(agent, GitIndex.t) :: {:ok, Git.oid} | {:error, term}
+  def index_write_tree(agent, index), do: exec(agent, {:index_write_tree, index})
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
@@ -545,6 +581,43 @@ defmodule GitRekt.GitAgent do
       zip_tree_entries_commits(tree_entries, commits, path, handle)
   end
 
+  defp call(:index, handle) do
+    case Git.repository_get_index(handle) do
+      {:ok, index} -> {:ok, resolve_index(index)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp call({:index_add, %GitIndex{__ref__: index}, %GitIndexEntry{} = entry}, _handle) do
+    Git.index_add(index, {entry.ctime, entry.mtime, entry.dev, entry.ino, entry.mode, entry.uid, entry.gid, entry.file_size, entry.oid, entry.flags, entry.flags_extended, entry.path})
+  end
+
+  defp call({:index_add, %GitIndex{__ref__: index}, oid, path, file_size, mode, opts}, _handle) do
+    tree_entry = {
+      Keyword.get(opts, :ctime, :undefined),
+      Keyword.get(opts, :mtime, :undefined),
+      Keyword.get(opts, :dev, :undefined),
+      Keyword.get(opts, :ino, :undefined),
+      mode,
+      Keyword.get(opts, :uid, :undefined),
+      Keyword.get(opts, :gid, :undefined),
+      file_size,
+      oid,
+      Keyword.get(opts, :flags, :undefined),
+      Keyword.get(opts, :flags_extended, :undefined),
+      path
+    }
+    Git.index_add(index, tree_entry)
+  end
+
+  defp call({:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}, _handle) do
+    Git.index_read_tree(index, tree)
+  end
+
+  defp call({:index_write_tree, %GitIndex{__ref__: index}}, handle) do
+    Git.index_write_tree(index, handle)
+  end
+
   defp call({:author, obj}, _handle), do: fetch_author(obj)
   defp call({:committer, obj}, _handle), do: fetch_committer(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
@@ -567,6 +640,10 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call({:commit_gpg_signature, %GitCommit{__ref__: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
+  defp call({:commit_create, update_ref, author, committer, message, tree_oid, parents_oids}, handle) do
+    Git.commit_create(handle, update_ref, signature_tuple(author), signature_tuple(committer), :undefined, message, tree_oid, List.wrap(parents_oids))
+  end
+
   defp call({:blob_content, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:blob_size, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
@@ -618,6 +695,8 @@ defmodule GitRekt.GitAgent do
   defp resolve_commit_parent({oid, commit}), do: %GitCommit{oid: oid, __ref__: commit}
 
   defp resolve_tree_entry({mode, type, oid, name}), do: %GitTreeEntry{oid: oid, name: name, mode: mode, type: type}
+
+  defp resolve_index(index), do: %GitIndex{__ref__: index}
 
   defp resolve_diff_delta({{old_file, new_file, count, similarity}, hunks}) do
     %{old_file: resolve_diff_file(old_file), new_file: resolve_diff_file(new_file), count: count, similarity: similarity, hunks: Enum.map(hunks, &resolve_diff_hunk/1)}
@@ -880,6 +959,10 @@ defmodule GitRekt.GitAgent do
       {oid, hidden} when is_binary(oid) -> {oid, hidden}
       oid when is_binary(oid) -> {oid, false}
     end)
+  end
+
+  defp signature_tuple(%{name: name, email: email, timestamp: datetime}) do
+    {name, email, DateTime.to_unix(datetime), datetime.utc_offset}
   end
 
   defp walk_insert(_walk, []), do: :ok
