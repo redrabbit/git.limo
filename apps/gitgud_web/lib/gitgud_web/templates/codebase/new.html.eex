@@ -1,0 +1,44 @@
+<%= form_for @changeset, Routes.codebase_path(@conn, :create, @repo.owner, @repo, @revision, @tree_path), [as: :blob], fn f -> %>
+  <nav class="level">
+    <div class="level-left">
+      <div class="level-item">
+        <%= branch_select(@conn) %>
+      </div>
+      <div class="level-item">
+        <%= render "_tree_breadcrumb.html", assigns %>
+      </div>
+      <div class="level-item">
+        <%= text_input f, :name, class: "input" %>
+      </div>
+    </div>
+    <div class="level-right">
+      <div class="level-item">
+        <p class="buttons">
+          <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
+        </p>
+      </div>
+    </div>
+  </nav>
+
+  <div class="field">
+    <%= label f, :content, class: "label" %>
+    <div class="control">
+      <%= textarea f, :content, class: "textarea" %>
+    </div>
+    <%= error_tag f, :content %>
+  </div>
+
+  <hr />
+
+  <div class="field">
+    <%= label f, :commit_message, class: "label" %>
+    <div class="control">
+      <%= textarea f, :commit_message, class: "textarea" %>
+    </div>
+    <%= error_tag f, :commit_message %>
+  </div>
+
+  <div class="field">
+    <%= submit "Commit", class: "button is-success" %>
+  </div>
+<% end %>

@@ -5,14 +5,16 @@ defmodule GitGud.Web.CodebaseController do
 
   use GitGud.Web, :controller
 
+  alias GitGud.DB
   alias GitGud.RepoQuery
 
   alias GitRekt.GitAgent
   alias GitRekt.{GitBlob, GitTree}
 
-  import GitRekt.Git, only: [oid_parse: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1, oid_parse: 1]
 
   plug :put_layout, :repo
+  plug :ensure_authenticated when action in [:new, :create, :edit, :update]
 
   action_fallback GitGud.Web.FallbackController
 
@@ -35,6 +37,133 @@ defmodule GitGud.Web.CodebaseController do
       end
     end || {:error, :not_found}
   end
+
+  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      if authorized?(conn.assigns.current_user, repo, :write) do
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, tree} <- GitAgent.tree(repo, object) do
+          changeset = blob_changeset(%{}, %{})
+          render(conn, "new.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], changeset: changeset, stats: stats(repo, reference || object))
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+  def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      if authorized?(conn.assigns.current_user, repo, :write) do
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
+             {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(repo, tree_entry) do
+          changeset = blob_changeset(%{}, %{})
+          render(conn, "new.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path, changeset: changeset)
+        else
+          {:ok, %GitBlob{}} ->
+            {:error, :not_found}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+  @spec create(Plug.Conn.t, map) :: Plug.Conn.t
+  def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path, "blob" => blob_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      current_user = conn.assigns.current_user
+      if authorized?(current_user, repo, :write) do
+        changeset = blob_changeset(%{}, blob_params)
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, commit} <- GitAgent.peel(repo, object, :commit),
+             {:ok, tree} <- GitAgent.tree(repo, commit) do
+          if changeset.valid? do # TODO
+            current_user = DB.preload(current_user, :primary_email)
+            %{name: blob_name, content: blob_content, commit_message: commit_message} = changeset.changes
+            blob_path = Path.join(tree_path ++ [blob_name])
+            author_sig = %{name: current_user.name, email: current_user.primary_email.address, timestamp: DateTime.now!("Etc/UTC")}
+            committer_sig = author_sig
+            with {:ok, index} <- GitAgent.index(repo),
+                  :ok <- GitAgent.index_read_tree(repo, index, tree),
+                 {:ok, odb} <- GitAgent.odb(repo),
+                 {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
+                  :ok <- GitAgent.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
+                 {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
+                 {:ok, commit_oid} <- GitAgent.commit_create(repo, author_sig, committer_sig, commit_message, tree_oid, [commit.oid]) do
+              conn
+              |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+              |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+            end
+          else
+            conn
+            |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+            |> put_status(:bad_request)
+            |> render("new.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert})
+          end
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+  def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      if authorized?(conn.assigns.current_user, repo, :write) do
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
+             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry),
+             {:ok, blob_content} <- GitAgent.blob_content(repo, blob) do
+          changeset = blob_changeset(%{name: List.last(blob_path), content: blob_content}, %{})
+          render(conn, "edit.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: changeset)
+        else
+          {:ok, %GitTree{}} ->
+            {:error, :not_found}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+  @spec update(Plug.Conn.t, map) :: Plug.Conn.t
+  def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "blob" => blob_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      current_user = conn.assigns.current_user
+      if authorized?(current_user, repo, :write) do
+        changeset = blob_changeset(%{}, blob_params)
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, commit} <- GitAgent.peel(repo, object, :commit),
+             {:ok, tree} <- GitAgent.tree(repo, commit),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
+             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
+          if changeset.valid? do # TODO
+            current_user = DB.preload(current_user, :primary_email)
+            %{name: blob_name, content: blob_content, commit_message: commit_message} = changeset.changes
+            blob_path = Path.join(List.delete_at(blob_path, -1) ++ [blob_name])
+            author_sig = %{name: current_user.name, email: current_user.primary_email.address, timestamp: DateTime.now!("Etc/UTC")}
+            committer_sig = author_sig
+            with {:ok, index} <- GitAgent.index(repo),
+                  :ok <- GitAgent.index_read_tree(repo, index, tree),
+                 {:ok, odb} <- GitAgent.odb(repo),
+                 {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
+                  :ok <- GitAgent.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
+                 {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
+                 {:ok, commit_oid} <- GitAgent.commit_create(repo, author_sig, committer_sig, commit_message, tree_oid, [commit.oid]) do
+              conn
+              |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+              |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+            end
+          else
+            conn
+            |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+            |> put_status(:bad_request)
+            |> render("edit.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :update})
+          end
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
 
   @doc """
   Renders all branches of a repository.
@@ -172,6 +301,14 @@ defmodule GitGud.Web.CodebaseController do
   #
   # Helpers
   #
+
+
+  defp blob_changeset(blob, params) do
+    types = %{name: :string, content: :string, commit_message: :string}
+    {blob, types}
+    |> Ecto.Changeset.cast(params, Map.keys(types))
+    |> Ecto.Changeset.validate_required([:name, :content, :commit_message])
+  end
 
   defp stats(repo, revision) do
     with {:ok, branches} <- GitAgent.branches(repo),

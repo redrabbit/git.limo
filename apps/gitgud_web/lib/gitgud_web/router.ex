@@ -78,12 +78,21 @@ defmodule GitGud.Web.Router do
     get "/new", RepoController, :new
     post "/new", RepoController, :create
 
+    get "/:user_login", UserController, :show
+
     scope "/:user_login/:repo_name" do
       get "/", CodebaseController, :show
+
+      get "/new/:revision/*path", CodebaseController, :new
+      post "/new/:revision/*path", CodebaseController, :create
+
+      get "/edit/:revision/*path", CodebaseController, :edit
+      put "/edit/:revision/*path", CodebaseController, :update
+
+
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
       get "/commit/:oid", CodebaseController, :commit
-      delete "/commit/:oid/comments/:id", CodebaseController, :delete_commit_comment
       get "/history", CodebaseController, :history
       get "/history/:revision/*path", CodebaseController, :history
       get "/tree/:revision/*path", CodebaseController, :tree
@@ -105,8 +114,6 @@ defmodule GitGud.Web.Router do
       put "/settings/maintainers", MaintainerController, :update
       delete "/settings/maintainers", MaintainerController, :delete
     end
-
-    get "/:user_login", UserController, :show
   end
 
   scope "/:user_login/:repo_name" do
