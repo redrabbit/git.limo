@@ -1,6 +1,8 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
+import {currentUser} from "../auth"
+
 import {CommitLineReview} from "../components"
 
 export default () => {
@@ -45,8 +47,10 @@ export default () => {
         } else {
           origin = td.previousElementSibling
         }
-        td.addEventListener("mouseover", () => origin.classList.add("is-active"))
-        td.addEventListener("mouseout", () => origin.classList.remove("is-active"))
+        if(currentUser) {
+          td.addEventListener("mouseover", () => origin.classList.add("is-active"))
+          td.addEventListener("mouseout", () => origin.classList.remove("is-active"))
+        }
       })
     })
   }

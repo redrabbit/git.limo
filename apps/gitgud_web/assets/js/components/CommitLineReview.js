@@ -5,6 +5,7 @@ import {fetchQuery,commitMutation, requestSubscription, graphql} from "react-rel
 
 import environment from "../relay-environment"
 import socket from "../socket"
+import {currentUser} from "../auth"
 
 import {Presence} from "phoenix"
 
@@ -255,11 +256,13 @@ class CommitLineReview extends React.Component {
         <div className="timeline">
           {this.renderComments()}
           {this.renderPresences()}
-          <div className="timeline-item">
-            <div className="timeline-content">
-              {this.renderForm()}
+          {currentUser &&
+            <div className="timeline-item">
+              <div className="timeline-content">
+                {this.renderForm()}
+              </div>
             </div>
-          </div>
+          }
         </div>
       </td>
     )

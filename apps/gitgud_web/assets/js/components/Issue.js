@@ -1,15 +1,15 @@
 import React from "react"
 import ReactDOM from "react-dom"
 
-import {fetchQuery, commitMutation, requestSubscription, graphql} from "react-relay";
-
-import environment from "../relay-environment"
-
-import socket from "../socket"
-
-import {Presence} from "phoenix"
+import {fetchQuery, commitMutation, requestSubscription, graphql} from "react-relay"
 
 import moment from "moment"
+import {Presence} from "phoenix"
+
+import environment from "../relay-environment"
+import socket from "../socket"
+
+import {currentUser} from "../auth"
 
 import Comment from "./Comment"
 import CommentForm from "./CommentForm"
@@ -458,11 +458,13 @@ class Issue extends React.Component {
             }
           })}
           {this.renderPresences()}
-          <div className="timeline-item">
-            <div className="timeline-content">
-              {this.renderForm()}
+          {currentUser &&
+            <div className="timeline-item">
+              <div className="timeline-content">
+                {this.renderForm()}
+              </div>
             </div>
-          </div>
+          }
         </div>
       </div>
     )
