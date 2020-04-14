@@ -6,7 +6,12 @@
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
-              <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, @commit) %>" class="button tooltip is-small is-white has-text-weight-bold" data-tooltip="<%= oid_fmt(@commit.oid)%>"><%= @commit %></a>
+              <button class="button is-small is-white has-text-weight-bold"><%= oid_fmt(@commit.oid) %></button>
+              <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
+                <span class="icon">
+                  <i class="fa fa-history"></i>
+                </span>
+              </a>
               <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-code"></i>
@@ -24,13 +29,8 @@
               <div class="control">
                 <div class="buttons">
                   <%= for parent <- @commit_parents do %>
-                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button tooltip is-small is-white has-text-grey-light has-text-weight-bold" data-tooltip="<%= oid_fmt(parent.oid)%>"><%= parent %></a>
+                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button is-small is-white has-text-grey-light has-text-weight-bold"><%= parent %></a>
                   <% end %>
-                  <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, repo_head(@repo), []) %>?after=<%= oid_fmt(@commit.oid) %>" class="button is-small is-white has-text-grey-light">
-                    <span class="icon">
-                      <i class="fa fa-ellipsis-v"></i>
-                    </span>
-                  </a>
                 </div>
               </div>
             </div>
