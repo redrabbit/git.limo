@@ -80,10 +80,15 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, tree} <- GitAgent.tree(repo, commit) do
           if changeset.valid? do # TODO
             current_user = DB.preload(current_user, :primary_email)
-            %{name: blob_name, content: blob_content, commit_message: commit_message} = changeset.changes
+            %{name: blob_name, content: blob_content, message: commit_message_title} = changeset.changes
             blob_path = Path.join(tree_path ++ [blob_name])
             author_sig = %{name: current_user.name, email: current_user.primary_email.address, timestamp: DateTime.now!("Etc/UTC")}
             committer_sig = author_sig
+            commit_message_body = changeset.changes[:description] || ""
+            commit_message =
+              if commit_message_body == "",
+                do: commit_message_title,
+              else: commit_message_title <> "\n" <> commit_message_body
             with {:ok, index} <- GitAgent.index(repo),
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                  {:ok, odb} <- GitAgent.odb(repo),
@@ -138,10 +143,15 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
           if changeset.valid? do # TODO
             current_user = DB.preload(current_user, :primary_email)
-            %{name: blob_name, content: blob_content, commit_message: commit_message} = changeset.changes
+            %{name: blob_name, content: blob_content, message: commit_message_title} = changeset.changes
             blob_path = Path.join(List.delete_at(blob_path, -1) ++ [blob_name])
             author_sig = %{name: current_user.name, email: current_user.primary_email.address, timestamp: DateTime.now!("Etc/UTC")}
             committer_sig = author_sig
+            commit_message_body = changeset.changes[:description] || ""
+            commit_message =
+              if commit_message_body == "",
+                do: commit_message_title,
+              else: commit_message_title <> "\n" <> commit_message_body
             with {:ok, index} <- GitAgent.index(repo),
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                  {:ok, odb} <- GitAgent.odb(repo),
@@ -304,10 +314,10 @@ defmodule GitGud.Web.CodebaseController do
 
 
   defp blob_changeset(blob, params) do
-    types = %{name: :string, content: :string, commit_message: :string}
+    types = %{name: :string, content: :string, message: :string, description: :string}
     {blob, types}
     |> Ecto.Changeset.cast(params, Map.keys(types))
-    |> Ecto.Changeset.validate_required([:name, :content, :commit_message])
+    |> Ecto.Changeset.validate_required([:name, :content, :message])
   end
 
   defp stats(repo, revision) do

@@ -20,25 +20,50 @@
     </div>
   </nav>
 
-  <div class="field">
-    <%= label f, :content, class: "label" %>
-    <div class="control">
-      <%= textarea f, :content, class: "textarea" %>
+  <div class="blob-edit">
+    <div class="tabs is-boxed">
+      <ul>
+        <li class="is-active">
+          <a>
+            <span class="icon is-small"><i class="fa fa-pen" aria-hidden="true"></i></span>
+            <span>Edit file</span>
+          </a>
+        </li>
+        <li>
+          <a>
+            <span class="icon is-small"><i class="fa fa-eye" aria-hidden="true"></i></span>
+            <span>Preview</span>
+          </a>
+        </li>
+      </ul>
     </div>
-    <%= error_tag f, :content %>
+
+    <div class="field">
+      <div class="control">
+        <%= textarea f, :content, class: "textarea code", rows: 20 %>
+      </div>
+      <%= error_tag f, :content %>
+    </div>
   </div>
 
-  <hr />
-
-  <div class="field">
-    <%= label f, :commit_message, class: "label" %>
-    <div class="control">
-      <%= textarea f, :commit_message, class: "textarea" %>
+  <div class="box">
+    <h2 class="subtitle">Commit changes</h2>
+    <div class="field">
+      <div class="control">
+        <%= text_input f, :message, class: "input", placeholder: "Update #{input_value(f, :name)}" %>
+      </div>
+      <%= error_tag f, :message %>
     </div>
-    <%= error_tag f, :commit_message %>
-  </div>
 
-  <div class="field">
-    <%= submit "Commit", class: "button is-success" %>
+    <div class="field">
+      <div class="control">
+        <%= textarea f, :description, class: "textarea", placeholder: "Add an optional extended message..." %>
+      </div>
+      <%= error_tag f, :description %>
+    </div>
+
+    <div class="field">
+      <%= submit "Commit", class: "button is-success" %>
+    </div>
   </div>
 <% end %>

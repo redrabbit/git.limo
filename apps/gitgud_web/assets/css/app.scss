@@ -88,8 +88,44 @@ table.table {
   }
 }
 
+.blob-edit {
+  margin-bottom: 1.5rem;
+  .tabs.is-boxed {
+    margin-bottom: 0;
+
+    ul {
+      border-color: $grey-lighter;
+      li {
+        a {
+          border-top-left-radius: 2px;
+          border-top-right-radius: 2px;
+        }
+
+        &.is-active a {
+          background-color: $white;
+          border-color: $grey-lighter;
+          border-left-color: $grey-lighter;
+        }
+      }
+    }
+  }
+
+  textarea {
+    border-top-width: 0;
+    border-radius: 0 0 2px 2px;
+    border-color: $grey-lighter !important;
+    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1);
+  }
+}
+
 textarea.textarea {
   padding: 0.33rem 0.56rem;
+
+  &.code {
+    font-size: 0.875em;
+    font-family: "Fira Mono", monospace;
+    -webkit-font-smoothing: initial;
+  }
 }
 
 .hero {
