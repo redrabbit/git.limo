@@ -62,8 +62,14 @@
       <%= error_tag f, :description %>
     </div>
 
+    <%= hidden_input f, :branch %>
+
+    <p>Commit directly to <span class="tag is-small"><%= input_value(f, :branch) %></span> branch.</p>
+
+    <hr />
+
     <div class="field">
-      <%= submit "Commit", class: "button is-success" %>
+      <%= submit "Commit changes", class: "button is-success" %>
     </div>
   </div>
 <% end %>
