@@ -91,7 +91,7 @@ defmodule GitGud.Web.CodebaseController do
             commit_message =
               if commit_message_body == "",
                 do: commit_message_title,
-              else: commit_message_title <> "\n" <> commit_message_body
+              else: commit_message_title <> "\n\n" <> commit_message_body
             with {:ok, index} <- GitAgent.index(repo),
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                  {:ok, odb} <- GitAgent.odb(repo),
@@ -156,7 +156,7 @@ defmodule GitGud.Web.CodebaseController do
             commit_message =
               if commit_message_body == "",
                 do: commit_message_title,
-              else: commit_message_title <> "\n" <> commit_message_body
+              else: commit_message_title <> "\n\n" <> commit_message_body
             with {:ok, index} <- GitAgent.index(repo),
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                  {:ok, odb} <- GitAgent.odb(repo),
@@ -201,7 +201,7 @@ defmodule GitGud.Web.CodebaseController do
             commit_message =
               if commit_message_body == "",
                 do: commit_message_title,
-              else: commit_message_title <> "\n" <> commit_message_body
+              else: commit_message_title <> "\n\n" <> commit_message_body
             with {:ok, index} <- GitAgent.index(repo),
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                   :ok <- GitAgent.index_remove(repo, index, blob_path),
