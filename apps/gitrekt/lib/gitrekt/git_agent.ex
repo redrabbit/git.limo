@@ -484,7 +484,7 @@ defmodule GitRekt.GitAgent do
 
   defp call({:odb_read, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_read(odb, oid)
   defp call({:odb_write, %GitOdb{__ref__: odb}, data, type}, _handle), do: Git.odb_write(odb, data, type)
-  defp call({:odb_object_exists, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
+  defp call({:odb_object_exists?, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
 
   defp call(:head, handle) do
     case Git.reference_resolve(handle, "HEAD") do
