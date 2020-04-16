@@ -179,6 +179,48 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
+  @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
+  def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "blob" => blob_params} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      current_user = conn.assigns.current_user
+      if authorized?(current_user, repo, :write) do
+        changeset = blob_delete_changeset(%{}, blob_params)
+        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, commit} <- GitAgent.peel(repo, object, :commit),
+             {:ok, tree} <- GitAgent.tree(repo, commit),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
+             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
+          if changeset.valid? do # TODO
+            current_user = DB.preload(current_user, :primary_email)
+            %{message: commit_message_title, branch: update_branch} = changeset.changes
+            update_ref = "refs/heads/" <> update_branch
+            blob_path = Path.join(blob_path)
+            author_sig = %{name: current_user.name, email: current_user.primary_email.address, timestamp: DateTime.now!("Etc/UTC")}
+            committer_sig = author_sig
+            commit_message_body = changeset.changes[:description] || ""
+            commit_message =
+              if commit_message_body == "",
+                do: commit_message_title,
+              else: commit_message_title <> "\n" <> commit_message_body
+            with {:ok, index} <- GitAgent.index(repo),
+                  :ok <- GitAgent.index_read_tree(repo, index, tree),
+                  :ok <- GitAgent.index_remove(repo, index, blob_path),
+                 {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
+                 {:ok, commit_oid} <- GitAgent.commit_create(repo, update_ref, author_sig, committer_sig, commit_message, tree_oid, [commit.oid]) do
+              conn
+              |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+              |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+            end
+          else
+            conn
+            |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+            |> put_status(:bad_request)
+            |> render("delete.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :delete})
+          end
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
 
   @doc """
   Renders all branches of a repository.
@@ -323,6 +365,13 @@ defmodule GitGud.Web.CodebaseController do
     {blob, types}
     |> Ecto.Changeset.cast(params, Map.keys(types))
     |> Ecto.Changeset.validate_required([:name, :content, :message, :branch])
+  end
+
+  defp blob_delete_changeset(blob, params) do
+    types = %{message: :string, description: :string, branch: :string}
+    {blob, types}
+    |> Ecto.Changeset.cast(params, Map.keys(types))
+    |> Ecto.Changeset.validate_required([:message, :branch])
   end
 
   defp stats(repo, revision) do
