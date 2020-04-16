@@ -8,9 +8,9 @@
     </div>
   </div>
   <div class="level-right">
-    <div class="level-item">
-      <div class="field is-grouped">
-        <%= if authorized?(assigns[:current_user], @repo, :write) do %>
+    <%= if authorized?(assigns[:current_user], @repo, :write) do %>
+      <div class="level-item">
+        <div class="field has-addons">
           <div class="control">
             <a href="<%= Routes.codebase_path(@conn, :edit, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Edit</a>
           </div>
@@ -21,11 +21,11 @@
               <button type="submit" class="button">Delete</button>
             <% end %>
           </div>
-        <% end %>
-        <div class="control">
-          <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @revision, @tree_path) %>" class="button">History</a>
         </div>
       </div>
+    <% end %>
+    <div class="level-item">
+      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @revision, @tree_path) %>" class="button">History</a>
     </div>
   </div>
 </nav>

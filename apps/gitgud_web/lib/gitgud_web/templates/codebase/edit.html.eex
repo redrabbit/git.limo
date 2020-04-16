@@ -13,9 +13,7 @@
     </div>
     <div class="level-right">
       <div class="level-item">
-        <p class="buttons">
-          <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
-        </p>
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
       </div>
     </div>
   </nav>

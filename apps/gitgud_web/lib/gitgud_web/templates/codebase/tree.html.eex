@@ -8,13 +8,15 @@
     </div>
   </div>
   <div class="level-right">
-    <div class="level-item">
-      <p class="buttons">
+    <%= if authorized?(assigns[:current_user], @repo, :write) do %>
+      <div class="level-item">
         <%= if authorized?(assigns[:current_user], @repo, :write) do %>
           <a href="<%= Routes.codebase_path(@conn, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
         <% end %>
-        <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
-      </p>
+      </div>
+    <% end %>
+    <div class="level-item">
+      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
     </div>
   </div>
 </nav>
