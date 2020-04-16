@@ -317,6 +317,12 @@ defmodule GitRekt.GitAgent do
   @spec index_add(agent, GitIndex.t, Git.oid, Path.t, non_neg_integer, pos_integer, keyword) :: :ok | {:error, term}
   def index_add(agent, index, oid, path, file_size, mode, opts \\ []), do: exec(agent, {:index_add, index, oid, path, file_size, mode, opts})
 
+  @spec index_remove(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
+  def index_remove(agent, index, path), do: exec(agent, {:index_remove, index, path})
+
+  @spec index_remove_dir(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
+  def index_remove_dir(agent, index, path), do: exec(agent, {:index_remove_dir, index, path})
+
   @doc """
   Reads the given `tree` into the given `index`.
   """
@@ -610,14 +616,10 @@ defmodule GitRekt.GitAgent do
     Git.index_add(index, tree_entry)
   end
 
-  defp call({:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}, _handle) do
-    Git.index_read_tree(index, tree)
-  end
-
-  defp call({:index_write_tree, %GitIndex{__ref__: index}}, handle) do
-    Git.index_write_tree(index, handle)
-  end
-
+  defp call({:index_remove, %GitIndex{__ref__: index}, path}, _handle), do: Git.index_remove(index, path)
+  defp call({:index_remove_dir, %GitIndex{__ref__: index}, path}, _handle), do: Git.index_remove_dir(index, path)
+  defp call({:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}, _handle), do: Git.index_read_tree(index, tree)
+  defp call({:index_write_tree, %GitIndex{__ref__: index}}, handle), do: Git.index_write_tree(index, handle)
   defp call({:author, obj}, _handle), do: fetch_author(obj)
   defp call({:committer, obj}, _handle), do: fetch_committer(obj)
   defp call({:message, obj}, _handle), do: fetch_message(obj)
