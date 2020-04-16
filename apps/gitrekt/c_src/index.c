@@ -11,6 +11,36 @@ void geef_index_free(ErlNifEnv *env, void *cd)
 	git_index_free(index->index);
 }
 
+ERL_NIF_TERM entry_to_term(ErlNifEnv *env, const git_index_entry *entry)
+{
+	ErlNifBinary id, path;
+	size_t len;
+
+	if (geef_oid_bin(&id, &entry->id) < 0)
+		return geef_oom(env);
+
+	len = strlen(entry->path);
+	if (!enif_alloc_binary(len, &path)) {
+		enif_release_binary(&id);
+		return geef_oom(env);
+	}
+	memcpy(path.data, entry->path, len);
+
+	return enif_make_tuple(env, 13, atoms.ok,
+			       enif_make_int64(env, entry->ctime.seconds),
+			       enif_make_int64(env, entry->mtime.seconds),
+			       enif_make_uint(env, entry->dev),
+			       enif_make_uint(env, entry->ino),
+			       enif_make_uint(env, entry->mode),
+			       enif_make_uint(env, entry->uid),
+			       enif_make_uint(env, entry->gid),
+			       enif_make_int64(env, entry->file_size),
+			       enif_make_binary(env, &id),
+			       enif_make_uint(env, entry->flags),
+			       enif_make_uint(env, entry->flags_extended),
+			       enif_make_binary(env, &path));
+}
+
 ERL_NIF_TERM
 geef_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -174,6 +204,66 @@ geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM
+geef_index_remove(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_index *index;
+	ErlNifBinary path;
+	unsigned int stage;
+
+	if (!enif_get_resource(env, argv[0], geef_index_type, (void **) &index))
+		return enif_make_badarg(env);
+
+	if (!enif_get_uint(env, argv[2], &stage))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &path))
+		return enif_make_badarg(env);
+
+	if (geef_terminate_binary(&path) < 0) {
+		enif_release_binary(&path);
+		return geef_oom(env);
+	}
+
+	if (git_index_remove(index->index, (char *) path.data, stage) < 0) {
+		enif_release_binary(&path);
+		return geef_error(env);
+	}
+
+	enif_release_binary(&path);
+	return atoms.ok;
+}
+
+ERL_NIF_TERM
+geef_index_remove_dir(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_index *index;
+	ErlNifBinary path;
+	unsigned int stage;
+
+	if (!enif_get_resource(env, argv[0], geef_index_type, (void **) &index))
+		return enif_make_badarg(env);
+
+	if (!enif_get_uint(env, argv[2], &stage))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &path))
+		return enif_make_badarg(env);
+
+	if (geef_terminate_binary(&path) < 0) {
+		enif_release_binary(&path);
+		return geef_oom(env);
+	}
+
+	if (git_index_remove_directory(index->index, (char *) path.data, stage) < 0) {
+		enif_release_binary(&path);
+		return geef_error(env);
+	}
+
+	enif_release_binary(&path);
+	return atoms.ok;
+}
+
+ERL_NIF_TERM
 geef_index_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_index *index;
@@ -182,36 +272,6 @@ geef_index_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	return enif_make_uint(env, git_index_entrycount(index->index));
-}
-
-ERL_NIF_TERM entry_to_term(ErlNifEnv *env, const git_index_entry *entry)
-{
-	ErlNifBinary id, path;
-	size_t len;
-
-	if (geef_oid_bin(&id, &entry->id) < 0)
-		return geef_oom(env);
-
-	len = strlen(entry->path);
-	if (!enif_alloc_binary(len, &path)) {
-		enif_release_binary(&id);
-		return geef_oom(env);
-	}
-	memcpy(path.data, entry->path, len);
-
-	return enif_make_tuple(env, 13, atoms.ok,
-			       enif_make_int64(env, entry->ctime.seconds),
-			       enif_make_int64(env, entry->mtime.seconds),
-			       enif_make_uint(env, entry->dev),
-			       enif_make_uint(env, entry->ino),
-			       enif_make_uint(env, entry->mode),
-			       enif_make_uint(env, entry->uid),
-			       enif_make_uint(env, entry->gid),
-			       enif_make_int64(env, entry->file_size),
-			       enif_make_binary(env, &id),
-			       enif_make_uint(env, entry->flags),
-			       enif_make_uint(env, entry->flags_extended),
-			       enif_make_binary(env, &path));
 }
 
 ERL_NIF_TERM

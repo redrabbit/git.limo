@@ -19,6 +19,8 @@ ERL_NIF_TERM geef_index_write_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
 ERL_NIF_TERM geef_index_clear(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_index_read_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM geef_index_remove(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM geef_index_remove_dir(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_index_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_index_nth(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_index_get(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);

@@ -925,6 +925,22 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Removes an entry from the given `index`.
+  """
+  @spec index_remove(index, Path.t, non_neg_integer) :: :ok | {:error, term}
+  def index_remove(_index, _path, _stage \\ 0) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Removes all entries from the given `index` under a given directory.
+  """
+  @spec index_remove_dir(index, Path.t, non_neg_integer) :: :ok | {:error, term}
+  def index_remove_dir(_index, _path, _stage \\ 0) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
   Clears the contents (all the entries) of the given `index`.
   """
   @spec index_clear(index) :: :ok | {:error, term}
