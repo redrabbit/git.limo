@@ -33,6 +33,9 @@ defmodule GitGud.Web.Router do
 
     get "/", LandingPageController, :index
 
+    get "/new", RepoController, :new
+    post "/", RepoController, :create
+
     get "/login", SessionController, :new
     post "/login", SessionController, :create
 
@@ -75,20 +78,13 @@ defmodule GitGud.Web.Router do
     get "/settings/oauth2", OAuth2Controller, :index, as: :oauth2
     delete "/settings/oauth2", OAuth2Controller, :delete, as: :oauth2
 
-    get "/new", RepoController, :new
-    post "/new", RepoController, :create
-
     get "/:user_login", UserController, :show
 
     scope "/:user_login/:repo_name" do
       get "/", CodebaseController, :show
 
       get "/new/:revision/*path", CodebaseController, :new
-      post "/new/:revision/*path", CodebaseController, :create
-
       get "/edit/:revision/*path", CodebaseController, :edit
-      put "/edit/:revision/*path", CodebaseController, :update
-
 
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags
@@ -113,6 +109,10 @@ defmodule GitGud.Web.Router do
       post "/settings/maintainers", MaintainerController, :create
       put "/settings/maintainers", MaintainerController, :update
       delete "/settings/maintainers", MaintainerController, :delete
+
+      post "/:revision/*path", CodebaseController, :create
+      put "/:revision/*path", CodebaseController, :update
+      delete "/:revision/*path", CodebaseController, :delete
     end
   end
 
