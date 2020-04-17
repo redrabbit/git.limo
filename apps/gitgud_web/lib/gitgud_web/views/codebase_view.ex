@@ -47,28 +47,36 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec breadcrumb_action(atom) :: atom
-  def breadcrumb_action(:show), do: :tree
-  def breadcrumb_action(:edit), do: :tree
-  def breadcrumb_action(:blob), do: :tree
+  def breadcrumb_action(action) when action not in [:history], do: :tree
   def breadcrumb_action(action), do: action
+
+  @spec breadcrumb_pwd?(Plug.Conn.t) :: boolean
+  def breadcrumb_pwd?(conn) do
+    case Phoenix.Controller.action_name(conn) do
+      :edit -> false
+      :update -> false
+      _action -> :true
+    end
+  end
 
   @spec breadcrumb_tree?(Plug.Conn.t) :: boolean
   def breadcrumb_tree?(conn) do
-    action = Phoenix.Controller.action_name(conn)
     %{repo: repo, revision: revision, tree_path: tree_path} = conn.assigns
+    action = Phoenix.Controller.action_name(conn)
     cond do
-      tree_path == [] -> true
-      action == :new -> true
-      action == :edit -> true
-      action == :tree -> true
-      action == :blob -> false
-      true ->
+      tree_path == [] ->
+        true
+      action == :blob ->
+        false
+      action == :history ->
         with {:ok, tree} <- GitAgent.tree(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, tree, Path.join(tree_path)) do
           tree_entry.type == :tree
         else
           {:error, reason} -> raise reason
         end
+      true ->
+        true
    end
   end
 
@@ -218,7 +226,9 @@ defmodule GitGud.Web.CodebaseView do
     case action_name(conn) do
       :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
       :new -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
+      :create -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
       :edit -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
+      :update -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
       :tree -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
       :blob -> Routes.codebase_path(conn, :blob, repo.owner, repo, "__rev__", tree_path)
       :history -> Routes.codebase_path(conn, :history, repo.owner, repo, "__rev__", tree_path)

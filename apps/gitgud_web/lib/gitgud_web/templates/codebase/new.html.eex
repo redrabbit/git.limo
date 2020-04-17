@@ -1,4 +1,4 @@
-<%= form_for @changeset, Routes.codebase_path(@conn, :create, @repo.owner, @repo, @revision, @tree_path), [as: :blob], fn f -> %>
+<%= form_for @changeset, Routes.codebase_path(@conn, :create, @repo.owner, @repo, @revision, @tree_path), [as: :commit], fn f -> %>
   <nav class="level">
     <div class="level-left">
       <div class="level-item">
@@ -7,9 +7,15 @@
       <div class="level-item">
         <%= render "_tree_breadcrumb.html", assigns %>
       </div>
-      <div class="level-item">
-        <%= text_input f, :name, class: "input" %>
+      <div class="level-item blob-name-level-item">
+        <div class="field blob-name-field">
+          <div class="control">
+            <%= text_input f, :name, class: "input" %>
+          </div>
+          <%= error_tag f, :name %>
+        </div>
       </div>
+    </div>
     </div>
     <div class="level-right">
       <div class="level-item">

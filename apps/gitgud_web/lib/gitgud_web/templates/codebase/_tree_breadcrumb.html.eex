@@ -6,7 +6,7 @@
           <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
             <li><a href="<%= Routes.codebase_path(@conn, breadcrumb_action(action), @repo.owner, @repo, @revision, Enum.take(@tree_path, index)) %>"><%= path %></a></li>
           <% end %>
-          <%= if action != :edit do %>
+          <%= if breadcrumb_pwd?(@conn) do %>
             <li class="is-active"><a href="#"><%= List.last(@tree_path) %></a></li>
           <% end %>
         <% end %>
