@@ -21,7 +21,7 @@ defmodule GitGud.Web.EmailView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:index, _assigns), do: "Settings · Emails"
+  def title(_action, _assigns), do: "Settings · Emails"
 
   #
   # Helpers

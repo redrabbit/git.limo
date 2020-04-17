@@ -12,6 +12,6 @@ defmodule GitGud.Web.GPGKeyView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:index, _assigns), do: "Settings · GPG keys"
-  def title(:new, _assigns), do: "Settings · Add a new GPG key"
+  def title(action, _assigns) when action in [:new, :create], do: "Settings · Add a new GPG key"
+  def title(_action, _assigns), do: "Settings · GPG keys"
 end

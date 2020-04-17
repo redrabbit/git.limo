@@ -32,7 +32,7 @@ defmodule GitGud.Web.IssueLabelView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:index, %{repo: repo}), do: "Issues labels · #{repo.owner.login}/#{repo.name}"
+  def title(_action, %{repo: repo}), do: "Issues labels · #{repo.owner.login}/#{repo.name}"
 
   #
   # Helpers

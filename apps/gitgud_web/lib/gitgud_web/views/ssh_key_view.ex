@@ -3,6 +3,6 @@ defmodule GitGud.Web.SSHKeyView do
   use GitGud.Web, :view
 
   @spec title(atom, map) :: binary
-  def title(:index, _assigns), do: "Settings · SSH keys"
-  def title(:new, _assigns), do: "Settings · Add a new SSH key"
+  def title(action, _assigns) when action in [:new, :create], do: "Settings · Add a new SSH key"
+  def title(_action, _assigns), do: "Settings · SSH keys"
 end

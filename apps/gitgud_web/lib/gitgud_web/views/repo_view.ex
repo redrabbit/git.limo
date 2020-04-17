@@ -3,6 +3,6 @@ defmodule GitGud.Web.RepoView do
   use GitGud.Web, :view
 
   @spec title(atom, map) :: binary
-  def title(:new, _assigns), do: "Create a new repository"
-  def title(:edit, %{repo: repo}), do: "Settings · #{repo.owner.login}/#{repo.name}"
+  def title(action, _assigns) when action in [:new, :create], do: "New repository"
+  def title(action, %{repo: repo}) when action in [:edit, :update], do: "Settings · #{repo.owner.login}/#{repo.name}"
 end

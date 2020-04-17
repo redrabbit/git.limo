@@ -21,5 +21,5 @@ defmodule GitGud.Web.OAuth2View do
   def provider_icon(provider), do: content_tag(:i, "", [class: "fab fa-lg fa-#{provider}"])
 
   @spec title(atom, map) :: binary
-  def title(:index, _assigns), do: "Settings · OAuth2.0"
+  def title(_action, _assigns), do: "Settings · OAuth2.0"
 end

@@ -74,5 +74,5 @@ defmodule GitGud.Web.IssueView do
   @spec title(atom, map) :: binary
   def title(:index, %{repo: repo}), do: "Issues · #{repo.owner.login}/#{repo.name}"
   def title(:show, %{repo: repo, issue: issue}), do: "#{issue.title} ##{issue.number} · #{repo.owner.login}/#{repo.name}"
-  def title(:new, %{repo: repo}), do: "New issue · #{repo.owner.login}/#{repo.name}"
+  def title(action, %{repo: repo}) when action in [:new, :create], do: "New issue · #{repo.owner.login}/#{repo.name}"
 end

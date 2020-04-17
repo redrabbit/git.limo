@@ -3,5 +3,5 @@ defmodule GitGud.Web.SessionView do
   use GitGud.Web, :view
 
   @spec title(atom, map) :: binary
-  def title(:new, _assign), do: "Login"
+  def title(action, _assign) when action in [:new, :create], do: "Login"
 end
