@@ -367,12 +367,19 @@ defmodule GitRekt.GitAgent do
   def history(agent, revision, opts \\ []), do: exec(agent, {:history, revision, opts})
 
   @doc """
+  Returns the number of commit ancestors for the given `revision`.
+  """
+  @spec history_count(agent, git_revision) :: {:ok, non_neg_integer} | {:error, term}
+  def history_count(agent, revision), do: exec(agent, {:history_count, revision})
+
+  @doc """
   Peels the given `obj` until a Git object of the specified type is met.
   """
   @spec peel(agent, git_reference | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
   def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
 
   @doc """
+  Returns a Git PACK representation of the given `oids`.
   """
   @spec pack_create(agent, [Git.oid]) :: {:ok, binary} | {:error, term}
   def pack_create(agent, oids), do: exec(agent, {:pack, oids})
@@ -667,6 +674,15 @@ defmodule GitRekt.GitAgent do
   defp call({:blob_content, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_content(blob)
   defp call({:blob_size, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_size(blob)
   defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
+  defp call({:history_count, obj}, handle) do
+    case walk_history(obj, handle) do
+      {:ok, stream} ->
+        {:ok, Enum.count(stream.enum)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
   defp call({:pack, oids}, agent) do
     with {:ok, walk} <- Git.revwalk_new(agent),
@@ -845,7 +861,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entries_commits(rev, handle), do: walk_history(rev, handle, [])
+  defp fetch_tree_entries_commits(rev, handle), do: walk_history(rev, handle)
   defp fetch_tree_entries_commits(rev, path, handle), do: walk_history(rev, handle, pathspec: path)
 
   defp fetch_diff(%GitTree{__ref__: tree1}, %GitTree{__ref__: tree2}, handle, opts) do
@@ -928,7 +944,7 @@ defmodule GitRekt.GitAgent do
   defp fetch_message(%GitCommit{__ref__: commit}), do: Git.commit_message(commit)
   defp fetch_message(%GitTag{__ref__: tag}), do: Git.tag_message(tag)
 
-  defp walk_history(obj, handle, opts) do
+  defp walk_history(obj, handle, opts \\ []) do
     {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_sorting(walk, sorting),
