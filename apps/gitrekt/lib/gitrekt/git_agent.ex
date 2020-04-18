@@ -1050,20 +1050,20 @@ defmodule GitRekt.GitAgent do
   defp make_cache_key({:reference, _name}), do: nil
   defp make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
   defp make_cache_key({:reference_delete, _name}), do: nil
-  defp make_cache_key({:author, %GitTag{}}), do: nil
-  defp make_cache_key({:message, %GitTag{}}), do: nil
+# defp make_cache_key({:author, %GitTag{}}), do: nil
+# defp make_cache_key({:message, %GitTag{}}), do: nil
   defp make_cache_key({:revision, _spec}), do: nil
   defp make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
-  defp make_cache_key({:tree, %GitRef{}}), do: nil
-  defp make_cache_key({:tree, %GitTag{}}), do: nil
-  defp make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
-  defp make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
-  defp make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_op_item(revision), path}
-  defp make_cache_key({:tree_entry, revision, {:oid, oid}}), do: {:tree_entry, map_op_item(revision), oid}
+# defp make_cache_key({:tree, %GitRef{}}), do: nil
+# defp make_cache_key({:tree, %GitTag{}}), do: nil
+# defp make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
+# defp make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
+  defp make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_operation_item(revision), path}
+  defp make_cache_key({:tree_entry, revision, {:oid, oid}}), do: {:tree_entry, map_operation_item(revision), oid}
   defp make_cache_key({:tree_entries_with_commit, %GitRef{}, _path}), do: nil
   defp make_cache_key({:tree_entries_with_commit, %GitTag{}, _path}), do: nil
-  defp make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
-  defp make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
+# defp make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
+# defp make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
   defp make_cache_key(:index), do: nil
   defp make_cache_key({:index_add, _index, _entry}), do: nil
   defp make_cache_key({:index_add, _index, _oid, _path, _file_size, _mode, _opts}), do: nil
@@ -1076,19 +1076,21 @@ defmodule GitRekt.GitAgent do
   defp make_cache_key({:diff_format, _diff, _format}), do: nil
   defp make_cache_key({:diff_stats, _diff}), do: nil
   defp make_cache_key({:history, _revision, _opts}), do: nil
-  defp make_cache_key({:peel, %GitRef{}, _target}), do: nil
-  defp make_cache_key({:peel, %GitTag{}, _target}), do: nil
+# defp make_cache_key({:peel, %GitRef{}, _target}), do: nil
+# defp make_cache_key({:peel, %GitTag{}, _target}), do: nil
   defp make_cache_key({:pack, _oids}), do: nil
   defp make_cache_key(op) do
       op
       |> Tuple.to_list()
-      |> Enum.map(&map_op_item/1)
+      |> Enum.map(&map_operation_item/1)
       |> List.to_tuple()
   end
 
-  defp map_op_item(item) when is_atom(item) or is_binary(item) or is_number(item), do: item
-  defp map_op_item(%GitCommit{oid: oid}), do: {:commit, oid}
-  defp map_op_item(%GitTree{oid: oid}), do: {:tree, oid}
-  defp map_op_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
-  defp map_op_item(%GitBlob{oid: oid}), do: {:blob, oid}
+  defp map_operation_item(item) when is_atom(item) or is_binary(item) or is_number(item), do: item
+  defp map_operation_item(%GitRef{oid: oid}), do: {:reference, oid}
+  defp map_operation_item(%GitTag{oid: oid}), do: {:tag, oid}
+  defp map_operation_item(%GitCommit{oid: oid}), do: {:commit, oid}
+  defp map_operation_item(%GitTree{oid: oid}), do: {:tree, oid}
+  defp map_operation_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
+  defp map_operation_item(%GitBlob{oid: oid}), do: {:blob, oid}
 end
