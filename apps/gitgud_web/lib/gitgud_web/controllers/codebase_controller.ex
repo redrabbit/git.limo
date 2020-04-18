@@ -175,8 +175,8 @@ defmodule GitGud.Web.CodebaseController do
                   |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
                   |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
                 end
-              {:changes, blob_name} ->
-                changeset = Ecto.Changeset.add_error(changeset, :name, "Rename not implemented yet.")
+              {:changes, new_name} ->
+                changeset = Ecto.Changeset.add_error(changeset, :name, "Cannot rename #{changeset.data.name} to #{new_name}")
                 conn
                 |> put_flash(:error, "Something went wrong! Please check error(s) below.")
                 |> put_status(:bad_request)
