@@ -87,6 +87,7 @@ defmodule GitRekt.GitAgent do
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @default_config %{
+      cache: true,
       idle_timeout: :infinity
   }
 
@@ -385,29 +386,33 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
-        {:ok, {handle, config}, config.idle_timeout}
+        cache =
+          if config.cache,
+            do: :ets.new(:cache, [:protected, :bag]),
+          else: nil
+        {:ok, {handle, config, cache}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
     end
   end
 
   @impl true
-  def handle_call({:references, _glob} = op, _from, {handle, config} = state) do
+  def handle_call({:references, _glob} = op, _from, {handle, config, _cache} = state) do
     {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:commit_parents, _commit} = op, _from, {handle, config} = state) do
+  def handle_call({:commit_parents, _commit} = op, _from, {handle, config, _cache} = state) do
     {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:tree_entries, _tree} = op, _from, {handle, config} = state) do
+  def handle_call({:tree_entries, _tree} = op, _from, {handle, config, _cache} = state) do
     {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_call({:history, obj, opts}, _from, {handle, config} = state) do
+  def handle_call({:history, obj, opts}, _from, {handle, config, _cache} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
     case call_stream({:history, obj, opts}, handle) do
       {:ok, stream} ->
@@ -417,7 +422,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  def handle_call({:history_next, stream, chunk_size}, _from, {_handle, config} = state) do
+  def handle_call({:history_next, stream, chunk_size}, _from, {_handle, config, _cache} = state) do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
     acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
@@ -425,8 +430,21 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call(op, _from, {handle, config} = state) do
+  def handle_call(op, _from, {handle, config, nil} = state) do
     {:reply, call(op, handle), state, config.idle_timeout}
+  end
+
+  @impl true
+  def handle_call(op, _from, {handle, config, cache} = state) do
+    cache_op = make_cache_key(op)
+    cond do
+      is_nil(cache_op) ->
+        {:reply, call(op, handle), state, config.idle_timeout}
+      cache_entry = fetch_cache(cache, cache_op) ->
+        {:reply, cache_entry, state, config.idle_timeout}
+      true ->
+        {:reply, put_cache(cache, cache_op, call(op, handle)), state, config.idle_timeout}
+    end
   end
 
   @impl true
@@ -1005,4 +1023,72 @@ defmodule GitRekt.GitAgent do
     entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end
+
+  defp fetch_cache(cache, op) when not is_nil(op) do
+    case :ets.lookup(cache, op) do
+      [{^op, cache_entry}] ->
+      # Logger.info("found #{inspect op} from cache")
+        cache_entry
+      [] ->
+        nil
+    end
+  end
+
+  defp put_cache(cache, op, resp) when not is_nil(op) do
+  # Logger.info("insert #{inspect op} to cache")
+    :ets.insert(cache, {op, resp})
+    resp
+  end
+
+  defp make_cache_key(:empty?), do: nil
+  defp make_cache_key(:odb), do: nil
+  defp make_cache_key({:odb_read, _odb, _oid}), do: nil
+  defp make_cache_key({:odb_write, _odb, _data, _type}), do: nil
+  defp make_cache_key({:odb_object_exists?, _odb, _oid}), do: nil
+  defp make_cache_key(:head), do: nil
+  defp make_cache_key({:references, _glob}), do: nil
+  defp make_cache_key({:reference, _name}), do: nil
+  defp make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
+  defp make_cache_key({:reference_delete, _name}), do: nil
+  defp make_cache_key({:author, %GitTag{}}), do: nil
+  defp make_cache_key({:message, %GitTag{}}), do: nil
+  defp make_cache_key({:revision, _spec}), do: nil
+  defp make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
+  defp make_cache_key({:tree, %GitRef{}}), do: nil
+  defp make_cache_key({:tree, %GitTag{}}), do: nil
+  defp make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
+  defp make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
+  defp make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_op_item(revision), path}
+  defp make_cache_key({:tree_entry, revision, {:oid, oid}}), do: {:tree_entry, map_op_item(revision), oid}
+  defp make_cache_key({:tree_entries_with_commit, %GitRef{}, _path}), do: nil
+  defp make_cache_key({:tree_entries_with_commit, %GitTag{}, _path}), do: nil
+  defp make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
+  defp make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
+  defp make_cache_key(:index), do: nil
+  defp make_cache_key({:index_add, _index, _entry}), do: nil
+  defp make_cache_key({:index_add, _index, _oid, _path, _file_size, _mode, _opts}), do: nil
+  defp make_cache_key({:index_remove, _index, _path}), do: nil
+  defp make_cache_key({:index_remove_dir, _index, _path}), do: nil
+  defp make_cache_key({:index_read_tree, _index, _tree}), do: nil
+  defp make_cache_key({:index_write_tree, _index}), do: nil
+  defp make_cache_key({:diff, _obj1, _obj2, _opts}), do: nil
+  defp make_cache_key({:diff_deltas, _diff}), do: nil
+  defp make_cache_key({:diff_format, _diff, _format}), do: nil
+  defp make_cache_key({:diff_stats, _diff}), do: nil
+  defp make_cache_key({:history, _revision, _opts}), do: nil
+  defp make_cache_key({:peel, %GitRef{}, _target}), do: nil
+  defp make_cache_key({:peel, %GitTag{}, _target}), do: nil
+  defp make_cache_key({:pack, _oids}), do: nil
+  defp make_cache_key(op) do
+      op
+      |> Tuple.to_list()
+      |> Enum.map(&map_op_item/1)
+      |> List.to_tuple()
+  end
+
+  defp map_op_item(item) when is_atom(item) or is_binary(item) or is_number(item), do: item
+  defp map_op_item(%GitCommit{oid: oid}), do: {:commit, oid}
+  defp map_op_item(%GitTree{oid: oid}), do: {:tree, oid}
+  defp map_op_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
+  defp map_op_item(%GitBlob{oid: oid}), do: {:blob, oid}
 end
