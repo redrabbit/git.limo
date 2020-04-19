@@ -17,7 +17,7 @@ defmodule GitRekt.Git do
   alias GitRekt.Git
 
   # load repository
-  {:ok, repo} = Git.repository_open("/tmp/my-repo")
+  {:ok, repo} = Git.repository_open("/tmp/my-repo.git")
 
   # fetch commit pointed by master
   {:ok, :commit, _oid, commit} = Git.reference_peel(repo, "refs/heads/master")
@@ -37,6 +37,8 @@ defmodule GitRekt.Git do
   This is one of many ways to fetch a given commit, `reference_lookup/2` and `reference_glob/2` offer similar
   functionalities. There are other related functions such as `revparse_single/2` and `revparse_ext/2` which
   provide support for parsing [revspecs](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection).
+
+  ## Retrieve tree and blob objects
 
   In order to access the actual files and directories of a repository, we have to retrieve the Git tree object of
   a given revision. Here we simply list files and folders at the root directory:
@@ -83,6 +85,8 @@ defmodule GitRekt.Git do
 
   IO.binwrite data
   ```
+
+  ## Compare revisions
 
   Now that we know how to access files and directories, it might be interesting to the determine the changes
   between two versions. In order to do so, we need to compare two tree objects from different revisions:

@@ -2,76 +2,44 @@ defmodule GitRekt.GitAgent do
   @moduledoc ~S"""
   High-level API for running Git commands on a repository.
 
-  This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it functions take
-  and return structs such as `GitRekt.GitRef`, `GitRekt.GitCommit`, `GitRekt.GitTree`. Also, it allows multiple
-  processes to manipulate a single repository simultaneously.
+  This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it offers
+  an abstraction for serializing Git commands via message passing. By doing so it allows multiple processes
+  to manipulate a single repository simultaneously.
+
+  At it core `GitRekt.GitAgent` implements `GenServer`. Therefore it makes it easy to fit into a supervision
+  tree and furthermore, in a distributed environment.
+
+  An other major benefit is support for caching command results. In their nature Git objects are immutable;
+  that is, once they have been created and stored in the data store, they cannot be modified. This allows for
+  very naive caching strategy implementations without having to deal with cache invalidation.
 
   ## Example
 
   Let's start by rewriting the example exposed in the `GitRekt.Git` module:
 
   ```elixir
-  alias GitRekt.Git
   alias GitRekt.GitAgent
 
   # load repository
-  {:ok, repo} = Git.repository_open("/tmp/my-repo")
+  {:ok, agent} = GitAgent.start_link("tmp/my-repo.git")
 
   # fetch master branch
-  {:ok, branch} = GitAgent.branch(repo, "master")
+  {:ok, branch} = GitAgent.branch(agent, "master")
 
   # fetch commit pointed by master
-  {:ok, commit} = GitAgent.peel(repo, branch)
+  {:ok, commit} = GitAgent.peel(agent, branch)
 
   # fetch commit author & message
-  {:ok, author} = GitAgent.commit_author(repo, commit)
-  {:ok, message} = GitAgent.commit_message(repo, commit)
+  {:ok, author} = GitAgent.commit_author(agent, commit)
+  {:ok, message} = GitAgent.commit_message(agent, commit)
 
   IO.puts "Last commit by #{author.name} <#{author.email}>:"
   IO.puts message
   ```
 
-  This look very similar to the original example. The real benefit of using `GitRekt.GitAgent` comes
-  when multiple processes need to manipulate a single Git repository simultaneously.
+  This look very similar to the original example altought the API is slightly different.
 
-  Let's refactor our code for that purpose:
-
-  ```elixir
-  alias GitRekt.GitAgent
-
-  # start a dedicated process for the repository
-  {:ok, repo} = GitAgent.start_link("/tmp/my-repo")
-
-  count_commits = fn revision ->
-    # fetch commit for given revision
-    {:ok, commit, _ref} = GitAgent.revision(repo, revision)
-
-    # walk history starting from commit
-    {:ok, history} = GitAgent.history(repo, commit)
-
-    # retrieve number of ancestors
-    ancestor_cout = Enum.count(history)
-
-    {revision, ancestor_count}
-  end
-
-  # simultaneously count the commit history from different revision points
-  ~w(master my-feature-branch v0.2.8)
-  |> Enum.map(&Task.async(fn -> count_commits.(&1) end))
-  |> Enum.map(&Task.await/1)
-  |> Enum.each(fn {revision, count} -> IO.puts "#{revision} has #{count} commits" end)
-  ```
-
-  By swapping `GitRekt.Git.repository_open/1` with `start_link/1`, we are not working with the underlying
-  `t:GitRekt.Git.repo/0` anymore. Instead we use a `PID` to serialize function calls via message passing. This
-  allow use to access the repository from multiple processes. In our example we start an asynchronous
-  task for counting the number of ancestor starting from each revision and collect the result afterwards.
-
-  Note that in the above example `history/2` returns a `t:Stream.t/0` struct. We could use `Stream.take/1` to
-  retrieve the last 30 commits without having the Git agent process to enumerate the entire stream.
-
-  So far we have used `GitRekt.GitAgent` functions by passing a `t:GitRekt.Git.repo/0` or a `PID` as first
-  argument. It's also possible to implement the `GitRekt.GitRepo` protocol for your own data structure.
+  TODO
   """
   use GenServer
 
@@ -198,11 +166,13 @@ defmodule GitRekt.GitAgent do
   def reference(agent, name), do: exec(agent, {:reference, name})
 
   @doc """
+  Creates a reference with the given `name` and `target`.
   """
   @spec reference_create(agent, binary, :atom, Git.oid | binary, boolean) :: :ok | {:error, term}
   def reference_create(agent, name, type, target, force \\ false), do: exec(agent, {:reference_create, name, type, target, force})
 
   @doc """
+  Deletes a reference with the given `name`.
   """
   @spec reference_delete(agent, binary) :: :ok | {:error, term}
   def reference_delete(agent, name), do: exec(agent, {:reference_delete, name})
@@ -331,9 +301,15 @@ defmodule GitRekt.GitAgent do
   @spec index_add(agent, GitIndex.t, Git.oid, Path.t, non_neg_integer, pos_integer, keyword) :: :ok | {:error, term}
   def index_add(agent, index, oid, path, file_size, mode, opts \\ []), do: exec(agent, {:index_add, index, oid, path, file_size, mode, opts})
 
+  @doc """
+  Removes an index entry from the given `index`.
+  """
   @spec index_remove(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
   def index_remove(agent, index, path), do: exec(agent, {:index_remove, index, path})
 
+  @doc """
+  Remove all entries from the given `index` under a given directory `path`.
+  """
   @spec index_remove_dir(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
   def index_remove_dir(agent, index, path), do: exec(agent, {:index_remove_dir, index, path})
 
