@@ -243,7 +243,7 @@ textarea.textarea {
 }
 
 @keyframes slideDown {
-    0%, 100% { transform: translateY(-100px); }
+    0%, 100% { transform: translateY(-110px); }
     5%, 95% { transform: translateY(0px); }
 }
 
@@ -314,8 +314,12 @@ textarea.textarea {
   top: 1.5rem;
   z-index: 99;
   min-width: 20rem;
-  transform: translateY(-100px);
-  animation: slideDown 4s 0 1 ease forwards;
+  transform: translateY(-110px);
+  animation-name: slideDown;
+  animation-duration: 4s;
+  animation-iteration-count: 1;
+  animation-timing-function: ease;
+  animation-fill-mode: forwards;
 }
 
 .button {
