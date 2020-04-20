@@ -68,7 +68,7 @@ defmodule GitRekt.GitAgent do
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @default_config %{
-      cache: __MODULE__,
+      cache: true,
       idle_timeout: :infinity
   }
 
@@ -382,7 +382,13 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
-        cache = if cache_mod = config.cache, do: cache_mod.init_cache(path)
+        {config, cache} =
+          if config.cache do
+            cache_adapter = Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
+            {Map.put(config, :cache_adapter, cache_adapter), cache_adapter.init_cache(path)}
+          else
+            {config, nil}
+          end
         {:ok, {handle, config, cache}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
@@ -442,22 +448,22 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call(op, _from, {handle, %{cache: cache_mod} = config, cache} = state) when is_atom(cache_mod) do
-    cache_op = cache_mod.make_cache_key(op)
+  def handle_call(op, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
+    cache_op = cache_adapter.make_cache_key(op)
     cond do
       is_nil(cache_op) ->
         {:reply, call(op, handle), state, config.idle_timeout}
-      cache_entry = cache_mod.fetch_cache(cache, cache_op) ->
+      cache_entry = cache_adapter.fetch_cache(cache, cache_op) ->
         {:reply, cache_entry, state, config.idle_timeout}
       true ->
         cache_entry = call(op, handle)
-        cache_mod.put_cache(cache, cache_op, cache_entry)
+        cache_adapter.put_cache(cache, cache_op, cache_entry)
         {:reply, cache_entry, state, config.idle_timeout}
     end
   end
 
   @impl true
-  def handle_call(op, _from, {handle, %{cache: nil} = config, nil} = state) do
+  def handle_call(op, _from, {handle, config, nil} = state) do
     {:reply, call(op, handle), state, config.idle_timeout}
   end
 
