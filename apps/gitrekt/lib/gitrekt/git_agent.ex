@@ -396,7 +396,7 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def init_cache(_path), do: :ets.new(:cache, [:protected, :bag])
+  def init_cache(_path), do: :ets.new(:cache, [:set, :protected])
 
   @impl true
   def fetch_cache(cache, op) when not is_nil(op) do
