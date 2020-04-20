@@ -11,7 +11,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitRekt.GitAgent
   alias GitRekt.{GitBlob, GitTree}
 
-  import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1, oid_parse: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   plug :put_layout, :repo
   plug :ensure_authenticated when action in [:new, :create, :edit, :update]
@@ -90,7 +90,8 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, tree} <- GitAgent.tree(repo, commit) do
           changeset = blob_commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
-            blob_path =  Path.join(tree_path ++ [blob_changeset_name(changeset)])
+            blob_name = blob_changeset_name(changeset)
+            blob_path = Path.join(tree_path ++ [blob_name])
             blob_content = blob_changeset_content(changeset)
             commit_author_sig = commit_signature(current_user, DateTime.now!("Etc/UTC"))
             commit_committer_sig = commit_author_sig
@@ -104,7 +105,7 @@ defmodule GitGud.Web.CodebaseController do
                  {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
                  {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
               conn
-              |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+              |> put_flash(:info, "File #{blob_name} created.")
               |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
             end
           else
@@ -163,7 +164,7 @@ defmodule GitGud.Web.CodebaseController do
             commit_message = commit_changeset_message(changeset)
             commit_update_ref = commit_changeset_update_ref(changeset)
             case Ecto.Changeset.fetch_field(changeset, :name) do
-              {:data, _blob_name} ->
+              {:data, blob_name} ->
                 with {:ok, index} <- GitAgent.index(repo),
                       :ok <- GitAgent.index_read_tree(repo, index, tree),
                      {:ok, odb} <- GitAgent.odb(repo),
@@ -172,7 +173,7 @@ defmodule GitGud.Web.CodebaseController do
                      {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
                      {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
                   conn
-                  |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+                  |> put_flash(:info, "File #{blob_name} updated.")
                   |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
                 end
               {:changes, new_name} ->
@@ -218,7 +219,7 @@ defmodule GitGud.Web.CodebaseController do
                  {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
                  {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
               conn
-              |> put_flash(:info, "Commit #{oid_fmt_short(commit_oid)} created.")
+              |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
               |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
             end
           else
