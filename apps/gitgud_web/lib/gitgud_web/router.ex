@@ -85,6 +85,7 @@ defmodule GitGud.Web.Router do
 
       get "/new/:revision/*path", CodebaseController, :new
       get "/edit/:revision/*path", CodebaseController, :edit
+      get "/delete/:revision/*path", CodebaseController, :confirm_delete
 
       get "/branches", CodebaseController, :branches
       get "/tags", CodebaseController, :tags

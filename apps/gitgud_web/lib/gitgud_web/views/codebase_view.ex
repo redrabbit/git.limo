@@ -47,8 +47,8 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec breadcrumb_action(atom) :: atom
-  def breadcrumb_action(action) when action not in [:history], do: :tree
-  def breadcrumb_action(action), do: action
+  def breadcrumb_action(:history), do: :history
+  def breadcrumb_action(_action), do: :tree
 
   @spec breadcrumb_pwd?(Plug.Conn.t) :: boolean
   def breadcrumb_pwd?(conn) do
@@ -66,7 +66,7 @@ defmodule GitGud.Web.CodebaseView do
     cond do
       tree_path == [] ->
         true
-      action == :blob ->
+      action in [:blob, :confirm_delete, :delete] ->
         false
       action == :history ->
         with {:ok, tree} <- GitAgent.tree(repo, revision),
@@ -225,13 +225,10 @@ defmodule GitGud.Web.CodebaseView do
 
     case action_name(conn) do
       :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
-      :new -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
       :create -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
-      :edit -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
       :update -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
-      :tree -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
-      :blob -> Routes.codebase_path(conn, :blob, repo.owner, repo, "__rev__", tree_path)
-      :history -> Routes.codebase_path(conn, :history, repo.owner, repo, "__rev__", tree_path)
+      :delete -> Routes.codebase_path(conn, :confirm_delete, repo.owner, repo, "__rev__", tree_path)
+      action -> Routes.codebase_path(conn, action, repo.owner, repo, "__rev__", tree_path)
     end
   end
 

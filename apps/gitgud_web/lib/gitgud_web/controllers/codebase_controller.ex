@@ -195,6 +195,29 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
+  Renders a blob delete form.
+  """
+  def confirm_delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      if authorized?(conn.assigns.current_user, repo, :write) do
+        with {:ok, head} <- GitAgent.head(repo),
+             {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
+             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
+          changeset = commit_changeset(%{branch: head.name}, %{})
+          render(conn, "confirm_delete.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: changeset)
+        else
+          {:ok, %GitTree{}} ->
+            {:error, :not_found}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+
+  @doc """
   Deletes an existing blob.
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
@@ -226,7 +249,7 @@ defmodule GitGud.Web.CodebaseController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("delete.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :delete})
+            |> render("confirm_delete.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :delete})
           end
         end
       end || {:error, :unauthorized}

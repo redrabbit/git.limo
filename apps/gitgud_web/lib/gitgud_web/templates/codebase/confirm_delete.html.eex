@@ -1,0 +1,45 @@
+<nav class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <%= branch_select(@conn) %>
+    </div>
+    <div class="level-item">
+      <%= render "_tree_breadcrumb.html", assigns %>
+    </div>
+  </div>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
+    </div>
+  </div>
+</nav>
+
+<%= form_for @changeset, Routes.codebase_path(@conn, :delete, @repo.owner, @repo, @revision, @tree_path), [as: :commit, method: :delete], fn f -> %>
+  <div class="box">
+    <h2 class="subtitle">Commit changes</h2>
+    <div class="field">
+      <div class="control">
+        <%= text_input f, :message, class: "input", placeholder: "Delete #{List.last(@tree_path)}" %>
+      </div>
+      <%= error_tag f, :message %>
+    </div>
+
+    <div class="field">
+      <div class="control">
+        <%= textarea f, :description, class: "textarea", placeholder: "Add an optional extended message..." %>
+      </div>
+      <%= error_tag f, :description %>
+    </div>
+
+    <%= hidden_input f, :branch %>
+
+    <p>Commit directly to <span class="tag is-small"><%= input_value(f, :branch) %></span> branch.</p>
+
+    <hr />
+
+    <div class="field">
+      <%= submit "Commit changes", class: "button is-success" %>
+    </div>
+  </div>
+<% end %>

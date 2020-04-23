@@ -15,11 +15,7 @@
             <a href="<%= Routes.codebase_path(@conn, :edit, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Edit</a>
           </div>
           <div class="control">
-            <%= form_for @conn, Routes.codebase_path(@conn, :delete, @repo.owner, @repo, @revision, @tree_path), [as: :commit, method: :delete], fn f -> %>
-              <%= hidden_input(f, :message, value: "Delete #{List.last(@tree_path)}") %>
-              <%= hidden_input(f, :branch, value: "master") %>
-              <button type="submit" class="button">Delete</button>
-            <% end %>
+            <a href="<%= Routes.codebase_path(@conn, :confirm_delete, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Delete</a>
           </div>
         </div>
       </div>
