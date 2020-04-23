@@ -25,7 +25,7 @@ defmodule GitGud.RepoPool do
     via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
     child_spec = %{
       id: GitAgent,
-      start: {GitAgent, :start_link, [RepoStorage.workdir(repo), [name: via_registry, idle_timeout: 30_000]]},
+      start: {GitAgent, :start_link, [RepoStorage.workdir(repo), [name: via_registry, idle_timeout: 900_000]]},
       restart: :temporary
     }
     case DynamicSupervisor.start_child(__MODULE__, child_spec) do
