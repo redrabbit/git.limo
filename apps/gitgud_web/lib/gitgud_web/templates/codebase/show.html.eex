@@ -39,6 +39,29 @@
     </div>
   </div>
   <div class="level-right">
+    <div class="level-item">
+      <div class="field clone-repo has-addons">
+        <div class="control"><button class="button http-clone-button is-active">HTTP</button></div>
+        <%= if authenticated?(@conn) do %>
+          <div class="control"><button class="button ssh-clone-button">SSH</button></div>
+        <% end %>
+        <div class="control http-clone">
+          <input class="input" type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" readonly />
+        </div>
+        <%= if authenticated?(@conn) do %>
+          <div class="control ssh-clone is-hidden">
+            <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}" %>" readonly />
+          </div>
+        <% end %>
+        <div class="control">
+          <button class="button clipboard-button tooltip" data-tooltip="Copy to clipboard">
+            <span class="icon">
+              <i class="fa fa-clipboard"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
     <%= if authorized?(assigns[:current_user], @repo, :write) do %>
       <div class="level-item">
         <%= if authorized?(assigns[:current_user], @repo, :write) do %>
@@ -46,9 +69,6 @@
         <% end %>
       </div>
     <% end %>
-    <div class="level-item">
-      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
-    </div>
   </div>
 </nav>
 
