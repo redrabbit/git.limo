@@ -26,7 +26,9 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       case GitAgent.empty?(repo) do
         {:ok, true} ->
-          render(conn, "initialize.html", repo: repo)
+          if authenticated?(conn) && authorized?(conn.assigns.current_user, repo, :write),
+            do: render(conn, "initialize.html", repo: repo),
+          else: {:error, :not_found}
         {:ok, false} ->
           with {:ok, head} <- GitAgent.head(repo),
                {:ok, commit} <- GitAgent.peel(repo, head, :commit),
