@@ -72,6 +72,16 @@ defmodule GitGud.UserQuery do
     DB.one(DBQueryable.query({__MODULE__, :user_oauth_query}, [provider, id], opts))
   end
 
+  @spec count_total() :: non_neg_integer
+  def count_total do
+    DB.one(DBQueryable.query({__MODULE__, :count_query}, :total, []))
+  end
+
+  @spec count_verified() :: non_neg_integer
+  def count_verified() do
+    DB.one(DBQueryable.query({__MODULE__, :count_query}, :verified, []))
+  end
+
   @doc """
   Returns a list of users matching the given `input`.
   """
@@ -121,6 +131,14 @@ defmodule GitGud.UserQuery do
   def query(:search_query, [input]) do
     term = "%#{input}%"
     from(u in User, as: :user, where: ilike(u.login, ^term) and not is_nil(u.primary_email_id))
+  end
+
+  def query(:count_query, [:total]) do
+    from(u in User, as: :user, select: count(u.id))
+  end
+
+  def query(:count_query, [:verified]) do
+    from(u in User, as: :user, where: not is_nil(u.primary_email_id), select: count(u.id))
   end
 
   @impl true
