@@ -67,16 +67,25 @@ defmodule GitGud.RepoQuery do
     end
   end
 
+  @doc """
+  Returns the total number of repositories.
+  """
   @spec count_total() :: non_neg_integer
   def count_total do
     DB.one(query(:count_query, [:total]))
   end
 
+  @doc """
+  Returns the number of public repositories.
+  """
   @spec count_public() :: non_neg_integer
   def count_public do
     DB.one(query(:count_query, [:public]))
   end
 
+  @doc """
+  Returns the number of private repositories.
+  """
   @spec count_private() :: non_neg_integer
   def count_private do
     DB.one(query(:count_query, [:private]))

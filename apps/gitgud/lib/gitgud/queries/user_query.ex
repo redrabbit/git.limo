@@ -72,11 +72,17 @@ defmodule GitGud.UserQuery do
     DB.one(DBQueryable.query({__MODULE__, :user_oauth_query}, [provider, id], opts))
   end
 
+  @doc """
+  Returns the number of registered users.
+  """
   @spec count_total() :: non_neg_integer
   def count_total do
     DB.one(query(:count_query, [:total]))
   end
 
+  @doc """
+  Returns the number of verified users.
+  """
   @spec count_verified() :: non_neg_integer
   def count_verified() do
     DB.one(query(:count_query, [:verified]))
