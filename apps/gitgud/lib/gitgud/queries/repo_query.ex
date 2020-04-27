@@ -67,6 +67,21 @@ defmodule GitGud.RepoQuery do
     end
   end
 
+  @spec count_total() :: non_neg_integer
+  def count_total do
+    DB.one(query(:count_query, [:total]))
+  end
+
+  @spec count_public() :: non_neg_integer
+  def count_public do
+    DB.one(query(:count_query, [:public]))
+  end
+
+  @spec count_private() :: non_neg_integer
+  def count_private do
+    DB.one(query(:count_query, [:private]))
+  end
+
   @doc """
   Returns a list of users matching the given `input`.
   """
@@ -117,6 +132,19 @@ defmodule GitGud.RepoQuery do
     term = "%#{input}%"
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: ilike(r.name, ^term), preload: [owner: u])
   end
+
+  def query(:count_query, [:total]) do
+    from(r in Repo, as: :repo, select: count(r.id))
+  end
+
+  def query(:count_query, [:public]) do
+    from(r in Repo, as: :repo, where: r.public == true, select: count(r.id))
+  end
+
+  def query(:count_query, [:private]) do
+    from(r in Repo, as: :repo, where: r.public == false, select: count(r.id))
+  end
+
 
   @impl true
   def alter_query(query, preloads, nil) do
