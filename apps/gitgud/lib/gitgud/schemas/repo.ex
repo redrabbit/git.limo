@@ -232,7 +232,7 @@ defmodule GitGud.Repo do
     def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
 
     # Everybody can read public repos.
-    def can?(%Repo{public: true}, _user, :read), do: true
+    def can?(%Repo{public: true, pushed_at: %NaiveDateTime{}}, _user, :read), do: true
 
     # Maintainers can perform action if he has granted permission to do so.
     def can?(repo, %User{} = user, action) do

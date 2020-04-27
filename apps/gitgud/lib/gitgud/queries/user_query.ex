@@ -181,14 +181,14 @@ defmodule GitGud.UserQuery do
 
   defp join_preload(query, :repos, nil) do
     query
-    |> join(:left, [user: u], r in assoc(u, :repos), on: r.public == true, as: :repos)
+    |> join(:left, [user: u], r in assoc(u, :repos), on: r.public == true and not is_nil(r.pushed_at), as: :repos)
     |> preload([repos: r], [repos: r])
   end
 
   defp join_preload(query, :repos, viewer) do
     query
     |> join(:left, [user: u], m in Maintainer, on: m.user_id == ^viewer.id, as: :maintainer)
-    |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: r.public == true or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
+    |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
     |> preload([repos: r], [repos: r])
   end
 

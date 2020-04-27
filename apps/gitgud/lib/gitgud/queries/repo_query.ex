@@ -158,7 +158,7 @@ defmodule GitGud.RepoQuery do
   @impl true
   def alter_query(query, preloads, nil) do
     query
-    |> where([repo: r], r.public == true)
+    |> where([repo: r], r.public == true and not is_nil(r.pushed_at))
     |> preload([], ^preloads)
   end
 
@@ -166,7 +166,7 @@ defmodule GitGud.RepoQuery do
   def alter_query(query, preloads, viewer) do
     query
     |> join(:left, [repo: r], m in Maintainer, on: r.id == m.repo_id, as: :maintainer)
-    |> where([repo: r, maintainer: m], r.public == true or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
+    |> where([repo: r, maintainer: m], (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
     |> preload([], ^preloads)
   end
 end
