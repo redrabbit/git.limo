@@ -74,12 +74,12 @@ defmodule GitGud.UserQuery do
 
   @spec count_total() :: non_neg_integer
   def count_total do
-    DB.one(DBQueryable.query({__MODULE__, :count_query}, :total, []))
+    DB.one(query(:count_query, [:total]))
   end
 
   @spec count_verified() :: non_neg_integer
   def count_verified() do
-    DB.one(DBQueryable.query({__MODULE__, :count_query}, :verified, []))
+    DB.one(query(:count_query, [:verified]))
   end
 
   @doc """
