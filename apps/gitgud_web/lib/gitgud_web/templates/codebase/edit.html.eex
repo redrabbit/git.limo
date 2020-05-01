@@ -1,4 +1,4 @@
-<%= form_for @changeset, Routes.codebase_path(@conn, :update, @repo.owner, @repo, @revision, @tree_path), [as: :commit, method: :put], fn f -> %>
+<%= form_for @changeset, Routes.codebase_path(@conn, :update, @repo.owner, @repo, @revision, @tree_path), [id: "blob-form", as: :commit, method: :put], fn f -> %>
   <nav class="level">
     <div class="level-left">
       <div class="level-item">

@@ -6,8 +6,9 @@ import highlightCode from "./highlight-code"
 import reactComponents from "./react-components"
 import issueLabelSelect from "./issue-label-select"
 import issueLabelTable from "./issue-label-table"
+import blobForm from "./blob-form"
 import blobTable from "./blob-table"
 import diffTable from "./diff-table"
 import treeTable from "./tree-table"
 
-export default [flash, cloneInput, breadcrumb, datetimeTooltip, highlightCode, reactComponents, issueLabelSelect, issueLabelTable, blobTable, diffTable, treeTable]
+export default [flash, cloneInput, breadcrumb, datetimeTooltip, highlightCode, reactComponents, issueLabelSelect, issueLabelTable, blobForm, blobTable, diffTable, treeTable]
