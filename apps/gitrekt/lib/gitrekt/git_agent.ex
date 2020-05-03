@@ -385,7 +385,7 @@ defmodule GitRekt.GitAgent do
         {config, cache} =
           if config.cache do
             cache_adapter = Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
-            {Map.put(config, :cache_adapter, cache_adapter), cache_adapter.init_cache(path)}
+            {Map.put(config, :cache_adapter, cache_adapter), telemetry_cache(cache_adapter, :init_cache, [path])}
           else
             {config, nil}
           end
@@ -453,11 +453,11 @@ defmodule GitRekt.GitAgent do
     cond do
       is_nil(cache_op) ->
         {:reply, call(op, handle), state, config.idle_timeout}
-      cache_entry = cache_adapter.fetch_cache(cache, cache_op) ->
+      cache_entry = telemetry_cache(cache_adapter, :fetch_cache, [cache, cache_op]) ->
         {:reply, cache_entry, state, config.idle_timeout}
       true ->
         cache_entry = call(op, handle)
-        cache_adapter.put_cache(cache, cache_op, cache_entry)
+        telemetry_cache(cache_adapter, :put_cache, [cache, cache_op, cache_entry])
         {:reply, cache_entry, state, config.idle_timeout}
     end
   end
@@ -528,8 +528,8 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op) when is_reference(agent), do: telemery_exec(op, fn -> call(op, agent) end)
-  defp exec(agent, op) when is_pid(agent), do: telemery_exec(op, fn -> GenServer.call(agent, op) end)
+  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(op, agent) end)
+  defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op) end)
   defp exec(repo, op) do
     case GitRepo.get_agent(repo) do
       {:ok, agent} ->
@@ -539,7 +539,16 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp telemery_exec(op, callback) do
+  defp telemetry_cache(cache_adapter, fun, args) do
+    event_time = System.monotonic_time(1_000_000)
+    if result = apply(cache_adapter, fun, args) do
+      latency = System.monotonic_time(1_000_000) - event_time
+      :telemetry.execute([:gitrekt, :git_agent, :cache], %{latency: latency}, %{function: fun, args: args})
+      result
+    end
+  end
+
+  defp telemetry_exec(op, callback) do
     {name, args} =
       if is_atom(op) do
         {op, []}

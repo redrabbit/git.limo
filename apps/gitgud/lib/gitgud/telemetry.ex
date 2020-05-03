@@ -9,6 +9,21 @@ defmodule GitGud.Telemetry do
     Logger.debug("[Git Agent] #{op}(#{args}) executed in #{latency}")
   end
 
+  def handle_event([:gitrekt, :git_agent, :cache], %{latency: latency}, %{function: :init_cache, args: [path]}, _config) do
+    latency = if latency > 1_000, do: "#{latency / 1_000} ms", else: "#{latency} µs"
+    Logger.debug("[Git Agent] init cache for #{path} in #{latency}")
+  end
+
+  def handle_event([:gitrekt, :git_agent, :cache], %{latency: latency}, %{function: :fetch_cache, args: [_cache, key]}, _config) do
+    latency = if latency > 1_000, do: "#{latency / 1_000} ms", else: "#{latency} µs"
+    Logger.debug("[Git Agent] fetch #{inspect key} from cache in #{latency}")
+  end
+
+  def handle_event([:gitrekt, :git_agent, :cache], %{latency: latency}, %{function: :put_cache, args: [_cache, key, _val]}, _config) do
+    latency = if latency > 1_000, do: "#{latency / 1_000} ms", else: "#{latency} µs"
+    Logger.debug("[Git Agent] put #{inspect key} to cache in #{latency}")
+  end
+
   def handle_event([:gitrekt, :wire_protocol, command], %{latency: latency}, %{service: service}, _config) do
     latency = if latency > 1_000, do: "#{latency / 1_000} ms", else: "#{latency} µs"
     Logger.debug("[Wire Protocol] #{command} executed #{service.state} in #{latency}")
