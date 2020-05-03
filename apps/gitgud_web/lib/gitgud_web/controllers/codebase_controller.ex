@@ -7,6 +7,7 @@ defmodule GitGud.Web.CodebaseController do
 
   alias GitGud.DB
   alias GitGud.RepoQuery
+  alias GitGud.RepoStorage
 
   alias GitRekt.GitAgent
   alias GitRekt.{GitBlob, GitTree}
@@ -14,7 +15,7 @@ defmodule GitGud.Web.CodebaseController do
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   plug :put_layout, :repo
-  plug :ensure_authenticated when action in [:new, :create, :edit, :update]
+  plug :ensure_authenticated when action in [:new, :create, :edit, :update, :confirm_delete, :delete]
 
   action_fallback GitGud.Web.FallbackController
 
@@ -23,10 +24,11 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       case GitAgent.empty?(repo) do
         {:ok, true} ->
-          if authorized?(conn.assigns[:current_user], repo, :read),
+          if authorized?(user, repo, :read),
             do: render(conn, "initialize.html", repo: repo),
           else: {:error, :not_found}
         {:ok, false} ->
@@ -45,8 +47,9 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if authorized?(conn.assigns.current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
              {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, tree} <- GitAgent.tree(repo, object) do
@@ -61,8 +64,9 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob creation form.
   """
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if authorized?(conn.assigns.current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
              {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
@@ -84,9 +88,9 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path, "commit" => commit_params} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      current_user = conn.assigns.current_user
-      if authorized?(current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit) do
@@ -95,7 +99,7 @@ defmodule GitGud.Web.CodebaseController do
             blob_name = blob_changeset_name(changeset)
             blob_path = Path.join(tree_path ++ [blob_name])
             blob_content = blob_changeset_content(changeset)
-            commit_author_sig = commit_signature(current_user, DateTime.now!("Etc/UTC"))
+            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
             commit_committer_sig = commit_author_sig
             commit_message = commit_changeset_message(changeset)
             commit_update_ref = commit_changeset_update_ref(changeset)
@@ -105,7 +109,9 @@ defmodule GitGud.Web.CodebaseController do
                  {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
                   :ok <- GitAgent.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
                  {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
-                 {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
+                 {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                 {:ok, commit} <- GitAgent.object(repo, commit_oid),
+                  :ok <- RepoStorage.push_commit(repo, user, commit) do
               conn
               |> put_flash(:info, "File #{blob_name} created.")
               |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
@@ -125,8 +131,9 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob edit form.
   """
   def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if authorized?(conn.assigns.current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
              {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
@@ -149,9 +156,9 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      current_user = conn.assigns.current_user
-      if authorized?(current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit),
@@ -161,7 +168,7 @@ defmodule GitGud.Web.CodebaseController do
           changeset = blob_commit_changeset(%{name: tree_entry.name, content: blob_content}, commit_params)
           if changeset.valid? do # TODO
             blob_content = blob_changeset_content(changeset)
-            commit_author_sig = commit_signature(current_user, DateTime.now!("Etc/UTC"))
+            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
             commit_committer_sig = commit_author_sig
             commit_message = commit_changeset_message(changeset)
             commit_update_ref = commit_changeset_update_ref(changeset)
@@ -173,7 +180,9 @@ defmodule GitGud.Web.CodebaseController do
                      {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
                       :ok <- GitAgent.index_add(repo, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
                      {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
-                     {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
+                     {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                     {:ok, commit} <- GitAgent.object(repo, commit_oid),
+                      :ok <- RepoStorage.push_commit(repo, user, commit) do
                   conn
                   |> put_flash(:info, "File #{blob_name} updated.")
                   |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
@@ -200,8 +209,9 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob delete form.
   """
   def confirm_delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if authorized?(conn.assigns.current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
              {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
@@ -224,9 +234,9 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      current_user = conn.assigns.current_user
-      if authorized?(current_user, repo, :write) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+      if authorized?(user, repo, :write) do
         with {:ok, object, reference} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit),
@@ -234,7 +244,7 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
           changeset = commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
-            commit_author_sig = commit_signature(current_user, DateTime.now!("Etc/UTC"))
+            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
             commit_committer_sig = commit_author_sig
             commit_message = commit_changeset_message(changeset)
             commit_update_ref = commit_changeset_update_ref(changeset)
@@ -242,7 +252,9 @@ defmodule GitGud.Web.CodebaseController do
                   :ok <- GitAgent.index_read_tree(repo, index, tree),
                   :ok <- GitAgent.index_remove(repo, index, Path.join(blob_path)),
                  {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
-                 {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]) do
+                 {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                 {:ok, commit} <- GitAgent.object(repo, commit_oid),
+                  :ok <- RepoStorage.push_commit(repo, user, commit) do
               conn
               |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
               |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
