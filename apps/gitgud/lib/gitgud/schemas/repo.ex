@@ -175,7 +175,7 @@ defmodule GitGud.Repo do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
-    |> cast(params, [:owner_id, :name, :public, :description])
+    |> cast(params, [:owner_id, :name, :public, :description, :pushed_at])
     |> validate_required([:owner_id, :name])
     |> assoc_constraint(:owner)
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)

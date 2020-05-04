@@ -28,7 +28,7 @@ defmodule GitGud.DataFactory do
   Returns a map representing `GitGud.Repo` changeset params.
   """
   def repo do
-    %{name: String.downcase(callsign()), description: sentence(2..8)}
+    %{name: String.downcase(callsign()), description: sentence(2..8), pushed_at: NaiveDateTime.utc_now()}
   end
 
   @doc """
