@@ -98,23 +98,32 @@ defmodule GitGud.Web.CodebaseController do
           if changeset.valid? do # TODO
             blob_name = blob_changeset_name(changeset)
             blob_path = Path.join(tree_path ++ [blob_name])
-            blob_content = blob_changeset_content(changeset)
-            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
-            commit_committer_sig = commit_author_sig
-            commit_message = commit_changeset_message(changeset)
-            commit_update_ref = commit_changeset_update_ref(changeset)
-            with {:ok, index} <- GitAgent.index(repo),
-                  :ok <- GitAgent.index_read_tree(repo, index, tree),
-                 {:ok, odb} <- GitAgent.odb(repo),
-                 {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
-                  :ok <- GitAgent.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
-                 {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
-                 {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
-                 {:ok, commit} <- GitAgent.object(repo, commit_oid),
-                  :ok <- RepoStorage.push_commit(repo, user, commit) do
-              conn
-              |> put_flash(:info, "File #{blob_name} created.")
-              |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+            case GitAgent.tree_entry_by_path(repo, tree, blob_path) do
+              {:ok, _tree_entry} ->
+                changeset = Ecto.Changeset.add_error(changeset, :name, "has already been taken")
+                conn
+                |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+                |> put_status(:bad_request)
+                |> render("new.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert})
+              {:error, _reason} ->
+                blob_content = blob_changeset_content(changeset)
+                commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
+                commit_committer_sig = commit_author_sig
+                commit_message = commit_changeset_message(changeset)
+                commit_update_ref = commit_changeset_update_ref(changeset)
+                with {:ok, index} <- GitAgent.index(repo),
+                      :ok <- GitAgent.index_read_tree(repo, index, tree),
+                     {:ok, odb} <- GitAgent.odb(repo),
+                     {:ok, blob_oid} <- GitAgent.odb_write(repo, odb, blob_content, :blob),
+                      :ok <- GitAgent.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
+                     {:ok, tree_oid} <- GitAgent.index_write_tree(repo, index),
+                     {:ok, commit_oid} <- GitAgent.commit_create(repo, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                     {:ok, commit} <- GitAgent.object(repo, commit_oid),
+                      :ok <- RepoStorage.push_commit(repo, user, commit) do
+                  conn
+                  |> put_flash(:info, "File #{blob_name} created.")
+                  |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+                end
             end
           else
             conn
