@@ -6,7 +6,7 @@ defmodule GitGud.Application do
     import Supervisor.Spec, warn: false
 
     :telemetry.attach("git-agent", [:gitrekt, :git_agent, :call], &GitGud.Telemetry.handle_event/4, %{})
-    :telemetry.attach("git-agent-cache", [:gitrekt, :git_agent, :cache], &GitGud.Telemetry.handle_event/4, %{})
+    :telemetry.attach_many("git-agent-cache", [[:gitrekt, :git_agent, :init_cache], [:gitrekt, :git_agent, :fetch_cache], [:gitrekt, :git_agent, :put_cache]], &GitGud.Telemetry.handle_event/4, %{})
     :telemetry.attach("git-upload-pack", [:gitrekt, :wire_protocol, :upload_pack], &GitGud.Telemetry.handle_event/4, %{})
     :telemetry.attach("git-receive-pack", [:gitrekt, :wire_protocol, :receive_pack], &GitGud.Telemetry.handle_event/4, %{})
 

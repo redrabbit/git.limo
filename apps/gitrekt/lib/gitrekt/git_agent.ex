@@ -385,7 +385,7 @@ defmodule GitRekt.GitAgent do
         {config, cache} =
           if config.cache do
             cache_adapter = Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
-            {Map.put(config, :cache_adapter, cache_adapter), telemetry_cache(cache_adapter, :init_cache, [path])}
+            {Map.put(config, :cache_adapter, cache_adapter), telemetry_cache({:init_cache, path}, cache_adapter, :init_cache, [path])}
           else
             {config, nil}
           end
@@ -453,11 +453,11 @@ defmodule GitRekt.GitAgent do
     cond do
       is_nil(cache_op) ->
         {:reply, call(op, handle), state, config.idle_timeout}
-      cache_entry = telemetry_cache(cache_adapter, :fetch_cache, [cache, cache_op]) ->
+      cache_entry = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
         {:reply, cache_entry, state, config.idle_timeout}
       true ->
         cache_entry = call(op, handle)
-        telemetry_cache(cache_adapter, :put_cache, [cache, cache_op, cache_entry])
+        telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, cache_entry])
         {:reply, cache_entry, state, config.idle_timeout}
     end
   end
@@ -539,11 +539,18 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp telemetry_cache(cache_adapter, fun, args) do
+  defp telemetry_cache(op, cache_adapter, fun, args) do
     event_time = System.monotonic_time(1_000_000)
     if result = apply(cache_adapter, fun, args) do
       latency = System.monotonic_time(1_000_000) - event_time
-      :telemetry.execute([:gitrekt, :git_agent, :cache], %{latency: latency}, %{function: fun, args: args})
+      {name, args} =
+        if is_atom(op) do
+          {op, []}
+        else
+          [name|args] = Tuple.to_list(op)
+          {name, args}
+        end
+      :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
       result
     end
   end
