@@ -222,7 +222,16 @@ defmodule GitGud.Repo do
   #
 
   defimpl GitRekt.GitRepo do
-    def get_agent(repo), do: RepoPool.start_agent(repo)
+    def get_agent(repo) do
+      case RepoPool.start_agent(repo) do
+        {:ok, pid} ->
+          {:ok, pid}
+        {:error, {:already_started, pid}} ->
+          {:ok, pid}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
   end
 
   defimpl GitGud.AuthorizationPolicies do
