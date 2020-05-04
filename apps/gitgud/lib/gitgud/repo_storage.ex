@@ -65,15 +65,18 @@ defmodule GitGud.RepoStorage do
          {:ok, meta} <- push_meta_objects(objs, repo, user),
           :ok <- ReceivePack.apply_cmds(receive_pack),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})),
-          :ok <- broadcast_events(repo, meta), do:
+          :ok <- dispatch_events(repo, meta), do:
       {:ok, Map.keys(objs)}
   end
 
+  @doc """
+  Pushes the given `commit` to the given `repo`.
+  """
   @spec push_commit(Repo.t, User.t, GitCommit.t) :: :ok | {:error, term}
   def push_commit(%Repo{} = repo, %User{} = user, %GitCommit{oid: oid} = commit) do
     with {:ok, meta} <- push_meta_objects([{oid, commit}], repo, user),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      broadcast_events(repo, meta)
+      dispatch_events(repo, meta)
   end
 
   @doc """
@@ -151,7 +154,7 @@ defmodule GitGud.RepoStorage do
     end)
   end
 
-  defp broadcast_events(_repo, meta) do
+  defp dispatch_events(_repo, meta) do
     meta
     |> Enum.filter(fn {{:issue_reference, _issue_id}, _val} -> true
                       {_key, _val} -> false end)
