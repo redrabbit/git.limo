@@ -17,12 +17,11 @@ defmodule GitGud.Web.ConnCase do
 
   using do
     quote do
-      # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
 
       alias GitGud.Web.Router.Helpers, as: Routes
 
-      # The default endpoint for testing
       @endpoint GitGud.Web.Endpoint
     end
   end

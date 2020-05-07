@@ -10,7 +10,7 @@ config :gitgud_web, GitGud.Web.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "Orcr/BYzysTwrdJaOA7vu7miC2V5M2ivU6yMY7hW1cUnegxFej5GLalozFC+f6uA",
   render_errors: [view: GitGud.Web.ErrorView, accepts: ~w(html)],
-  pubsub: [name: GitGud.Web.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: GitGud.Web.PubSub
 
 # Configure generators
 config :gitgud_web, :generators,

@@ -8,8 +8,8 @@ defmodule GitGud.Web.LayoutView do
   end
 
   @spec render_inner_layout(Plug.Conn.t, map) :: binary
-  def render_inner_layout(conn, assigns) do
-    Map.get(assigns, :inner_layout) || render(Phoenix.Controller.view_module(conn), Phoenix.Controller.view_template(conn), assigns)
+  def render_inner_layout(_conn, assigns) do
+    Map.get(assigns, :inner_layout, assigns.inner_content)
   end
 
   @spec session_params(Plug.Conn.t) :: keyword

@@ -3,11 +3,9 @@ defmodule GitGud.Web.Application do
   use Application
 
   def start(_type, _args) do
-    import Supervisor.Spec
-
     children = [
-      supervisor(GitGud.Web.Endpoint, []),
-      supervisor(Absinthe.Subscription, [GitGud.Web.Endpoint]),
+      {Phoenix.PubSub, name: GitGud.Web.PubSub},
+      GitGud.Web.Endpoint,
       GitGud.Web.CommentThreadPresence
     ]
 

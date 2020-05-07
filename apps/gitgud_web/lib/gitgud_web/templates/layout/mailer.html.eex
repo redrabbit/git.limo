@@ -8,12 +8,8 @@
   <body>
     <main class="hero">
       <div class="hero-body">
-        <div class="container">
-          <%= render(@view_module, @view_template, assigns) %>
-        </div>
+        <div class="container"><%= @inner_content %></div>
       </div>
     </main>
   </body>
 </html>
-
-

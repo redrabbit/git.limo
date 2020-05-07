@@ -32,7 +32,7 @@ defmodule GitGud.Mixfile do
      {:ecto_sql, "~> 3.2"},
      {:postgrex, "~> 0.14"},
      {:phoenix, "~> 1.4", optional: true},
-     {:phoenix_pubsub, "~> 1.1", optional: true},
+     {:phoenix_pubsub, "~> 2.0", optional: true},
      {:jason, "~> 1.1"},
      {:argon2_elixir, "~> 2.0"},
      {:plug, "~> 1.8", optional: true},
