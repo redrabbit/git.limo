@@ -15,6 +15,12 @@ A Git source code management tool written in Elixir.
 
 See the [Getting Started](http://almightycouch.com/gitgud/docs/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud/docs).
 
+---
+
+Visit **https://git.limo** for a live demo.
+
+*Monitoring and error tracking is kindly provided by [AppSignal](https://appsignal.com). 💖*
+
 ## Install dependencies
 
 First, ensure you have [libgit2](https://libgit2.github.com) installed on your system:
