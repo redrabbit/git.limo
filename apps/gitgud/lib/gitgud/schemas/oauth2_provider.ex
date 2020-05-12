@@ -33,7 +33,7 @@ defmodule GitGud.OAuth2.Provider do
   Creates a new OAuth2.0 provider with the given `params`.
 
   ```elixir
-  {:ok, provider} = GitGud.OAuth2.Provider.create(account_id: user.account.id, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
+  {:ok, provider} = GitGud.OAuth2.Provider.create(auth_id: user.account.id, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
   ```
 
   This function validates the given `params` using `changeset/2`.

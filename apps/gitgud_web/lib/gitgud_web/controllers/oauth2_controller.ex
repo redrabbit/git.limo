@@ -62,7 +62,7 @@ defmodule GitGud.Web.OAuth2Controller do
     user_info = get_user!(provider, client)
     cond do
       user = authenticated?(conn) && DB.preload(current_user(conn), account: :oauth2_providers) ->
-        case Provider.create(account_id: user.account.id, provider: provider, provider_id: user_info.id, token: client.token.access_token) do
+        case Provider.create(auth_id: user.account.id, provider: provider, provider_id: user_info.id, token: client.token.access_token) do
           {:ok, oauth2} ->
             conn
             |> put_session(:user_id, user.id)
