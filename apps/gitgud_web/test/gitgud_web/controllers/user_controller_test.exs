@@ -114,14 +114,14 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "updates password with valid params", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_password), auth: %{old_password: "qwertz", password: "qwerty"})
+      conn = put(conn, Routes.user_path(conn, :update_password), account: %{old_password: "qwertz", password: "qwerty"})
       assert get_flash(conn, :info) == "Password updated."
       assert redirected_to(conn) == Routes.user_path(conn, :edit_password)
     end
 
     test "fails to update password with invalid old password", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_password), auth: %{old_password: "qwerty", password: "qwerty"})
+      conn = put(conn, Routes.user_path(conn, :update_password), account: %{old_password: "qwerty", password: "qwerty"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Password</h2>)

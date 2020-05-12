@@ -11,7 +11,7 @@ defmodule GitGud.User do
 
   alias GitGud.DB
 
-  alias GitGud.Auth
+  alias GitGud.Account
   alias GitGud.Email
   alias GitGud.Repo
   alias GitGud.SSHKey
@@ -20,7 +20,7 @@ defmodule GitGud.User do
   schema "users" do
     field :login, :string
     field :name, :string
-    has_one :auth, Auth, on_replace: :update, on_delete: :delete_all
+    has_one :account, Account, on_replace: :update, on_delete: :delete_all
     belongs_to :primary_email, Email, on_replace: :update
     belongs_to :public_email, Email, on_replace: :update
     has_many :emails, Email, on_delete: :delete_all
@@ -38,7 +38,7 @@ defmodule GitGud.User do
     id: pos_integer,
     login: binary,
     name: binary,
-    auth: Auth.t,
+    account: Account.t,
     primary_email: Email.t,
     public_email: Email.t,
     emails: [Email.t],
@@ -62,7 +62,7 @@ defmodule GitGud.User do
     emails: [
       %{address: "m.flach@almightycouch.com"}
     ],
-    auth: %{
+    account: %{
       password: "qwertz"
     }
   )
@@ -73,7 +73,7 @@ defmodule GitGud.User do
   def create(params) do
     case create_with_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
       {:ok, %{user_with_primary_email: user}} ->
-        {:ok, put_in(user.auth.password, nil)}
+        {:ok, put_in(user.account.password, nil)}
       {:error, :user, changeset, _changes} ->
         {:error, changeset}
       {:error, :user_with_primary_email, changeset, _changes} ->
@@ -159,7 +159,7 @@ defmodule GitGud.User do
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [:login, :name, :bio, :website_url, :location])
-    |> cast_assoc(:auth, required: true, with: &Auth.registration_changeset/2)
+    |> cast_assoc(:account, required: true, with: &Account.registration_changeset/2)
     |> cast_assoc(:emails, required: true, with: &Email.registration_changeset/2)
     |> validate_required([:login, :name])
     |> validate_login()
@@ -205,8 +205,8 @@ defmodule GitGud.User do
   @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(%{auth: params}, [])
-    |> cast_assoc(:auth, required: true, with: &Auth.password_changeset/2)
+    |> cast(%{account: params}, [])
+    |> cast_assoc(:account, required: true, with: &Account.password_changeset/2)
   end
 
   @doc """
@@ -215,8 +215,8 @@ defmodule GitGud.User do
   @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
   def oauth2_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
-    |> cast(%{auth: params}, [])
-    |> cast_assoc(:auth, required: true, with: &Auth.oauth2_changeset/2)
+    |> cast(%{account: params}, [])
+    |> cast_assoc(:account, required: true, with: &Account.oauth2_changeset/2)
   end
 
   #
@@ -263,7 +263,7 @@ defmodule GitGud.User do
   end
 
   defp verify_oauth2_email(changeset) do
-    if auth_changeset = get_change(changeset, :auth) do
+    if auth_changeset = get_change(changeset, :account) do
       emails = get_change(changeset, :emails, [])
       if email_changeset = !Enum.empty?(emails) && hd(emails) do
         providers = get_change(auth_changeset, :oauth2_providers)

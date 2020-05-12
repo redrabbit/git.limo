@@ -21,7 +21,7 @@ defmodule GitGud.SmartHTTPBackend do
   alias GitRekt.GitAgent
   alias GitRekt.WireProtocol
 
-  alias GitGud.Auth
+  alias GitGud.Account
   alias GitGud.User
   alias GitGud.RepoQuery
   alias GitGud.RepoStorage
@@ -72,7 +72,7 @@ defmodule GitGud.SmartHTTPBackend do
     with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
          {:ok, credentials} <- decode64(auth),
          [login, passwd] <- split(credentials, ":", parts: 2),
-         %User{} = user <- Auth.check_credentials(login, passwd) do
+         %User{} = user <- Account.check_credentials(login, passwd) do
       assign(conn, :current_user, user)
     else
       _ -> conn

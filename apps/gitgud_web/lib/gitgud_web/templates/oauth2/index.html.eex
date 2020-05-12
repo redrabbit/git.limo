@@ -16,7 +16,7 @@
       <%= for provider <- ["github", "gitlab", "bitbucket"] do %>
         <div class="control">
           <div class="buttons has-addons">
-            <%= if oauth2 = Enum.find(@user.auth.oauth2_providers, &(&1.provider == provider)) do %>
+            <%= if oauth2 = Enum.find(@user.account.oauth2_providers, &(&1.provider == provider)) do %>
               <div class="button is-small is-static <%= provider %>">
                 <span class="icon"><%= provider_icon(provider) %></span>
               </div>

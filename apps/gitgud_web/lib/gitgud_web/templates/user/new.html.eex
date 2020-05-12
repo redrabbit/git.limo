@@ -36,7 +36,7 @@
           </div>
         <% end %>
 
-        <%= inputs_for f, :auth, fn fa -> %>
+        <%= inputs_for f, :account, fn fa -> %>
           <div class="field">
             <%= label fa, :password, class: "label" %>
             <div class="control">

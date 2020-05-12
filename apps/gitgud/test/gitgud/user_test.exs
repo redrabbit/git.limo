@@ -2,14 +2,14 @@ defmodule GitGud.UserTest do
   use GitGud.DataCase, async: true
   use GitGud.DataFactory
 
-  alias GitGud.Auth
+  alias GitGud.Account
   alias GitGud.User
   alias GitGud.Email
 
   test "creates a new user with valid params" do
     assert {:ok, user} = User.create(factory(:user))
-    assert is_nil(user.auth.password)
-    assert String.starts_with?(user.auth.password_hash, "$argon2id$")
+    assert is_nil(user.account.password)
+    assert String.starts_with?(user.account.password_hash, "$argon2id$")
   end
 
   test "fails to create a new user with invalid login" do
@@ -32,23 +32,23 @@ defmodule GitGud.UserTest do
 
   test "fails to create a new user with invalid password" do
     params = factory(:user)
-    assert {:error, changeset} = User.create(%{params|auth: %{}})
-    assert "can't be blank" in errors_on(changeset).auth.password
-    assert {:error, changeset} = User.create(%{params|auth: %{password: "abc"}})
-    assert "should be at least 6 character(s)" in errors_on(changeset).auth.password
+    assert {:error, changeset} = User.create(%{params|account: %{}})
+    assert "can't be blank" in errors_on(changeset).account.password
+    assert {:error, changeset} = User.create(%{params|account: %{password: "abc"}})
+    assert "should be at least 6 character(s)" in errors_on(changeset).account.password
   end
 
   describe "when user exists" do
     setup :create_user
 
     test "checks credentials", %{user: user} do
-      assert Auth.check_credentials(user.login, "qwertz")
-      assert Auth.check_credentials(hd(user.emails).address, "qwertz")
+      assert Account.check_credentials(user.login, "qwertz")
+      assert Account.check_credentials(hd(user.emails).address, "qwertz")
     end
 
     test "fails to check credentials with invalid password", %{user: user} do
-      refute Auth.check_credentials(user.login, "abc")
-      refute Auth.check_credentials(hd(user.emails).address, "abc")
+      refute Account.check_credentials(user.login, "abc")
+      refute Account.check_credentials(hd(user.emails).address, "abc")
     end
 
     test "fails to create a new user with already existing login", %{user: user} do
@@ -77,19 +77,19 @@ defmodule GitGud.UserTest do
 
     test "updates password with valid params", %{user: user1} do
       assert {:ok, user2} = User.update(user1, :password, old_password: "qwertz", password: "qwerty")
-      assert user1.auth.password_hash != user2.auth.password_hash
+      assert user1.account.password_hash != user2.account.password_hash
     end
 
     test "fails to update password with invalid old password", %{user: user} do
       assert {:error, changeset} = User.update(user, :password, old_password: "abcdef", password: "qwerty")
-      assert "does not match old password" in errors_on(changeset).auth.old_password
+      assert "does not match old password" in errors_on(changeset).account.old_password
     end
 
     test "fails to update password with invalid new password", %{user: user} do
       assert {:error, changeset} = User.update(user, :password, old_password: "qwertz")
-      assert "can't be blank" in errors_on(changeset).auth.password
+      assert "can't be blank" in errors_on(changeset).account.password
       assert {:error, changeset} = User.update(user, :password, old_password: "qwertz", password: "abc")
-      assert "should be at least 6 character(s)" in errors_on(changeset).auth.password
+      assert "should be at least 6 character(s)" in errors_on(changeset).account.password
     end
 
     test "updates primary email with valid email", %{user: user1} do

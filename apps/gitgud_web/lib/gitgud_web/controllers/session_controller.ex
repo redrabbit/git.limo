@@ -5,7 +5,7 @@ defmodule GitGud.Web.SessionController do
 
   use GitGud.Web, :controller
 
-  alias GitGud.Auth
+  alias GitGud.Account
 
   plug :put_layout, :hero
   plug :ensure_authenticated when action == :delete
@@ -27,7 +27,7 @@ defmodule GitGud.Web.SessionController do
   def create(conn, %{"session" => session_params} = _params) do
     changeset = session_changeset(session_params)
     if changeset.valid? do
-      if user = Auth.check_credentials(changeset.params["login_or_email"], changeset.params["password"]) do
+      if user = Account.check_credentials(changeset.params["login_or_email"], changeset.params["password"]) do
         conn
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome #{user.login}.")

@@ -7,7 +7,7 @@ defmodule GitGud.Web.UserController do
 
   alias GitGud.DB
 
-  alias GitGud.Auth
+  alias GitGud.Account
   alias GitGud.Email
 
   alias GitGud.User
@@ -21,7 +21,7 @@ defmodule GitGud.Web.UserController do
 
   plug :scrub_params, "user" when action == :create
   plug :scrub_params, "profile" when action == :update_profile
-  plug :scrub_params, "auth" when action == :update_password
+  plug :scrub_params, "account" when action == :update_password
 
   action_fallback GitGud.Web.FallbackController
 
@@ -30,7 +30,7 @@ defmodule GitGud.Web.UserController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, _params) do
-    render(conn, "new.html", changeset: User.registration_changeset(%User{auth: %Auth{}, emails: [%Email{}]}))
+    render(conn, "new.html", changeset: User.registration_changeset(%User{account: %Account{}, emails: [%Email{}]}))
   end
 
   @doc """
@@ -100,8 +100,8 @@ defmodule GitGud.Web.UserController do
   """
   @spec edit_password(Plug.Conn.t, map) :: Plug.Conn.t
   def edit_password(conn, _params) do
-    user = DB.preload(current_user(conn), :auth)
-    changeset = Auth.password_changeset(user.auth)
+    user = DB.preload(current_user(conn), :account)
+    changeset = Account.password_changeset(user.account)
     render(conn, "edit_password.html", user: user, changeset: changeset)
   end
 
@@ -109,9 +109,9 @@ defmodule GitGud.Web.UserController do
   Updates a password.
   """
   @spec update_password(Plug.Conn.t, map) :: Plug.Conn.t
-  def update_password(conn, %{"auth" => auth_params} = _params) do
-    user = DB.preload(current_user(conn), :auth)
-    case User.update(user, :password, auth_params) do
+  def update_password(conn, %{"account" => account_params} = _params) do
+    user = DB.preload(current_user(conn), :account)
+    case User.update(user, :password, account_params) do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Password updated.")
@@ -120,7 +120,7 @@ defmodule GitGud.Web.UserController do
         conn
         |> put_flash(:error, "Something went wrong! Please check error(s) below.")
         |> put_status(:bad_request)
-        |> render("edit_password.html", user: user, changeset: %{changeset.changes.auth|action: :update})
+        |> render("edit_password.html", user: user, changeset: %{changeset.changes.account|action: :update})
     end
   end
 
@@ -164,8 +164,8 @@ defmodule GitGud.Web.UserController do
   def verify_password_reset(conn, %{"token" => token} = _params) do
     case Phoenix.Token.verify(conn, "reset-password", token, max_age: 86400) do
       {:ok, user_id} ->
-        if user = UserQuery.by_id(user_id, preload: :auth) do
-          changeset = Auth.password_changeset(user.auth, %{reset_token: token})
+        if user = UserQuery.by_id(user_id, preload: :account) do
+          changeset = Account.password_changeset(user.account, %{reset_token: token})
           conn
           |> put_session(:user_id, user_id)
           |> put_flash(:info, "Please set a new password below.")

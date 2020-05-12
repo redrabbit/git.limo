@@ -6,12 +6,12 @@ defmodule GitGud.OAuth2.Provider do
   use Ecto.Schema
 
   alias GitGud.DB
-  alias GitGud.Auth
+  alias GitGud.Account
 
   import Ecto.Changeset
 
-  schema "authentication_providers" do
-    belongs_to :auth, Auth
+  schema "oauth2_providers" do
+    belongs_to :account, Account
     field :provider, :string
     field :provider_id, :integer
     field :token, :string
@@ -20,8 +20,8 @@ defmodule GitGud.OAuth2.Provider do
 
   @type t :: %__MODULE__{
     id: pos_integer,
-    auth_id: pos_integer,
-    auth: Auth.t,
+    account_id: pos_integer,
+    account: Account.t,
     provider: binary,
     provider_id: pos_integer,
     token: binary,
@@ -33,7 +33,7 @@ defmodule GitGud.OAuth2.Provider do
   Creates a new OAuth2.0 provider with the given `params`.
 
   ```elixir
-  {:ok, provider} = GitGud.OAuth2.Provider.create(auth_id: user.auth.id, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
+  {:ok, provider} = GitGud.OAuth2.Provider.create(account_id: user.account.id, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
   ```
 
   This function validates the given `params` using `changeset/2`.
@@ -73,9 +73,9 @@ defmodule GitGud.OAuth2.Provider do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = provider, params \\ %{}) do
     provider
-    |> cast(params, [:auth_id, :provider, :provider_id, :token])
+    |> cast(params, [:account_id, :provider, :provider_id, :token])
     |> validate_required([:provider, :provider_id, :token])
-    |> assoc_constraint(:auth)
+    |> assoc_constraint(:account)
     |> unique_constraint(:provider_id, name: :authentication_providers_provider_provider_id_index)
   end
 end

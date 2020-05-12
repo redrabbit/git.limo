@@ -1,6 +1,6 @@
-defmodule GitGud.Auth do
+defmodule GitGud.Account do
   @moduledoc """
-  Authentication schema and helper functions.
+  Account schema and helper functions.
   """
 
   use Ecto.Schema
@@ -15,7 +15,7 @@ defmodule GitGud.Auth do
 
   import Argon2, only: [add_hash: 1, check_pass: 2, verify_pass: 2]
 
-  schema "authentications" do
+  schema "accounts" do
     belongs_to :user, User
     has_many :oauth2_providers, OAuth2.Provider
     field :password, :string, virtual: true
@@ -38,7 +38,7 @@ defmodule GitGud.Auth do
   Returns the matching user for the given credentials; elsewhise returns `nil`.
 
   ```elixir
-  if user = GitGud.Auth.check_credentials("redrabbit", "qwertz") do
+  if user = GitGud.Account.check_credentials("redrabbit", "qwertz") do
     IO.puts "Welcome!"
   else
     IO.puts "Invalid login credentials."
@@ -48,21 +48,21 @@ defmodule GitGud.Auth do
   @spec check_credentials(binary, binary) :: t | nil
   def check_credentials(email_or_login, password) do
     query = from u in User,
-           join: a in assoc(u, :auth),
+           join: a in assoc(u, :account),
            join: e in assoc(u, :emails),
        or_where: u.login == ^email_or_login,
        or_where: e.address == ^email_or_login and e.verified == true,
-        preload: [auth: a, emails: e]
+        preload: [account: a, emails: e]
     user = DB.one(query)
-    if user && verify_pass(password, user.auth.password_hash), do: user
+    if user && verify_pass(password, user.account.password_hash), do: user
   end
 
   @doc """
   Returns a registration changeset for the given `params`.
   """
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
-  def registration_changeset(%__MODULE__{} = auth, params \\ %{}) do
-    auth
+  def registration_changeset(%__MODULE__{} = account, params \\ %{}) do
+    account
     |> cast(params, [:user_id, :password])
     |> cast_assoc(:oauth2_providers)
     |> validate_required([:password])
@@ -74,8 +74,8 @@ defmodule GitGud.Auth do
   Returns a password changeset for the given `params`.
   """
   @spec password_changeset(t, map) :: Ecto.Changeset.t
-  def password_changeset(%__MODULE__{} = auth, params \\ %{}) do
-    auth
+  def password_changeset(%__MODULE__{} = account, params \\ %{}) do
+    account
     |> cast(params, [:user_id, :password])
     |> validate_required([:password])
     |> validate_old_password()
@@ -87,8 +87,8 @@ defmodule GitGud.Auth do
   Returns an OAuth2.0 changeset for the given `params`.
   """
   @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
-  def oauth2_changeset(%__MODULE__{} = auth, params \\ %{}) do
-    auth
+  def oauth2_changeset(%__MODULE__{} = account, params \\ %{}) do
+    account
     |> cast(params, [:user_id])
     |> cast_assoc(:oauth2_providers, required: true)
     |> assoc_constraint(:user)

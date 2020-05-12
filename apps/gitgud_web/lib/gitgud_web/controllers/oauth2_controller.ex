@@ -24,7 +24,7 @@ defmodule GitGud.Web.OAuth2Controller do
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, _params) do
-    user = DB.preload(current_user(conn), [auth: :oauth2_providers])
+    user = DB.preload(current_user(conn), [account: :oauth2_providers])
     render(conn, "index.html", user: user)
   end
 
@@ -33,9 +33,9 @@ defmodule GitGud.Web.OAuth2Controller do
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"oauth2" => oauth2_params} = _params) do
-    user = DB.preload(current_user(conn), [auth: :oauth2_providers])
+    user = DB.preload(current_user(conn), [account: :oauth2_providers])
     oauth2_id = String.to_integer(oauth2_params["id"])
-    if oauth2 = Enum.find(user.auth.oauth2_providers, &(&1.id == oauth2_id)) do
+    if oauth2 = Enum.find(user.account.oauth2_providers, &(&1.id == oauth2_id)) do
       oauth2 = Provider.delete!(oauth2)
       conn
       |> put_flash(:info, "OAuth2.0 provider #{provider_name(oauth2.provider)} disconnected.")
@@ -61,8 +61,8 @@ defmodule GitGud.Web.OAuth2Controller do
     client = get_token!(provider, code: code, redirect_uri: Routes.oauth2_url(conn, :callback, provider))
     user_info = get_user!(provider, client)
     cond do
-      user = authenticated?(conn) && DB.preload(current_user(conn), auth: :oauth2_providers) ->
-        case Provider.create(auth_id: user.auth.id, provider: provider, provider_id: user_info.id, token: client.token.access_token) do
+      user = authenticated?(conn) && DB.preload(current_user(conn), account: :oauth2_providers) ->
+        case Provider.create(account_id: user.account.id, provider: provider, provider_id: user_info.id, token: client.token.access_token) do
           {:ok, oauth2} ->
             conn
             |> put_session(:user_id, user.id)
@@ -84,7 +84,7 @@ defmodule GitGud.Web.OAuth2Controller do
         changeset = User.registration_changeset(%User{}, %{
           login: user_info.login,
           name: user_info.name,
-          auth: %{oauth2_providers: [%{
+          account: %{oauth2_providers: [%{
             provider: provider,
             provider_id: user_info.id,
             token: client.token.access_token,

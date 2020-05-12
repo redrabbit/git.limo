@@ -48,7 +48,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.AuthorizationPolicies
         ],
         "Schemas & Queries": [
-          GitGud.Auth,
+          GitGud.Account,
           GitGud.Comment,
           GitGud.CommentQuery,
           GitGud.CommentRevision,

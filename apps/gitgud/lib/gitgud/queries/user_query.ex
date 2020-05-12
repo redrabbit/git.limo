@@ -117,9 +117,9 @@ defmodule GitGud.UserQuery do
 
   def query(:user_oauth_query, [provider, id]) do
     from(u in User, as: :user,
-      join: a in assoc(u, :auth),
+      join: a in assoc(u, :account),
       join: p in assoc(a, :oauth2_providers), where: p.provider == ^provider and p.provider_id == ^id,
-      preload: [auth: a])
+      preload: [account: a])
   end
 
   def query(:users_query, [ids]) when is_list(ids) do

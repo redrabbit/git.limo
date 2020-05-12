@@ -8,7 +8,7 @@ defmodule GitGud.Email do
   Every `GitGud.User` has **at least one** email address. In order to be taken in account, an email address
   must be verified first. See `verify/1` for more details.
 
-  Once verified, an email address can be used to authenticate users (see `GitGud.Auth.check_credentials/2`)
+  Once verified, an email address can be used to authenticate users (see `GitGud.Account.check_credentials/2`)
   and resolve Git commit authors.
   """
 
