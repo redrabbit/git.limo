@@ -30,7 +30,7 @@ defmodule GitGud.SSHServer do
   @behaviour :ssh_server_channel
   @behaviour :ssh_server_key_api
 
-  @max_request_size 10_485_760
+  @max_request_size Application.compile_env(:gitgud, :git_max_request_size, :infinity)
 
   defstruct [:conn, :chan, :user, :repo, :service, request_size: 0]
 

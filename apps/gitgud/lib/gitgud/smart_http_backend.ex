@@ -32,7 +32,7 @@ defmodule GitGud.SmartHTTPBackend do
   plug :match
   plug :dispatch
 
-  @max_request_size 10_485_760
+  @max_request_size Application.compile_env(:gitgud, :git_max_request_size, :infinity)
 
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
