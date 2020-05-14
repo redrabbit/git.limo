@@ -302,7 +302,7 @@ geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_inspect_binary(env, argv[1], &bin))
 		return enif_make_badarg(env);
 
-	if (bin.size < GIT_OID_RAWSZ)
+	if (bin.size != GIT_OID_RAWSZ)
 		return enif_make_badarg(env);
 
 	git_oid_fromraw(&id, bin.data);

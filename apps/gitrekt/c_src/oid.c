@@ -22,7 +22,7 @@ geef_oid_fmt(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_inspect_binary(env, argv[0], &bin))
 		return enif_make_badarg(env);
 
-	if (bin.size < GIT_OID_RAWSZ)
+	if (bin.size != GIT_OID_RAWSZ)
 		return enif_make_badarg(env);
 
 	if (!enif_alloc_binary(GIT_OID_HEXSZ, &bin_out))

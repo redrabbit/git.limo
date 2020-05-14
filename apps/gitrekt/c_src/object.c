@@ -78,7 +78,7 @@ geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[1], &bin))
         return enif_make_badarg(env);
 
-    if (bin.size < GIT_OID_RAWSZ)
+    if (bin.size != GIT_OID_RAWSZ)
         return enif_make_badarg(env);
 
     git_oid_fromraw(&id, bin.data);
@@ -87,10 +87,8 @@ geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!obj)
         return geef_oom(env);
 
-    if (git_object_lookup(&obj->obj, repo->repo, &id, GIT_OBJ_ANY) < 0) {
-        enif_release_resource(obj);
+    if (git_object_lookup(&obj->obj, repo->repo, &id, GIT_OBJ_ANY) < 0)
         return geef_error(env);
-    }
 
     term_obj = enif_make_resource(env, obj);
     enif_release_resource(obj);
