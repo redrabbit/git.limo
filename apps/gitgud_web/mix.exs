@@ -39,7 +39,7 @@ defmodule GitGud.Web.Mixfile do
      {:phoenix_ecto, "~> 4.0"},
      {:absinthe, "~> 1.5.0-rc"},
      {:absinthe_relay, "~> 1.5.0-rc"},
-     {:absinthe_phoenix, "~> 1.5.0-rc"},
+     {:absinthe_phoenix, github: "absinthe-graphql/absinthe_phoenix"},
      {:oauth2, "~> 2.0"},
      {:bamboo, "~> 1.2"},
      {:gettext, "~> 0.17"},

@@ -6,6 +6,7 @@ defmodule GitGud.Web.Application do
     children = [
       {Phoenix.PubSub, name: GitGud.Web.PubSub},
       GitGud.Web.Endpoint,
+      {Absinthe.Subscription, GitGud.Web.Endpoint},
       GitGud.Web.CommentThreadPresence
     ]
 
