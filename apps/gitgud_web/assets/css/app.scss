@@ -133,7 +133,7 @@ textarea.textarea {
 
   &.code {
     font-size: 0.875em;
-    font-family: "Fira Mono", monospace;
+    font-family: $family-monospace;
     -webkit-font-smoothing: initial;
   }
 }
