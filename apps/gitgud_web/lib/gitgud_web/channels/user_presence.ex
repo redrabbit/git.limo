@@ -1,6 +1,6 @@
-defmodule GitGud.Web.CommentThreadPresence do
+defmodule GitGud.Web.UserPresence do
   @moduledoc false
-  use Phoenix.Presence, otp_app: :my_app, pubsub_server: GitGud.Web.PubSub
+  use Phoenix.Presence, otp_app: :gitgud_web, pubsub_server: GitGud.Web.PubSub
 
   alias GitGud.UserQuery
   alias GitGud.Web.Router.Helpers, as: Routes

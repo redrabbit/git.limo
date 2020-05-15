@@ -2,7 +2,7 @@ defmodule GitGud.Web.CommentThreadChannel do
   @moduledoc false
   use GitGud.Web, :channel
 
-  alias GitGud.Web.CommentThreadPresence
+  alias GitGud.Web.UserPresence
 
   intercept ["presence_diff"]
 
@@ -17,9 +17,9 @@ defmodule GitGud.Web.CommentThreadChannel do
   end
 
   def handle_info(:after_join, socket) do
-    push(socket, "presence_state", filter_presence(CommentThreadPresence.list(socket), socket.assigns[:current_user]))
+    push(socket, "presence_state", filter_presence(UserPresence.list(socket), socket.assigns[:current_user]))
     if current_user = socket.assigns[:current_user] do
-      case CommentThreadPresence.track(socket, current_user.id, %{typing: false}) do
+      case UserPresence.track(socket, current_user.id, %{typing: false}) do
         {:ok, _presence} ->
           {:noreply, socket}
         {:error, reason} ->
@@ -31,7 +31,7 @@ defmodule GitGud.Web.CommentThreadChannel do
   end
 
   def handle_in("start_typing", _params, socket) do
-    case CommentThreadPresence.update(socket, socket.assigns.current_user.id, &Map.put(&1, :typing, true)) do
+    case UserPresence.update(socket, socket.assigns.current_user.id, &Map.put(&1, :typing, true)) do
       {:ok, _presence} ->
         {:noreply, socket}
       {:error, reason} ->
@@ -40,7 +40,7 @@ defmodule GitGud.Web.CommentThreadChannel do
   end
 
   def handle_in("stop_typing", _params, socket) do
-    case CommentThreadPresence.update(socket, socket.assigns.current_user.id, &Map.put(&1, :typing, false)) do
+    case UserPresence.update(socket, socket.assigns.current_user.id, &Map.put(&1, :typing, false)) do
       {:ok, _presence} ->
         {:noreply, socket}
       {:error, reason} ->

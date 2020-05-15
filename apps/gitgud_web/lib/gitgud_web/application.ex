@@ -7,7 +7,7 @@ defmodule GitGud.Web.Application do
       {Phoenix.PubSub, name: GitGud.Web.PubSub},
       GitGud.Web.Endpoint,
       {Absinthe.Subscription, GitGud.Web.Endpoint},
-      GitGud.Web.CommentThreadPresence
+      GitGud.Web.UserPresence
     ]
 
     opts = [strategy: :one_for_one, name: GitGud.Web.Supervisor]
