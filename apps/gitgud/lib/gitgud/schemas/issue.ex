@@ -72,9 +72,9 @@ defmodule GitGud.Issue do
   def close(%__MODULE__{} = issue, opts \\ []) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(opts), %{type: "close", timestamp: NaiveDateTime.utc_now()})
-    case DB.update_all(query, set: [status: "close"], push: [events: event]) do
-      {1, [issue]} ->
-        {:ok, issue}
+    case DB.update_all(query, set: [status: "close", updated_at: event.timestamp], push: [events: event]) do
+      {1, [new_issue]} ->
+        {:ok, struct(new_issue, Map.take(issue, __schema__(:associations)))}
       {0, nil} ->
         changeset = change(issue, status: "close", events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
@@ -99,9 +99,9 @@ defmodule GitGud.Issue do
   def reopen(%__MODULE__{} = issue, opts \\ []) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(opts), %{type: "reopen", timestamp: NaiveDateTime.utc_now()})
-    case DB.update_all(query, set: [status: "open"], push: [events: event]) do
-      {1, [issue]} ->
-        {:ok, issue}
+    case DB.update_all(query, set: [status: "open", updated_at: event.timestamp], push: [events: event]) do
+      {1, [new_issue]} ->
+        {:ok, struct(new_issue, Map.take(issue, __schema__(:associations)))}
       {0, nil} ->
         changeset = change(issue, status: "open", events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
@@ -126,9 +126,9 @@ defmodule GitGud.Issue do
   def update_title(%__MODULE__{} = issue, title, opts \\ []) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(Keyword.merge([old_title: issue.title, new_title: title], opts)), %{type: "title_update", timestamp: NaiveDateTime.utc_now()})
-    case DB.update_all(query, set: [title: title], push: [events: event]) do
-      {1, [issue]} ->
-        {:ok, issue}
+    case DB.update_all(query, set: [title: title, updated_at: event.timestamp], push: [events: event]) do
+      {1, [new_issue]} ->
+        {:ok, struct(new_issue, Map.take(issue, __schema__(:associations)))}
       {0, nil} ->
         changeset = change(issue, title: title, events: issue.events ++ [event])
         {:error, %{changeset|action: :update}}
@@ -161,7 +161,7 @@ defmodule GitGud.Issue do
        do: Multi.delete_all(multi, :issue_labels_pull, from(l in "issues_labels", where: l.issue_id == ^issue.id and l.label_id in ^labels_pull)),
      else: multi
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
-    event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull], opts)), %{type: "labels_update", timestamp: NaiveDateTime.utc_now()})
+    event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull, updated_at: NaiveDateTime.utc_now()], opts)), %{type: "labels_update", timestamp: NaiveDateTime.utc_now()})
     multi = Multi.update_all(multi, :issue, query, push: [events: event])
     case DB.transaction(multi) do
       {:ok, %{issue: {1, [issue]}}} ->
