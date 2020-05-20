@@ -35,11 +35,11 @@ defmodule GitGud.Authorization do
   end
 
   @doc """
-  Filters the given list of `resources`, i.e. returns only those for which `enforce_policy/3` applies.
+  Filters the given list of `resources`, i.e. returns only those for which `authorized?/3` applies.
   """
   @spec filter(User.t | nil, [GitGud.AuthorizationPolicies.t], atom) :: [GitGud.AuthorizationPolicies.t]
   def filter(user, resources, action) do
-    Enum.filter(resources, &enforce_policy!(user, &1, action))
+    Enum.filter(resources, &authorized?(user, &1, action))
   end
 end
 
