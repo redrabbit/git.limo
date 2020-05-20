@@ -69,7 +69,9 @@ defmodule GitGud.Issue do
   Closes the given `issue`.
   """
   @spec close(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def close(%__MODULE__{} = issue, opts \\ []) do
+  def close(issue, opts \\ [])
+  def close(%__MODULE__{status: "close"} = issue, _opts), do: {:ok, issue}
+  def close(%__MODULE__{} = issue, opts) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(opts), %{type: "close", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
     case DB.update_all(query, set: [status: "close", updated_at: event.timestamp], push: [events: event]) do
@@ -96,7 +98,9 @@ defmodule GitGud.Issue do
   Reopens the given `issue`.
   """
   @spec reopen(t) :: {:ok, t} | {:error, term}
-  def reopen(%__MODULE__{} = issue, opts \\ []) do
+  def reopen(issue, opts \\ [])
+  def reopen(%__MODULE__{status: "open"} = issue, _opts), do: {:ok, issue}
+  def reopen(%__MODULE__{} = issue, opts) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(opts), %{type: "reopen", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
     case DB.update_all(query, set: [status: "open", updated_at: event.timestamp], push: [events: event]) do
@@ -123,7 +127,9 @@ defmodule GitGud.Issue do
   Updates the title of the given `issue`.
   """
   @spec update_title(t, binary, keyword) :: {:ok, t} | {:error, term}
-  def update_title(%__MODULE__{} = issue, title, opts \\ []) do
+  def update_title(issue, title, opts \\ [])
+  def update_title(%__MODULE__{title: title} = issue, title, _opts), do: {:ok, issue}
+  def update_title(%__MODULE__{} = issue, title, opts) do
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
     event = Map.merge(Map.new(Keyword.merge([old_title: issue.title, new_title: title], opts)), %{type: "title_update", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
     case DB.update_all(query, set: [title: title, updated_at: event.timestamp], push: [events: event]) do
@@ -221,6 +227,9 @@ defmodule GitGud.Issue do
 
     # Everybody can read comments.
     def can?(%Issue{}, _user, :read), do: true
+
+    # Everybody can write comments if the issue is open.
+    def can?(%Issue{status: "open"}, _user, :write), do: true
 
     # Everything-else is forbidden.
     def can?(%Issue{}, _user, _actions), do: false
