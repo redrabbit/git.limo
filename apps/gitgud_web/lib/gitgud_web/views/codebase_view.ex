@@ -47,7 +47,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec breadcrumb_action(atom) :: atom
-  def breadcrumb_action(:history), do: :history
+  def breadcrumb_action(action) when action in [:new, :history], do: action
   def breadcrumb_action(_action), do: :tree
 
   @spec breadcrumb_pwd?(Plug.Conn.t) :: boolean
@@ -221,8 +221,7 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec revision_action_href(Plug.Conn.t) :: binary
   def revision_action_href(conn) do
-    %{repo: repo, tree_path: tree_path} = Map.take(conn.assigns, [:repo, :tree_path])
-
+    %{repo: repo, tree_path: tree_path} = conn.assigns
     case action_name(conn) do
       :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
       :create -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
