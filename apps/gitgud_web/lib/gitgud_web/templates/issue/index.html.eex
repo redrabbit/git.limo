@@ -59,15 +59,39 @@
               <% end %>
             </div>
             <div class="column">
-              <div class="field is-grouped">
+              <div class="field has-addons">
                 <div class="control">
-                  <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button is-white">
-                    <div>
-                      <span>Labels</span>
-                      <span class="tag"><%= Enum.count(@repo.issue_labels) %></span>
+                  <div class="issue-label-dropdown dropdown is-hoverable">
+                    <div class="dropdown-trigger">
+                      <button class="button" aria-haspopup="true">
+                        <span>Labels</span>
+                        <span class="icon is-small">
+                          <i class="fa fa-angle-down" aria-hidden="true"></i>
+                        </span>
+                      </button>
                     </div>
+                    <div class="dropdown-menu">
+                      <div class="dropdown-content">
+                        <%= for label <- @repo.issue_labels do %>
+                          <div class="dropdown-item">
+                            <%= if label.name in @q.labels do %>
+                              <%= label_button(@conn, label, class: "edit is-active", href: current_path(@conn, q: encode_search_query(@q, labels: List.delete(@q.labels, label.name)))) %>
+                            <% else %>
+                              <%= label_button(@conn, label, class: "edit", href: current_path(@conn, q: encode_search_query(@q, labels: [label.name|@q.labels]))) %>
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <%= if authorized?(@current_user, @repo, :admin) do %>
+                <div class="control">
+                  <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button">
+                    <span class="icon"><i class="fa fa-cog"></i></span>
                   </a>
                 </div>
+                <% end %>
               </div>
             </div>
           </nav>

@@ -9,7 +9,7 @@ defmodule GitGud.Web.IssueView do
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
-  import GitGud.Web.IssueLabelView, only: [label_button: 2]
+  import GitGud.Web.IssueLabelView, only: [label_button: 2, label_button: 3]
 
   def encode_search_query(params) when is_list(params) do
     params

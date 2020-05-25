@@ -427,6 +427,11 @@ textarea.textarea {
       .panel-block {
         font-size: 0.875em;
 
+        &.is-active {
+          border-left-color: #3273dc;
+          border-left-style: solid;
+        }
+
         &:last-child {
           border-bottom-left-radius: $radius;
           border-bottom-right-radius: $radius;
@@ -461,7 +466,7 @@ textarea.textarea {
   }
 }
 
-.issue-label-select {
+.issue-label-select, .issue-label-dropdown {
   .menu-label button {
     margin-top: -4px;
   }
@@ -480,10 +485,6 @@ textarea.textarea {
       }
     }
 
-    &.edit.is-active {
-      flex-direction: row-reverse;
-    }
-
     span.icon {
       flex-grow: 1;
       justify-content: flex-end;
@@ -495,6 +496,15 @@ textarea.textarea {
     }
   }
 }
+
+.issue-label-select {
+  .issue-label {
+    &.edit.is-active {
+      flex-direction: row-reverse;
+    }
+  }
+}
+
 
 table {
   td.is-fullwidth {
