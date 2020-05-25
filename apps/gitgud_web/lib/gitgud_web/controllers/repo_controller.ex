@@ -32,7 +32,7 @@ defmodule GitGud.Web.RepoController do
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{} = _params) do
     user = current_user(conn)
-    if User.verified?(user),
+    if verified?(user),
       do: render(conn, "new.html", changeset: Repo.changeset(%Repo{})),
     else: {:error, :unauthorized}
   end
@@ -43,7 +43,7 @@ defmodule GitGud.Web.RepoController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"repo" => repo_params} = _params) do
     user = current_user(conn)
-    if User.verified?(user) do
+    if verified?(user) do
       case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
         {:ok, repo} ->
           conn
@@ -64,7 +64,7 @@ defmodule GitGud.Web.RepoController do
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
   def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :admin) do
+      if authorized?(conn, repo, :admin) do
         changeset = Repo.changeset(repo)
         render(conn, "edit.html", repo: repo, changeset: changeset)
       end || {:error, :unauthorized}

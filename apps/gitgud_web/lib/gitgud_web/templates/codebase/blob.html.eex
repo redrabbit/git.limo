@@ -8,7 +8,7 @@
     </div>
   </div>
   <div class="level-right">
-    <%= if authorized?(assigns[:current_user], @repo, :write) do %>
+    <%= if authorized?(@conn, @repo, :write) do %>
       <div class="level-item">
         <div class="field has-addons">
           <div class="control">

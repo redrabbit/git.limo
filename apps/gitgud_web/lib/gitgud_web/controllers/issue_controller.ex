@@ -42,7 +42,7 @@ defmodule GitGud.Web.IssueController do
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
-      if User.verified?(user),
+      if verified?(user),
         do: render(conn, "new.html", repo: repo, changeset: Issue.changeset(%Issue{comments: [%Comment{}]})),
       else: {:error, :unauthorized}
     end || {:error, :not_found}
@@ -55,7 +55,7 @@ defmodule GitGud.Web.IssueController do
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "issue" => issue_params} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
-      if User.verified?(user) do
+      if verified?(user) do
         issue_params = Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})
         issue_params = Map.update(issue_params, "labels", [], fn label_ids_str ->
           Enum.map(label_ids_str, fn label_id_str ->

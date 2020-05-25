@@ -9,7 +9,10 @@ defmodule GitGud.Web.AuthenticationPlug do
   import Phoenix.Controller, only: [put_view: 2, render: 3]
   import Absinthe.Plug, only: [put_options: 2]
 
+  alias GitGud.Authorization
+  alias GitGud.User
   alias GitGud.UserQuery
+
   alias GitGud.Web.ErrorView
 
   @doc """
@@ -70,6 +73,13 @@ defmodule GitGud.Web.AuthenticationPlug do
   """
   @spec authenticated?(Plug.Conn.t) :: boolean
   def authenticated?(conn), do: !!current_user(conn)
+
+  @doc """
+  Returns `true` if the given `conn` is allowed to perform `action` on `resource`; otherwhise returns `false`.
+  """
+  @spec authorized?(Plug.Conn.t, any, atom) :: boolean
+  def authorized?(%Plug.Conn{} = conn, resource, action), do: authorized?(current_user(conn), resource, action)
+  def authorized?(user, resource, action), do: Authorization.authorized?(user, resource, action)
 
   @doc """
   Returns the current user if `conn` is authenticated.
