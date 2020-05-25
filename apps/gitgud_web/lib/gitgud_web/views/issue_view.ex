@@ -9,15 +9,21 @@ defmodule GitGud.Web.IssueView do
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
-  import GitGud.Web.IssueLabelView, only: [label_button: 1]
+  import GitGud.Web.IssueLabelView, only: [label_button: 2]
 
-  def encode_search_query(q, params \\ []) do
-    q
-    |> order_search_query()
-    |> Keyword.merge(params)
+  def encode_search_query(params) when is_list(params) do
+    params
     |> Enum.flat_map(&map_search_query_param/1)
     |> Enum.join(" ")
   end
+
+  def encode_search_query(q, params \\ []) when is_map(q) do
+    q
+    |> order_search_query()
+    |> Keyword.merge(params)
+    |> encode_search_query()
+  end
+
 
   def status_button(conn, issue, attrs \\ [])
   def status_button(conn, %Issue{status: status} = _issue, attrs), do: status_button(conn, String.to_atom(status), attrs)
@@ -81,11 +87,11 @@ defmodule GitGud.Web.IssueView do
   defp map_search_query_param({:search, search}), do: Enum.map(search, &quote_str/1)
 
   defp order_search_query(%{status: status, labels: labels, search: search}) do
-    Keyword.new([status: status, labels: labels, search: search])
+    [status: status, labels: labels, search: search]
   end
 
+  defp quote_str(str) when not is_binary(str), do: quote_str(to_string(str))
   defp quote_str(str) do
-    str = to_string(str)
     if String.contains?(str, " "),
      do: "\"#{str}\"",
    else: str

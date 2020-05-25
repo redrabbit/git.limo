@@ -90,7 +90,7 @@
               <div class="issue-title has-text-weight-bold">
                 <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
                 <div class="issue-labels">
-                  <%= for label <- issue.labels, do: label_button(label) %>
+                  <%= for label <- issue.labels, do: label_button(@conn, label) %>
                 </div>
               </div>
               <div class="issue-info">

@@ -4,21 +4,32 @@ defmodule GitGud.Web.IssueLabelView do
 
   alias GitGud.IssueLabel
 
-  def label_button(tag \\ :button, label)
-  def label_button(tag, %IssueLabel{color: nil} = _label) do
-    content_tag(tag, "new label", class: "button issue-label has-text-dark is-active", style: "background-color: #dddddd")
+  def label_button(tag \\ :button, label, attrs \\ [])
+  def label_button(tag, %IssueLabel{color: nil} = _label, attrs) when is_atom(tag) do
+    content_tag(tag, "new label", attrs ++ [class: "button issue-label has-text-dark is-active", style: "background-color: #dddddd"])
   end
 
-  def label_button(tag, %IssueLabel{description: nil} = label) do
+  def label_button(tag, %IssueLabel{description: nil} = label, attrs) when is_atom(tag) do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}")
+    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}"])
   end
 
-  def label_button(tag, %IssueLabel{} = label) do
+  def label_button(tag, %IssueLabel{} = label, attrs) when is_atom(tag) do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
-    content_tag(tag, label.name, class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}", data: [tooltip: label.description])
+    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} is-active tooltip", style: "background-color: ##{label.color}", data: [tooltip: label.description]])
+  end
+
+  def label_button(conn, label, attrs) do
+    case conn.assigns do
+      %{repo: repo, q: q} ->
+        query = GitGud.Web.IssueView.encode_search_query(q, labels: [label.name])
+        label_button(:a, label, attrs ++ [href: Routes.issue_path(conn, :index, repo.owner, repo, q: query)])
+      %{repo: repo} ->
+        query = GitGud.Web.IssueView.encode_search_query(labels: [label.name])
+        label_button(:a, label, attrs ++ [href: Routes.issue_path(conn, :index, repo.owner, repo, q: query)])
+    end
   end
 
   def color_picker(%IssueLabel{color: nil} = _label) do
