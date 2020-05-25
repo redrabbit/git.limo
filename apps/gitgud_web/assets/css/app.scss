@@ -194,16 +194,6 @@ textarea.textarea {
   }
 }
 
-.color-picker {
-  margin-top: -2px;
-  .pickr {
-    @extend .is-small;
-    width: 70px;
-    font-weight: 500;
-    border-width: 0;
-  }
-}
-
 .title, .subtitle {
   font-family: $family-secondary;
 }
@@ -453,6 +443,21 @@ textarea.textarea {
 
   &.is-active {
     border-color: $white;
+  }
+}
+
+.issue-label-table {
+  tbody tr td {
+    vertical-align: middle;
+    .color-picker {
+      .pickr {
+        width: 70px;
+        height: 2.5rem;
+        font-size: .8em;
+        font-weight: 500;
+        border-width: 0;
+      }
+    }
   }
 }
 

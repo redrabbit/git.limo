@@ -12,7 +12,7 @@
                 <div class="control">
                   <div class="field color-picker has-addons">
                     <div class="control">
-                      <%= text_input fl, :name, class: "input is-small" %>
+                      <%= text_input fl, :name, class: "input" %>
                     </div>
                     <div class="control">
                       <%= color_picker(fl.data) %>
@@ -21,7 +21,7 @@
                   </div>
                 </div>
                 <div class="control">
-                  <a class="button is-white is-inverted is-link is-small" data-label-id="<%= input_id(fl, :id) %>">
+                  <a class="button is-white is-inverted is-link" data-label-id="<%= input_id(fl, :id) %>">
                     <span class="icon">
                       <i class="fa fa-times"></i>
                     </span>
@@ -37,17 +37,17 @@
           <td>
             <div class="field is-grouped">
               <div class="control">
-                <%= submit "Update labels", class: "button is-small is-link has-text-weight-medium", disabled: true %>
+                <%= submit "Update labels", class: "button is-link", disabled: true %>
               </div>
               <div class="control">
-                <button type="reset" class="button is-small is-light has-text-weight-medium" disabled>Reset</a>
+                <button type="reset" class="button is-light" disabled>Cancel</a>
               </div>
             </div>
           </td>
           <td>
             <div class="field is-pulled-right">
               <div class="control">
-                <a id="add-label" class="button is-white is-inverted is-link is-small">
+                <a id="add-label" class="button is-white is-inverted is-link">
                   <span class="icon">
                     <i class="fa fa-plus"></i>
                   </span>

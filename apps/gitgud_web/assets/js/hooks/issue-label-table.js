@@ -110,7 +110,6 @@ export default () => {
       col = row.insertCell(1)
       let nameInput = document.createElement("input")
       nameInput.classList.add("input")
-      nameInput.classList.add("is-small")
       nameInput.id = `repo_issue_labels_${nextLabelIndex}_name`
       nameInput.name = `repo[issue_labels][${nextLabelIndex}][name]`
       nameInput.value = "new label"
@@ -169,7 +168,6 @@ export default () => {
       removeLink.classList.add("is-white")
       removeLink.classList.add("is-inverted")
       removeLink.classList.add("is-link")
-      removeLink.classList.add("is-small")
       removeLink.dataset.labelIndex = nextLabelIndex
       removeLink.appendChild(iconContainer)
       removeLink.addEventListener("click", event => {
