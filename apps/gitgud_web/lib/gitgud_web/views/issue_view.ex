@@ -5,33 +5,27 @@ defmodule GitGud.Web.IssueView do
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
+  import Phoenix.Controller, only: [current_path: 2]
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
   import GitGud.Web.IssueLabelView, only: [label_button: 1]
 
-  @spec status_tag(Issue.t | binary, keyword) :: binary
-  def status_tag(issue, attrs \\ [])
-  def status_tag(%Issue{status: status} = _issue, attrs), do: status_tag(status, attrs)
-  def status_tag("open", attrs) do
-    content_tag(:p, Keyword.merge([class: "tag is-success"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end), do: [
-      content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), class: "icon"),
-      content_tag(:span, "Open")
-    ])
+  def encode_search_query(q, params \\ []) do
+    q
+    |> order_search_query()
+    |> Keyword.merge(params)
+    |> Enum.flat_map(&map_search_query_param/1)
+    |> Enum.join(" ")
   end
 
-  def status_tag("close", attrs) do
-    content_tag(:p, Keyword.merge([class: "tag is-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end), do: [
-      content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
-      content_tag(:span, "Closed")
-    ])
-  end
-
-  def status_button(issue, attrs \\ [])
-  def status_button(%Issue{status: status} = _issue, attrs), do: status_button(status, attrs)
-  def status_button("open", attrs) do
+  def status_button(conn, issue, attrs \\ [])
+  def status_button(conn, %Issue{status: status} = _issue, attrs), do: status_button(conn, String.to_atom(status), attrs)
+  def status_button(conn, :open, attrs) do
     {icon_attrs, attrs} = Keyword.pop(attrs, :icon, [])
-    link(Keyword.merge([to: "?status=open", class: "button"], attrs, fn
+    status = if :open in conn.assigns.q.status, do: [:close], else: [:open]
+    query = encode_search_query(conn.assigns.q, status: status)
+    link(Keyword.merge([to: current_path(conn, %{q: query}), class: "button"], attrs, fn
       :to, _v1, v2 -> v2
       _k, v1, v2 -> "#{v1} #{v2}" end), do: [
       content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), Keyword.merge([class: "icon"], icon_attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end)),
@@ -39,9 +33,11 @@ defmodule GitGud.Web.IssueView do
     ])
   end
 
-  def status_button("close", attrs) do
+  def status_button(conn, :close, attrs) do
     {icon_attrs, attrs} = Keyword.pop(attrs, :icon, [])
-    link(Keyword.merge([to: "?status=close", class: "button"], attrs, fn
+    status = if :close in conn.assigns.q.status, do: [:open], else: [:close]
+    query = encode_search_query(conn.assigns.q, status: status)
+    link(Keyword.merge([to: current_path(conn, %{q: query}), class: "button"], attrs, fn
       :to, _v1, v2 -> v2
       _k, v1, v2 -> "#{v1} #{v2}" end), do: [
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon"], icon_attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end)),
@@ -50,13 +46,13 @@ defmodule GitGud.Web.IssueView do
   end
 
   def status_icon(issue, attrs \\ [])
-  def status_icon(%Issue{status: status}, attrs), do: status_icon(status, attrs)
-  def status_icon("open", attrs) do
+  def status_icon(%Issue{status: status}, attrs), do: status_icon(String.to_atom(status), attrs)
+  def status_icon(:open, attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), Keyword.merge([class: "icon has-text-success"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
 
-  def status_icon("close", attrs) do
+  def status_icon(:close, attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon has-text-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
@@ -75,4 +71,23 @@ defmodule GitGud.Web.IssueView do
   def title(:index, %{repo: repo}), do: "Issues · #{repo.owner.login}/#{repo.name}"
   def title(:show, %{repo: repo, issue: issue}), do: "#{issue.title} ##{issue.number} · #{repo.owner.login}/#{repo.name}"
   def title(action, %{repo: repo}) when action in [:new, :create], do: "New issue · #{repo.owner.login}/#{repo.name}"
+
+  #
+  # Helpers
+  #
+
+  defp map_search_query_param({:status, status}), do: Enum.map(status, &"is:#{quote_str(&1)}")
+  defp map_search_query_param({:labels, labels}), do: Enum.map(labels, &"label:#{quote_str(&1)}")
+  defp map_search_query_param({:search, search}), do: Enum.map(search, &quote_str/1)
+
+  defp order_search_query(%{status: status, labels: labels, search: search}) do
+    Keyword.new([status: status, labels: labels, search: search])
+  end
+
+  defp quote_str(str) do
+    str = to_string(str)
+    if String.contains?(str, " "),
+     do: "\"#{str}\"",
+   else: str
+  end
 end

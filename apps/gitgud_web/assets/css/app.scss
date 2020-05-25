@@ -504,6 +504,12 @@ table {
     &>:not(last-child) {
       margin-right: .33rem;
     }
+
+    .issue-labels {
+      .issue-label {
+        margin-left: 0.33rem;
+      }
+    }
   }
 }
 
@@ -753,6 +759,9 @@ table.blob-table {
 }
 
 table.issues-table {
+  thead tr td.selection {
+    line-height: 2.5;
+  }
   tr {
     td.selection {
       width: 0.75rem;
