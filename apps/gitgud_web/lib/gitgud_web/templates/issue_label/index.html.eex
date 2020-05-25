@@ -1,6 +1,6 @@
 <h2 class="subtitle">Issue labels</h2>
 
-<%= if authorized?(@current_user, @repo, :admin) do %>
+<%= if authorized?(@conn, @repo, :admin) do %>
   <%= form_for @changeset, Routes.issue_label_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
     <table class="table issue-label-table is-fullwidth">
       <tbody>

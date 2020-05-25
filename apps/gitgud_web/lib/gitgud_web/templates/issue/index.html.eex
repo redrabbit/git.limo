@@ -85,7 +85,7 @@
                     </div>
                   </div>
                 </div>
-                <%= if authorized?(@current_user, @repo, :admin) do %>
+                <%= if authorized?(@conn, @repo, :admin) do %>
                 <div class="control">
                   <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button">
                     <span class="icon"><i class="fa fa-cog"></i></span>

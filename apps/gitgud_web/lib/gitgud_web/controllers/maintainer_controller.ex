@@ -24,7 +24,7 @@ defmodule GitGud.Web.MaintainerController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :admin) do
+      if authorized?(conn, repo, :admin) do
         changeset = Maintainer.changeset(%Maintainer{})
         render(conn, "index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: changeset)
       end || {:error, :unauthorized}
@@ -37,7 +37,7 @@ defmodule GitGud.Web.MaintainerController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :admin) do
+      if authorized?(conn, repo, :admin) do
         {maintainer_login, maintainer_params} = Map.pop(maintainer_params, "user_login")
         if user = maintainer_login && UserQuery.by_login(maintainer_login) do
           case Maintainer.create(Map.merge(maintainer_params, %{"repo_id" => repo.id, "user_id" => user.id})) do
@@ -71,7 +71,7 @@ defmodule GitGud.Web.MaintainerController do
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :admin) do
+      if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
           if maintainer.permission != maintainer_params["permission"] do
@@ -95,7 +95,7 @@ defmodule GitGud.Web.MaintainerController do
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
-      if authorized?(current_user(conn), repo, :admin) do
+      if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
           maintainer = Maintainer.delete!(maintainer)
