@@ -5,6 +5,8 @@ defmodule GitGud.IssueQuery do
 
   @behaviour GitGud.DBQueryable
 
+  @queryable_status [:open, :close]
+
   alias GitGud.DB
   alias GitGud.DBQueryable
 
@@ -28,10 +30,7 @@ defmodule GitGud.IssueQuery do
   """
   @spec repo_issue(Repo.t | pos_integer, pos_integer, keyword) :: Issue.t | nil
   def repo_issue(repo, number, opts \\ [])
-  def repo_issue(%Repo{id: repo_id}, number, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :repo_issue_query}, [repo_id, number], opts))
-  end
-
+  def repo_issue(%Repo{id: repo_id}, number, opts), do: repo_issue(repo_id, number, opts)
   def repo_issue(repo_id, number, opts) do
     DB.one(DBQueryable.query({__MODULE__, :repo_issue_query}, [repo_id, number], opts))
   end
@@ -43,10 +42,8 @@ defmodule GitGud.IssueQuery do
   def repo_issues(repo, opts \\ [])
   def repo_issues(%Repo{id: repo_id}, opts), do: repo_issues(repo_id, opts)
   def repo_issues(repo_id, opts) do
-    {numbers, opts} = Keyword.pop(opts, :numbers)
-    {status, opts} = Keyword.pop(opts, :status, :all)
-    {labels, opts} = Keyword.pop(opts, :labels, [])
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, numbers || status, labels], opts))
+    {params, opts} = Keyword.split(opts, [:numbers, :status, :labels, :search])
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_query}, [repo_id, Map.new(params)], opts))
   end
 
   @doc """
@@ -56,9 +53,8 @@ defmodule GitGud.IssueQuery do
   def repo_issues_with_comments_count(repo, opts \\ [])
   def repo_issues_with_comments_count(%Repo{id: repo_id}, opts), do: repo_issues_with_comments_count(repo_id, opts)
   def repo_issues_with_comments_count(repo_id, opts) do
-    {status, opts} = Keyword.pop(opts, :status, :all)
-    {labels, opts} = Keyword.pop(opts, :labels, [])
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, status, labels], opts))
+    {params, opts} = Keyword.split(opts, [:numbers, :status, :labels, :search])
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, Map.new(params)], opts))
   end
 
   @doc """
@@ -78,7 +74,7 @@ defmodule GitGud.IssueQuery do
   def count_repo_issues(repo, opts \\ [])
   def count_repo_issues(%Repo{id: repo_id}, opts), do: count_repo_issues(repo_id, opts)
   def count_repo_issues(repo_id, opts) do
-    {status, opts} = Keyword.pop(opts, :status, :all)
+    {status, opts} = Keyword.pop(opts, :status, @queryable_status)
     {labels, opts} = Keyword.pop(opts, :labels, [])
     DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status, labels], opts))
   end
@@ -96,18 +92,36 @@ defmodule GitGud.IssueQuery do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number == ^number)
   end
 
-  def query(:repo_issues_query, [repo_id]), do: query(:repo_issues_query, [repo_id, :all])
+  def query(:repo_issues_query, [repo_id]), do: query(:repo_issues_query, [repo_id, @queryable_status])
 
-  def query(:repo_issues_query, [repo_id, numbers]) when is_list(numbers) do
-    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number in ^numbers)
+  def query(:repo_issues_query, [repo_id, %{numbers: numbers}]) do
+    query(:repo_issues_query, [repo_id, numbers])
   end
 
-  def query(:repo_issues_query, [repo_id, :all]) do
-    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
+  def query(:repo_issues_query, [repo_id, params]) when is_map(params) do
+    Enum.reduce(Map.get(params, :search, []), query(:repo_issues_query, [repo_id, Map.get(params, :status, @queryable_status), Map.get(params, :labels, [])]), fn search_term, query ->
+      where(query, [issue: i], ilike(i.title, ^"%#{search_term}%"))
+    end)
   end
 
-  def query(:repo_issues_query, [repo_id, status]) do
+  def query(:repo_issues_query, [repo_id, status]) when status in @queryable_status do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
+  end
+
+  def query(:repo_issues_query, [repo_id, [status]]) when status in @queryable_status do
+    from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
+  end
+
+  def query(:repo_issues_query, [repo_id, params]) when is_list(params) do
+    cond do
+      Enum.empty?(params -- @queryable_status) ->
+        from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
+      Enum.all?(params, &(&1 in @queryable_status)) ->
+        status = Enum.map(params, &to_string/1)
+        from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status in ^status)
+      Enum.all?(params, &is_integer/1) ->
+        from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number in ^params)
+    end
   end
 
   def query(:repo_issues_query, [repo_id, status, []]) do
@@ -130,6 +144,10 @@ defmodule GitGud.IssueQuery do
 
   def query(:repo_labels_query, [repo_id]) do
     from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
+  end
+
+  def query(:count_repo_issues_query, [repo_id, params]) when is_map(params) do
+    select(query(:repo_issues_query, [repo_id, params]), [issue: e], count())
   end
 
   def query(:count_repo_issues_query, [repo_id, status]) do
