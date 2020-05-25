@@ -16,7 +16,6 @@ defmodule GitGud.Web.UserController do
   plug :ensure_authenticated when action in [:edit_profile, :edit_password, :update_profile, :update_password]
 
   plug :put_layout, :hero when action in [:new, :create, :reset_password, :send_password_reset]
-  plug :put_layout, :user_profile when action == :show
   plug :put_layout, :user_settings when action in [:edit_profile, :edit_password, :update_profile, :update_password, :verify_password_reset]
 
   plug :scrub_params, "user" when action == :create
@@ -24,6 +23,16 @@ defmodule GitGud.Web.UserController do
   plug :scrub_params, "account" when action == :update_password
 
   action_fallback GitGud.Web.FallbackController
+
+  @doc """
+  Renders a user.
+  """
+  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
+  def show(conn, %{"user_login" => user_login} = _params) do
+    if user = UserQuery.by_login(user_login, viewer: current_user(conn)),
+      do: redirect(conn, to: Routes.repo_path(conn, :index, user)),
+    else: {:error, :not_found}
+  end
 
   @doc """
   Renders the registration page.
@@ -54,16 +63,6 @@ defmodule GitGud.Web.UserController do
         |> put_status(:bad_request)
         |> render("new.html", changeset: %{changeset|action: :insert})
     end
-  end
-
-  @doc """
-  Renders a user.
-  """
-  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user_login" => user_login} = _params) do
-    if user = UserQuery.by_login(user_login, preload: [:public_email, :repos], viewer: current_user(conn)),
-      do: render(conn, "show.html", user: user),
-    else: {:error, :not_found}
   end
 
   @doc """

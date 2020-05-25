@@ -6,13 +6,25 @@ defmodule GitGud.Web.RepoController do
   use GitGud.Web, :controller
 
   alias GitGud.User
+  alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery
 
-  plug :ensure_authenticated
-  plug :put_layout, :repo_settings when action not in [:new, :create]
+  plug :ensure_authenticated when action != :index
+  plug :put_layout, :user_profile when action == :index
+  plug :put_layout, :repo_settings when action in [:edit, :update, :delete]
 
   action_fallback GitGud.Web.FallbackController
+
+  @doc """
+  Renders user repositories.
+  """
+  @spec index(Plug.Conn.t, map) :: Plug.Conn.t
+  def index(conn, %{"user_login" => user_login} = _params) do
+    if user = UserQuery.by_login(user_login, preload: [:public_email, :repos], viewer: current_user(conn)),
+      do: render(conn, "index.html", user: user),
+    else: {:error, :not_found}
+  end
 
   @doc """
   Renders a repository creation form.

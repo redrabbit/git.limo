@@ -7,7 +7,7 @@
   <%= if authenticated?(@conn) do %>
     <div class="level-right">
       <div class="level-item">
-        <%= if GitGud.User.verified?(@current_user) do %>
+        <%= if verified?(@current_user) do %>
           <a class="button is-success" href="<%= Routes.issue_path(@conn, :new, @repo.owner, @repo) %>">New</a>
         <% else %>
           <a class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</a>

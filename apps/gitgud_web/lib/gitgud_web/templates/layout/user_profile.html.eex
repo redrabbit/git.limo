@@ -43,16 +43,16 @@
     <div class="column">
       <div class="tabs">
         <ul>
-          <li>
-            <a class="has-text-grey-light">
+          <%= navigation_item @conn, :user, :show do %>
+            <a href="<%= Routes.user_path(@conn, :show, @user) %>">
               <span class="icon"><i class="fa fa-user-circle" aria-hidden="true"></i></span>
               <span>Overview</span>
             </a>
-          </li>
-          <%= navigation_item @conn, :user, :show do %>
-            <a href="<%= Routes.user_path(@conn, :show, @user) %>">
-              <span class="icon"><i class="fa fa-boxes-alt" aria-hidden="true"></i></span>
-              <span>Repositories</span>
+          <% end %>
+          <%= navigation_item @conn, :repo, :index do %>
+            <a href="<%= Routes.repo_path(@conn, :index, @user) %>">
+              <span class="icon"><i class="fa fa-cubes" aria-hidden="true"></i></span>
+              <span>Repositories <span class="tag"><%= Enum.count(@user.repos) %></span></span>
             </a>
           <% end %>
         </ul>

@@ -245,7 +245,7 @@ defmodule GitGud.User do
     changeset
     |> validate_length(:login, min: 3, max: 24)
     |> validate_format(:login, ~r/^[a-zA-Z0-9_-]+$/)
-    |> validate_exclusion(:login, ["auth", "login", "graphql", "logout", "new", "password", "register", "settings"])
+    |> validate_exclusion(:login, ["auth", "login", "logout", "graphql", "new", "password", "register", "settings"])
     |> unique_constraint(:login)
   end
 

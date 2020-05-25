@@ -180,7 +180,7 @@ defmodule GitGud.Repo do
     |> assoc_constraint(:owner)
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
-    |> validate_exclusion(:name, ["settings"])
+    |> validate_exclusion(:name, ["repositories", "settings"])
     |> validate_maintainers()
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
   end

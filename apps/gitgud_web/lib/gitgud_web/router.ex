@@ -79,6 +79,7 @@ defmodule GitGud.Web.Router do
     delete "/settings/oauth2", OAuth2Controller, :delete, as: :oauth2
 
     get "/:user_login", UserController, :show
+    get "/:user_login/repositories", RepoController, :index
 
     scope "/:user_login/:repo_name" do
       get "/", CodebaseController, :show
