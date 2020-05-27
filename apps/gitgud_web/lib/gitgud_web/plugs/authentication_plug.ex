@@ -10,7 +10,6 @@ defmodule GitGud.Web.AuthenticationPlug do
   import Absinthe.Plug, only: [put_options: 2]
 
   alias GitGud.Authorization
-  alias GitGud.User
   alias GitGud.UserQuery
 
   alias GitGud.Web.ErrorView

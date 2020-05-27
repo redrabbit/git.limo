@@ -5,7 +5,6 @@ defmodule GitGud.Web.RepoController do
 
   use GitGud.Web, :controller
 
-  alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery

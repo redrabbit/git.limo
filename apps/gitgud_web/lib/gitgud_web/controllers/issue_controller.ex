@@ -5,7 +5,6 @@ defmodule GitGud.Web.IssueController do
 
   use GitGud.Web, :controller
 
-  alias GitGud.User
   alias GitGud.RepoQuery
   alias GitGud.Issue
   alias GitGud.IssueQuery
