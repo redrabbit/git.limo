@@ -8,7 +8,7 @@ defmodule GitRekt.Mixfile do
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
      lockfile: "../../mix.lock",
-     elixir: "~> 1.5",
+     elixir: "~> 1.10",
      compilers: [:elixir_make] ++ Mix.compilers,
      make_args: ["--quiet"],
      start_permanent: Mix.env == :prod,
