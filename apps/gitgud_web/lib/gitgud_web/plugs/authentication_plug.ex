@@ -10,6 +10,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   import Absinthe.Plug, only: [put_options: 2]
 
   alias GitGud.Authorization
+  alias GitGud.User
   alias GitGud.UserQuery
 
   alias GitGud.Web.ErrorView
@@ -78,7 +79,14 @@ defmodule GitGud.Web.AuthenticationPlug do
   """
   @spec authorized?(Plug.Conn.t, any, atom) :: boolean
   def authorized?(%Plug.Conn{} = conn, resource, action), do: authorized?(current_user(conn), resource, action)
-  def authorized?(user, resource, action), do: Authorization.authorized?(user, resource, action)
+  defdelegate authorized?(user, resource, action), to: Authorization
+
+  @doc """
+  Returns `true` if the given `conn` is authenticated with a verified user; otherwise returns `false`.
+  """
+  @spec verified?(Plug.Conn.t) :: boolean
+  def verified?(%Plug.Conn{} = conn), do: verified?(current_user(conn))
+  defdelegate verified?(user), to: User
 
   @doc """
   Returns the current user if `conn` is authenticated.

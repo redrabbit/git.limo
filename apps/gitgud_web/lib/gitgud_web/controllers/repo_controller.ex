@@ -30,8 +30,7 @@ defmodule GitGud.Web.RepoController do
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{} = _params) do
-    user = current_user(conn)
-    if verified?(user),
+    if verified?(conn),
       do: render(conn, "new.html", changeset: Repo.changeset(%Repo{})),
     else: {:error, :unauthorized}
   end
