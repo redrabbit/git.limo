@@ -2,6 +2,7 @@ defmodule GitGud.Web.IssueView do
   @moduledoc false
   use GitGud.Web, :view
 
+  alias GitGud.Repo
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
@@ -64,15 +65,14 @@ defmodule GitGud.Web.IssueView do
   end
 
   @spec count_issues(Repo.t, atom) :: non_neg_integer()
-  def count_issues(repo, status) do
+  def count_issues(%Repo{} = repo, status) do
     if Ecto.assoc_loaded?(repo.issues),
-     do: Enum.count(filter_issues(repo, status)),
+     do: Enum.count(filter_issues(repo.issues, status)),
    else: IssueQuery.count_repo_issues(repo, status: status)
   end
 
   @spec filter_issues([Issue.t], atom) :: [Issue.t]
-  def filter_issues(issues, "all"), do: issues
-  def filter_issues(issues, status) do
+  def filter_issues(issues, status) when is_list(issues) do
     Enum.filter(issues, &(&1.status == to_string(status)))
   end
 

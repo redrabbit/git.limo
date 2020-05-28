@@ -46,7 +46,7 @@
                 </div>
               </div>
             </div>
-            <div class="column is-half">
+            <div class="column is-three-fifths">
               <%= form_for @conn, Routes.issue_path(@conn, :index, @repo.owner, @repo), [method: "get"], fn f -> %>
                 <div class="field has-addons">
                   <div class="control is-expanded">
@@ -86,11 +86,11 @@
                   </div>
                 </div>
                 <%= if authorized?(@conn, @repo, :admin) do %>
-                <div class="control">
-                  <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button">
-                    <span class="icon"><i class="fa fa-cog"></i></span>
-                  </a>
-                </div>
+                  <div class="control">
+                    <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button">
+                      <span class="icon"><i class="fa fa-cog"></i></span>
+                    </a>
+                  </div>
                 <% end %>
               </div>
             </div>
