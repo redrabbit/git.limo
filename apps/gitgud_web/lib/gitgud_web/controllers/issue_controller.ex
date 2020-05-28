@@ -92,7 +92,9 @@ defmodule GitGud.Web.IssueController do
 
   defp map_search_query_word("is:" <> status, {params, search}) do
     status = String.to_atom(status)
-    {Map.update(params, :status, [status], &(&1 ++ [status])), search}
+    if status in [:open, :close],
+     do: {Map.update(params, :status, [status], &(&1 ++ [status])), search},
+   else: {params, search}
   end
 
   defp map_search_query_word("label:" <> label, {params, search}) do
