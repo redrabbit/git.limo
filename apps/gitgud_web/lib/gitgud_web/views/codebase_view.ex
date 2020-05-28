@@ -203,10 +203,7 @@ defmodule GitGud.Web.CodebaseView do
   def revision_type(%GitRef{type: type} = _object), do: type
 
   @spec revision_href(Plug.Conn.t, GitAgent.git_object | atom) :: binary
-  def revision_href(conn, revision_type) when is_atom(revision_type) do
-    Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
-  end
-
+  def revision_href(conn, revision_type) when is_atom(revision_type), do: Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
   def revision_href(conn, revision) do
     repo = conn.assigns.repo
     case revision_type(revision) do
@@ -267,10 +264,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec diff_deltas_with_reviews(Repo.t, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
-  def diff_deltas_with_reviews(repo, %GitCommit{} = commit, diff) do
-    diff_deltas_with_reviews(repo, ReviewQuery.commit_line_reviews(repo, commit), diff)
-  end
-
+  def diff_deltas_with_reviews(repo, %GitCommit{} = commit, diff), do: diff_deltas_with_reviews(repo, ReviewQuery.commit_line_reviews(repo, commit), diff)
   def diff_deltas_with_reviews(repo, line_reviews, diff) when is_list(line_reviews) do
     Enum.map(diff_deltas(repo, diff), fn delta ->
       reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
@@ -283,10 +277,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec diff_deltas_with_comments(Repo.t, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
-  def diff_deltas_with_comments(repo, %GitCommit{} = commit, diff) do
-    diff_deltas_with_comments(repo, ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author]), diff)
-  end
-
+  def diff_deltas_with_comments(repo, %GitCommit{} = commit, diff), do: diff_deltas_with_comments(repo, ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author]), diff)
   def diff_deltas_with_comments(repo, line_reviews, diff) when is_list(line_reviews) do
     Enum.map(diff_deltas(repo, diff), fn delta ->
       reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))

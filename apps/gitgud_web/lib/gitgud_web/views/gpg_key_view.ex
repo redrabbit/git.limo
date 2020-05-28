@@ -2,6 +2,7 @@ defmodule GitGud.Web.GPGKeyView do
   @moduledoc false
   use GitGud.Web, :view
 
+  @spec format_key_id(binary) :: binary
   def format_key_id(key) do
     key
     |> binary_part(20, -8)

@@ -11,6 +11,7 @@ defmodule GitGud.Web.IssueView do
 
   import GitGud.Web.IssueLabelView, only: [label_button: 2, label_button: 3]
 
+  @spec encode_search_query(Enumerable.t) :: binary
   def encode_search_query(params) when is_list(params) do
     params
     |> Enum.flat_map(&map_search_query_param/1)
@@ -24,7 +25,7 @@ defmodule GitGud.Web.IssueView do
     |> encode_search_query()
   end
 
-
+  @spec status_button(Plug.Conn.t, Issue.t | atom, keyword) :: iodata
   def status_button(conn, issue, attrs \\ [])
   def status_button(conn, %Issue{status: status} = _issue, attrs), do: status_button(conn, String.to_atom(status), attrs)
   def status_button(conn, :open, attrs) do
@@ -51,23 +52,25 @@ defmodule GitGud.Web.IssueView do
     ])
   end
 
+  @spec status_icon(Issue.t | atom, keyword) :: iodata
   def status_icon(issue, attrs \\ [])
   def status_icon(%Issue{status: status}, attrs), do: status_icon(String.to_atom(status), attrs)
   def status_icon(:open, attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), Keyword.merge([class: "icon has-text-success"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
-
   def status_icon(:close, attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon has-text-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
+  @spec count_issues(Repo.t, atom) :: non_neg_integer()
   def count_issues(repo, status) do
     if Ecto.assoc_loaded?(repo.issues),
      do: Enum.count(filter_issues(repo, status)),
    else: IssueQuery.count_repo_issues(repo, status: status)
   end
 
+  @spec filter_issues([Issue.t], atom) :: [Issue.t]
   def filter_issues(issues, "all"), do: issues
   def filter_issues(issues, status) do
     Enum.filter(issues, &(&1.status == to_string(status)))

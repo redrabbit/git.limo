@@ -4,6 +4,7 @@ defmodule GitGud.Web.IssueLabelView do
 
   alias GitGud.IssueLabel
 
+  @spec label_button(atom | Plug.Conn.t, IssueLabel.t, keyword) :: iodata
   def label_button(tag \\ :button, label, attrs \\ [])
   def label_button(tag, %IssueLabel{color: nil} = _label, attrs) when is_atom(tag) do
     {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
@@ -37,6 +38,7 @@ defmodule GitGud.Web.IssueLabelView do
     end
   end
 
+  @spec color_picker(IssueLabel.t) :: iodata
   def color_picker(%IssueLabel{color: nil} = _label) do
     content_tag(:a, "#dddddd", class: "button pickr has-text-dark", style: "background-color: #dddddd")
   end
