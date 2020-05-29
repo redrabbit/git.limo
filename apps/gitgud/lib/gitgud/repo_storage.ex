@@ -148,9 +148,12 @@ defmodule GitGud.RepoStorage do
     query = IssueQuery.query(:repo_issues_query, [repo.id, Enum.uniq(List.flatten(Map.values(commits)))])
     query = select(query, [issue: i], {i.id, i.number})
     Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
-      oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end)
-      event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
-      Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+      if oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end) do
+        event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
+        Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+      else
+        multi
+      end
     end)
   end
 
