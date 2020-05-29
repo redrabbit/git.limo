@@ -32,8 +32,6 @@ defmodule GitGud.SmartHTTPBackend do
   plug :match
   plug :dispatch
 
-  @max_request_size Application.compile_env(:gitgud, :git_max_request_size, :infinity)
-
   get "/info/refs" do
     if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
@@ -128,40 +126,39 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_stream_pack(conn, service, request_size \\ 0)
-  defp git_stream_pack(conn, service, request_size) when request_size <= @max_request_size do
-    case read_body(conn) do
-      {:ok, body, conn} ->
-        {service, data} = WireProtocol.next(service, body)
-        case chunk(conn, data) do
-          {:ok, conn} ->
-            if WireProtocol.done?(service) do
-              {_service, data} = WireProtocol.next(service)
-              chunk(conn, data)
-            else
+  defp git_stream_pack(conn, service, request_size \\ 0) do
+    if request_size <= Application.get_env(:gitgud, :git_max_request_size, :infinity) do
+      case read_body(conn) do
+        {:ok, body, conn} ->
+          {service, data} = WireProtocol.next(service, body)
+          case chunk(conn, data) do
+            {:ok, conn} ->
+              if WireProtocol.done?(service) do
+                {_service, data} = WireProtocol.next(service)
+                chunk(conn, data)
+              else
+                git_stream_pack(conn, service, request_size + byte_size(body))
+              end
+            {:error, reason} ->
+              {:error, reason}
+          end
+        {:more, body, conn} ->
+          {service, data} = WireProtocol.next(service, body)
+          case chunk(conn, data) do
+            {:ok, conn} ->
               git_stream_pack(conn, service, request_size + byte_size(body))
-            end
-          {:error, reason} ->
-            {:error, reason}
-        end
-      {:more, body, conn} ->
-        {service, data} = WireProtocol.next(service, body)
-        case chunk(conn, data) do
-          {:ok, conn} ->
-            git_stream_pack(conn, service, request_size + byte_size(body))
-          {:error, reason} ->
-            {:error, reason}
-        end
-      {:error, reason} ->
-        {:error, reason}
+            {:error, reason} ->
+              {:error, reason}
+          end
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+    # error_status = :request_entity_too_large
+    # error_code = Plug.Conn.Status.code(error_status)
+    # error_body = Plug.Conn.Status.reason_phrase(error_code)
+      {:ok, conn} = chunk(conn, WireProtocol.encode([:flush]))
+      {:ok, halt(conn)}
     end
-  end
-
-  defp git_stream_pack(conn, _service, _request_size) do
-#   error_status = :request_entity_too_large
-#   error_code = Plug.Conn.Status.code(error_status)
-#   error_body = Plug.Conn.Status.reason_phrase(error_code)
-    {:ok, conn} = chunk(conn, WireProtocol.encode([:flush]))
-    {:ok, halt(conn)}
   end
 end
