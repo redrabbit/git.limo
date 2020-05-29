@@ -229,7 +229,7 @@ defmodule GitGud.Issue do
     def can?(%Issue{}, _user, :read), do: true
 
     # Everybody can write comments if the issue is open.
-    def can?(%Issue{status: "open"}, _user, :write), do: true
+    def can?(%Issue{status: "open"}, user, :write), do: User.verified?(user)
 
     # Everything-else is forbidden.
     def can?(%Issue{}, _user, _actions), do: false

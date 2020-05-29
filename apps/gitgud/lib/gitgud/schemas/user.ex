@@ -148,9 +148,8 @@ defmodule GitGud.User do
   Returns `true` is `user` is verified; otherwise returns `false`.
   """
   @spec verified?(t) :: boolean
-  def verified?(%__MODULE__{} = user) do
-    !!user.primary_email_id
-  end
+  def verified?(%__MODULE__{} = user), do: !!user.primary_email_id
+  def verified?(nil), do: false
 
   @doc """
   Returns a registration changeset for the given `params`.

@@ -699,19 +699,18 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec create_issue_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_issue_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if author = ctx[:current_user] do
-      if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
-        case Issue.add_comment(issue, author, body) do
+    user = ctx[:current_user]
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
+      if authorized?(user, issue, :write) do
+        case Issue.add_comment(issue, user, body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, issue_comment_create: issue.id)
             {:ok, comment}
           {:error, reason} ->
             {:error, reason}
         end
-      end
-    else
-      {:error, "Unauthorized"}
-    end
+      end || {:error, "Unauthorized"}
+    end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
@@ -719,17 +718,18 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec close_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def close_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
-      if authorized?(ctx[:current_user], issue, :admin) do
-        case Issue.close(issue, user_id: ctx[:current_user].id) do
+    user = ctx[:current_user]
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
+      if authorized?(user, issue, :admin) do
+        case Issue.close(issue, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
           {:error, reason} ->
             {:error, reason}
         end
-     end || {:error, "Unauthorized"}
-   end || {:error, "this given issue id '#{id}' is not valid"}
+      end || {:error, "Unauthorized"}
+    end || {:error, "this given issue id '#{id}' is not valid"}
   end
 
   @doc """
@@ -737,9 +737,10 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec reopen_issue(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def reopen_issue(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
-      if authorized?(ctx[:current_user], issue, :admin) do
-        case Issue.reopen(issue, user_id: ctx[:current_user].id) do
+    user = ctx[:current_user]
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
+      if authorized?(user, issue, :admin) do
+        case Issue.reopen(issue, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
@@ -755,9 +756,10 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_issue_title(any, %{id: pos_integer, title: binary}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def update_issue_title(_parent, %{id: id, title: title} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
-      if authorized?(ctx[:current_user], issue, :admin) do
-        case Issue.update_title(issue, title, user_id: ctx[:current_user].id) do
+    user = ctx[:current_user]
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
+      if authorized?(user, issue, :admin) do
+        case Issue.update_title(issue, title, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
@@ -773,11 +775,12 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_issue_labels(any, %{id: pos_integer, label_id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Issue.t} | {:error, term}
   def update_issue_labels(_parent, %{id: id} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user], preload: :labels) do
-      if authorized?(ctx[:current_user], issue, :admin) do
+    user = ctx[:current_user]
+    if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
+      if authorized?(user, issue, :admin) do
         labels_push = Map.get(args, :push, [])
         labels_pull = Map.get(args, :pull, [])
-        case Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: ctx[:current_user].id) do
+        case Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
             {:ok, issue}
@@ -793,10 +796,11 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec create_commit_line_review_comment(any, %{repo_id: pos_integer, commit_oid: Git.oid, blob_oid: Git.oid, hunk: non_neg_integer, line: non_neg_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def create_commit_line_review_comment(_parent, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: ctx[:current_user])
-    if author = ctx[:current_user] do
-      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: ctx[:current_user])
-      case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, with_review: true) do
+    user = ctx[:current_user]
+    if User.verified?(user) do
+      repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: user)
+      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: user)
+      case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body, with_review: true) do
         {:ok, line_review, comment} ->
           unless old_line_review do
             publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
@@ -808,9 +812,7 @@ defmodule GitGud.GraphQL.Resolvers do
         {:error, reason} ->
           {:error, reason}
       end
-    else
-      {:error, "Unauthorized"}
-    end
+    end || {:error, "Unauthorized"}
   end
 
   @doc """
@@ -818,18 +820,19 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec update_comment(any, %{id: pos_integer, body: binary}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def update_comment(_parent, %{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user]) do
-      if authorized?(ctx[:current_user], comment, :admin) do
+    user = ctx[:current_user]
+    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
+      if authorized?(user, comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
-        case Comment.update_rev(comment, ctx[:current_user], body: body) do
+        case Comment.update_rev(comment, user, body: body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :update))
             {:ok, comment}
+          {:error, reason} ->
+            {:error, reason}
         end
-      else
-        {:error, "Unauthorized"}
-      end
-    end
+      end || {:error, "Unauthorized"}
+    end || {:error, "this given comment id '#{id}' is not valid"}
   end
 
 
@@ -838,18 +841,17 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec delete_comment(any, %{id: pos_integer}, Absinthe.Resolution.t) :: {:ok, Comment.t} | {:error, term}
   def delete_comment(_parent, %{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: ctx[:current_user]) do
-      if authorized?(ctx[:current_user], comment, :admin) do
+    user = ctx[:current_user]
+    if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
+      if authorized?(user, comment, :admin) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.delete(comment) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :delete))
             {:ok, comment}
         end
-      else
-        {:error, "Unauthorized"}
-      end
-    end
+      end || {:error, "Unauthorized"}
+    end || {:error, "this given comment id '#{id}' is not valid"}
   end
 
   @doc """
