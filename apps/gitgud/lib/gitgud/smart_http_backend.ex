@@ -56,9 +56,7 @@ defmodule GitGud.SmartHTTPBackend do
     else: send_resp(conn, :not_found, "Not found")
   end
 
-  match _ do
-    send_resp(conn, :not_found, "Not Found")
-  end
+  match _, do: raise_phoenix_no_route_error(conn)
 
   #
   # Helpers
@@ -84,6 +82,11 @@ defmodule GitGud.SmartHTTPBackend do
     |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
     |> send_resp(:unauthorized, "Unauthorized")
     |> halt()
+  end
+
+  defp raise_phoenix_no_route_error(conn) do
+    conn = %{conn|path_info: String.split(conn.request_path, "/", trim: true)}
+    raise Phoenix.Router.NoRouteError, conn: conn, router: GitGud.Web.Router
   end
 
   defp git_info_refs(conn, repo, exec) do

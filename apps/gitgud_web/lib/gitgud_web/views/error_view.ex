@@ -5,19 +5,11 @@ defmodule GitGud.Web.ErrorView do
 
   use GitGud.Web, :view
 
-  def render("401.html", _assigns) do
-    "Unauthorized"
-  end
-
-  def render("404.html", _assigns) do
-    "Page not found"
-  end
-
-  def render("500.html", _assigns) do
-    "Internal server error"
-  end
-
+  @spec template_not_found(binary, map) :: iodata
   def template_not_found(_template, assigns) do
     render("500.html", assigns)
   end
+
+  @spec title(atom, map) :: binary
+  def title(_action, _assigns), do: "Oops, something went wrong!"
 end

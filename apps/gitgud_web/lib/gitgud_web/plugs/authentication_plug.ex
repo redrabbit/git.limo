@@ -6,7 +6,7 @@ defmodule GitGud.Web.AuthenticationPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import Phoenix.Controller, only: [put_view: 2, render: 3]
+  import Phoenix.Controller, only: [put_layout: 2, put_view: 2, render: 3]
   import Absinthe.Plug, only: [put_options: 2]
 
   alias GitGud.Authorization
@@ -62,6 +62,7 @@ defmodule GitGud.Web.AuthenticationPlug do
     unless authenticated?(conn) do
       conn
       |> put_status(:unauthorized)
+      |> put_layout(:app)
       |> put_view(ErrorView)
       |> render("401.html", %{})
       |> halt()
