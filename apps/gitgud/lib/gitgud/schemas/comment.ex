@@ -66,11 +66,12 @@ defmodule GitGud.Comment do
   @spec update_rev(t, User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_rev(%__MODULE__{} = comment, author, params) do
     changeset = changeset(comment, Map.new(params))
-    if comment_body = get_change(changeset, :body) do
+    if get_change(changeset, :body) do
+      old_comment_body = comment.body
       multi =
         Ecto.Multi.new
         |> Ecto.Multi.update(:comment, changeset)
-        |> Ecto.Multi.insert(:revision, fn %{comment: comment} -> Ecto.build_assoc(comment, :revisions, author_id: author.id, body: comment_body) end)
+        |> Ecto.Multi.insert(:revision, fn %{comment: comment} -> Ecto.build_assoc(comment, :revisions, author_id: author.id, body: old_comment_body) end)
       case DB.transaction(multi) do
         {:ok,  %{comment: comment, revision: _revision}} ->
           {:ok, comment}
