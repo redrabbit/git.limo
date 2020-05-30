@@ -271,7 +271,8 @@ class Issue extends React.Component {
             this.setState(state => ({events: [...state.events, event]}))
             break
         }
-      }
+      },
+      onError: error => console.error(error)
     })
   }
 
@@ -309,6 +310,7 @@ class Issue extends React.Component {
       subscription,
       variables,
       onNext: response => this.handleCommentCreate(response.issueCommentCreate),
+      onError: error => console.error(error)
     })
   }
 
@@ -331,7 +333,8 @@ class Issue extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => this.handleCommentUpdate(response.issueCommentUpdate)
+      onNext: response => this.handleCommentUpdate(response.issueCommentUpdate),
+      onError: error => console.error(error)
     })
   }
 
@@ -352,7 +355,8 @@ class Issue extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => this.handleCommentDelete(response.issueCommentDelete)
+      onNext: response => this.handleCommentDelete(response.issueCommentDelete),
+      onError: error => console.error(error)
     })
   }
 
@@ -536,9 +540,8 @@ class Issue extends React.Component {
       commitMutation(environment, {
         mutation,
         variables,
-        onCompleted: (response, errors) => {
-          this.setState({title: response.updateIssueTitle.title, titleEdit: false})
-        }
+        onCompleted: response => this.setState({title: response.updateIssueTitle.title, titleEdit: false}),
+        onError: error => console.error(error)
       })
     }
     event.preventDefault()
@@ -573,9 +576,8 @@ class Issue extends React.Component {
       commitMutation(environment, {
         mutation,
         variables,
-        onCompleted: (response, errors) => {
-          this.handleCommentCreate(response.createIssueComment)
-        }
+        onCompleted: response => this.handleCommentCreate(response.createIssueComment),
+        onError: error => console.error(error)
       })
     }
   }
@@ -601,9 +603,8 @@ class Issue extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: (response, errors) => {
-        this.setState({labels: response.updateIssueLabels.labels.map(label => label.id)})
-      }
+      onCompleted: response => this.setState({labels: response.updateIssueLabels.labels.map(label => label.id)}),
+      onError: error => console.error(error)
     })
   }
 
@@ -625,9 +626,8 @@ class Issue extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: (response, errors) => {
-        this.setState({status: response.closeIssue.status, editable: response.closeIssue.editable})
-      }
+      onCompleted: response => this.setState({status: response.closeIssue.status, editable: response.closeIssue.editable}),
+      onError: error => console.error(error)
     })
   }
 
@@ -649,9 +649,8 @@ class Issue extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: (response, errors) => {
-        this.setState({status: response.reopenIssue.status, editable: response.reopenIssue.editable})
-      }
+      onCompleted: response => this.setState({status: response.reopenIssue.status, editable: response.reopenIssue.editable}),
+      onError: error => console.error(error)
     })
   }
 

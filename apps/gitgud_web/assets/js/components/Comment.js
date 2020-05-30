@@ -99,10 +99,15 @@ class Comment extends React.Component {
         }
       }
     `
-    commitMutation(environment, {mutation, variables, onCompleted: response => {
-      this.props.onUpdate(response.updateComment)
-      this.setState({edit: false})
-    }})
+    commitMutation(environment, {
+      mutation,
+      variables,
+      onCompleted: response => {
+        this.props.onUpdate(response.updateComment)
+        this.setState({edit: false})
+      },
+      onError: error => console.error(error)
+    })
   }
 
   handleCancel() {
@@ -122,7 +127,12 @@ class Comment extends React.Component {
         }
       }
     `
-    commitMutation(environment, {mutation, variables, onCompleted: response => this.props.onDelete(response.deleteComment)})
+    commitMutation(environment, {
+      mutation,
+      variables,
+      onCompleted: response => this.props.onDelete(response.deleteComment),
+      onError: error => console.error(error)
+    })
   }
 }
 

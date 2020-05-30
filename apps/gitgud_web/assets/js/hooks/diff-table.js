@@ -25,7 +25,8 @@ export default () => {
           row.classList.add("inline-comments")
           ReactDOM.render(React.createElement(CommitLineReview, {reviewId: id}), row)
         }
-      }
+      },
+      onError: error => console.error(error)
     })
 
     document.querySelectorAll("table.diff-table").forEach(table => {

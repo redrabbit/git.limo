@@ -52,9 +52,11 @@ module.exports = (env, options) => ({
     new MiniCssExtractPlugin({
       filename: '../css/app.css'
     }),
-    new CopyWebpackPlugin([{
-      from: 'static/', to: '../'
-    }]),
+    new CopyWebpackPlugin({
+      patterns: [{
+        from: 'static/', to: '../'
+      }]
+    }),
     new RelayCompilerWebpackPlugin({
       schema: path.resolve(__dirname, '../priv/graphql/schema.json'),
       src: path.resolve(__dirname, './js'),

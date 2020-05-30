@@ -183,6 +183,7 @@ class CommitLineReview extends React.Component {
       subscription,
       variables,
       onNext: response => this.handleCommentCreate(response.commitLineReviewCommentCreate),
+      onError: error => console.error(error)
     })
   }
 
@@ -215,7 +216,8 @@ class CommitLineReview extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => this.handleCommentUpdate(response.commitLineReviewCommentUpdate)
+      onNext: response => this.handleCommentUpdate(response.commitLineReviewCommentUpdate),
+      onError: error => console.error(error)
     })
   }
 
@@ -246,7 +248,8 @@ class CommitLineReview extends React.Component {
     return requestSubscription(environment, {
       subscription,
       variables,
-      onNext: response => this.handleCommentDelete(response.commitLineReviewCommentDelete)
+      onNext: response => this.handleCommentDelete(response.commitLineReviewCommentDelete),
+      onError: error => console.error(error)
     })
   }
 
@@ -349,10 +352,11 @@ class CommitLineReview extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: (response, errors) => {
+      onCompleted: response => {
         this.handleCommentCreate(response.createCommitLineReviewComment)
         this.setState({folded: true})
-      }
+      },
+      onError: error => console.error(error)
     })
   }
 
