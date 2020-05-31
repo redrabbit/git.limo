@@ -45,6 +45,19 @@ defmodule GitGud.Web.RepoControllerTest do
     assert html_response(conn, 400) =~ ~s(<h1 class="title">Create a new repository</h1>)
   end
 
+  describe "when user has repositories" do
+    setup :create_repos
+
+    test "renders user repositories", %{conn: conn, user: user, repos: repos} do
+      conn = get(conn, Routes.repo_path(conn, :index, user))
+      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
+      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
+      for repo <- repos do
+        assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
+      end
+    end
+  end
+
   describe "when repository exists" do
     setup :create_repo
 
@@ -113,5 +126,15 @@ defmodule GitGud.Web.RepoControllerTest do
       File.rm_rf(RepoStorage.workdir(repo))
     end
     Map.put(context, :repo, repo)
+  end
+
+  defp create_repos(context) do
+    repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, context.user)) end), 3)
+    on_exit fn ->
+      for repo <- repos do
+        File.rm_rf(RepoStorage.workdir(repo))
+      end
+    end
+    Map.put(context, :repos, repos)
   end
 end

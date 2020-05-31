@@ -62,7 +62,7 @@ defmodule GitGud.Web.AuthenticationPlug do
     unless authenticated?(conn) do
       conn
       |> put_status(:unauthorized)
-      |> put_layout(:app)
+      |> put_layout({GitGud.Web.LayoutView, :app})
       |> put_view(ErrorView)
       |> render("401.html", %{})
       |> halt()

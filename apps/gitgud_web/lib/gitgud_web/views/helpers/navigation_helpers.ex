@@ -22,7 +22,9 @@ defmodule GitGud.Web.NavigationHelpers do
   @spec current_route?(Plug.Conn.t, atom, []) :: boolean
   def current_route?(conn, helper, action \\ [])
   def current_route?(conn, helper, []) do
-    controller_module(conn) == helper_controller(helper)
+    if Map.has_key?(conn.private, :phoenix_controller),
+      do: controller_module(conn) == helper_controller(helper),
+    else: false
   end
 
   @spec current_route?(Plug.Conn.t, atom, [only: [atom]]) :: boolean

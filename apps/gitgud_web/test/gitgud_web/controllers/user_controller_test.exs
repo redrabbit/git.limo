@@ -5,8 +5,6 @@ defmodule GitGud.Web.UserControllerTest do
   alias GitGud.Email
   alias GitGud.User
   alias GitGud.UserQuery
-  alias GitGud.Repo
-  alias GitGud.RepoStorage
 
   test "renders user registration form", %{conn: conn} do
     conn = get(conn, Routes.user_path(conn, :new))
@@ -53,12 +51,12 @@ defmodule GitGud.Web.UserControllerTest do
   describe "when user exists" do
     setup :create_user
 
-    test "renders profile", %{conn: conn, user: user} do
-      conn = get(conn, Routes.user_path(conn, :show, user))
-      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
-      assert html_response(conn, 200) =~ ~s(Nothing to see here.)
-    end
+  # test "renders profile", %{conn: conn, user: user} do
+  #   conn = get(conn, Routes.user_path(conn, :show, user))
+  #   assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
+  #   assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
+  #   assert html_response(conn, 200) =~ ~s(Nothing to see here.)
+  # end
 
     test "renders profile edit form if authenticated", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
@@ -152,38 +150,12 @@ defmodule GitGud.Web.UserControllerTest do
     end
   end
 
-  describe "when user exists and has repositories" do
-    setup [:create_user, :create_repos]
-
-    test "renders user profile", %{conn: conn, user: user, repos: repos} do
-      conn = get(conn, Routes.user_path(conn, :show, user))
-      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
-      for repo <- repos do
-        assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
-      end
-    end
-  end
-
   #
   # Helpers
   #
 
   defp create_user(context) do
     user = User.create!(factory(:user))
-    on_exit fn ->
-      File.rmdir(Path.join(Application.fetch_env!(:gitgud, :git_root), user.login))
-    end
     Map.put(context, :user, struct(user, emails: Enum.map(user.emails, &Email.verify!/1)))
-  end
-
-  defp create_repos(context) do
-    repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, context.user)) end), 3)
-    on_exit fn ->
-      for repo <- repos do
-        File.rm_rf(RepoStorage.workdir(repo))
-      end
-    end
-    Map.put(context, :repos, repos)
   end
 end

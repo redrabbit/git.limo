@@ -41,7 +41,9 @@ defmodule GitGud.Web.AuthenticationPlugTest do
   end
 
   test "halts connection if not authenticated", %{conn: conn} do
-    conn = Plug.Test.init_test_session(conn, user_id: 0)
+    conn = Plug.Test.init_test_session(conn, [])
+    conn = bypass_through(conn, GitGud.Web.Router)
+    conn = get(conn, "/")
     conn = authenticate_session(conn, [])
     conn = ensure_authenticated(conn, [])
     assert conn.status == 401
