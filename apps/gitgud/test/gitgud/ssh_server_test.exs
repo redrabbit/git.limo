@@ -51,7 +51,7 @@ defmodule GitGud.SSHServerTest do
       File.write!(Path.join(workdir, "README.md"), readme_content)
       assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, head} = GitAgent.head(repo)
       assert {:ok, commit} = GitAgent.peel(repo, head)
@@ -66,7 +66,7 @@ defmodule GitGud.SSHServerTest do
     test "pushes repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--quiet", "https://github.com/almightycouch/gitgud.git", workdir])
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, head} = GitAgent.head(repo)
       output = Git.oid_fmt(head.oid) <> "\n"
@@ -79,7 +79,7 @@ defmodule GitGud.SSHServerTest do
 
     @tag :skip
     test "clones repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
-      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
+      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
       assert {:ok, head} = GitAgent.head(repo)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)

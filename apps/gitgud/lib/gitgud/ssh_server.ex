@@ -160,8 +160,16 @@ defmodule GitGud.SSHServer do
   defp parse_args(user, args) do
     if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
       {path, args} = List.pop_at(args, idx)
-      [RepoQuery.by_path(Path.relative(String.trim(to_string(path), "'")), viewer: user)|args]
-    end
+      [user_login, repo_name] =
+        path
+        |> to_string()
+        |> String.trim("'")
+        |> Path.relative()
+        |> Path.split()
+      if String.ends_with?(repo_name, ".git") do
+        [RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5), viewer: user)|args]
+      end
+    end || [nil|args]
   end
 
   defp check_credentials(login, password) do
