@@ -18,7 +18,6 @@ defmodule GitGud.SmartHTTPBackend do
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
 
-  alias GitRekt.GitAgent
   alias GitRekt.WireProtocol
 
   alias GitGud.Account
@@ -33,25 +32,22 @@ defmodule GitGud.SmartHTTPBackend do
   plug :dispatch
 
   get "/info/refs" do
-    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
+    {user_login, repo_name} = fetch_user_repo!(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
-  get "/HEAD" do
-    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
-      do: git_head_ref(conn, repo) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Not found")
-  end
-
   post "/git-receive-pack" do
-    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
+    {user_login, repo_name} = fetch_user_repo!(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
   post "/git-upload-pack" do
-    if repo = RepoQuery.user_repo(conn.params["user_login"], conn.params["repo_name"]),
+    {user_login, repo_name} = fetch_user_repo!(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
@@ -61,6 +57,14 @@ defmodule GitGud.SmartHTTPBackend do
   #
   # Helpers
   #
+
+  defp fetch_user_repo!(conn) do
+    user_login = conn.params["user_login"]
+    repo_name = conn.params["repo_name"]
+    if String.ends_with?(repo_name, ".git"),
+      do: {user_login, String.slice(repo_name, 0..-5)},
+    else: raise_phoenix_no_route_error(conn)
+  end
 
   defp authorized?(conn, repo, "git-upload-pack"),  do: authorized?(conn, repo, :read)
   defp authorized?(conn, repo, "git-receive-pack"), do: authorized?(conn, repo, :write)
@@ -89,7 +93,7 @@ defmodule GitGud.SmartHTTPBackend do
     raise Phoenix.Router.NoRouteError, conn: conn, router: GitGud.Web.Router
   end
 
-  defp git_info_refs(conn, repo, exec) do
+  defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
     if authorized?(conn, repo, exec) do
       refs = WireProtocol.reference_discovery(repo, exec)
       info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
@@ -99,24 +103,13 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp git_head_ref(conn, repo) do
-    if authorized?(conn, repo, :read) do
-      case GitAgent.head(repo) do
-        {:ok, head} ->
-          send_resp(conn, :ok, "ref: #{head.prefix <> head.name}")
-        {:error, reason} ->
-          conn
-          |> send_resp(:internal_server_error, reason)
-          |> halt()
-      end
-    end
-  end
+  defp git_info_refs(conn, _repo, _exec), do: send_resp(conn, :forbidden, "Forbidden")
 
   defp git_pack(conn, repo, exec) do
     if authorized?(conn, repo, exec) do
       conn = put_resp_content_type(conn, "application/x-#{exec}-result")
       conn = send_chunked(conn, :ok)
-      service = WireProtocol.new(repo, exec, callback: {RepoStorage, [repo, conn.assigns.current_user]})
+      service = WireProtocol.new(repo, exec, callback: {RepoStorage, [repo, conn.assigns[:current_user]]})
       service = WireProtocol.skip(service)
       case git_stream_pack(conn, service) do
         {:ok, conn} ->

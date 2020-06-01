@@ -16,26 +16,32 @@ defmodule GitGud.SmartHTTPBackendTest do
   setup [:create_user, :create_repo]
 
   test "authenticates with valid credentials", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name})
+    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
     conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwertz"))
     conn = SmartHTTPBackend.call(conn, [])
     assert conn.assigns.current_user == user
     assert conn.status == 200
   end
 
-  test "fails to authenticates with invalid credentials", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name})
-    conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwerty"))
+  test "fails to call backend without authentication header", %{user: user, repo: repo} do
+    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
     conn = SmartHTTPBackend.call(conn, [])
-    assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
     assert conn.status == 401
+    assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
   end
 
-  test "fails to calls backend without authentication header", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name})
+  test "fails to authenticates with invalid credentials", %{user: user, repo: repo} do
+    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
+    conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwerty"))
     conn = SmartHTTPBackend.call(conn, [])
-    assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
     assert conn.status == 401
+    assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
+  end
+
+  test "fails to advertise references to dump clients", %{user: user, repo: repo} do
+    conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
+    conn = SmartHTTPBackend.call(conn, [])
+    assert conn.status == 403
   end
 
   describe "when repository is empty" do
@@ -47,7 +53,7 @@ defmodule GitGud.SmartHTTPBackendTest do
       File.write!(Path.join(workdir, "README.md"), readme_content)
       assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {"Everything up-to-date\n", 1} = System.cmd("git", ["push", "--set-upstream", "origin", "master"], cd: workdir, stderr_to_stdout: true)
       assert {:ok, head} = GitAgent.head(repo)
       assert {:ok, commit} = GitAgent.peel(repo, head)
@@ -62,7 +68,7 @@ defmodule GitGud.SmartHTTPBackendTest do
     test "pushes repository", %{user: user, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--quiet", "https://github.com/almightycouch/gitgud.git", workdir])
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {"Everything up-to-date\n", 1} = System.cmd("git", ["push", "--set-upstream", "origin", "master"], cd: workdir, stderr_to_stdout: true)
       assert {:ok, head} = GitAgent.head(repo)
       output = Git.oid_fmt(head.oid) <> "\n"
@@ -75,7 +81,7 @@ defmodule GitGud.SmartHTTPBackendTest do
 
     @tag :skip
     test "clones repository", %{user: user, repo: repo, workdir: workdir} do
-      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}", workdir])
+      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git", workdir])
       assert {:ok, head} = GitAgent.head(repo)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
