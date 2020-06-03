@@ -15,10 +15,11 @@ defmodule GitRekt.WireProtocol do
   """
 
   alias GitRekt.Git
+  alias GitRekt.GitRef
   alias GitRekt.GitAgent
   alias GitRekt.Packfile
 
-  @upload_caps ~w(thin-pack multi_ack multi_ack_detailed)
+  @upload_caps ~w(multi_ack multi_ack_detailed)
   @receive_caps ~w(report-status delete-refs)
 
   @doc """
@@ -100,7 +101,8 @@ defmodule GitRekt.WireProtocol do
   """
   @spec reference_discovery(GitAgent.agent, binary) :: iolist
   def reference_discovery(agent, service) do
-    [reference_head(agent), reference_branches(agent), reference_tags(agent)]
+    {:ok, refs} = GitAgent.references(agent, :undefined, target: :commit)
+    [reference_head(agent)|Enum.to_list(refs)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
     |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
@@ -179,25 +181,11 @@ defmodule GitRekt.WireProtocol do
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
 
-  defp format_ref_line(ref), do: "#{Git.oid_fmt(ref.oid)} #{ref.prefix <> ref.name}"
+  defp format_ref_line(%GitRef{oid: oid, prefix: prefix, name: name}), do: "#{Git.oid_fmt(oid)} #{prefix <> name}"
 
   defp reference_head(agent) do
     case GitAgent.head(agent) do
       {:ok, head} -> %{head|prefix: "", name: "HEAD"}
-      {:error, _reason} -> []
-    end
-  end
-
-  defp reference_branches(agent) do
-    case GitAgent.branches(agent) do
-      {:ok, stream} -> Enum.to_list(stream)
-      {:error, _reason} -> []
-    end
-  end
-
-  defp reference_tags(agent) do
-    case GitAgent.tags(agent) do
-      {:ok, stream} -> Enum.to_list(stream)
       {:error, _reason} -> []
     end
   end

@@ -64,7 +64,6 @@ defmodule GitRekt.GitAgent do
 
   @type git_odb :: GitOdb.t
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
-  @type git_reference :: GitRef.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @default_config %{
@@ -114,32 +113,32 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git reference for `HEAD`.
   """
-  @spec head(agent) :: {:ok, git_reference} | {:error, term}
+  @spec head(agent) :: {:ok, GitRef.t} | {:error, term}
   def head(agent), do: exec(agent, :head)
 
   @doc """
   Returns all Git branches.
   """
-  @spec branches(agent) :: {:ok, [git_reference]} | {:error, term}
-  def branches(agent), do: exec(agent, {:references, "refs/heads/*"})
+  @spec branches(agent, keyword) :: {:ok, Stream.t} | {:error, term}
+  def branches(agent, opts \\ []), do: exec(agent, {:references, "refs/heads/*", opts})
 
   @doc """
   Returns the Git branch with the given `name`.
   """
-  @spec branch(agent, binary) :: {:ok, git_reference} | {:error, term}
-  def branch(agent, name), do: exec(agent, {:reference, "refs/heads/" <> name})
+  @spec branch(agent, binary) :: {:ok, GitRef.t} | {:error, term}
+  def branch(agent, name), do: exec(agent, {:reference, "refs/heads/" <> name, :undefined})
 
   @doc """
   Returns all Git tags.
   """
-  @spec tags(agent) :: {:ok, [GitTag.t]} | {:error, term}
-  def tags(agent), do: exec(agent, {:references, "refs/tags/*"})
+  @spec tags(agent, keyword) :: {:ok, Stream.t} | {:error, term}
+  def tags(agent, opts \\ []), do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)})
 
   @doc """
   Returns the Git tag with the given `name`.
   """
-  @spec tag(agent, binary) :: {:ok, GitTag.t} | {:error, term}
-  def tag(agent, name), do: exec(agent, {:reference, "refs/tags/" <> name})
+  @spec tag(agent, binary) :: {:ok, GitRef.t | GitTag.t} | {:error, term}
+  def tag(agent, name), do: exec(agent, {:reference, "refs/tags/" <> name, :tag})
 
   @doc """
   Returns the Git tag author of the given `tag`.
@@ -156,14 +155,14 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec references(agent, binary | :undefined) :: {:ok, [git_reference]} | {:error, term}
-  def references(agent, glob \\ :undefined), do: exec(agent, {:references, glob})
+  @spec references(agent, binary | :undefined, keyword) :: {:ok, Stream.t} | {:error, term}
+  def references(agent, glob \\ :undefined, opts \\ []), do: exec(agent, {:references, glob, opts})
 
   @doc """
   Returns the Git reference with the given `name`.
   """
-  @spec reference(agent, binary) :: {:ok, git_reference} | {:error, term}
-  def reference(agent, name), do: exec(agent, {:reference, name})
+  @spec reference(agent, binary) :: {:ok, GitRef.t} | {:error, term}
+  def reference(agent, name), do: exec(agent, {:reference, name, :undefined})
 
   @doc """
   Creates a reference with the given `name` and `target`.
@@ -186,13 +185,13 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git object matching the given `spec`.
   """
-  @spec revision(agent, binary) :: {:ok, GitCommit.t | GitTag.t, git_reference | nil} | {:error, term}
+  @spec revision(agent, binary) :: {:ok, GitRef.t | GitTag.t, GitCommit.t | nil} | {:error, term}
   def revision(agent, spec), do: exec(agent, {:revision, spec})
 
   @doc """
   Returns the parent of the given `commit`.
   """
-  @spec commit_parents(agent, GitCommit.t) :: {:ok, [GitCommit.t]} | {:error, term}
+  @spec commit_parents(agent, GitCommit.t) :: {:ok, Stream.t} | {:error, term}
   def commit_parents(agent, commit), do: exec(agent, {:commit_parents, commit})
 
   @doc """
@@ -252,7 +251,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git tree entries of the given `tree`.
   """
-  @spec tree_entries(agent, GitTree.t) :: {:ok, [GitTreeEntry.t]} | {:error, term}
+  @spec tree_entries(agent, GitTree.t) :: {:ok, Stream.t} | {:error, term}
   def tree_entries(agent, tree), do: exec(agent, {:tree_entries, tree})
 
   @doc """
@@ -352,7 +351,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git commit history of the given `revision`.
   """
-  @spec history(agent, git_revision, keyword) :: {:ok, [GitCommit.t]} | {:error, term}
+  @spec history(agent, git_revision, keyword) :: {:ok, Stream.t} | {:error, term}
   def history(agent, revision, opts \\ []), do: exec(agent, {:history, revision, opts})
 
   @doc """
@@ -364,7 +363,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Peels the given `obj` until a Git object of the specified type is met.
   """
-  @spec peel(agent, git_reference | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
+  @spec peel(agent, GitRef.t | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
   def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
 
   @doc """
@@ -415,39 +414,31 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:references, _glob} = op, _from, {handle, config, _cache} = state) do
-    {:reply, call_stream(op, handle), state, config.idle_timeout}
+  def handle_call({:references, glob, opts}, _from, {handle, config, _cache} = state) do
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
+    {:reply, call_stream({:references, glob, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  @impl true
   def handle_call({:commit_parents, _commit} = op, _from, {handle, config, _cache} = state) do
     {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
-  @impl true
   def handle_call({:tree_entries, _tree} = op, _from, {handle, config, _cache} = state) do
     {:reply, call_stream(op, handle), state, config.idle_timeout}
   end
 
-  @impl true
   def handle_call({:history, obj, opts}, _from, {handle, config, _cache} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
-    case call_stream({:history, obj, opts}, handle) do
-      {:ok, stream} ->
-        {:reply, {:ok, async_stream(:history_next, stream, chunk_size)}, state, config.idle_timeout}
-      {:error, reason} ->
-        {:reply, {:error, reason}, state, config.idle_timeout}
-    end
+    {:reply, call_stream({:history, obj, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  def handle_call({:history_next, stream, chunk_size}, _from, {_handle, config, _cache} = state) do
+  def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config, _cache} = state) do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
     acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
     {:reply, {Enum.to_list(chunk_stream), acc}, state, config.idle_timeout}
   end
 
-  @impl true
   def handle_call(op, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
     cache_op = cache_adapter.make_cache_key(op)
     cond do
@@ -462,7 +453,6 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  @impl true
   def handle_call(op, _from, {handle, config, nil} = state) do
     {:reply, call(op, handle), state, config.idle_timeout}
   end
@@ -472,7 +462,6 @@ defmodule GitRekt.GitAgent do
     {:noreply, state}
   end
 
-  @impl true
   def handle_info(:timeout, state) do
     {:stop, :normal, state}
   end
@@ -596,28 +585,28 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:references, glob}, handle) do
+  defp call({:references, glob, opts}, handle) do
     case Git.reference_stream(handle, glob) do
       {:ok, stream} ->
-        {:ok, Stream.map(stream, &resolve_reference/1)}
+        {:ok, Stream.map(stream, &resolve_reference_peel!(&1, Keyword.get(opts, :target, :undefined), handle))}
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp call({:reference, "/refs/" <> _suffix = name}, handle) do
+  defp call({:reference, "refs/" <> _suffix = name, target}, handle) do
     case Git.reference_lookup(handle, name) do
       {:ok, shorthand, :oid, oid} ->
-        {:ok, resolve_reference({name, shorthand, :oid, oid})}
+        {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  defp call({:reference, shorthand}, handle) do
+  defp call({:reference, shorthand, target}, handle) do
     case Git.reference_dwim(handle, shorthand) do
       {:ok, name, :oid, oid} ->
-        {:ok, resolve_reference({name, shorthand, :oid, oid})}
+        {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -775,6 +764,15 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp call_stream(op, chunk_size, handle) do
+    case call_stream(op, handle) do
+      {:ok, stream} ->
+        {:ok, async_stream(stream, chunk_size)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
 
   defp resolve_reference({nil, nil, :oid, _oid}), do: nil
@@ -787,6 +785,25 @@ defmodule GitRekt.GitAgent do
   defp resolve_reference({name, shorthand, :oid, oid}) do
     prefix = String.slice(name, 0, String.length(name) - String.length(shorthand))
     %GitRef{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix)}
+  end
+
+  defp resolve_reference_peel!({_name, _shorthand, _type, _target} = ref, target, handle) do
+    ref
+    |> resolve_reference()
+    |> resolve_reference_peel!(target, handle)
+  end
+
+  defp resolve_reference_peel!(ref, :undefined, _handle), do: ref
+  defp resolve_reference_peel!(%GitRef{type: :branch} = ref, _target, _handle), do: ref
+  defp resolve_reference_peel!(%GitRef{type: :tag} = ref, target, handle) do
+    case fetch_target(ref, target, handle) do
+      {:ok, %GitTag{} = tag} ->
+        tag
+      {:ok, %GitCommit{oid: oid} } ->
+        struct(ref, oid: oid)
+      {:error, reason} ->
+        raise RuntimeError, message: reason
+    end
   end
 
   defp resolve_reference_type("refs/heads/"), do: :branch
@@ -835,7 +852,7 @@ defmodule GitRekt.GitAgent do
       {:ok, obj_type, obj} ->
         resolve_object({obj, obj_type, oid})
       {:error, reason} ->
-        raise reason
+        raise RuntimeError, message: reason
     end
   end
 
@@ -1020,11 +1037,12 @@ defmodule GitRekt.GitAgent do
   defp fetch_message(%GitCommit{__ref__: commit}), do: Git.commit_message(commit)
   defp fetch_message(%GitTag{__ref__: tag}), do: Git.tag_message(tag)
 
-  defp walk_history(obj, handle, opts \\ []) do
+  defp walk_history(rev, handle, opts \\ []) do
     {sorting, opts} = Enum.split_with(opts, &(is_atom(&1) && String.starts_with?(to_string(&1), "sort")))
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- Git.revwalk_sorting(walk, sorting),
-          :ok <- Git.revwalk_push(walk, obj.oid),
+         {:ok, commit} <- fetch_target(rev, :commit, handle),
+          :ok <- Git.revwalk_push(walk, commit.oid),
          {:ok, stream} <- Git.revwalk_stream(walk) do
       stream = Stream.map(stream, &lookup_object!(&1, handle))
       if pathspec = Keyword.get(opts, :pathspec),
@@ -1085,12 +1103,12 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp async_stream(request, stream, chunk_size) do
+  defp async_stream(stream, chunk_size) do
     agent = self()
     Stream.resource(
       fn -> stream end,
       fn :halt -> {:halt, agent}
-         stream -> GenServer.call(agent, {request, stream, chunk_size})
+         stream -> GenServer.call(agent, {:stream_next, stream, chunk_size})
       end,
       &(&1)
     )
