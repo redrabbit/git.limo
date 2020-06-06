@@ -799,10 +799,10 @@ defmodule GitRekt.GitAgent do
     case fetch_target(ref, target, handle) do
       {:ok, %GitTag{} = tag} ->
         tag
-      {:ok, %GitCommit{oid: oid} } ->
+      {:ok, %GitCommit{oid: oid}} ->
         struct(ref, oid: oid)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, _reason} ->
+        ref
     end
   end
 
