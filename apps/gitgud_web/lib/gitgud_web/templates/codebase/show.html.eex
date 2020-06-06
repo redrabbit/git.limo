@@ -46,11 +46,11 @@
           <div class="control"><button class="button ssh-clone-button">SSH</button></div>
         <% end %>
         <div class="control http-clone">
-          <input class="input" type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>" readonly />
+          <input class="input" type="text" value="<%= Routes.codebase_url(@conn, :show, @repo.owner, @repo) %>.git" readonly />
         </div>
         <%= if authenticated?(@conn) do %>
           <div class="control ssh-clone is-hidden">
-            <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}" %>" readonly />
+            <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
           </div>
         <% end %>
         <div class="control">
