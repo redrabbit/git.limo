@@ -327,7 +327,7 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- GitAgent.revision(repo, revision),
-           {:ok, history} <- GitAgent.history(repo, object), do:
+           {:ok, history} <- GitAgent.history(repo, object, stream_chunk_size: 20), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
     end || {:error, :not_found}
   end
@@ -335,7 +335,7 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, object, reference} <- GitAgent.revision(repo, revision),
-           {:ok, history} <- GitAgent.history(repo, object, pathspec: Path.join(tree_path)), do:
+           {:ok, history} <- GitAgent.history(repo, object, pathspec: Path.join(tree_path), stream_chunk_size: 20), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: tree_path)
     end || {:error, :not_found}
   end
