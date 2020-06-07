@@ -68,6 +68,7 @@ defmodule GitRekt.GitAgent do
 
   @default_config %{
       cache: true,
+      stream_chunk_size: 1_000,
       idle_timeout: :infinity
   }
 
@@ -415,20 +416,23 @@ defmodule GitRekt.GitAgent do
 
   @impl true
   def handle_call({:references, glob, opts}, _from, {handle, config, _cache} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
     {:reply, call_stream({:references, glob, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  def handle_call({:commit_parents, _commit} = op, _from, {handle, config, _cache} = state) do
-    {:reply, call_stream(op, handle), state, config.idle_timeout}
-  end
-
-  def handle_call({:tree_entries, _tree} = op, _from, {handle, config, _cache} = state) do
-    {:reply, call_stream(op, handle), state, config.idle_timeout}
+  def handle_call({:history, obj, opts}, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
+    reply =
+      case Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size) do
+        {:infinity, opts} ->
+          call_cache({:history, obj, opts}, cache, cache_adapter, handle)
+        {chunk_size, opts} ->
+          call_stream({:history, obj, opts}, chunk_size, handle)
+      end
+    {:reply, reply, state, config.idle_timeout}
   end
 
   def handle_call({:history, obj, opts}, _from, {handle, config, _cache} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, 100)
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
     {:reply, call_stream({:history, obj, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
@@ -443,7 +447,7 @@ defmodule GitRekt.GitAgent do
     {:reply, call_cache(op, cache, cache_adapter, handle), state, config.idle_timeout}
   end
 
-  def handle_call(op, _from, {handle, config, nil} = state) do
+  def handle_call(op, _from, {handle, config, _cache} = state) do
     {:reply, call(op, handle), state, config.idle_timeout}
   end
 
@@ -551,18 +555,17 @@ defmodule GitRekt.GitAgent do
 
   defp telemetry_cache(op, cache_adapter, fun, args) do
     event_time = System.monotonic_time(1_000_000)
-    if result = apply(cache_adapter, fun, args) do
-      latency = System.monotonic_time(1_000_000) - event_time
-      {name, args} =
-        if is_atom(op) do
-          {op, []}
-        else
-          [name|args] = Tuple.to_list(op)
-          {name, args}
-        end
-      :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
-      result
-    end
+    result = apply(cache_adapter, fun, args)
+    latency = System.monotonic_time(1_000_000) - event_time
+    {name, args} =
+      if is_atom(op) do
+        {op, []}
+      else
+        [name|args] = Tuple.to_list(op)
+        {name, args}
+      end
+    :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
+    result
   end
 
   defp call(:empty?, handle) do
@@ -783,10 +786,8 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call_stream(op, handle), do: call(op, handle)
-# defp call_stream(op, cache, cache_adapter, handle), do: call_cache(op, cache, cache_adapter, handle)
   defp call_stream(op, chunk_size, handle) do
-    case call_stream(op, handle) do
+    case call(op, handle) do
       {:ok, stream} ->
         {:ok, async_stream(op, stream, chunk_size)}
       {:error, reason} ->
@@ -1155,12 +1156,12 @@ defmodule GitRekt.GitAgent do
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end
 
-  defp map_operation_item(item) when is_atom(item) or is_binary(item) or is_number(item), do: item
+  defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
   defp map_operation_item(%GitRef{oid: oid}), do: {:reference, oid}
   defp map_operation_item(%GitTag{oid: oid}), do: {:tag, oid}
   defp map_operation_item(%GitCommit{oid: oid}), do: {:commit, oid}
   defp map_operation_item(%GitTree{oid: oid}), do: {:tree, oid}
   defp map_operation_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
   defp map_operation_item(%GitBlob{oid: oid}), do: {:blob, oid}
-  defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
+  defp map_operation_item(item), do: item
 end
