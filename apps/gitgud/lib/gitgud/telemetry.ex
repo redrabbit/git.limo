@@ -31,6 +31,12 @@ defmodule GitGud.Telemetry do
     Logger.debug("[Wire Protocol] #{command} executed #{service.state} in #{latency}")
   end
 
+  def handle_event([:gitrekt, :git_agent, :stream], %{latency: latency}, %{op: op, args: args, chunk_size: chunk_size}, _config) do
+    args = Enum.join(map_git_agent_op_args(op, args), ", ")
+    latency = if latency > 1_000, do: "#{latency / 1_000} ms", else: "#{latency} µs"
+    Logger.debug("[Git Agent] #{op}(#{args}) streamed #{chunk_size} items in #{latency}")
+  end
+
   #
   # Helpers
   #

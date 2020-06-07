@@ -534,6 +534,21 @@ defmodule GitRekt.GitAgent do
     result
   end
 
+  defp telemetry_stream(op, chunk_size, callback) do
+    {name, args} =
+      if is_atom(op) do
+        {op, []}
+      else
+        [name|args] = Tuple.to_list(op)
+        {name, args}
+      end
+    event_time = System.monotonic_time(1_000_000)
+    result = callback.()
+    latency = System.monotonic_time(1_000_000) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :stream], %{latency: latency}, %{op: name, args: args, chunk_size: chunk_size})
+    result
+  end
+
   defp telemetry_cache(op, cache_adapter, fun, args) do
     event_time = System.monotonic_time(1_000_000)
     if result = apply(cache_adapter, fun, args) do
@@ -751,28 +766,29 @@ defmodule GitRekt.GitAgent do
     cond do
       is_nil(cache_op) ->
         call(op, handle)
-      cache_entry = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
-        cache_entry
+      result = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
+        {:ok, result}
       true ->
-        cache_entry = call(op, handle)
-        telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, cache_entry])
-        cache_entry
+        case call(op, handle) do
+          {:ok, %Stream{} = stream} ->
+            result = Enum.to_list(stream)
+            telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
+            {:ok, result}
+          {:ok, result} ->
+            telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
+            {:ok, result}
+          {:error, reason} ->
+            {:error, reason}
+        end
     end
   end
 
-  defp call_stream(op, handle) do
-    case call(op, handle) do
-      {:ok, stream} ->
-        {:ok, stream}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
+  defp call_stream(op, handle), do: call(op, handle)
+# defp call_stream(op, cache, cache_adapter, handle), do: call_cache(op, cache, cache_adapter, handle)
   defp call_stream(op, chunk_size, handle) do
     case call_stream(op, handle) do
       {:ok, stream} ->
-        {:ok, async_stream(stream, chunk_size)}
+        {:ok, async_stream(op, stream, chunk_size)}
       {:error, reason} ->
         {:error, reason}
     end
@@ -1108,12 +1124,15 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp async_stream(stream, chunk_size) do
+  defp async_stream(_op, stream, :infinity), do: Enum.to_list(stream)
+  defp async_stream(op, stream, chunk_size) do
     agent = self()
     Stream.resource(
       fn -> stream end,
-      fn :halt -> {:halt, agent}
-         stream -> GenServer.call(agent, {:stream_next, stream, chunk_size})
+      fn :halt ->
+          {:halt, agent}
+         stream ->
+          telemetry_stream(op, chunk_size, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}) end)
       end,
       &(&1)
     )
@@ -1143,4 +1162,5 @@ defmodule GitRekt.GitAgent do
   defp map_operation_item(%GitTree{oid: oid}), do: {:tree, oid}
   defp map_operation_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
   defp map_operation_item(%GitBlob{oid: oid}), do: {:blob, oid}
+  defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
 end
