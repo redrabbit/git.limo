@@ -440,17 +440,7 @@ defmodule GitRekt.GitAgent do
   end
 
   def handle_call(op, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
-    cache_op = cache_adapter.make_cache_key(op)
-    cond do
-      is_nil(cache_op) ->
-        {:reply, call(op, handle), state, config.idle_timeout}
-      cache_entry = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
-        {:reply, cache_entry, state, config.idle_timeout}
-      true ->
-        cache_entry = call(op, handle)
-        telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, cache_entry])
-        {:reply, cache_entry, state, config.idle_timeout}
-    end
+    {:reply, call_cache(op, cache, cache_adapter, handle), state, config.idle_timeout}
   end
 
   def handle_call(op, _from, {handle, config, nil} = state) do
@@ -477,20 +467,18 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:reference, _name}), do: nil
   def make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
   def make_cache_key({:reference_delete, _name}), do: nil
-# def make_cache_key({:author, %GitTag{}}), do: nil
-# def make_cache_key({:message, %GitTag{}}), do: nil
   def make_cache_key({:revision, _spec}), do: nil
   def make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
-# def make_cache_key({:tree, %GitRef{}}), do: nil
-# def make_cache_key({:tree, %GitTag{}}), do: nil
-# def make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
-# def make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
+  def make_cache_key({:tree, %GitRef{}}), do: nil
+  def make_cache_key({:tree, %GitTag{}}), do: nil
+  def make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
+  def make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
   def make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_operation_item(revision), path}
   def make_cache_key({:tree_entry, revision, {:oid, oid}}), do: {:tree_entry, map_operation_item(revision), oid}
   def make_cache_key({:tree_entries_with_commit, %GitRef{}, _path}), do: nil
   def make_cache_key({:tree_entries_with_commit, %GitTag{}, _path}), do: nil
-# def make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
-# def make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
+  def make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
+  def make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
   def make_cache_key(:index), do: nil
   def make_cache_key({:index_add, _index, _entry}), do: nil
   def make_cache_key({:index_add, _index, _oid, _path, _file_size, _mode, _opts}), do: nil
@@ -502,9 +490,12 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:diff_deltas, _diff}), do: nil
   def make_cache_key({:diff_format, _diff, _format}), do: nil
   def make_cache_key({:diff_stats, _diff}), do: nil
-  def make_cache_key({:history, _revision, _opts}), do: nil
-# def make_cache_key({:peel, %GitRef{}, _target}), do: nil
-# def make_cache_key({:peel, %GitTag{}, _target}), do: nil
+  def make_cache_key({:history, %GitRef{}, _opts}), do: nil
+  def make_cache_key({:history, %GitTag{}, _opts}), do: nil
+  def make_cache_key({:history_count, %GitRef{}, _opts}), do: nil
+  def make_cache_key({:history_count, %GitTag{}, _opts}), do: nil
+  def make_cache_key({:peel, %GitRef{}, _target}), do: nil
+  def make_cache_key({:peel, %GitTag{}, _target}), do: nil
   def make_cache_key({:pack, _oids}), do: nil
   def make_cache_key(op) do
       op
@@ -528,6 +519,21 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp telemetry_exec(op, callback) do
+    {name, args} =
+      if is_atom(op) do
+        {op, []}
+      else
+        [name|args] = Tuple.to_list(op)
+        {name, args}
+      end
+    event_time = System.monotonic_time(1_000_000)
+    result = callback.()
+    latency = System.monotonic_time(1_000_000) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :call], %{latency: latency}, %{op: name, args: args})
+    result
+  end
+
   defp telemetry_cache(op, cache_adapter, fun, args) do
     event_time = System.monotonic_time(1_000_000)
     if result = apply(cache_adapter, fun, args) do
@@ -542,21 +548,6 @@ defmodule GitRekt.GitAgent do
       :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
       result
     end
-  end
-
-  defp telemetry_exec(op, callback) do
-    {name, args} =
-      if is_atom(op) do
-        {op, []}
-      else
-        [name|args] = Tuple.to_list(op)
-        {name, args}
-      end
-    event_time = System.monotonic_time(1_000_000)
-    result = callback.()
-    latency = System.monotonic_time(1_000_000) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :call], %{latency: latency}, %{op: name, args: args})
-    result
   end
 
   defp call(:empty?, handle) do
@@ -755,10 +746,24 @@ defmodule GitRekt.GitAgent do
       do: Git.revwalk_pack(walk)
   end
 
+  defp call_cache(op, cache, cache_adapter, handle) do
+    cache_op = cache_adapter.make_cache_key(op)
+    cond do
+      is_nil(cache_op) ->
+        call(op, handle)
+      cache_entry = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
+        cache_entry
+      true ->
+        cache_entry = call(op, handle)
+        telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, cache_entry])
+        cache_entry
+    end
+  end
+
   defp call_stream(op, handle) do
     case call(op, handle) do
       {:ok, stream} ->
-        {:ok, enumerate_stream(stream)}
+        {:ok, stream}
       {:error, reason} ->
         {:error, reason}
     end
@@ -1113,9 +1118,6 @@ defmodule GitRekt.GitAgent do
       &(&1)
     )
   end
-
-  defp enumerate_stream(stream) when is_function(stream), do: %Stream{enum: Enum.to_list(stream)}
-  defp enumerate_stream(%Stream{} = stream), do: Map.update!(stream, :enum, &Enum.to_list/1)
 
   defp zip_tree_entries_commits(tree_entries, commits, path, handle) do
     path_map = Map.new(tree_entries, &{Path.join(path, &1.name), &1})
