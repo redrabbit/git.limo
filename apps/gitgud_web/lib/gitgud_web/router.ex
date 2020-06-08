@@ -28,6 +28,12 @@ defmodule GitGud.Web.Router do
       schema: GitGud.GraphQL.Schema
   end
 
+  scope "/:user_login/:repo_name", GitGud do
+    get "/info/refs", SmartHTTPBackend, :discovery
+    post "/git-receive-pack", SmartHTTPBackend, :receive_pack
+    post "/git-upload-pack", SmartHTTPBackend, :upload_pack
+  end
+
   scope "/", GitGud.Web do
     pipe_through :browser
 
@@ -116,9 +122,5 @@ defmodule GitGud.Web.Router do
       put "/:revision/*path", CodebaseController, :update
       delete "/:revision/*path", CodebaseController, :delete
     end
-  end
-
-  scope "/:user_login/:repo_name" do
-    forward "/", GitGud.SmartHTTPBackend
   end
 end

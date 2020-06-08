@@ -7,13 +7,45 @@ defmodule GitGud.SmartHTTPBackend do
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
 
+  ## Example
+
+  Here is an example of `GitGud.SmartHTTPBackend` used in a `Plug.Router` to handle Git server commands:
+
+  ```elixir
+  defmodule SmartHTTPBackendRouter do
+    use Plug.Router
+
+    plug :match
+    plug :fetch_query_params
+    plug :dispatch
+
+    get "/:user_login/:repo_name/info/refs", to: GitGud.SmartHTTPBackend, init_opts: :discovery
+    post "/:user_login/:repo_name/git-receive-pack", to: GitGud.SmartHTTPBackend, init_opts: :receive_pack
+    post "/:user_login/:repo_name/git-upload-pack", to: GitGud.SmartHTTPBackend, init_opts: :upload_pack
+  end
+  ```
+
+  Note that `user_login` and `repo_name` path parameters are mandatory.
+
+  To process Git commands over HTTP, simply start a Cowboy server as part of your supervision tree:
+
+  ```elixir
+  children = [
+    {Plug.Cowboy, scheme: :http, plug: SmartHTTPBackendRouter}
+  ]
+
+  Supervisor.start_link(children, strategy: :one_for_one)
+  ```
+
+  ## Authentication
+
   A registered `GitGud.User` can authenticate over HTTP via *Basic Authentication*.
-  This is only, required for commands requiring specific permissions (such as pushing commits and cloning private repos).
+  This is required to execute commands with granted permissions (such as pushing commits and cloning private repos).
 
   See `GitGud.Authorization` for more details.
   """
 
-  use Plug.Router
+  use Plug.Builder
 
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
@@ -28,42 +60,60 @@ defmodule GitGud.SmartHTTPBackend do
   alias GitGud.Authorization
 
   plug :basic_authentication
-  plug :match
-  plug :dispatch
 
-  get "/info/refs" do
-    {user_login, repo_name} = fetch_user_repo!(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name),
+  @doc """
+  Returns all references available for the given Git repository.
+  """
+  @spec discovery(Plug.Conn.t, keyword) :: Plug.Conn.t
+  def discovery(conn, _opts) do
+    if repo = fetch_user_repo(conn),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
-  post "/git-receive-pack" do
-    {user_login, repo_name} = fetch_user_repo!(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name),
+  @doc """
+  Processes `git-receive-pack` requests.
+  """
+  @spec receive_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
+  def receive_pack(conn, _opts) do
+    if repo = fetch_user_repo(conn),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
-  post "/git-upload-pack" do
-    {user_login, repo_name} = fetch_user_repo!(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name),
+  @doc """
+  Processes `git-upload-pack` requests.
+  """
+  @spec upload_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
+  def upload_pack(conn, _opts) do
+    if repo = fetch_user_repo(conn),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
     else: send_resp(conn, :not_found, "Not found")
   end
 
-  match _, do: raise_phoenix_no_route_error(conn)
+  #
+  # Callbacks
+  #
+
+  @impl true
+  def init(action), do: action
+
+  @impl true
+  def call(conn, action) do
+    opts = []
+    apply(__MODULE__, action, [super(conn, opts), opts])
+  end
 
   #
   # Helpers
   #
 
-  defp fetch_user_repo!(conn) do
+  defp fetch_user_repo(conn) do
     user_login = conn.params["user_login"]
     repo_name = conn.params["repo_name"]
-    if String.ends_with?(repo_name, ".git"),
-      do: {user_login, String.slice(repo_name, 0..-5)},
-    else: raise_phoenix_no_route_error(conn)
+    if String.ends_with?(repo_name, ".git") do
+      RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5))
+    end
   end
 
   defp authorized?(conn, repo, "git-upload-pack"),  do: authorized?(conn, repo, :read)
@@ -86,11 +136,6 @@ defmodule GitGud.SmartHTTPBackend do
     |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
     |> send_resp(:unauthorized, "Unauthorized")
     |> halt()
-  end
-
-  defp raise_phoenix_no_route_error(conn) do
-    conn = %{conn|path_info: String.split(conn.request_path, "/", trim: true)}
-    raise Phoenix.Router.NoRouteError, conn: conn, router: GitGud.Web.Router
   end
 
   defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do

@@ -18,14 +18,14 @@ defmodule GitGud.SmartHTTPBackendTest do
   test "authenticates with valid credentials", %{user: user, repo: repo} do
     conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
     conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwertz"))
-    conn = SmartHTTPBackend.call(conn, [])
+    conn = SmartHTTPBackend.call(conn, :discovery)
     assert conn.assigns.current_user == user
     assert conn.status == 200
   end
 
   test "fails to call backend without authentication header", %{user: user, repo: repo} do
     conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
-    conn = SmartHTTPBackend.call(conn, [])
+    conn = SmartHTTPBackend.call(conn, :discovery)
     assert conn.status == 401
     assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
   end
@@ -33,14 +33,14 @@ defmodule GitGud.SmartHTTPBackendTest do
   test "fails to authenticates with invalid credentials", %{user: user, repo: repo} do
     conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
     conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwerty"))
-    conn = SmartHTTPBackend.call(conn, [])
+    conn = SmartHTTPBackend.call(conn, :discovery)
     assert conn.status == 401
     assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
   end
 
   test "fails to advertise references to dump clients", %{user: user, repo: repo} do
     conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
-    conn = SmartHTTPBackend.call(conn, [])
+    conn = SmartHTTPBackend.call(conn, :discovery)
     assert conn.status == 403
   end
 
