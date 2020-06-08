@@ -186,7 +186,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git object matching the given `spec`.
   """
-  @spec revision(agent, binary) :: {:ok, GitRef.t | GitTag.t, GitCommit.t | nil} | {:error, term}
+  @spec revision(agent, binary) :: {:ok, {GitRef.t | GitTag.t, GitCommit.t | nil}} | {:error, term}
   def revision(agent, spec), do: exec(agent, {:revision, spec})
 
   @doc """
@@ -627,7 +627,7 @@ defmodule GitRekt.GitAgent do
   defp call({:revision, spec}, handle) do
     case Git.revparse_ext(handle, spec) do
       {:ok, obj, obj_type, oid, name} ->
-        {:ok, resolve_object({obj, obj_type, oid}), resolve_reference({name, nil, :oid, oid})}
+        {:ok, {resolve_object({obj, obj_type, oid}), resolve_reference({name, nil, :oid, oid})}}
       {:error, reason} ->
         {:error, reason}
     end
@@ -667,7 +667,7 @@ defmodule GitRekt.GitAgent do
   defp call({:tree_entry_with_commit, obj, path}, handle) do
     with {:ok, tree_entry} <- fetch_tree_entry(obj, {:path, path}, handle),
          {:ok, commit} <- fetch_tree_entry_commit(obj, path, handle), do:
-      {:ok, tree_entry, commit}
+      {:ok, {tree_entry, commit}}
   end
 
   defp call({:tree_entry_target, %GitTreeEntry{} = tree_entry}, handle), do: fetch_target(tree_entry, :undefined, handle)

@@ -299,7 +299,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec repo_revision(Repo.t, %{spec: binary}, Absinthe.Resolution.t) :: {:ok, GitAgent.git_object} | {:error, term}
   def repo_revision(%Repo{} = repo, %{spec: spec} = _args, _info) do
     case GitAgent.revision(repo, spec) do
-     {:ok, object, _reference} ->
+     {:ok, {object, _reference}} ->
        GitAgent.peel(repo, object, :commit)
      {:error, reason} ->
        {:error, reason}
@@ -498,7 +498,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_tree_entry_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def git_tree_entry_with_last_commit(%{path: path}, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
     case GitAgent.tree_entry_by_path(ctx.repo, revision, path, with_commit: true) do
-      {:ok, tree_entry, commit} ->
+      {:ok, {tree_entry, commit}} ->
         {:ok, %{tree_entry: tree_entry, commit: commit}}
       {:error, reason} ->
         {:error, reason}

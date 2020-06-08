@@ -51,7 +51,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
-             {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree} <- GitAgent.tree(repo, object) do
           changeset = blob_commit_changeset(%{branch: head.name}, %{})
           render(conn, "new.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], changeset: changeset, stats: stats(repo, reference || object))
@@ -68,7 +68,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
-             {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
              {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(repo, tree_entry) do
           changeset = blob_commit_changeset(%{branch: head.name}, %{})
@@ -91,7 +91,7 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit) do
           changeset = blob_commit_changeset(%{}, commit_params)
@@ -144,7 +144,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
-             {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(repo, blob) do
@@ -168,7 +168,7 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
@@ -222,7 +222,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
         with {:ok, head} <- GitAgent.head(repo),
-             {:ok, object, reference} <- GitAgent.revision(repo, revision),
+             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
           changeset = commit_changeset(%{branch: head.name}, %{})
@@ -246,7 +246,7 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
              {:ok, commit} <- GitAgent.peel(repo, object, :commit),
              {:ok, tree} <- GitAgent.tree(repo, commit),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
@@ -326,7 +326,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec history(Plug.Conn.t, map) :: Plug.Conn.t
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+      with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, history} <- GitAgent.history(repo, object), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: [])
     end || {:error, :not_found}
@@ -334,7 +334,7 @@ defmodule GitGud.Web.CodebaseController do
 
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+      with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, history} <- GitAgent.history(repo, object, pathspec: Path.join(tree_path)), do:
         render(conn, "commit_list.html", repo: repo, revision: reference || object, commits: history, tree_path: tree_path)
     end || {:error, :not_found}
@@ -357,7 +357,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+      with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree} <- GitAgent.tree(repo, object), do:
         render(conn, "show.html", repo: repo, revision: reference || object, commit: commit, tree: tree, tree_path: [], stats: stats(repo, reference || object))
@@ -366,7 +366,7 @@ defmodule GitGud.Web.CodebaseController do
 
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+      with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
            {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
@@ -392,7 +392,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, object, reference} <- GitAgent.revision(repo, revision),
+      with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
            {:ok, tree_entry_target} <- GitAgent.tree_entry_target(repo, tree_entry) do
