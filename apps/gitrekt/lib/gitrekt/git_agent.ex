@@ -72,6 +72,7 @@ defmodule GitRekt.GitAgent do
   @default_config %{
       cache: true,
       stream_chunk_size: 1_000,
+      timeout: 60_000,
       idle_timeout: :infinity
   }
 
@@ -516,7 +517,7 @@ defmodule GitRekt.GitAgent do
   #
 
   defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(op, agent) end)
-  defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op) end)
+  defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
   defp exec(repo, op) do
     case GitRepo.get_agent(repo) do
       {:ok, agent} ->
@@ -1136,7 +1137,7 @@ defmodule GitRekt.GitAgent do
       fn :halt ->
           {:halt, agent}
          stream ->
-          telemetry_stream(op, chunk_size, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}) end)
+          telemetry_stream(op, chunk_size, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end)
       end,
       &(&1)
     )
