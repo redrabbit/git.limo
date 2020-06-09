@@ -37,9 +37,12 @@ defmodule GitRekt.GitAgent do
   IO.puts message
   ```
 
-  This look very similar to the original example altought the API is slightly different.
+  This look very similar to the original example altought the API is slightly different. You might have
+  noticed that the first argument of each Git function is an `agent`. In our example the agent is a PID
+  referencing a dedicated process started with `start_link/1`.
 
-  TODO
+  Note that replacing `start_link/1` with `GitRekt.Git.repository_open/1` in the above example would actually
+  return the exact same output.
   """
   use GenServer
 

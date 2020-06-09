@@ -7,7 +7,21 @@ defmodule GitGud.SSHServer do
   * `git-receive-pack` - corresponding server-side command to `git push`.
   * `git-upload-pack` - corresponding server-side command to `git fetch`.
 
-  A registered `GitGud.User` can authenticate with following methods:
+  ## Example
+
+  To process Git commands over SSH, simply start the server as part of your supervision tree:
+
+  ```elixir
+  children = [
+    Git.SSHServer
+  ]
+
+  Supervisor.start_link(children, strategy: :one_for_one)
+  ```
+
+  ## Authentication
+
+  A registered `GitGud.User` must authenticate with following methods:
 
   * *public-key* - if any of the associated `GitGud.SSHKey` matches.
   * *password* - if the given credentials are correct.
