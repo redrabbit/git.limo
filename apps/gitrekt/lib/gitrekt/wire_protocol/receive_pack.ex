@@ -16,13 +16,9 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defstruct [:agent, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
 
-  @type callback :: {module, atom, [term]} | nil
+  @type callback :: {module, [term]} | nil
 
-  @type cmd :: {
-    :create | :update | :delete,
-    Git.oid,
-    Git.oid,
-  }
+  @type cmd :: {:create, Git.oid, binary} | {:update, Git.oid, Git.oid, binary} | {:delete, Git.oid, binary}
 
   @type t :: %__MODULE__{
     agent: GitAgent.agent,
