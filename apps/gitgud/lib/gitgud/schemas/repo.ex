@@ -12,7 +12,6 @@ defmodule GitGud.Repo do
   alias GitGud.IssueLabel
   alias GitGud.Maintainer
   alias GitGud.User
-  alias GitGud.UserQuery
   alias GitGud.RepoPool
   alias GitGud.RepoStorage
 
@@ -69,13 +68,12 @@ defmodule GitGud.Repo do
   @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
     case create_and_init(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
-      {:ok, %{repo: repo, init: _handle}} ->
-        owner = UserQuery.by_id(repo.owner_id)
-        {:ok, struct(repo, owner: owner, maintainers: [owner])}
-      {:error, :repo, changeset, _changes} ->
-        {:error, changeset}
+      {:ok, %{repo: repo, issue_labels: issue_labels}} ->
+        {:ok, struct(repo, issue_labels: issue_labels, maintainers: [repo.owner])}
       {:error, :init, reason, _changes} ->
         {:error, reason}
+      {:error, _name, changeset, _changes} ->
+        {:error, changeset}
     end
   end
 
@@ -269,12 +267,15 @@ defmodule GitGud.Repo do
 
   defp create_and_init(changeset, bare?) do
     Multi.new()
-    |> Multi.insert(:repo, changeset)
+    |> Multi.insert(:repo_, changeset)
+    |> Multi.run(:repo, &preload_owner/2)
     |> Multi.run(:maintainer, &create_maintainer/2)
     |> Multi.run(:issue_labels, &create_issue_labels/2)
     |> Multi.run(:init, &init(&1, &2, bare?))
     |> DB.transaction()
   end
+
+  defp preload_owner(db, %{repo_: repo}), do: {:ok, db.preload(repo, :owner)}
 
   defp create_maintainer(db, %{repo: repo}) do
     changeset = Maintainer.changeset(%Maintainer{}, %{repo_id: repo.id, user_id: repo.owner_id, permission: "admin"})

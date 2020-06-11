@@ -72,11 +72,9 @@ defmodule GitGud.User do
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
     case create_with_primary_email(registration_changeset(%__MODULE__{}, Map.new(params))) do
-      {:ok, %{user_with_primary_email: user}} ->
+      {:ok, %{user: user}} ->
         {:ok, put_in(user.account.password, nil)}
-      {:error, :user, changeset, _changes} ->
-        {:error, changeset}
-      {:error, :user_with_primary_email, changeset, _changes} ->
+      {:error, _name, changeset, _changes} ->
         {:error, changeset}
     end
   end
@@ -224,12 +222,12 @@ defmodule GitGud.User do
 
   defp create_with_primary_email(changeset) do
     Multi.new()
-    |> Multi.insert(:user, changeset)
-    |> Multi.run(:user_with_primary_email, &set_verified_primary_email/2)
+    |> Multi.insert(:user_, changeset)
+    |> Multi.run(:user, &set_verified_primary_email/2)
     |> DB.transaction()
   end
 
-  defp set_verified_primary_email(db, %{user: user}) do
+  defp set_verified_primary_email(db, %{user_: user}) do
     if email = Enum.find(user.emails, &(&1.verified)),
       do: db.update(update_changeset(user, :primary_email, email)),
     else: {:ok, user}
