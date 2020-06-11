@@ -65,18 +65,18 @@ defmodule GitGud.RepoStorage do
          {:ok, meta} <- push_meta_objects(objs, repo, user),
           :ok <- ReceivePack.apply_cmds(receive_pack),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})),
-          :ok <- dispatch_events(repo, meta), do:
+          :ok <- dispatch_events(repo, receive_pack.cmds, meta), do:
       {:ok, Map.keys(objs)}
   end
 
   @doc """
   Pushes the given `commit` to the given `repo`.
   """
-  @spec push_commit(Repo.t, User.t, GitCommit.t) :: :ok | {:error, term}
-  def push_commit(%Repo{} = repo, %User{} = user, %GitCommit{oid: oid} = commit) do
+  @spec push_commit(Repo.t, User.t, ReceivePack.cmd, GitCommit.t) :: :ok | {:error, term}
+  def push_commit(%Repo{} = repo, %User{} = user, cmd, %GitCommit{oid: oid} = commit) do
     with {:ok, meta} <- push_meta_objects([{oid, commit}], repo, user),
          {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      dispatch_events(repo, meta)
+      dispatch_events(repo, [cmd], meta)
   end
 
   @doc """
@@ -86,7 +86,6 @@ defmodule GitGud.RepoStorage do
   """
   @spec workdir(Repo.t) :: Path.t
   def workdir(%Repo{} = repo) do
-    repo = DB.preload(repo, :owner)
     Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner.login, repo.name])
   end
 
@@ -157,7 +156,11 @@ defmodule GitGud.RepoStorage do
     end)
   end
 
-  defp dispatch_events(_repo, meta) do
+  defp dispatch_events(_repo, _cmds, meta) do
+    dispatch_issue_reference_events(meta)
+  end
+
+  defp dispatch_issue_reference_events(meta) do
     meta
     |> Enum.filter(fn {{:issue_reference, _issue_id}, _val} -> true
                       {_key, _val} -> false end)
@@ -170,7 +173,7 @@ defmodule GitGud.RepoStorage do
          {:ok, committer} <- GitAgent.commit_committer(repo, commit),
          {:ok, message} <- GitAgent.commit_message(repo, commit),
          {:ok, parents} <- GitAgent.commit_parents(repo, commit),
-    #    {:ok, gpg_signature} <- GitAgent.commit_gpg_signature(repo, commit),
+       # {:ok, gpg_signature} <- GitAgent.commit_gpg_signature(repo, commit),
          {:ok, timestamp} <- GitAgent.commit_timestamp(repo, commit) do
       {:commit, %{
         oid: oid,
@@ -181,7 +184,7 @@ defmodule GitGud.RepoStorage do
         author_email: author.email,
         committer_name: committer.name,
         committer_email: committer.email,
-    #   gpg_key_id: gpg_signature,
+      # gpg_key_id: gpg_signature,
         committer_at: timestamp,
       }}
     else
