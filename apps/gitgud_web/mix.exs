@@ -31,7 +31,7 @@ defmodule GitGud.Web.Mixfile do
   defp deps do
     [{:ecto, "~> 3.4"},
      {:plug, "~> 1.10"},
-     {:plug_cowboy, "~> 2.2"},
+     {:plug_cowboy, "~> 2.3"},
      {:phoenix, "~> 1.5"},
      {:phoenix_html, "~> 2.14"},
      {:phoenix_pubsub, "~> 2.0"},
@@ -45,7 +45,7 @@ defmodule GitGud.Web.Mixfile do
      {:gettext, "~> 0.17"},
      {:timex, "~> 3.6"},
      {:earmark, "~> 1.4"},
-     {:exmoji, "~> 0.2"},
+     {:exmoji, "~> 0.3"},
      {:floki, "~> 0.26", only: :test},
      {:gitgud, in_umbrella: true}]
   end
