@@ -67,7 +67,12 @@ defmodule GitGud.Repo do
   """
   @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
-    case create_and_init(changeset(%__MODULE__{}, Map.new(params)), Keyword.get(opts, :bare, true)) do
+    changeset = changeset(%__MODULE__{}, Map.new(params))
+    multi =
+      if Keyword.get(opts, :init, true),
+        do: create_and_init_multi(changeset, Keyword.get(opts, :bare, true)),
+      else: create_multi(changeset)
+    case DB.transaction(multi) do
       {:ok, %{repo: repo, issue_labels: issue_labels}} ->
         {:ok, struct(repo, issue_labels: issue_labels, maintainers: [repo.owner])}
       {:error, :init, reason, _changes} ->
@@ -265,14 +270,18 @@ defmodule GitGud.Repo do
   # Helpers
   #
 
-  defp create_and_init(changeset, bare?) do
+  defp create_multi(changeset) do
     Multi.new()
     |> Multi.insert(:repo_, changeset)
     |> Multi.run(:repo, &preload_owner/2)
     |> Multi.run(:maintainer, &create_maintainer/2)
     |> Multi.run(:issue_labels, &create_issue_labels/2)
+  end
+
+  defp create_and_init_multi(changeset, bare?) do
+    changeset
+    |> create_multi()
     |> Multi.run(:init, &init(&1, &2, bare?))
-    |> DB.transaction()
   end
 
   defp preload_owner(db, %{repo_: repo}), do: {:ok, db.preload(repo, :owner)}
