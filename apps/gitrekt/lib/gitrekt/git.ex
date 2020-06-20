@@ -362,7 +362,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns a stream for the references that match the specific `glob` pattern.
   """
-  @spec reference_stream(repo, binary | :undefined) :: {:ok, Stream.t} | {:error, term}
+  @spec reference_stream(repo, binary | :undefined) :: {:ok, Enumerable.t} | {:error, term}
   def reference_stream(repo, glob \\ :undefined) do
     case reference_iterator(repo, glob) do
       {:ok, iter} -> {:ok, Stream.resource(fn -> iter end, &reference_stream_next/1, fn _iter -> :ok end)}
@@ -640,7 +640,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns all entries in the given `tree`.
   """
-  @spec tree_entries(tree) :: {:ok, Stream.t} | {:error, term}
+  @spec tree_entries(tree) :: {:ok, Enumerable.t} | {:error, term}
   def tree_entries(tree) do
     {:ok, Stream.resource(fn -> {tree, 0} end, &tree_stream_next/1, fn _iter -> :ok end)}
   end
@@ -760,7 +760,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns a stream for the given revision `walk`.
   """
-  @spec revwalk_stream(revwalk) :: {:ok, Stream.t} | {:error, term}
+  @spec revwalk_stream(revwalk) :: {:ok, Enumerable.t} | {:error, term}
   def revwalk_stream(walk) do
     {:ok, Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)}
   end

@@ -29,7 +29,7 @@ defmodule GitGud.Web.FormHelpers do
   end
 
   @doc """
-  See `Phoenix.HTML.input_validations/2` for more details.
+  See `Phoenix.HTML.Form.input_validations/2` for more details.
   """
   def input_validations(form, field) do
     Phoenix.HTML.Form.input_validations(form, field)
@@ -37,7 +37,7 @@ defmodule GitGud.Web.FormHelpers do
 
   for input_fn <- Enum.uniq(Enum.map(@basic_inputs_with_arity ++ @extra_inputs_with_arity, &elem(&1, 0))) do
     @doc """
-    See `Phoenix.HTML.#{input_fn}/3` for more details.
+    See `Phoenix.HTML.Form.#{input_fn}/3` for more details.
     """
     def unquote(input_fn)(form, field, opts \\ []) do
       apply(Phoenix.HTML.Form, unquote(input_fn), [form, field, input_options(form, field, opts)])
@@ -45,21 +45,21 @@ defmodule GitGud.Web.FormHelpers do
   end
 
   @doc """
-  See `Phoenix.HTML.radio_button/4` for more details.
+  See `Phoenix.HTML.Form.radio_button/4` for more details.
   """
   def radio_button(form, field, value, opts \\ []) do
     Phoenix.HTML.Form.radio_button(form, field, value, input_options(form, field, opts))
   end
 
   @doc """
-  See `Phoenix.HTML.select/4` for more details.
+  See `Phoenix.HTML.Form.select/4` for more details.
   """
   def select(form, field, options, opts \\ []) do
     Phoenix.HTML.Form.select(form, field, options, input_options(form, field, opts))
   end
 
   @doc """
-  See `Phoenix.HTML.multiple_select/4` for more details.
+  See `Phoenix.HTML.Form.multiple_select/4` for more details.
   """
   def multiple_select(form, field, options, opts \\ []) do
     Phoenix.HTML.Form.multiple_select(form, field, options, input_options(form, field, opts))

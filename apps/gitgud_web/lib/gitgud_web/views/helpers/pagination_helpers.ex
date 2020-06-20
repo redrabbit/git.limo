@@ -9,7 +9,7 @@ defmodule GitGud.Web.PaginationHelpers do
   @doc """
   Paginates the given `stream`.
   """
-  @spec paginate(Plug.Conn.t, Stream.t, pos_integer) :: map
+  @spec paginate(Plug.Conn.t, Enumerable.t, pos_integer) :: map
   def paginate(conn, stream, limit \\ 20) do
     list = Enum.to_list(stream)
     count = max(trunc(Float.ceil(Enum.count(list) / limit)), 1)
@@ -20,7 +20,7 @@ defmodule GitGud.Web.PaginationHelpers do
   @doc """
   Paginates the given `stream`.
   """
-  @spec paginate_cursor(Plug.Conn.t, Stream.t, (any, binary -> boolean), (any -> binary), pos_integer) :: map
+  @spec paginate_cursor(Plug.Conn.t, Enumerable.t, (any, binary -> boolean), (any -> binary), pos_integer) :: map
   def paginate_cursor(conn, stream, filter_fn, cursor_fn, limit \\ 20)
   def paginate_cursor(conn, slice, _filter_fn, _cursor_fn, limit) when is_list(slice) do
     page = page_params(conn)

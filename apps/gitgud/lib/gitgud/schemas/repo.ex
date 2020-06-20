@@ -137,7 +137,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Similar to `update_issue_labels/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `update_issue_labels/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec update_issue_labels!(t, map|keyword) :: t
   def update_issue_labels!(repo, params) do

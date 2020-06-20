@@ -473,7 +473,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the tree for a given Git `commit` object.
   """
-  @spec git_tree(Repo.git_revision, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
+  @spec git_tree(GitAgent.git_revision, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t} | {:error, term}
   def git_tree(revision, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     GitAgent.tree(ctx.repo, revision)
   end

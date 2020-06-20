@@ -124,7 +124,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns all Git branches.
   """
-  @spec branches(agent, keyword) :: {:ok, Stream.t} | {:error, term}
+  @spec branches(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def branches(agent, opts \\ []), do: exec(agent, {:references, "refs/heads/*", opts})
 
   @doc """
@@ -136,7 +136,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns all Git tags.
   """
-  @spec tags(agent, keyword) :: {:ok, Stream.t} | {:error, term}
+  @spec tags(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def tags(agent, opts \\ []), do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)})
 
   @doc """
@@ -160,7 +160,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec references(agent, binary | :undefined, keyword) :: {:ok, Stream.t} | {:error, term}
+  @spec references(agent, binary | :undefined, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def references(agent, glob \\ :undefined, opts \\ []), do: exec(agent, {:references, glob, opts})
 
   @doc """
@@ -196,7 +196,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the parent of the given `commit`.
   """
-  @spec commit_parents(agent, GitCommit.t) :: {:ok, Stream.t} | {:error, term}
+  @spec commit_parents(agent, GitCommit.t) :: {:ok, Enumerable.t} | {:error, term}
   def commit_parents(agent, commit), do: exec(agent, {:commit_parents, commit})
 
   @doc """
@@ -256,7 +256,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git tree entries of the given `tree`.
   """
-  @spec tree_entries(agent, GitTree.t) :: {:ok, Stream.t} | {:error, term}
+  @spec tree_entries(agent, GitTree.t) :: {:ok, Enumerable.t} | {:error, term}
   def tree_entries(agent, tree), do: exec(agent, {:tree_entries, tree})
 
   @doc """
@@ -356,7 +356,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git commit history of the given `revision`.
   """
-  @spec history(agent, git_revision, keyword) :: {:ok, Stream.t} | {:error, term}
+  @spec history(agent, git_revision, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def history(agent, revision, opts \\ []), do: exec(agent, {:history, revision, opts})
 
   @doc """

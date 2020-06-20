@@ -50,7 +50,7 @@ defmodule GitGud.SSHServer do
     conn: :ssh_connection.ssh_connection_ref,
     chan: :ssh_connection.ssh_channel_id,
     user: User.t,
-    service: Module.t,
+    service: module,
     request_size: non_neg_integer
   }
 

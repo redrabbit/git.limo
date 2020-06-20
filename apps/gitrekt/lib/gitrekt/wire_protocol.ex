@@ -43,7 +43,7 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a stream of decoded *PKT-LINE*s for the given `pkt`.
   """
-  @spec decode(binary) :: Stream.t
+  @spec decode(binary) :: Enumerable.t
   def decode(pkt) do
     Stream.map(pkt_stream(pkt), &pkt_decode/1)
   end
