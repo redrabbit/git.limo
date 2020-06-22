@@ -21,6 +21,7 @@ class Comment extends React.Component {
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
     this.state = {edit: false, timestamp: moment.utc(this.props.comment.insertedAt).fromNow()}
+    console.log(this.props)
   }
 
   componentDidMount() {
@@ -39,7 +40,7 @@ class Comment extends React.Component {
   render() {
     const {comment} = this.props
     if(this.state.edit) {
-      return <CommentForm body={comment.body} action="edit" onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
+      return <CommentForm body={comment.body} bodyHtml={comment.bodyHtml} action="edit" repoId={this.props.repoId} onSubmit={this.handleSubmit} onCancel={this.handleCancel} />
     } else {
       const timestamp = moment.utc(comment.insertedAt)
       const {editable=true, deletable=true} = this.props

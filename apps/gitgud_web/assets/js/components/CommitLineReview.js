@@ -275,7 +275,7 @@ class CommitLineReview extends React.Component {
     return this.state.comments.map((comment, index) =>
       <div key={index} className="timeline-item">
         <div className="timeline-content">
-          <Comment comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+          <Comment repoId={this.state.repoId} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
         </div>
       </div>
     )
@@ -317,7 +317,7 @@ class CommitLineReview extends React.Component {
         </div>
       )
     } else {
-      return <CommentForm onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onCancel={this.handleFormCancel} />
+      return <CommentForm repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onCancel={this.handleFormCancel} />
     }
   }
 

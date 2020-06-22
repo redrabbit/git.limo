@@ -716,6 +716,28 @@ table.blob-table {
   }
 }
 
+.comment-form {
+  header {
+    margin-top: -1.25rem;
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    padding-top: 1.25rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+
+    ul {
+      margin-left: -1.25rem;
+      margin-right: -1.25rem;
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+
+      li.is-active a {
+        color: $black;
+      }
+    }
+  }
+}
+
 .thread, .inline-comments {
   .comment, .comment-form {
     @extend .box;

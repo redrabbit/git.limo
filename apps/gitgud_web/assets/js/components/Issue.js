@@ -424,6 +424,7 @@ class Issue extends React.Component {
   }
 
   renderFeed() {
+    const repoId = this.state.repoId
     let comments = this.state.comments.slice()
     let events = this.state.events.slice().map(event => {
       switch(event.__typename) {
@@ -442,7 +443,7 @@ class Issue extends React.Component {
 
     return (
       <div className="thread">
-        <Comment comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
+        <Comment repoId={repoId} comment={firstComment} onUpdate={this.handleCommentUpdate} deletable={false} />
         <div className="timeline">
           <div className="timeline-header">
             {comments.length == 1 ? "1 comment" : `${comments.length} comments`}
@@ -453,7 +454,7 @@ class Issue extends React.Component {
                 return (
                   <div key={index} className="timeline-item">
                     <div className="timeline-content">
-                      <Comment comment={item.comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+                      <Comment repoId={repoId} comment={item.comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
                     </div>
                   </div>
                 )
@@ -509,13 +510,13 @@ class Issue extends React.Component {
   renderForm() {
     const {status, editable} = this.state
     if(!editable) {
-      return <CommentForm action="new" onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
+      return <CommentForm action="new" repoId={this.state.repoId} onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
     } else {
       switch(status) {
         case "open":
-          return <CommentForm action="close" onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onClose={this.handleClose} />
+          return <CommentForm action="close" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onClose={this.handleClose} />
         case "close":
-          return <CommentForm action="reopen" onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onReopen={this.handleReopen} />
+          return <CommentForm action="reopen" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onReopen={this.handleReopen} />
       }
     }
   }

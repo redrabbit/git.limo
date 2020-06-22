@@ -65,7 +65,7 @@ defmodule GitGud.GraphQL.Schema do
     Returns the current authenticated user.
     """
     field :viewer, :user do
-      resolve &Resolvers.viewer/3
+      resolve &Resolvers.viewer/2
     end
 
     @desc """
@@ -83,7 +83,7 @@ defmodule GitGud.GraphQL.Schema do
     """
     field :user, :user do
       arg :login, non_null(:string), description: "The login of the user."
-      resolve &Resolvers.user/3
+      resolve &Resolvers.user/2
     end
 
     @desc """
@@ -104,33 +104,33 @@ defmodule GitGud.GraphQL.Schema do
     field :create_issue_comment, type: :comment do
       arg :id, non_null(:id), description: "The issue ID."
       arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.create_issue_comment/3
+      resolve &Resolvers.create_issue_comment/2
     end
 
     @desc "Close an issue."
     field :close_issue, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
-      resolve &Resolvers.close_issue/3
+      resolve &Resolvers.close_issue/2
     end
 
     @desc "Reopens an issue."
     field :reopen_issue, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
-      resolve &Resolvers.reopen_issue/3
+      resolve &Resolvers.reopen_issue/2
     end
 
     @desc "Updates the title of an issue."
     field :update_issue_title, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
       arg :title, non_null(:string), description: "The new title."
-      resolve &Resolvers.update_issue_title/3
+      resolve &Resolvers.update_issue_title/2
     end
 
     field :update_issue_labels, type: :issue do
       arg :id, non_null(:id), description: "The issue ID."
       arg :push, list_of(:id), description: "The labels to push."
       arg :pull, list_of(:id), description: "The labels to pull."
-      resolve &Resolvers.update_issue_labels/3
+      resolve &Resolvers.update_issue_labels/2
     end
 
     @desc "Create a new commit line review comment."
@@ -141,20 +141,28 @@ defmodule GitGud.GraphQL.Schema do
       arg :hunk, non_null(:integer), description: "The delta hunk index."
       arg :line, non_null(:integer), description: "The delta line index."
       arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.create_commit_line_review_comment/3
+      resolve &Resolvers.create_commit_line_review_comment/2
     end
 
     @desc "Update a comment."
     field :update_comment, type: :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
       arg :body, non_null(:string), description: "The body of the comment."
-      resolve &Resolvers.update_comment/3
+      resolve &Resolvers.update_comment/2
     end
+
+    @desc "Preview a comment."
+    field :preview_comment, :string do
+      arg :body, non_null(:string), description: "The Markdown formatted body to render."
+      arg :repo_id, :id, description: "The repository ID to use as context."
+      resolve &Resolvers.preview_comment/2
+    end
+
 
     @desc "Delete a comment."
     field :delete_comment, type: :comment do
       arg :id, non_null(:id), description: "The ID of the comment."
-      resolve &Resolvers.delete_comment/3
+      resolve &Resolvers.delete_comment/2
     end
   end
 
