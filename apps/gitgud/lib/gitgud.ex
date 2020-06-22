@@ -1,3 +1,5 @@
 defmodule GitGud do
-  @moduledoc false
+  @moduledoc """
+  Building blocks to orchestrate Git repositories.
+  """
 end

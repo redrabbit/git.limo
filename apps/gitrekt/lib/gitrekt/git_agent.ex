@@ -42,7 +42,8 @@ defmodule GitRekt.GitAgent do
   referencing a dedicated process started with `start_link/1`.
 
   Note that replacing `start_link/1` with `GitRekt.Git.repository_open/1` in the above example would actually
-  return the exact same output.
+  return the exact same output. This works because `t:agent/0` can be either a `t:GitRekt.Git.repo/0`, a PID
+  or a user defined struct implementing the `GitRekt.GitRepo` protocol (more on that later).
   """
   use GenServer
 

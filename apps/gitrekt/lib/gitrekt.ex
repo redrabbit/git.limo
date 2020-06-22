@@ -1,5 +1,7 @@
 defmodule GitRekt do
-  @moduledoc false
+  @moduledoc """
+  Git low-level APIs
+  """
 
   alias GitRekt.Git
 

@@ -48,6 +48,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.AuthorizationPolicies
         ],
         "Schemas & Queries": [
+          GitGud,
           GitGud.Account,
           GitGud.Comment,
           GitGud.CommentQuery,
@@ -120,10 +121,13 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.Router.Helpers,
           GitGud.Web.SSHKeyController,
           GitGud.Web.SessionController,
+          GitGud.Web.TrailingFormatPlug,
           GitGud.Web.UserController,
-          GitGud.Web.UserSocket
+          GitGud.Web.UserSocket,
+          GitGud.Web.XForwardedForPlug
         ],
         "Git low-level APIs": [
+          GitRekt,
           GitRekt.GitAgent,
           GitRekt.GitAgent.Cache,
           GitRekt.GitRepo,
