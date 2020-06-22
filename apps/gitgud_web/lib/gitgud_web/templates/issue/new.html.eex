@@ -3,23 +3,28 @@
 <%= form_for @changeset, Routes.issue_path(@conn, :create, @repo.owner, @repo), [as: :issue], fn f -> %>
 <div class="columns">
   <div class="column is-three-quarters">
-    <div class="field">
-      <%= label f, :title, class: "label" %>
-      <div class="control">
-        <%= text_input f, :title, class: "input" %>
+    <div class="box">
+      <div class="field">
+        <div class="control">
+          <%= text_input f, :title, class: "input", placeholder: "Title" %>
+        </div>
+        <%= error_tag f, :title %>
       </div>
-      <%= error_tag f, :title %>
+
+      <%= inputs_for f, :comments, fn fc -> %>
+        <div class="field">
+          <div class="control">
+              <%= react_component("comment-form", [action: "preview", input_name: input_name(fc, :body), repo_id: to_relay_id(@repo)]) %>
+          </div>
+          <%= error_tag fc, :body %>
+        </div>
+      <% end %>
+
+      <div class="field is-grouped is-grouped-right">
+        <%= submit "Create issue", class: "button is-success" %>
+      </div>
     </div>
 
-    <%= inputs_for f, :comments, fn fc -> %>
-      <div class="field">
-        <%= label fc, :body, class: "label" %>
-        <div class="control">
-          <%= textarea fc, :body, class: "textarea" %>
-        </div>
-        <%= error_tag fc, :body %>
-      </div>
-    <% end %>
   </div>
   <div class="column is-one-quarter">
     <aside class="menu is-sticky">
@@ -36,12 +41,6 @@
         </div>
       </div>
   </div>
-</div>
-
-<hr />
-
-<div class="field">
-  <%= submit "Create issue", class: "button is-success" %>
 </div>
 
 <% end %>

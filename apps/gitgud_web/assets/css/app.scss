@@ -717,6 +717,7 @@ table.blob-table {
 }
 
 .comment-form {
+  margin-bottom: 1.25rem;
   header {
     margin-top: -1.25rem;
     margin-left: -1.25rem;
@@ -735,6 +736,16 @@ table.blob-table {
         color: $black;
       }
     }
+  }
+
+  textarea, .comment-preview {
+    margin-bottom: 1.25rem;
+  }
+  .comment-preview {
+    border-bottom: 1px solid $grey-lighter;
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    padding: 0 1.25rem 1.25rem;
   }
 }
 

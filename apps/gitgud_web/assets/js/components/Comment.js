@@ -21,7 +21,6 @@ class Comment extends React.Component {
     this.handleUpdateClick = this.handleUpdateClick.bind(this)
     this.handleDeleteClick = this.handleDeleteClick.bind(this)
     this.state = {edit: false, timestamp: moment.utc(this.props.comment.insertedAt).fromNow()}
-    console.log(this.props)
   }
 
   componentDidMount() {
