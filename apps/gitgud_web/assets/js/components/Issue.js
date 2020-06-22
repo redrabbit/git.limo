@@ -25,12 +25,15 @@ class Issue extends React.Component {
     this.subscriptions = []
     this.channel = null
     this.presence = null
+    this.issueCountElement = document.getElementById("issue-count")
     this.subscribePresence = this.subscribePresence.bind(this)
     this.subscribeEvents = this.subscribeEvents.bind(this)
     this.subscribeComments = this.subscribeComments.bind(this)
     this.subscribeCommentCreate = this.subscribeCommentCreate.bind(this)
     this.subscribeCommentUpdate = this.subscribeCommentUpdate.bind(this)
     this.subscribeCommentDelete = this.subscribeCommentDelete.bind(this)
+    this.incrementGlobalIssueCount = this.incrementGlobalIssueCount.bind(this)
+    this.decrementGlobalIssueCount = this.decrementGlobalIssueCount.bind(this)
     this.renderFeed = this.renderFeed.bind(this)
     this.renderStatus = this.renderStatus.bind(this)
     this.renderPresences = this.renderPresences.bind(this)
@@ -257,9 +260,11 @@ class Issue extends React.Component {
         switch(event.__typename) {
           case "IssueCloseEvent":
             this.setState(state => ({status: "close", events: [...state.events, event]}))
+            this.decrementGlobalIssueCount()
             break
           case "IssueReopenEvent":
             this.setState(state => ({status: "open", events: [...state.events, event]}))
+            this.incrementGlobalIssueCount()
             break
           case "IssueTitleUpdateEvent":
             this.setState(state => ({title: event.newTitle, events: [...state.events, event]}))
@@ -358,6 +363,14 @@ class Issue extends React.Component {
       onNext: response => this.handleCommentDelete(response.issueCommentDelete),
       onError: error => console.error(error)
     })
+  }
+
+  incrementGlobalIssueCount() {
+    this.issueCountElement.textContent = parseInt(this.issueCountElement.textContent) + 1
+  }
+
+  decrementGlobalIssueCount() {
+    this.issueCountElement.textContent = parseInt(this.issueCountElement.textContent) - 1
   }
 
   render() {

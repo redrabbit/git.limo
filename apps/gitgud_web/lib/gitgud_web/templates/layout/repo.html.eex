@@ -28,7 +28,7 @@
             <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
             <span>Issues</span>
             &nbsp;
-            <span class="tag"><%= GitGud.Web.IssueView.count_issues(@repo, :open) %></span>
+            <span id="issue-count" class="tag"><%= GitGud.Web.IssueView.count_issues(@repo, :open) %></span>
           </a>
         </li>
         <li>
