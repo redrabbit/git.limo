@@ -202,8 +202,9 @@ defmodule GitGud.Repo do
   @doc """
   Returns the list of associated `GitGud.Maintainer` for the given `repo`.
   """
-  @spec maintainers(t) :: [Maintainer.t]
-  def maintainers(%__MODULE__{id: repo_id} = _repo) do
+  @spec maintainers(t | pos_integer) :: [Maintainer.t]
+  def maintainers(%__MODULE__{id: repo_id} = _repo), do: maintainers(repo_id)
+  def maintainers(repo_id) do
     query = from(m in Maintainer,
            join: u in assoc(m, :user),
           where: m.repo_id == ^repo_id,
@@ -214,8 +215,9 @@ defmodule GitGud.Repo do
   @doc """
   Returns a single `GitGud.Maintainer` for the given `repo` and `user`.
   """
-  @spec maintainer(t, User.t) :: Maintainer.t | nil
-  def maintainer(%__MODULE__{id: repo_id} = _repo, %User{id: user_id} = user) do
+  @spec maintainer(t | pos_integer, User.t) :: Maintainer.t | nil
+  def maintainer(%__MODULE__{id: repo_id} = _repo, %User{} = user), do: maintainer(repo_id, user)
+  def maintainer(repo_id, %User{id: user_id} = user) do
     query = from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
     if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
@@ -246,7 +248,7 @@ defmodule GitGud.Repo do
     # Everybody can read public repos.
     def can?(%Repo{public: true, pushed_at: %NaiveDateTime{}}, _user, :read), do: true
 
-    # Maintainers can perform action if he has granted permission to do so.
+    # Maintainers can perform action if they have granted permission to do so.
     def can?(repo, %User{} = user, action) do
       if maintainer = Repo.maintainer(repo, user) do
         cond do

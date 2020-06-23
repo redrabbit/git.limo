@@ -16,6 +16,8 @@ defmodule GitGud.Issue do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
+  import GitGud.Authorization, only: [authorized?: 3]
+
   schema "issues" do
     belongs_to :repo, Repo
     field :number, :integer, read_after_writes: true
@@ -225,11 +227,16 @@ defmodule GitGud.Issue do
     # Owner can do everything
     def can?(%Issue{author_id: user_id}, %User{id: user_id}, _action), do: true
 
-    # Everybody can read comments.
-    def can?(%Issue{}, _user, :read), do: true
+    # Verified users can write comments.
+    def can?(%Issue{}, user, :write), do: User.verified?(user)
 
-    # Everybody can write comments if the issue is open.
-    def can?(%Issue{status: "open"}, user, :write), do: User.verified?(user)
+    # Maintainers with at least write permission can admin the issue.
+    def can?(%Issue{repo: %Repo{} = repo}, user, :admin), do: authorized?(user, repo, :write)
+    def can?(%Issue{repo_id: repo_id}, %User{} = user, :admin) do
+      if maintainer = Repo.maintainer(repo_id, user),
+       do: maintainer.permission in ["write", "admin"],
+     else: false
+    end
 
     # Everything-else is forbidden.
     def can?(%Issue{}, _user, _actions), do: false
