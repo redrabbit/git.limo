@@ -88,10 +88,10 @@ table.table {
   }
 }
 
-.blob-name-level-item {
-  .blob-name-field {
-  }
+.commit-oid::before {
+  font-weight: normal;
 }
+
 .blob-edit {
   margin-bottom: 1.5rem;
   .tabs.is-boxed {

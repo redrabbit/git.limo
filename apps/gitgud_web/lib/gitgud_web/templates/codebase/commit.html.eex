@@ -6,7 +6,7 @@
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
-              <button class="button is-small is-white has-text-weight-bold">
+              <button class="commit-oid button is-small is-white has-text-weight-bold">
                 <span class="is-family-monospace"><%= oid_fmt(@commit.oid) %></span>
               </button>
               <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
