@@ -10,7 +10,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.RepoStorage
 
   alias GitRekt.GitAgent
-  alias GitRekt.{GitBlob, GitTree}
+  alias GitRekt.{GitRef, GitBlob, GitTree}
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
@@ -50,11 +50,15 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, head} <- GitAgent.head(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree} <- GitAgent.tree(repo, object) do
-          changeset = blob_commit_changeset(%{branch: head.name}, %{})
-          render(conn, "new.html", repo: repo, revision: reference || object, tree: tree, tree_path: [], changeset: changeset, stats: stats(repo, reference || object))
+          changeset = blob_commit_changeset(%{branch: branch_name}, %{})
+          render(conn, "new.html", repo: repo, revision: reference, tree: tree, tree_path: [], changeset: changeset, stats: stats(repo, reference || object))
+        else
+          {:ok, {_object, _reference}} ->
+            {:error, :not_found}
+          {:error, reason} ->
+            {:error, reason}
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}
@@ -67,13 +71,14 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, head} <- GitAgent.head(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(tree_path)),
              {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(repo, tree_entry) do
-          changeset = blob_commit_changeset(%{branch: head.name}, %{})
-          render(conn, "new.html", repo: repo, revision: reference || object, tree: tree, tree_path: tree_path, changeset: changeset)
+          changeset = blob_commit_changeset(%{branch: branch_name}, %{})
+          render(conn, "new.html", repo: repo, revision: reference, tree: tree, tree_path: tree_path, changeset: changeset)
         else
+          {:ok, {_object, _reference}} ->
+            {:error, :not_found}
           {:ok, %GitBlob{}} ->
             {:error, :not_found}
           {:error, reason} ->
@@ -144,14 +149,15 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, head} <- GitAgent.head(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(repo, blob) do
-          changeset = blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: head.name}, %{})
-          render(conn, "edit.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: changeset)
+          changeset = blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: branch_name}, %{})
+          render(conn, "edit.html", repo: repo, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset)
         else
+          {:ok, {_object, _reference}} ->
+            {:error, :not_found}
           {:ok, %GitTree{}} ->
             {:error, :not_found}
           {:error, reason} ->
@@ -223,13 +229,14 @@ defmodule GitGud.Web.CodebaseController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
-        with {:ok, head} <- GitAgent.head(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
+        with {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(repo, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(repo, tree_entry) do
-          changeset = commit_changeset(%{branch: head.name}, %{})
-          render(conn, "confirm_delete.html", repo: repo, revision: reference || object, blob: blob, tree_path: blob_path, changeset: changeset)
+          changeset = commit_changeset(%{branch: branch_name}, %{})
+          render(conn, "confirm_delete.html", repo: repo, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset)
         else
+          {:ok, {_object, _reference}} ->
+            {:error, :not_found}
           {:ok, %GitTree{}} ->
             {:error, :not_found}
           {:error, reason} ->

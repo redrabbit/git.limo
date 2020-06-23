@@ -8,7 +8,7 @@
     </div>
   </div>
   <div class="level-right">
-    <%= if authorized?(@conn, @repo, :write) do %>
+    <%= if authorized?(@conn, @repo, :write) && revision_branch?(@revision) do %>
       <div class="level-item">
         <a href="<%= Routes.codebase_path(@conn, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
       </div>

@@ -189,20 +189,24 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec revision_oid(GitAgent.git_object) :: binary
+  @spec revision_oid(GitAgent.git_revision) :: binary
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
-  @spec revision_name(GitAgent.git_object) :: binary
+  @spec revision_branch?(GitAgent.git_revision) :: boolean
+  def revision_branch?(%GitRef{type: :branch} = _revision), do: true
+  def revision_branch?(_revision), do: false
+
+  @spec revision_name(GitAgent.git_revision) :: binary
   def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
   def revision_name(%GitRef{name: name} = _object), do: name
   def revision_name(%GitTag{name: name} = _object), do: name
 
-  @spec revision_type(GitAgent.git_object) :: atom
+  @spec revision_type(GitAgent.git_revision) :: atom
   def revision_type(%GitCommit{} = _object), do: :commit
   def revision_type(%GitTag{} = _object), do: :tag
   def revision_type(%GitRef{type: type} = _object), do: type
 
-  @spec revision_href(Plug.Conn.t, GitAgent.git_object | atom) :: binary
+  @spec revision_href(Plug.Conn.t, GitAgent.git_revision | atom) :: binary
   def revision_href(conn, revision_type) when is_atom(revision_type), do: Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
   def revision_href(conn, revision) do
     repo = conn.assigns.repo
