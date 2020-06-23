@@ -561,16 +561,18 @@ defmodule GitRekt.GitAgent do
   defp telemetry_cache(op, cache_adapter, fun, args) do
     event_time = System.monotonic_time(1_000_000)
     result = apply(cache_adapter, fun, args)
-    latency = System.monotonic_time(1_000_000) - event_time
-    {name, args} =
-      if is_atom(op) do
-        {op, []}
-      else
-        [name|args] = Tuple.to_list(op)
-        {name, args}
-      end
-    :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
-    result
+    if result do
+      latency = System.monotonic_time(1_000_000) - event_time
+      {name, args} =
+        if is_atom(op) do
+          {op, []}
+        else
+          [name|args] = Tuple.to_list(op)
+          {name, args}
+        end
+      :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
+      result
+    end
   end
 
   defp call(:empty?, handle) do
