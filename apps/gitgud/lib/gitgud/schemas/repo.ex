@@ -250,7 +250,7 @@ defmodule GitGud.Repo do
 
     # Maintainers can perform action if they have granted permission to do so.
     def can?(repo, %User{} = user, action) do
-      if maintainer = Repo.maintainer(repo, user) do
+      if maintainer = User.verified?(user) && Repo.maintainer(repo, user) do
         cond do
           action == :read && maintainer.permission in ["read", "write", "admin"] ->
             true

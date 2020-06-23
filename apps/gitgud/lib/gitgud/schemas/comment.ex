@@ -140,9 +140,9 @@ defmodule GitGud.Comment do
     def can?(%Comment{author_id: user_id}, %User{id: user_id}, _action), do: true
 
     # Maintainers with at least write permission can admin the comment.
-    def can?(%Comment{repo: %Repo{} = repo}, user, :admin), do: authorized?(user, repo, :write)
+    def can?(%Comment{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
     def can?(%Comment{repo_id: repo_id}, %User{} = user, :admin) do
-      if maintainer = Repo.maintainer(repo_id, user),
+      if maintainer = User.verified?(user) && Repo.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end

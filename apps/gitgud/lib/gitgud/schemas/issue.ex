@@ -231,9 +231,9 @@ defmodule GitGud.Issue do
     def can?(%Issue{}, user, :write), do: User.verified?(user)
 
     # Maintainers with at least write permission can admin the issue.
-    def can?(%Issue{repo: %Repo{} = repo}, user, :admin), do: authorized?(user, repo, :write)
+    def can?(%Issue{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
     def can?(%Issue{repo_id: repo_id}, %User{} = user, :admin) do
-      if maintainer = Repo.maintainer(repo_id, user),
+      if maintainer = User.verified?(user) && Repo.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end
