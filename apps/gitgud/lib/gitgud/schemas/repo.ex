@@ -216,7 +216,8 @@ defmodule GitGud.Repo do
   Returns a single `GitGud.Maintainer` for the given `repo` and `user`.
   """
   @spec maintainer(t | pos_integer, User.t) :: Maintainer.t | nil
-  def maintainer(%__MODULE__{id: repo_id} = _repo, %User{} = user), do: maintainer(repo_id, user)
+  def maintainer(_repo, nil = _user), do: nil
+  def maintainer(%__MODULE__{id: repo_id}, %User{} = user), do: maintainer(repo_id, user)
   def maintainer(repo_id, %User{id: user_id} = user) do
     query = from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
     if maintainer = DB.one(query), do: struct(maintainer, user: user)
@@ -240,32 +241,8 @@ defmodule GitGud.Repo do
   end
 
   defimpl GitGud.AuthorizationPolicies do
-    alias GitGud.Repo
-
-    # Owner can do everything
-    def can?(%Repo{owner_id: user_id}, %User{id: user_id}, _action), do: true
-
-    # Everybody can read public repos.
-    def can?(%Repo{public: true, pushed_at: %NaiveDateTime{}}, _user, :read), do: true
-
-    # Maintainers can perform action if they have granted permission to do so.
-    def can?(repo, %User{} = user, action) do
-      if maintainer = User.verified?(user) && Repo.maintainer(repo, user) do
-        cond do
-          action == :read && maintainer.permission in ["read", "write", "admin"] ->
-            true
-          action == :write && maintainer.permission in ["write", "admin"] ->
-            true
-          action == :admin && maintainer.permission == "admin" ->
-            true
-          true ->
-            false
-        end
-      end
-    end
-
-    # Everything-else is forbidden.
-    def can?(%Repo{}, _user, _actions), do: false
+    import GitGud.RepoQuery, only: [permissions: 2]
+    def can?(repo, user, action), do: action in permissions(repo, user)
   end
 
   #

@@ -211,9 +211,11 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "A list of comments for this issue."
     connection field :comments, node_type: :comment do
+      middleware GitGud.GraphQL.RepoMiddleware
       resolve &Resolvers.issue_comments/2
     end
 
+    @desc "A list of labels for this issue."
     field :labels, list_of(:issue_label)
 
     @desc "A list of events for this issue."
@@ -424,6 +426,7 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "A list of comments for this review."
     connection field :comments, node_type: :comment do
+      middleware GitGud.GraphQL.RepoMiddleware
       resolve &Resolvers.commit_line_review_comments/2
     end
 

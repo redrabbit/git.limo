@@ -99,6 +99,24 @@ defmodule GitGud.RepoQuery do
     DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
   end
 
+  @doc """
+  Returns a list of permissions for the given `repo` and `user`.
+  """
+  @spec permissions(Repo.t, User.t | nil):: [atom]
+  def permissions(repo, user)
+  def permissions(%Repo{public: true, pushed_at: %NaiveDateTime{}}, nil), do: [:read]
+  def permissions(%Repo{}, nil), do: []
+  def permissions(%Repo{owner_id: user_id}, %User{id: user_id}), do: [:read, :write, :admin]
+  def permissions(%Repo{} = repo, %User{} = user) do
+    if maintainer = Repo.maintainer(repo, user) do
+      case maintainer.permission do
+        "read" -> [:read]
+        "write" -> [:read, :write]
+        "admin" -> [:read, :write, :admin]
+      end
+    end || []
+  end
+
   #
   # Callbacks
   #
