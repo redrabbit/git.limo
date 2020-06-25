@@ -8,8 +8,9 @@ defmodule GitGud.Issue do
   alias Ecto.Multi
 
   alias GitGud.DB
-  alias GitGud.Repo
   alias GitGud.User
+  alias GitGud.Repo
+  alias GitGud.RepoQuery
   alias GitGud.IssueLabel
   alias GitGud.Comment
 
@@ -233,7 +234,7 @@ defmodule GitGud.Issue do
     # Maintainers with at least write permission can admin the issue.
     def can?(%Issue{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
     def can?(%Issue{repo_id: repo_id}, %User{} = user, :admin) do
-      if maintainer = User.verified?(user) && Repo.maintainer(repo_id, user),
+      if maintainer = User.verified?(user) && RepoQuery.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end

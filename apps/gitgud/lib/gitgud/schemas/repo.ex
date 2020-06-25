@@ -16,7 +16,6 @@ defmodule GitGud.Repo do
   alias GitGud.RepoStorage
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
 
   schema "repositories" do
     belongs_to :owner, User
@@ -197,30 +196,6 @@ defmodule GitGud.Repo do
     |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
     |> cast(params, [])
     |> cast_assoc(:issue_labels, with: &IssueLabel.changeset/2)
-  end
-
-  @doc """
-  Returns the list of associated `GitGud.Maintainer` for the given `repo`.
-  """
-  @spec maintainers(t | pos_integer) :: [Maintainer.t]
-  def maintainers(%__MODULE__{id: repo_id} = _repo), do: maintainers(repo_id)
-  def maintainers(repo_id) do
-    query = from(m in Maintainer,
-           join: u in assoc(m, :user),
-          where: m.repo_id == ^repo_id,
-        preload: [user: u])
-    DB.all(query)
-  end
-
-  @doc """
-  Returns a single `GitGud.Maintainer` for the given `repo` and `user`.
-  """
-  @spec maintainer(t | pos_integer, User.t) :: Maintainer.t | nil
-  def maintainer(_repo, nil = _user), do: nil
-  def maintainer(%__MODULE__{id: repo_id}, %User{} = user), do: maintainer(repo_id, user)
-  def maintainer(repo_id, %User{id: user_id} = user) do
-    query = from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
-    if maintainer = DB.one(query), do: struct(maintainer, user: user)
   end
 
   #

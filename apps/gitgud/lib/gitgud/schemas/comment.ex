@@ -12,6 +12,7 @@ defmodule GitGud.Comment do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoQuery
   alias GitGud.CommentRevision
 
   schema "comments" do
@@ -142,7 +143,7 @@ defmodule GitGud.Comment do
     # Maintainers with at least write permission can admin the comment.
     def can?(%Comment{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
     def can?(%Comment{repo_id: repo_id}, %User{} = user, :admin) do
-      if maintainer = User.verified?(user) && Repo.maintainer(repo_id, user),
+      if maintainer = User.verified?(user) && RepoQuery.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end

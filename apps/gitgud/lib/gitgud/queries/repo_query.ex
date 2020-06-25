@@ -100,6 +100,27 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
+  Returns a list of associated `GitGud.Maintainer` for the given `repo`.
+  """
+  @spec maintainers(Repo.t | pos_integer) :: [Maintainer.t]
+  def maintainers(%Repo{id: repo_id} = _repo), do: maintainers(repo_id)
+  def maintainers(repo_id) do
+    DB.all(query(:maintainers_query, [repo_id]))
+  end
+
+  @doc """
+  Returns a single `GitGud.Maintainer` for the given `repo` and `user`.
+  """
+  @spec maintainer(Repo.t | pos_integer, User.t) :: Maintainer.t | nil
+  def maintainer(_repo, nil = _user), do: nil
+  def maintainer(%Repo{id: repo_id}, %User{} = user), do: maintainer(repo_id, user)
+  def maintainer(repo_id, %User{id: user_id} = user) do
+    if maintainer = DB.one(query(:maintainer_query, [repo_id, user_id])) do
+      struct(maintainer, user: user)
+    end
+  end
+
+  @doc """
   Returns a list of permissions for the given `repo` and `user`.
   """
   @spec permissions(Repo.t, User.t | nil):: [atom]
@@ -108,7 +129,7 @@ defmodule GitGud.RepoQuery do
   def permissions(%Repo{}, nil), do: []
   def permissions(%Repo{owner_id: user_id}, %User{id: user_id}), do: [:read, :write, :admin]
   def permissions(%Repo{} = repo, %User{} = user) do
-    if maintainer = Repo.maintainer(repo, user) do
+    if maintainer = maintainer(repo, user) do
       case maintainer.permission do
         "read" -> [:read]
         "write" -> [:read, :write]
@@ -158,6 +179,14 @@ defmodule GitGud.RepoQuery do
   def query(:search_query, [input]) do
     term = "%#{input}%"
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: ilike(r.name, ^term), preload: [owner: u])
+  end
+
+  def query(:maintainers_query, [repo_id]) do
+    from(m in Maintainer, join: u in assoc(m, :user), where: m.repo_id == ^repo_id, preload: [user: u])
+  end
+
+  def query(:maintainer_query, [repo_id, user_id]) do
+    from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
   end
 
   def query(:count_query, [:total]) do

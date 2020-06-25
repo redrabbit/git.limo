@@ -5,7 +5,6 @@ defmodule GitGud.Web.MaintainerController do
 
   use GitGud.Web, :controller
 
-  alias GitGud.Repo
   alias GitGud.Maintainer
 
   alias GitGud.UserQuery
@@ -26,7 +25,7 @@ defmodule GitGud.Web.MaintainerController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
         changeset = Maintainer.changeset(%Maintainer{})
-        render(conn, "index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: changeset)
+        render(conn, "index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: changeset)
       end || {:error, :unauthorized}
     end  || {:error, :not_found}
   end
@@ -51,7 +50,7 @@ defmodule GitGud.Web.MaintainerController do
               conn
               |> put_flash(:error, "Something went wrong! Please check error(s) below.")
               |> put_status(:bad_request)
-              |> render("index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: %{changeset|action: :insert})
+              |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert})
           end
         else
           changeset = Maintainer.changeset(%Maintainer{})
@@ -59,7 +58,7 @@ defmodule GitGud.Web.MaintainerController do
           conn
           |> put_flash(:error, "Something went wrong! Please check error(s) below.")
           |> put_status(:bad_request)
-          |> render("index.html", repo: repo, maintainers: Repo.maintainers(repo), changeset: %{changeset|action: :insert})
+          |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}
@@ -73,7 +72,7 @@ defmodule GitGud.Web.MaintainerController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
-        if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
+        if maintainer = Enum.find(RepoQuery.maintainers(repo), &(&1.id == maintainer_id)) do
           if maintainer.permission != maintainer_params["permission"] do
             maintainer = Maintainer.update_permission!(maintainer, maintainer_params["permission"])
             conn
@@ -97,7 +96,7 @@ defmodule GitGud.Web.MaintainerController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
-        if maintainer = Enum.find(Repo.maintainers(repo), &(&1.id == maintainer_id)) do
+        if maintainer = Enum.find(RepoQuery.maintainers(repo), &(&1.id == maintainer_id)) do
           maintainer = Maintainer.delete!(maintainer)
           conn
           |> put_flash(:info, "Maintainer '#{maintainer.user.login}' deleted.")
