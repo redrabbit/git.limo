@@ -64,16 +64,30 @@ defmodule GitGud.Web.IssueView do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon has-text-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
   end
 
-  @spec count_issues(Repo.t, atom) :: non_neg_integer()
+  @spec count_issues(Plug.Conn.t | Repo.t, atom) :: non_neg_integer()
+  def count_issues(%Plug.Conn{} = conn, status) do
+    case conn.assigns do
+      %{q: %{labels: [], search: [], status: q_status}, issues: issues} ->
+        if status in q_status do
+          Enum.count(filter_issues(issues, status))
+        end
+      %{} ->
+        nil
+    end || count_issues(conn.assigns.repo, status)
+  end
+
   def count_issues(%Repo{} = repo, status) do
     if Ecto.assoc_loaded?(repo.issues),
      do: Enum.count(filter_issues(repo.issues, status)),
    else: IssueQuery.count_repo_issues(repo, status: status)
   end
 
-  @spec filter_issues([Issue.t], atom) :: [Issue.t]
+  @spec filter_issues([Issue.t | {Issue.t, non_neg_integer()}], atom) :: [Issue.t]
   def filter_issues(issues, status) when is_list(issues) do
-    Enum.filter(issues, &(&1.status == to_string(status)))
+    Enum.filter(issues, fn
+      %Issue{status: issue_status} -> issue_status == to_string(status)
+      {%Issue{status: issue_status}, _count} -> issue_status == to_string(status)
+    end)
   end
 
   @spec title(atom, map) :: binary
