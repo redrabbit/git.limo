@@ -53,6 +53,12 @@ defmodule GitGud.GraphQL.Schema do
     Absinthe.Relay.Node.to_global_id(node_type, source_id, __MODULE__)
   end
 
+  @doc """
+  Evaluates a query `document`.
+  """
+  @spec run(binary | Absinthe.Language.Source.t | Absinthe.Language.Document.t, Absinthe.run_opts) :: Absinthe.run_result
+  def run(document, opts \\ []), do: Absinthe.run(document, __MODULE__, opts)
+
   @desc """
   The root query of the GraphQL interface.
   """
