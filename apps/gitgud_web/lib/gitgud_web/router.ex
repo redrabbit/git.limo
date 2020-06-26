@@ -20,12 +20,9 @@ defmodule GitGud.Web.Router do
     forward "/sent_emails", Bamboo.SentEmailViewerPlug
   end
 
-  scope "/graphql" do
+  scope "/graphql", GitGud.Web do
     pipe_through :graphql
-    forward "/", Absinthe.Plug.GraphiQL,
-      json_codec: Jason,
-      socket: GitGud.Web.UserSocket,
-      schema: GitGud.GraphQL.Schema
+    forward "/", GraphQLPlug
   end
 
   scope "/:user_login/:repo_name", GitGud do
