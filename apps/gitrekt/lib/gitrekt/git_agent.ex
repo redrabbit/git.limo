@@ -536,10 +536,10 @@ defmodule GitRekt.GitAgent do
         [name|args] = Tuple.to_list(op)
         {name, args}
       end
-    event_time = System.monotonic_time(1_000_000)
+    event_time = System.monotonic_time(:nanosecond)
     result = callback.()
-    latency = System.monotonic_time(1_000_000) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :call], %{latency: latency}, %{op: name, args: args})
+    duration = System.monotonic_time(:nanosecond) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :call], %{duration: duration}, %{op: name, args: args})
     result
   end
 
@@ -551,18 +551,18 @@ defmodule GitRekt.GitAgent do
         [name|args] = Tuple.to_list(op)
         {name, args}
       end
-    event_time = System.monotonic_time(1_000_000)
+    event_time = System.monotonic_time(:nanosecond)
     result = callback.()
-    latency = System.monotonic_time(1_000_000) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :stream], %{latency: latency}, %{op: name, args: args, chunk_size: chunk_size})
+    duration = System.monotonic_time(:nanosecond) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, %{op: name, args: args, chunk_size: chunk_size})
     result
   end
 
   defp telemetry_cache(op, cache_adapter, fun, args) do
-    event_time = System.monotonic_time(1_000_000)
+    event_time = System.monotonic_time(:nanosecond)
     result = apply(cache_adapter, fun, args)
     if result do
-      latency = System.monotonic_time(1_000_000) - event_time
+      duration = System.monotonic_time(:nanosecond) - event_time
       {name, args} =
         if is_atom(op) do
           {op, []}
@@ -570,7 +570,7 @@ defmodule GitRekt.GitAgent do
           [name|args] = Tuple.to_list(op)
           {name, args}
         end
-      :telemetry.execute([:gitrekt, :git_agent, fun], %{latency: latency}, %{op: name, args: args})
+      :telemetry.execute([:gitrekt, :git_agent, fun], %{duration: duration}, %{op: name, args: args})
       result
     end
   end
