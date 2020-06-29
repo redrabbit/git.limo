@@ -68,7 +68,7 @@ defmodule GitGud.SmartHTTPBackend do
   def discovery(conn, _opts) do
     if repo = fetch_user_repo(conn),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Not found")
+    else: require_authentication_or_404(conn)
   end
 
   @doc """
@@ -78,7 +78,7 @@ defmodule GitGud.SmartHTTPBackend do
   def receive_pack(conn, _opts) do
     if repo = fetch_user_repo(conn),
       do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Not found")
+    else: require_authentication_or_404(conn)
   end
 
   @doc """
@@ -88,7 +88,7 @@ defmodule GitGud.SmartHTTPBackend do
   def upload_pack(conn, _opts) do
     if repo = fetch_user_repo(conn),
       do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
-    else: send_resp(conn, :not_found, "Not found")
+    else: require_authentication_or_404(conn)
   end
 
   #
@@ -112,7 +112,7 @@ defmodule GitGud.SmartHTTPBackend do
     user_login = conn.params["user_login"]
     repo_name = conn.params["repo_name"]
     if String.ends_with?(repo_name, ".git") do
-      RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5))
+      RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5), viewer: conn.assigns[:current_user])
     end
   end
 
@@ -137,6 +137,13 @@ defmodule GitGud.SmartHTTPBackend do
     |> send_resp(:unauthorized, "Unauthorized")
     |> halt()
   end
+
+  defp require_authentication_or_404(conn) do
+    if is_nil(conn.assigns[:current_user]),
+      do: require_authentication(conn),
+    else: send_resp(conn, :not_found, "Not found")
+  end
+
 
   defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
     if authorized?(conn, repo, exec) do
