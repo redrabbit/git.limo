@@ -18,7 +18,7 @@ class Search extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if(this.state.input != prevState.input) {
+    if(this.state.input.length > 0 && this.state.input != prevState.input) {
       const query = graphql`
         query SearchQuery($input: String!) {
           search(all: $input, first:10) {
