@@ -93,7 +93,8 @@ defmodule GitGud.UserQuery do
   """
   @spec search(binary, keyword) :: [User.t]
   def search(input, opts \\ []) do
-    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
+    {threshold, opts} = Keyword.pop(opts, :similarity, 0.3)
+    DB.all(DBQueryable.query({__MODULE__, :search_query}, [input, threshold], opts))
   end
 
   #
@@ -134,9 +135,8 @@ defmodule GitGud.UserQuery do
     from(u in User, as: :user, join: e in assoc(u, :emails), where: e.verified == true and e.address in ^vals)
   end
 
-  def query(:search_query, [input]) do
-    term = "%#{input}%"
-    from(u in User, as: :user, where: ilike(u.login, ^term) and not is_nil(u.primary_email_id))
+  def query(:search_query, [input, threshold]) do
+    from(u in User, as: :user, where: fragment("similarity(?, ?) > ?", u.login, ^input, ^threshold) and not is_nil(u.primary_email_id), order_by: fragment("similarity(?, ?) DESC", u.login, ^input))
   end
 
   def query(:count_query, [:total]) do

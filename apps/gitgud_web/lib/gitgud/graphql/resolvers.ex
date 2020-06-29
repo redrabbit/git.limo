@@ -155,18 +155,18 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec search(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def search(%{all: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    users = UserQuery.search(input, viewer: ctx[:current_user])
-    repos = RepoQuery.search(input, viewer: ctx[:current_user])
+    users = UserQuery.search(input, viewer: ctx[:current_user], similarity: 0.2, limit: 5)
+    repos = RepoQuery.search(input, viewer: ctx[:current_user], similarity: 0.2, limit: 5)
     Connection.from_list(users ++ repos, args)
   end
 
   def search(%{user: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    query = DBQueryable.query({UserQuery, :search_query}, input, viewer: ctx[:current_user])
+    query = DBQueryable.query({UserQuery, :search_query}, [input, 0.2], viewer: ctx[:current_user], limit: 5)
     Connection.from_query(query, &DB.all/1, args)
   end
 
   def search(%{repo: input} = args, %Absinthe.Resolution{context: ctx} = _info) do
-    query = DBQueryable.query({RepoQuery, :search_query}, input, viewer: ctx[:current_user])
+    query = DBQueryable.query({RepoQuery, :search_query}, [input, 0.2], viewer: ctx[:current_user], limit: 5)
     Connection.from_query(query, &DB.all/1, args)
   end
 

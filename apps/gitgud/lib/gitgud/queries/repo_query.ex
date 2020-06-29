@@ -96,7 +96,8 @@ defmodule GitGud.RepoQuery do
   """
   @spec search(binary, keyword) :: [User.t]
   def search(input, opts \\ []) do
-    DB.all(DBQueryable.query({__MODULE__, :search_query}, input, opts))
+    {threshold, opts} = Keyword.pop(opts, :similarity, 0.3)
+    DB.all(DBQueryable.query({__MODULE__, :search_query}, [input, threshold], opts))
   end
 
   @doc """
@@ -176,9 +177,8 @@ defmodule GitGud.RepoQuery do
     end
   end
 
-  def query(:search_query, [input]) do
-    term = "%#{input}%"
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: ilike(r.name, ^term), preload: [owner: u])
+  def query(:search_query, [input, threshold]) do
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: fragment("similarity(?, ?) > ?", r.name, ^input, ^threshold), order_by: fragment("similarity(?, ?) DESC", r.name, ^input), preload: [owner: u])
   end
 
   def query(:maintainers_query, [repo_id]) do
