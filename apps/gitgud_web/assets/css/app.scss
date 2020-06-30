@@ -68,6 +68,12 @@ nav.navbar {
     .dropdown {
       .dropdown-menu {
         width: 18rem;
+        .dropdown-item:hover {
+          background-color: $white;
+        }
+        .dropdown-item.is-selected {
+          background-color: $light;
+        }
       }
     }
   }
