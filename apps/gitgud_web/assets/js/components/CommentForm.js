@@ -1,13 +1,17 @@
 import React from "react"
 import {commitMutation, graphql} from "react-relay"
 
+import ReactTextareaAutocomplete from "@webscopeio/react-textarea-autocomplete"
+import emoji from "@jukben/emoji-search"
+
+import "@webscopeio/react-textarea-autocomplete/style.css"
+
 import environment from "../relay-environment"
 import {currentUser} from "../auth"
 
 class CommentForm extends React.Component {
   constructor(props) {
     super(props)
-    this.bodyInput = React.createRef()
     this.updatePreview = this.updatePreview.bind(this)
     this.renderActiveTab = this.renderActiveTab.bind(this)
     this.renderSubmitActions = this.renderSubmitActions.bind(this)
@@ -24,8 +28,8 @@ class CommentForm extends React.Component {
 
   componentDidMount() {
     if(currentUser) {
-      this.bodyInput.current.focus()
-      this.bodyInput.current.setSelectionRange(this.bodyInput.current.value.length, this.bodyInput.current.value.length);
+      this.bodyInput.focus()
+      this.bodyInput.setSelectionRange(this.bodyInput.value.length, this.bodyInput.value.length);
     }
   }
 
@@ -109,20 +113,35 @@ class CommentForm extends React.Component {
   renderActiveTab() {
     switch(this.state.activeTab) {
       case "write":
-        return <textarea name={this.state.inputName} className="textarea" placeholder="Leave a comment" value={this.state.body} onChange={this.handleBodyChange} ref={this.bodyInput} />
+        return (
+          <ReactTextareaAutocomplete
+            loadingComponent={() => <span>Loading</span>}
+            innerRef={textarea => this.bodyInput = textarea}
+            className="textarea"
+            value={this.state.body}
+            onChange={this.handleBodyChange}
+            trigger={{
+              ":": {
+                dataProvider: token => emoji(token).slice(0, 5),
+                component: ({ entity: { name, char } }) => <div>{`${name}: ${char}`}</div>,
+                output: (item, trigger) => trigger + item.name + trigger
+              }
+            }}
+          />
+        )
       case "preview":
         if(this.state.body != "") {
           if(this.state.bodyHtml != "") {
             return(
               <div className="comment-preview">
-                <input type="hidden" name={this.state.inputName} value={this.state.body} ref={this.bodyInput} />
+                <input type="hidden" name={this.state.inputName} value={this.state.body} />
                 <div className="content" dangerouslySetInnerHTML={{ __html: this.state.bodyHtml}} />
               </div>
             )
           } else {
             return(
               <div className="comment-preview">
-                <input type="hidden" name={this.state.inputName} value={this.state.body} ref={this.bodyInput} />
+                <input type="hidden" name={this.state.inputName} value={this.state.body} />
                 <div className="content">Loading preview...</div>
               </div>
             )
@@ -130,7 +149,7 @@ class CommentForm extends React.Component {
         } else {
           return (
             <div className="comment-preview">
-              <input type="hidden" name={this.state.inputName} value={this.state.body} ref={this.bodyInput} />
+              <input type="hidden" name={this.state.inputName} value={this.state.body} />
               <div className="content">Nothing to see here.</div>
             </div>
           )

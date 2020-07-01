@@ -9,7 +9,9 @@
   "dependencies": {
     "@absinthe/socket-relay": "^0.2.1",
     "@fortawesome/fontawesome-free": "^5.13.0",
+    "@jukben/emoji-search": "^2.0.1",
     "@simonwep/pickr": "^1.6.0",
+    "@webscopeio/react-textarea-autocomplete": "^4.7.0",
     "bulma": "^0.8.2",
     "bulma-badge": "^3.0.1",
     "bulma-divider": "^0.2.0",
