@@ -69,17 +69,27 @@ class UserInput extends React.Component {
   }
 
   renderDropdown() {
-    return (
-      <div className="dropdown-content">
-        {this.state.users.filter(user => !this.props.reject.includes(user.id)).map((user, i) =>
-          <a key={i} className="dropdown-item" onClick={this.handleTagUser(user)}>
-            <span className="tag user is-white">
-              <img className="avatar is-small" src={user.avatarUrl} width={24} />{user.login}
-            </span>
-          </a>
-        )}
-      </div>
-    )
+    if(this.state.users.length > 0) {
+      return (
+        <div className="dropdown-content">
+          {this.state.users.filter(user => !this.props.reject.includes(user.id)).map((user, i) =>
+            <a key={i} className="dropdown-item" onClick={this.handleTagUser(user)}>
+              <span className="tag user is-white">
+                <img className="avatar is-small" src={user.avatarUrl} width={24} />{user.login}
+              </span>
+            </a>
+          )}
+        </div>
+      )
+    } else {
+      return (
+        <div className="dropdown-content">
+          <div className="dropdown-item">
+            Nothing to see here.
+          </div>
+        </div>
+      )
+    }
   }
 
   handleTagUser(user) {
