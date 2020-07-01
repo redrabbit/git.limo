@@ -3,11 +3,7 @@ import {fetchQuery, graphql} from "react-relay"
 
 import environment from "../relay-environment"
 
-class SearchDropDown extends React.Component {
-
-}
-
-class Search extends React.Component {
+class GlobalSearchInput extends React.Component {
   constructor(props) {
     super(props)
     this.dropdown = React.createRef()
@@ -21,7 +17,7 @@ class Search extends React.Component {
   componentDidUpdate(prevProps, prevState) {
     if(this.state.input.length > 0 && this.state.input != prevState.input) {
       const query = graphql`
-        query SearchQuery($input: String!) {
+        query GlobalSearchInputQuery($input: String!) {
           search(all: $input, first:10) {
             edges {
               node {
@@ -149,4 +145,4 @@ class Search extends React.Component {
 
 }
 
-export default Search
+export default GlobalSearchInput

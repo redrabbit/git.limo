@@ -26,7 +26,7 @@
         <div class="navbar-menu">
           <div class="navbar-start">
             <div class="navbar-item">
-              <%= global_search() %>
+              <%= global_search_input() %>
             </div>
           </div>
 
