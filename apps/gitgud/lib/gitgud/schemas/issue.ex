@@ -35,6 +35,8 @@ defmodule GitGud.Issue do
     id: pos_integer,
     repo: Repo.t,
     number: pos_integer,
+    title: binary,
+    status: binary,
     author_id: pos_integer,
     author: User.t,
     repo_id: pos_integer,

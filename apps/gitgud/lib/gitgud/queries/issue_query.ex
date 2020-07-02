@@ -70,13 +70,24 @@ defmodule GitGud.IssueQuery do
   @doc """
   Returns the number of issues for the given `repo`.
   """
-  @spec count_repo_issues(Repo.t | pos_integer, keyword) :: non_neg_integer | nil
+  @spec count_repo_issues(Repo.t | pos_integer, keyword) :: non_neg_integer()
   def count_repo_issues(repo, opts \\ [])
   def count_repo_issues(%Repo{id: repo_id}, opts), do: count_repo_issues(repo_id, opts)
   def count_repo_issues(repo_id, opts) do
     {status, opts} = Keyword.pop(opts, :status, @queryable_status)
     {labels, opts} = Keyword.pop(opts, :labels, [])
     DB.one(DBQueryable.query({__MODULE__, :count_repo_issues_query}, [repo_id, status, labels], opts))
+  end
+
+  @spec count_repo_issues_by_status(Repo.t | pos_integer, keyword) :: %{atom => non_neg_integer}
+  def count_repo_issues_by_status(repo, opts \\ [])
+  def count_repo_issues_by_status(%Repo{id: repo_id}, opts), do: count_repo_issues_by_status(repo_id, opts)
+  def count_repo_issues_by_status(repo_id, opts) do
+      {status, opts} = Keyword.pop(opts, :status, @queryable_status)
+      {labels, opts} = Keyword.pop(opts, :labels, [])
+      DBQueryable.query({__MODULE__, :count_repo_issues_by_status_query}, [repo_id, status, labels], opts)
+      |> DB.all()
+      |> Map.new(fn {status, count} -> {String.to_atom(status), count} end)
   end
 
   #
@@ -146,17 +157,14 @@ defmodule GitGud.IssueQuery do
     from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end
 
-  def query(:count_repo_issues_query, [repo_id, params]) when is_map(params) do
-    select(query(:repo_issues_query, [repo_id, params]), [issue: e], count())
+  def query(:count_repo_issues_query, args) do
+    select(query(:repo_issues_query, args), [issue: e], count())
   end
 
-  def query(:count_repo_issues_query, [repo_id, status]) do
-    select(query(:repo_issues_query, [repo_id, status]), [issue: e], count())
-  end
-
-  def query(:count_repo_issues_query, [repo_id, status, []]), do: query(:count_repo_issues_query, [repo_id, status])
-  def query(:count_repo_issues_query, [repo_id, status, labels]) do
-    select(query(:repo_issues_query, [repo_id, status, labels]), [issue: e], count())
+  def query(:count_repo_issues_by_status_query, args) do
+    query(:repo_issues_query, args)
+    |> group_by([issue: i], i.status)
+    |> select([issue: i], {i.status, count(i.id)})
   end
 
   def query(:comments_query, [%Issue{id: issue_id} = _issue]), do: query(:comments_query, [issue_id])
