@@ -115,8 +115,9 @@ class CommentForm extends React.Component {
       case "write":
         return (
           <ReactTextareaAutocomplete
-            loadingComponent={() => <span>Loading</span>}
+            loadingComponent={() => <span class="loading-ellipsis">Loading</span>}
             innerRef={textarea => this.bodyInput = textarea}
+            required={true}
             className="textarea"
             value={this.state.body}
             onChange={this.handleBodyChange}
