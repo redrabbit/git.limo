@@ -1,1 +1,0 @@
-<%= react_component("issue", issue_id: to_relay_id(@issue)) %>

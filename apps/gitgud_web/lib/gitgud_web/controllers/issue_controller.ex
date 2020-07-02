@@ -15,6 +15,9 @@ defmodule GitGud.Web.IssueController do
 
   action_fallback GitGud.Web.FallbackController
 
+  @doc """
+  Render issues.
+  """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
@@ -25,6 +28,9 @@ defmodule GitGud.Web.IssueController do
     end || {:error, :not_found}
   end
 
+  @doc """
+  Renders an issue with comments.
+  """
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name, "number" => issue_number} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
@@ -35,7 +41,7 @@ defmodule GitGud.Web.IssueController do
   end
 
   @doc """
-  Renders a repository creation form.
+  Renders an issue creation form.
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
@@ -48,7 +54,7 @@ defmodule GitGud.Web.IssueController do
   end
 
   @doc """
-  Creates a new repository.
+  Creates a new issue.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "issue" => issue_params} = _params) do

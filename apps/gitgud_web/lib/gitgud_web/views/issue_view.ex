@@ -12,6 +12,8 @@ defmodule GitGud.Web.IssueView do
 
   import GitGud.Web.IssueLabelView, only: [label_button: 2, label_button: 3]
 
+  def render("show.html", %{issue: issue}), do: react_component("issue", issue_id: to_relay_id(issue))
+
   @spec encode_search_query(Enumerable.t) :: binary
   def encode_search_query(params) when is_list(params) do
     params
