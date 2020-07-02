@@ -62,12 +62,8 @@ defmodule GitGud.Web.IssueController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
       if verified?(user) do
         issue_params = Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})
-        issue_params = Map.update(issue_params, "labels", [], fn label_ids_str ->
-          Enum.map(label_ids_str, fn label_id_str ->
-            label_id = String.to_integer(label_id_str)
-            Enum.find(repo.issue_labels, &(&1.id == label_id))
-          end)
-        end)
+        issue_params = Map.put_new(issue_params, "comments", [%{}])
+        issue_params = Map.update(issue_params, "labels", [], &map_labels(repo.issue_labels, &1))
         case Issue.create(issue_params) do
           {:ok, issue} ->
             conn
@@ -87,6 +83,12 @@ defmodule GitGud.Web.IssueController do
   # Helpers
   #
 
+  defp map_labels(labels, label_ids_str) do
+    Enum.map(label_ids_str, fn label_id_str ->
+      label_id = String.to_integer(label_id_str)
+      Enum.find(labels, &(&1.id == label_id))
+    end)
+  end
 
   defp map_search_query(str) do
     {params, search} = Enum.reduce(split_search_query(str), {%{}, []}, &map_search_query_word/2)
