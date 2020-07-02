@@ -817,12 +817,9 @@ defmodule GitGud.GraphQL.Resolvers do
       old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: user)
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body, with_review: true) do
         {:ok, line_review, comment} ->
-          unless old_line_review do
-            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
-            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
-          else
-            publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
-          end
+          unless old_line_review,
+            do: publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
+          publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
           {:ok, comment}
         {:error, reason} ->
           {:error, reason}
