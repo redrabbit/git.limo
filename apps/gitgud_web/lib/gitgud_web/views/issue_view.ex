@@ -6,7 +6,7 @@ defmodule GitGud.Web.IssueView do
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
-  import Phoenix.Controller, only: [current_path: 2]
+  import Phoenix.Controller, only: [current_path: 2, view_module: 1]
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
@@ -68,13 +68,8 @@ defmodule GitGud.Web.IssueView do
 
   @spec count_issues(Plug.Conn.t | Repo.t, atom) :: non_neg_integer()
   def count_issues(%Plug.Conn{} = conn, status) do
-    case conn.assigns do
-      %{q: %{labels: [], search: [], status: q_status}, issues: issues} ->
-        if status in q_status do
-          Enum.count(filter_issues(issues, status))
-        end
-      %{} ->
-        nil
+    if view_module(conn) == __MODULE__ do
+      get_in(conn.assigns, [:stats, status])
     end || count_issues(conn.assigns.repo, status)
   end
 

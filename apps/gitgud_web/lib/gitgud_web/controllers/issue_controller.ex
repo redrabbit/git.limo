@@ -24,7 +24,7 @@ defmodule GitGud.Web.IssueController do
       query = map_search_query(conn.query_params["q"] || "")
       query_opts = Keyword.merge(Map.to_list(query), preload: [:author, :labels], order_by: [desc: :number])
       issues = IssueQuery.repo_issues_with_comments_count(repo, query_opts)
-      render(conn, "index.html", repo: repo, issues: issues, q: query)
+      render(conn, "index.html", repo: repo, issues: issues, q: query, stats: IssueQuery.count_repo_issues_by_status(repo))
     end || {:error, :not_found}
   end
 
