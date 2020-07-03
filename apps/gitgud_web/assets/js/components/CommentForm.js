@@ -125,7 +125,7 @@ class CommentForm extends React.Component {
               ":": {
                 dataProvider: token => emoji(token).slice(0, 5),
                 component: ({ entity: { name, char } }) => <div>{`${name}: ${char}`}</div>,
-                output: (item, trigger) => trigger + item.name + trigger
+                output: emoji => emoji.char
               }
             }}
           />
