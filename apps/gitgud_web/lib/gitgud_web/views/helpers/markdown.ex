@@ -7,6 +7,7 @@ defmodule GitGud.Web.Markdown do
   alias GitGud.IssueQuery
 
   alias GitGud.Web.Router.Helpers, as: Routes
+  alias GitGud.Web.Emoji
 
   alias GitRekt.GitAgent
 
@@ -59,7 +60,7 @@ defmodule GitGud.Web.Markdown do
   defp transform_ast_node(content, opts) when is_binary(content) do
     transform_ast_node_text(
       content,
-      Regex.scan(~r/\B(@[a-zA-Z0-9_-]+)\b|\B(#[0-9]+)\b|:([a-z0-1\+]+):|\b([a-f0-9]{7})\b/, content, capture: :first, return: :index),
+      Regex.scan(~r/\B(@[a-zA-Z0-9_-]+)\b|\B(#[0-9]+)\b|:([a-z0-1_\+]+):|\b([a-f0-9]{7})\b/, content, capture: :first, return: :index),
       Keyword.get(opts, :repo),
       Keyword.get(opts, :users),
       Keyword.get(opts, :issues)
@@ -85,8 +86,8 @@ defmodule GitGud.Web.Markdown do
             match ->
               cond do
                 String.starts_with?(match, ":") && String.ends_with?(match, ":") ->
-                  emojify_short_name(match, String.slice(match, 1..-2))
-                byte_size(match) == 7 ->
+                  Emoji.render(String.slice(match, 1..-2)) || match
+                byte_size(match) == 7 && hexadecimal_str?(match) ->
                   if repo do
                     case GitAgent.revision(repo, match) do
                       {:ok, commit, _ref} ->
@@ -101,13 +102,6 @@ defmodule GitGud.Web.Markdown do
       end)
     List.flatten(content, [rest])
   end
-
-  defp emojify_short_name(match, short_name) do
-    if emoji = Exmoji.from_short_name(short_name),
-     do: Exmoji.EmojiChar.render(emoji),
-   else: match
-  end
-
 
   defp find_issue_references(_content, nil), do: []
   defp find_issue_references(content, repo) do
@@ -132,4 +126,10 @@ defmodule GitGud.Web.Markdown do
       do: UserQuery.by_login(logins),
     else: []
   end
+
+  defp hexadecimal_str?(str), do: Enum.all?(String.to_charlist(str), &hexadecimal_char?/1)
+
+  defp hexadecimal_char?(c) when c in ?a..?f, do: true
+  defp hexadecimal_char?(c) when c in ?0..?9, do: true
+  defp hexadecimal_char?(c), do: IO.inspect(c) && false
 end
