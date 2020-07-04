@@ -138,6 +138,38 @@ textarea.textarea {
   }
 }
 
+.rta {
+  position: relative;
+
+  .rta__loader {
+    display: none;
+  }
+
+  .rta__autocomplete {
+    margin-top: 1.5em;
+    position: absolute;
+    z-index: 99;
+
+    &.rta__autocomplete--top {
+      margin-top: 0;
+      margin-bottom: 1.5em;
+    }
+
+    .rta__list {
+      .rta__item {
+        .dropdown-item {
+          font-size: 1rem;
+        }
+        &.rta__item--selected  {
+          .dropdown-item {
+            background-color: $white-ter;
+          }
+        }
+      }
+    }
+  }
+}
+
 .hero {
   .hero-body {
     padding: 3rem 0;

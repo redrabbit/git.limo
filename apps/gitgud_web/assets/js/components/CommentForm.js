@@ -4,8 +4,6 @@ import {commitMutation, graphql} from "react-relay"
 import ReactTextareaAutocomplete from "@webscopeio/react-textarea-autocomplete"
 import emoji from "@jukben/emoji-search"
 
-import "@webscopeio/react-textarea-autocomplete/style.css"
-
 import environment from "../relay-environment"
 import {currentUser} from "../auth"
 
@@ -115,16 +113,18 @@ class CommentForm extends React.Component {
       case "write":
         return (
           <ReactTextareaAutocomplete
-            loadingComponent={() => <span class="loading-ellipsis">Loading</span>}
+            loadingComponent={() => <span className="loading-ellipsis">Loading</span>}
             innerRef={textarea => this.bodyInput = textarea}
             required={true}
             className="textarea"
+            dropdownClassName="dropdown is-active"
+            listClassName="dropdown-content"
             value={this.state.body}
             onChange={this.handleBodyChange}
             trigger={{
               ":": {
                 dataProvider: token => emoji(token).slice(0, 5),
-                component: ({ entity: { name, char } }) => <div>{`${name}: ${char}`}</div>,
+                component: ({ entity: { name, char } }) => <a className="dropdown-item">{`${char} ${name}`}</a>,
                 output: emoji => emoji.char
               }
             }}
