@@ -1,5 +1,5 @@
 import React from "react"
-import {commitMutation, graphql} from "react-relay"
+import {fetchQuery, commitMutation, graphql} from "react-relay"
 
 import ReactTextareaAutocomplete from "@webscopeio/react-textarea-autocomplete"
 import emoji from "@jukben/emoji-search"
@@ -10,6 +10,7 @@ import {currentUser} from "../auth"
 class CommentForm extends React.Component {
   constructor(props) {
     super(props)
+    this.searchUserMention = this.searchUserMention.bind(this)
     this.updatePreview = this.updatePreview.bind(this)
     this.renderForm = this.renderForm.bind(this)
     this.renderActiveTab = this.renderActiveTab.bind(this)
@@ -32,18 +33,46 @@ class CommentForm extends React.Component {
     }
   }
 
+  searchUserMention(input) {
+    const query = graphql`
+      query CommentFormMentionQuery($input: String!) {
+        search(user: $input, first:10) {
+          edges {
+            node {
+              ... on User {
+                id
+                login
+                avatarUrl
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const variables = {
+      input: input
+    }
+
+    return new Promise((resolve, reject) => {
+      fetchQuery(environment, query, variables)
+        .then(response => resolve(response.search.edges.map(({node}) => node)))
+    })
+  }
+
   updatePreview() {
     if(this.state.body != "" && this.state.bodyHtml == "") {
-      const variables = {
-        body: this.state.body,
-        repoId: this.props.repoId
-      }
-
       const mutation = graphql`
         mutation CommentFormPreviewMutation($body: String!, $repoId: ID) {
           previewComment(body: $body, repoId: $repoId)
         }
       `
+
+      const variables = {
+        body: this.state.body,
+        repoId: this.props.repoId
+      }
+
       commitMutation(environment, {
         mutation,
         variables,
@@ -116,6 +145,16 @@ class CommentForm extends React.Component {
                 dataProvider: token => emoji(token).slice(0, 5),
                 component: ({ entity: { name, char } }) => <a className="dropdown-item">{`${char} ${name}`}</a>,
                 output: emoji => emoji.char
+              },
+              "@": {
+                dataProvider: this.searchUserMention,
+                component: ({ entity: { login, avatarUrl } }) =>
+                  <a className="dropdown-item">
+                    <span className="tag user is-white">
+                      <img className="avatar is-small" src={avatarUrl} width={24} />{login}
+                    </span>
+                  </a>,
+                output: (user, trigger) => trigger + user.login
               }
             }}
           />
