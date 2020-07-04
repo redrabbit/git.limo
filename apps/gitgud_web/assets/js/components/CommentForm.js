@@ -11,6 +11,7 @@ class CommentForm extends React.Component {
   constructor(props) {
     super(props)
     this.updatePreview = this.updatePreview.bind(this)
+    this.renderForm = this.renderForm.bind(this)
     this.renderActiveTab = this.renderActiveTab.bind(this)
     this.renderSubmitActions = this.renderSubmitActions.bind(this)
     this.handleSubmit = this.handleSubmit.bind(this)
@@ -19,7 +20,7 @@ class CommentForm extends React.Component {
     this.state = {
       body: props.body || "",
       bodyHtml: props.bodyHtml || "",
-      activeTab: "write",
+      activeTab: "form",
       inputName: this.props.inputName || "comment[body]"
     }
   }
@@ -54,46 +55,21 @@ class CommentForm extends React.Component {
 
   render() {
     if(currentUser) {
-      if(this.props.action != "preview") {
-        return (
-          <div className="comment-form">
-            <header className="tabs is-boxed">
-              <ul>
-                <li className={this.state.activeTab == "write" ? "is-active" : undefined}>
-                  <a onClick={() => this.setState({activeTab: "write"})}>Write</a>
-                </li>
-                <li className={this.state.activeTab == "preview" ? "is-active" : undefined}>
-                  <a onClick={() => this.setState({activeTab: "preview"}, () => this.updatePreview())}>Preview</a>
-                </li>
-              </ul>
-            </header>
-            <form onSubmit={this.handleSubmit}>
-              <div className="field">
-                <div className="control">
-                  {this.renderActiveTab()}
-                </div>
-              </div>
-              {this.renderSubmitActions()}
-            </form>
-          </div>
-        )
-      } else {
-        return (
-          <div className="comment-form">
-            <header className="tabs is-boxed">
-              <ul>
-                <li className={this.state.activeTab == "write" ? "is-active" : undefined}>
-                  <a onClick={() => this.setState({activeTab: "write"})}>Write</a>
-                </li>
-                <li className={this.state.activeTab == "preview" ? "is-active" : undefined}>
-                  <a onClick={() => this.setState({activeTab: "preview"}, () => this.updatePreview())}>Preview</a>
-                </li>
-              </ul>
-            </header>
-            {this.renderActiveTab()}
-          </div>
-        )
-      }
+      return (
+        <div className="comment-form">
+          <header className="tabs is-boxed">
+            <ul>
+              <li className={this.state.activeTab == "form" ? "is-active" : undefined}>
+                <a onClick={() => this.setState({activeTab: "form"})}>Write</a>
+              </li>
+              <li className={this.state.activeTab == "preview" ? "is-active" : undefined}>
+                <a onClick={() => this.setState({activeTab: "preview"}, () => this.updatePreview())}>Preview</a>
+              </li>
+            </ul>
+          </header>
+          {this.props.embedded ? this.renderActiveTab() : this.renderForm()}
+        </div>
+      )
     } else {
       return (
         <div className="comment-form">
@@ -108,14 +84,28 @@ class CommentForm extends React.Component {
     }
   }
 
+  renderForm() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <div className="field">
+          <div className="control">
+            {this.renderActiveTab()}
+          </div>
+        </div>
+        {this.renderSubmitActions()}
+      </form>
+    )
+  }
+
   renderActiveTab() {
     switch(this.state.activeTab) {
-      case "write":
+      case "form":
         return (
           <ReactTextareaAutocomplete
             loadingComponent={() => <span className="loading-ellipsis">Loading</span>}
             innerRef={textarea => this.bodyInput = textarea}
             required={true}
+            name={this.state.inputName}
             className="textarea"
             dropdownClassName="dropdown is-active"
             listClassName="dropdown-content"
@@ -168,17 +158,6 @@ class CommentForm extends React.Component {
               </div>
             </div>
           )
-        case "edit":
-          return (
-            <div className="field is-grouped is-grouped-right">
-              <div className="control">
-                <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
-              </div>
-              <div className="control">
-                <button className="button is-link" type="submit" disabled={this.state.body === ""}>Update comment</button>
-              </div>
-            </div>
-          )
         case "reopen":
           return (
             <div className="field is-grouped is-grouped-right">
@@ -198,6 +177,17 @@ class CommentForm extends React.Component {
               </div>
               <div className="control">
                 <button className="button is-success" type="submit" disabled={this.state.body === ""}>Add comment</button>
+              </div>
+            </div>
+          )
+        case "edit":
+          return (
+            <div className="field is-grouped is-grouped-right">
+              <div className="control">
+                <button className="button" type="reset" onClick={this.props.onCancel}>Cancel</button>
+              </div>
+              <div className="control">
+                <button className="button is-link" type="submit" disabled={this.state.body === "" || this.state.body === this.props.body}>Update comment</button>
               </div>
             </div>
           )

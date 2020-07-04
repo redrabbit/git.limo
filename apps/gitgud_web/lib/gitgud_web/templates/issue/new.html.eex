@@ -14,7 +14,7 @@
       <%= inputs_for f, :comments, fn fc -> %>
         <div class="field">
           <div class="control">
-              <%= react_component("comment-form", [action: "preview", input_name: input_name(fc, :body), repo_id: to_relay_id(@repo)], []) do %>
+              <%= react_component("comment-form", [embedded: true, input_name: input_name(fc, :body), repo_id: to_relay_id(@repo)], []) do %>
                 <div class="comment-form">
                   <%= textarea fc, :body, class: "textarea" %>
                 </div>
