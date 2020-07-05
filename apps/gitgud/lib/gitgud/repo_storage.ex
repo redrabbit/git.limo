@@ -13,6 +13,7 @@ defmodule GitGud.RepoStorage do
   alias GitGud.DB
 
   alias GitGud.User
+  alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.GPGKey
 
@@ -21,8 +22,6 @@ defmodule GitGud.RepoStorage do
 
   import Ecto.Changeset, only: [change: 2]
   import Ecto.Query, only: [from: 2, select: 3]
-
-  @batch_insert_chunk_size 5_000
 
   @doc """
   Initializes a new Git repository for the given `repo`.
@@ -93,81 +92,6 @@ defmodule GitGud.RepoStorage do
   # Helpers
   #
 
-  defp push_meta_objects(objs, repo, user) do
-    case DB.transaction(write_git_meta_objects(objs, repo, user), timeout: :infinity) do
-      {:ok, multi_results} ->
-        {:ok, multi_results}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp write_git_meta_objects(objs, repo, user) do
-    objs
-    |> Enum.map(&map_git_meta_object(&1, repo))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(&1, &2, repo, user))
-  end
-
-  defp write_git_meta_objects_multi({:commit, {commits, _i}}, multi, repo, user) do
-    reference_issues_multi(multi, repo, user, commits)
-  end
-
-  defp write_git_meta_objects_multi({schema, {objs, i}}, multi, _repo, _user) do
-    Multi.insert_all(multi, {schema, {:chunk, i}}, schema, objs)
-  end
-
-  defp write_git_meta_objects_multi({schema, objs}, multi, repo, user) when length(objs) > @batch_insert_chunk_size do
-    objs
-    |> Enum.chunk_every(@batch_insert_chunk_size)
-    |> Enum.with_index()
-    |> Enum.reduce(multi, &write_git_meta_objects_multi({schema, &1}, &2, repo, user))
-  end
-
-  defp write_git_meta_objects_multi({:commit, commits}, multi, repo, user) do
-    reference_issues_multi(multi, repo, user, commits)
-  end
-
-  defp write_git_meta_objects_multi({schema, objs}, multi, _repo, _user) do
-    Multi.insert_all(multi, {schema, :all}, schema, objs)
-  end
-
-  defp reference_issues_multi(multi, repo, user, commits) do
-    commits =
-      Enum.reduce(commits, %{}, fn commit, acc ->
-        refs = Regex.scan(~r/\B#([0-9]+)\b/, commit.message, capture: :all_but_first)
-        refs = List.flatten(refs)
-        refs = Enum.map(refs, &String.to_integer/1)
-        unless Enum.empty?(refs),
-          do: Map.put(acc, commit.oid, refs),
-        else: acc
-      end)
-
-    query = IssueQuery.query(:repo_issues_query, [repo.id, Enum.uniq(List.flatten(Map.values(commits)))])
-    query = select(query, [issue: i], {i.id, i.number})
-    Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
-      if oid = Enum.find_value(commits, fn {oid, refs} -> number in refs && oid end) do
-        event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
-        Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
-      else
-        multi
-      end
-    end)
-  end
-
-  defp dispatch_events(_repo, _cmds, meta) do
-    dispatch_issue_reference_events(meta)
-  end
-
-  defp dispatch_issue_reference_events(meta) do
-    meta
-    |> Enum.filter(fn {{:issue_reference, _issue_id}, _val} -> true
-                      {_key, _val} -> false end)
-    |> Enum.map(fn {{:issue_reference, _issue_id}, {1, [issue]}} -> issue end)
-    |> Enum.each(&Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(&1.events), issue_event: &1.id))
-  end
-
   defp map_git_meta_object({oid, %GitCommit{} = commit}, repo) do
     with {:ok, author} <- GitAgent.commit_author(repo, commit),
          {:ok, committer} <- GitAgent.commit_committer(repo, commit),
@@ -213,6 +137,76 @@ defmodule GitGud.RepoStorage do
 
   defp map_git_meta_object(_obj, _repo), do: nil
 
+  defp push_meta_objects(objs, repo, user) do
+    case DB.transaction(write_git_meta_objects(objs, repo, user), timeout: :infinity) do
+      {:ok, multi_results} ->
+        {:ok, multi_results}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp write_git_meta_objects(objs, repo, user) do
+    objs
+    |> Enum.map(&map_git_meta_object(&1, repo))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(&1, &2, repo, user))
+  end
+
+  defp write_git_meta_objects_multi({:commit, commits}, multi, repo, user) do
+    batch = batch_commits_users(commits)
+    multi
+    |> insert_contributors_multi(repo, {user, batch}, commits)
+    |> reference_issues_multi(repo, {user, batch}, commits)
+  end
+
+  defp batch_commits_users(commits) do
+    emails = Enum.uniq(Enum.flat_map(commits, &[&1.author_email, &1.committer_email]))
+    emails
+    |> UserQuery.by_email(preload: :emails)
+    |> Enum.map(fn user -> if email = Enum.find(user.emails, &(&1.verified && &1.address in emails)), do: {email.address, user} end)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new()
+  end
+
+  defp insert_contributors_multi(multi, _repo, {_user, _users}, _commits), do: multi
+
+  defp reference_issues_multi(multi, repo, {user, users}, commits) do
+    commits =
+      Enum.reduce(commits, %{}, fn commit, acc ->
+        refs = Regex.scan(~r/\B#([0-9]+)\b/, commit.message, capture: :all_but_first)
+        refs = List.flatten(refs)
+        refs = Enum.map(refs, &String.to_integer/1)
+        unless Enum.empty?(refs),
+          do: Map.put(acc, commit.oid, {Map.get(users, commit.committer_email, user), refs}),
+        else: acc
+      end)
+
+    query = IssueQuery.query(:repo_issues_query, [repo.id, Enum.uniq(Enum.flat_map(commits, fn {_oid, {_user, refs}} -> refs end))])
+    query = select(query, [issue: i], {i.id, i.number})
+    Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
+      case Enum.find_value(commits, fn {oid, {user, refs}} -> number in refs && {oid, user} end) do
+        {oid, user} ->
+          event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
+          Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+        nil ->
+          multi
+      end
+    end)
+  end
+
+  defp dispatch_events(_repo, _cmds, meta) do
+    dispatch_issue_reference_events(meta)
+  end
+
+  defp dispatch_issue_reference_events(meta) do
+    meta
+    |> Enum.filter(&meta_reference_issue?/1)
+    |> Enum.map(fn {{:issue_reference, _issue_id}, {1, [issue]}} -> issue end)
+    |> Enum.each(&Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(&1.events), issue_event: &1.id))
+  end
+
   defp extract_commit_props(data) do
     [header, message] = String.split(data, "\n\n", parts: 2)
     header
@@ -257,6 +251,9 @@ defmodule GitGud.RepoStorage do
       |> get_in([:sig, :sub_pack, :issuer])
     end
   end
+
+  defp meta_reference_issue?({{:issue_reference, _issue_id}, _val}), do: true
+  defp meta_reference_issue?(_multi_result), do: false
 
   defp strip_utf8(str) do
     strip_utf8_helper(str, [])
