@@ -24,8 +24,8 @@ defmodule GitGud.Repo do
     field :description, :string
     has_many :issue_labels, IssueLabel, on_replace: :delete
     has_many :issues, Issue
-    many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete, on_delete: :delete_all
-    many_to_many :contributors, User, join_through: "repositories_contributors"
+    many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete
+    many_to_many :contributors, User, join_through: "repositories_contributors", on_replace: :delete
     timestamps()
     field :pushed_at, :naive_datetime
   end

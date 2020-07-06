@@ -10,6 +10,12 @@ defmodule GitGud.DB.Migrations.AddRepositoriesTable do
       timestamps()
       add :pushed_at, :naive_datetime
     end
+
     create unique_index("repositories", [:owner_id, :name])
+
+    create table("repositories_contributors", primary_key: false) do
+      add :repo_id, references("repositories", on_delete: :delete_all), null: false
+      add :user_id, references("users", on_delete: :delete_all), null: false
+    end
   end
 end

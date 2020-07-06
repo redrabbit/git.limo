@@ -9,6 +9,7 @@ defmodule GitGud.DB.Migrations.AddEmailsTable do
       timestamps(updated_at: false)
       add :verified_at, :naive_datetime
     end
+
     create unique_index("emails", [:user_id, :address])
 
     execute """

@@ -170,7 +170,10 @@ defmodule GitGud.RepoStorage do
     |> Map.new()
   end
 
-  defp insert_contributors_multi(multi, _repo, {_user, _users}, _commits), do: multi
+  defp insert_contributors_multi(multi, repo, {_user, users}, _commits) do
+    contributors = Enum.map(users, fn {_email, user} -> %{repo_id: repo.id, user_id: user.id} end)
+    Multi.insert_all(multi, :contributors, "repositories_contributors", contributors, on_conflict: :nothing)
+  end
 
   defp reference_issues_multi(multi, repo, {user, users}, commits) do
     commits =

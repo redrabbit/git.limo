@@ -13,6 +13,7 @@ defmodule GitGud.DB.Migrations.AddRepositoryMaintainersTable do
       add :permission, :repository_permissions, null: false, default: "read"
       timestamps()
     end
+
     create unique_index("maintainers", [:user_id, :repo_id])
   end
 end

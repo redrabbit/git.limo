@@ -21,9 +21,9 @@
       </a>
     </li>
     <li>
-      <a class="has-text-grey-light">
+      <a>
         <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
-        <span>Contributors&nbsp;&nbsp;<span class="tag">1</span></span>
+        <span>Contributors&nbsp;&nbsp;<span class="tag"><%= @stats.contributors %></span></span>
       </a>
     </li>
   </ul>

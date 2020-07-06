@@ -25,7 +25,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :contributors) do
       case GitAgent.empty?(repo) do
         {:ok, true} ->
           if authorized?(user, repo, :read),
@@ -48,7 +48,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :contributors) do
       if authorized?(user, repo, :write) do
         with {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(repo, revision),
              {:ok, tree} <- GitAgent.tree(repo, object) do
@@ -366,7 +366,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :contributors) do
       with {:ok, {object, reference}} <- GitAgent.revision(repo, revision),
            {:ok, commit} <- GitAgent.peel(repo, object, :commit),
            {:ok, tree} <- GitAgent.tree(repo, object), do:
@@ -467,10 +467,10 @@ defmodule GitGud.Web.CodebaseController do
     with {:ok, branches} <- GitAgent.branches(repo),
          {:ok, tags} <- GitAgent.tags(repo),
          {:ok, history_count} <- GitAgent.history_count(repo, revision) do
-      %{branches: Enum.count(branches), tags: Enum.count(tags), commits: history_count}
+      %{branches: Enum.count(branches), tags: Enum.count(tags), commits: history_count, contributors: RepoQuery.count_contributors(repo)}
     else
       {:error, _reason} ->
-        %{commits: 0, branches: 0, tags: 0}
+        %{commits: 0, branches: 0, tags: 0, contributors: 0}
     end
   end
 end

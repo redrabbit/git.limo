@@ -9,6 +9,7 @@ defmodule GitGud.DB.Migrations.AddOAuth2ProvidersTable do
       add :token, :string
       timestamps()
     end
+
     create unique_index("oauth2_providers", [:provider, :provider_id])
   end
 end

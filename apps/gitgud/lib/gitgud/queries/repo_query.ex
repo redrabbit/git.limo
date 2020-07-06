@@ -92,6 +92,15 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
+  Returns the number of contributors for the given `repo`.
+  """
+  @spec count_contributors(Repo.t | pos_integer) :: non_neg_integer
+  def count_contributors(%Repo{id: repo_id} = _repo), do: count_contributors(repo_id)
+  def count_contributors(repo_id) do
+    DB.one(query(:count_query, [repo_id, :contributors]))
+  end
+
+  @doc """
   Returns a list of users matching the given `input`.
   """
   @spec search(binary, keyword) :: [User.t]
@@ -201,6 +210,9 @@ defmodule GitGud.RepoQuery do
     from(r in Repo, as: :repo, where: r.public == false, select: count(r.id))
   end
 
+  def query(:count_query, [repo_id, :contributors]) do
+    from(c in "repositories_contributors", where: c.repo_id == ^repo_id, select: count(c))
+  end
 
   @impl true
   def alter_query(query, preloads, nil) do
