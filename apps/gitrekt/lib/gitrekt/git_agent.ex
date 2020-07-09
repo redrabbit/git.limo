@@ -388,9 +388,13 @@ defmodule GitRekt.GitAgent do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
         {config, cache} =
-          if config.cache do
-            cache_adapter = Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
-            {Map.put(config, :cache_adapter, cache_adapter), telemetry_cache({:init_cache, path}, cache_adapter, :init_cache, [path])}
+          if cache = config.cache do
+            cache_adapter = cache_adapter_env()
+            config = Map.put(config, :cache, !!cache)
+            config = Map.put(config, :cache_adapter, cache_adapter)
+            if cache != true,
+              do: {config, cache},
+            else: {config, telemetry_cache({:init_cache, path}, cache_adapter, :init_cache, [path])}
           else
             {config, nil}
           end
@@ -425,17 +429,6 @@ defmodule GitRekt.GitAgent do
     {:reply, call_stream({:references, glob, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  def handle_call({:history, obj, opts}, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
-    reply =
-      case Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size) do
-        {:infinity, opts} ->
-          call_cache({:history, obj, opts}, cache, cache_adapter, handle)
-        {chunk_size, opts} ->
-          call_stream({:history, obj, opts}, chunk_size, handle)
-      end
-    {:reply, reply, state, config.idle_timeout}
-  end
-
   def handle_call({:history, obj, opts}, _from, {handle, config, _cache} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
     {:reply, call_stream({:history, obj, opts}, chunk_size, handle), state, config.idle_timeout}
@@ -448,15 +441,34 @@ defmodule GitRekt.GitAgent do
     {:reply, {Enum.to_list(chunk_stream), acc}, state, config.idle_timeout}
   end
 
+  def handle_call({:nocache, op, nil}, _from, {handle, %{cache: true} = config, _cache} = state) do
+    {:reply, call(handle, op), state, config.idle_timeout}
+  end
+
+  def handle_call({:nocache, op, cache_op}, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
+    case call(handle, op) do
+      {:ok, result} ->
+        call_cache_write(op, cache_op, cache, cache_adapter, result)
+        {:reply, {:ok, result}, state, config.idle_timeout}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state, config.idle_timeout}
+    end
+    {:reply, call(handle, op), state, config.idle_timeout}
+  end
+
   def handle_call(op, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
     {:reply, call_cache(op, cache, cache_adapter, handle), state, config.idle_timeout}
   end
 
   def handle_call(op, _from, {handle, config, _cache} = state) do
-    {:reply, call(op, handle), state, config.idle_timeout}
+    {:reply, call(handle, op), state, config.idle_timeout}
   end
 
   @impl true
+  def handle_info({:"ETS-TRANSFER", cache, _heir, _gift_data}, {_handle, %{cache: true} = _config, cache} = state) do
+    {:noreply, state}
+  end
+
   def handle_info(:timeout, {_handle, %{idle_timeout: :infinity}} = state) do
     {:noreply, state}
   end
@@ -472,7 +484,7 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:odb_write, _odb, _data, _type}), do: nil
   def make_cache_key({:odb_object_exists?, _odb, _oid}), do: nil
   def make_cache_key(:head), do: nil
-  def make_cache_key({:references, _glob}), do: nil
+  def make_cache_key({:references, _glob, _opts}), do: nil
   def make_cache_key({:reference, _name}), do: nil
   def make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
   def make_cache_key({:reference_delete, _name}), do: nil
@@ -499,8 +511,7 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:diff_deltas, _diff}), do: nil
   def make_cache_key({:diff_format, _diff, _format}), do: nil
   def make_cache_key({:diff_stats, _diff}), do: nil
-  def make_cache_key({:history, %GitRef{}, _opts}), do: nil
-  def make_cache_key({:history, %GitTag{}, _opts}), do: nil
+  def make_cache_key({:history, _revision, _opts}), do: nil
   def make_cache_key({:history_count, %GitRef{}, _opts}), do: nil
   def make_cache_key({:history_count, %GitTag{}, _opts}), do: nil
   def make_cache_key({:peel, %GitRef{}, _target}), do: nil
@@ -517,7 +528,9 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(op, agent) end)
+  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(op, cache, cache_adapter_env(), agent, &exec/2)
+  defp exec({agent, cache}, op) when is_pid(agent), do: call_cache(op, cache, cache_adapter_env(), agent, &telemetry_exec(&2, fn -> GenServer.call(&1, {:nocache, &2, &3}, @default_config.timeout) end))
+  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
   defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
   defp exec(repo, op) do
     case GitRepo.get_agent(repo) do
@@ -575,11 +588,11 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call(:empty?, handle) do
+  defp call(handle, :empty?) do
     {:ok, Git.repository_empty?(handle)}
   end
 
-  defp call(:odb, handle) do
+  defp call(handle, :odb) do
     case Git.repository_get_odb(handle) do
       {:ok, odb} ->
         {:ok, resolve_odb(odb)}
@@ -588,11 +601,11 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:odb_read, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_read(odb, oid)
-  defp call({:odb_write, %GitOdb{__ref__: odb}, data, type}, _handle), do: Git.odb_write(odb, data, type)
-  defp call({:odb_object_exists?, %GitOdb{__ref__: odb}, oid}, _handle), do: Git.odb_object_exists?(odb, oid)
+  defp call(_handle, {:odb_read, %GitOdb{__ref__: odb}, oid}), do: Git.odb_read(odb, oid)
+  defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
+  defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}), do: Git.odb_object_exists?(odb, oid)
 
-  defp call(:head, handle) do
+  defp call(handle, :head) do
     case Git.reference_resolve(handle, "HEAD") do
       {:ok, name, shorthand, oid} ->
         {:ok, resolve_reference({name, shorthand, :oid, oid})}
@@ -601,7 +614,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:references, glob, opts}, handle) do
+  defp call(handle, {:references, glob, opts}) do
     case Git.reference_stream(handle, glob) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_reference_peel!(&1, Keyword.get(opts, :target, :undefined), handle))}
@@ -610,7 +623,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:reference, "refs/" <> _suffix = name, target}, handle) do
+  defp call(handle, {:reference, "refs/" <> _suffix = name, target}) do
     case Git.reference_lookup(handle, name) do
       {:ok, shorthand, :oid, oid} ->
         {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
@@ -619,7 +632,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:reference, shorthand, target}, handle) do
+  defp call(handle, {:reference, shorthand, target}) do
     case Git.reference_dwim(handle, shorthand) do
       {:ok, name, :oid, oid} ->
         {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
@@ -628,10 +641,10 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:reference_create, name, type, target, force}, handle), do: Git.reference_create(handle, name, type, target, force)
-  defp call({:reference_delete, name}, handle), do: Git.reference_delete(handle, name)
+  defp call(handle, {:reference_create, name, type, target, force}), do: Git.reference_create(handle, name, type, target, force)
+  defp call(handle, {:reference_delete, name}), do: Git.reference_delete(handle, name)
 
-  defp call({:revision, spec}, handle) do
+  defp call(handle, {:revision, spec}) do
     case Git.revparse_ext(handle, spec) do
       {:ok, obj, obj_type, oid, name} ->
         {:ok, {resolve_object({obj, obj_type, oid}), resolve_reference({name, nil, :oid, oid})}}
@@ -640,7 +653,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:object, oid}, handle) do
+  defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do
       {:ok, obj_type, obj} ->
         {:ok, resolve_object({obj, obj_type, oid})}
@@ -649,10 +662,10 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:tree, obj}, handle), do: fetch_tree(obj, handle)
-  defp call({:diff, obj1, obj2, opts}, handle), do: fetch_diff(obj1, obj2, handle, opts)
-  defp call({:diff_format, %GitDiff{__ref__: diff}, format}, _handle), do: Git.diff_format(diff, format)
-  defp call({:diff_deltas, %GitDiff{__ref__: diff}}, _handle) do
+  defp call(handle, {:tree, obj}), do: fetch_tree(obj, handle)
+  defp call(handle, {:diff, obj1, obj2, opts}), do: fetch_diff(obj1, obj2, handle, opts)
+  defp call(_handle, {:diff_format, %GitDiff{__ref__: diff}, format}), do: Git.diff_format(diff, format)
+  defp call(_handle, {:diff_deltas, %GitDiff{__ref__: diff}}) do
     case Git.diff_deltas(diff) do
       {:ok, deltas} ->
         {:ok, Enum.map(deltas, &resolve_diff_delta/1)}
@@ -661,7 +674,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:diff_stats, %GitDiff{__ref__: diff}}, _handle) do
+  defp call(_handle, {:diff_stats, %GitDiff{__ref__: diff}}) do
     case Git.diff_stats(diff) do
       {:ok, files_changed, insertions, deletions} ->
         {:ok, resolve_diff_stats({files_changed, insertions, deletions})}
@@ -670,41 +683,41 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:tree_entry, obj, spec}, handle), do: fetch_tree_entry(obj, spec, handle)
-  defp call({:tree_entry_with_commit, obj, path}, handle) do
+  defp call(handle, {:tree_entry, obj, spec}), do: fetch_tree_entry(obj, spec, handle)
+  defp call(handle, {:tree_entry_with_commit, obj, path}) do
     with {:ok, tree_entry} <- fetch_tree_entry(obj, {:path, path}, handle),
          {:ok, commit} <- fetch_tree_entry_commit(obj, path, handle), do:
       {:ok, {tree_entry, commit}}
   end
 
-  defp call({:tree_entry_target, %GitTreeEntry{} = tree_entry}, handle), do: fetch_target(tree_entry, :undefined, handle)
-  defp call({:tree_entries, tree}, handle), do: fetch_tree_entries(tree, handle)
-  defp call({:tree_entries, rev, :root}, handle), do: fetch_tree_entries(rev, handle)
-  defp call({:tree_entries, rev, path}, handle), do: fetch_tree_entries(rev, path, handle)
-  defp call({:tree_entries_with_commit, rev, :root}, handle) do
+  defp call(handle, {:tree_entry_target, %GitTreeEntry{} = tree_entry}), do: fetch_target(tree_entry, :undefined, handle)
+  defp call(handle, {:tree_entries, tree}), do: fetch_tree_entries(tree, handle)
+  defp call(handle, {:tree_entries, rev, :root}), do: fetch_tree_entries(rev, handle)
+  defp call(handle, {:tree_entries, rev, path}), do: fetch_tree_entries(rev, path, handle)
+  defp call(handle, {:tree_entries_with_commit, rev, :root}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
          {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
       zip_tree_entries_commits(tree_entries, commits, "", handle)
   end
 
-  defp call({:tree_entries_with_commit, rev, path}, handle) do
+  defp call(handle, {:tree_entries_with_commit, rev, path}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
          {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
       zip_tree_entries_commits(tree_entries, commits, path, handle)
   end
 
-  defp call(:index, handle) do
+  defp call(handle, :index) do
     case Git.repository_get_index(handle) do
       {:ok, index} -> {:ok, resolve_index(index)}
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp call({:index_add, %GitIndex{__ref__: index}, %GitIndexEntry{} = entry}, _handle) do
+  defp call(_handle, {:index_add, %GitIndex{__ref__: index}, %GitIndexEntry{} = entry}) do
     Git.index_add(index, {entry.ctime, entry.mtime, entry.dev, entry.ino, entry.mode, entry.uid, entry.gid, entry.file_size, entry.oid, entry.flags, entry.flags_extended, entry.path})
   end
 
-  defp call({:index_add, %GitIndex{__ref__: index}, oid, path, file_size, mode, opts}, _handle) do
+  defp call(_handle, {:index_add, %GitIndex{__ref__: index}, oid, path, file_size, mode, opts}) do
     tree_entry = {
       Keyword.get(opts, :ctime, :undefined),
       Keyword.get(opts, :mtime, :undefined),
@@ -722,14 +735,14 @@ defmodule GitRekt.GitAgent do
     Git.index_add(index, tree_entry)
   end
 
-  defp call({:index_remove, %GitIndex{__ref__: index}, path}, _handle), do: Git.index_remove(index, path)
-  defp call({:index_remove_dir, %GitIndex{__ref__: index}, path}, _handle), do: Git.index_remove_dir(index, path)
-  defp call({:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}, _handle), do: Git.index_read_tree(index, tree)
-  defp call({:index_write_tree, %GitIndex{__ref__: index}}, handle), do: Git.index_write_tree(index, handle)
-  defp call({:author, obj}, _handle), do: fetch_author(obj)
-  defp call({:committer, obj}, _handle), do: fetch_committer(obj)
-  defp call({:message, obj}, _handle), do: fetch_message(obj)
-  defp call({:commit_parents, %GitCommit{__ref__: commit}}, _handle) do
+  defp call(_handle, {:index_remove, %GitIndex{__ref__: index}, path}), do: Git.index_remove(index, path)
+  defp call(_handle, {:index_remove_dir, %GitIndex{__ref__: index}, path}), do: Git.index_remove_dir(index, path)
+  defp call(_handle, {:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}), do: Git.index_read_tree(index, tree)
+  defp call(handle, {:index_write_tree, %GitIndex{__ref__: index}}), do: Git.index_write_tree(index, handle)
+  defp call(_handle, {:author, obj}), do: fetch_author(obj)
+  defp call(_handle, {:committer, obj}), do: fetch_committer(obj)
+  defp call(_handle, {:message, obj}), do: fetch_message(obj)
+  defp call(_handle, {:commit_parents, %GitCommit{__ref__: commit}}) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_commit_parent/1)}
@@ -738,7 +751,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_timestamp, %GitCommit{__ref__: commit}}, _handle) do
+  defp call(_handle, {:commit_timestamp, %GitCommit{__ref__: commit}}) do
     case Git.commit_time(commit) do
       {:ok, time, _offset} ->
         DateTime.from_unix(time)
@@ -747,15 +760,15 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:commit_gpg_signature, %GitCommit{__ref__: commit}}, _handle), do: Git.commit_header(commit, "gpgsig")
-  defp call({:commit_create, update_ref, author, committer, message, tree_oid, parents_oids}, handle) do
+  defp call(_handle, {:commit_gpg_signature, %GitCommit{__ref__: commit}}), do: Git.commit_header(commit, "gpgsig")
+  defp call(handle, {:commit_create, update_ref, author, committer, message, tree_oid, parents_oids}) do
     Git.commit_create(handle, update_ref, signature_tuple(author), signature_tuple(committer), :undefined, message, tree_oid, List.wrap(parents_oids))
   end
 
-  defp call({:blob_content, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_content(blob)
-  defp call({:blob_size, %GitBlob{__ref__: blob}}, _handle), do: Git.blob_size(blob)
-  defp call({:history, obj, opts}, handle), do: walk_history(obj, handle, opts)
-  defp call({:history_count, obj}, handle) do
+  defp call(_handle, {:blob_content, %GitBlob{__ref__: blob}}), do: Git.blob_content(blob)
+  defp call(_handle, {:blob_size, %GitBlob{__ref__: blob}}), do: Git.blob_size(blob)
+  defp call(handle, {:history, obj, opts}), do: walk_history(obj, handle, opts)
+  defp call(handle, {:history_count, obj}) do
     case walk_history(obj, handle) do
       {:ok, stream} ->
         {:ok, Enum.count(stream.enum)}
@@ -764,28 +777,25 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call({:peel, obj, target}, handle), do: fetch_target(obj, target, handle)
-  defp call({:pack, oids}, agent) do
-    with {:ok, walk} <- Git.revwalk_new(agent),
+  defp call(handle, {:peel, obj, target}), do: fetch_target(obj, target, handle)
+  defp call(handle, {:pack, oids}) do
+    with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- walk_insert(walk, oid_mask(oids)),
       do: Git.revwalk_pack(walk)
   end
 
-  defp call_cache(op, cache, cache_adapter, handle) do
+  defp call_cache(op, cache, cache_adapter, handle, callback \\ &call/2)
+  defp call_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 2) do
     cache_op = cache_adapter.make_cache_key(op)
     cond do
       is_nil(cache_op) ->
-        call(op, handle)
-      result = telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op]) ->
+        callback.(handle, op)
+      result = call_cache_read(op, cache_op, cache, cache_adapter) ->
         {:ok, result}
       true ->
-        case call(op, handle) do
-          {:ok, %Stream{} = stream} ->
-            result = Enum.to_list(stream)
-            telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
-            {:ok, result}
+        case callback.(handle, op) do
           {:ok, result} ->
-            telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
+            call_cache_write(op, cache_op, cache, cache_adapter, result)
             {:ok, result}
           {:error, reason} ->
             {:error, reason}
@@ -793,8 +803,31 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp call_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 3) do
+    cache_op = cache_adapter.make_cache_key(op)
+    cond do
+      is_nil(cache_op) ->
+        callback.(handle, op, nil)
+      result = call_cache_read(op, cache_op, cache, cache_adapter) ->
+        {:ok, result}
+      true ->
+        callback.(handle, op, cache_op)
+    end
+  end
+
+  defp call_cache_read(_op, nil, _cache, _cache_adapter), do: nil
+  defp call_cache_read(op, cache_op, cache, cache_adapter) do
+    telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op])
+  end
+
+  defp call_cache_write(_op, nil, _cache, _cache_adapter, _result), do: :ok
+  defp call_cache_write(op, cache_op, cache, cache_adapter, %Stream{} = result), do: call_cache_write(op, cache_op, cache, cache_adapter, Enum.to_list(result))
+  defp call_cache_write(op, cache_op, cache, cache_adapter, result) do
+    telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
+  end
+
   defp call_stream(op, chunk_size, handle) do
-    case call(op, handle) do
+    case call(handle, op) do
       {:ok, stream} ->
         {:ok, async_stream(op, stream, chunk_size)}
       {:error, reason} ->
@@ -1162,6 +1195,8 @@ defmodule GitRekt.GitAgent do
     entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end
+
+  defp cache_adapter_env, do: Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
 
   defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
   defp map_operation_item(%GitRef{oid: oid}), do: {:reference, oid}
