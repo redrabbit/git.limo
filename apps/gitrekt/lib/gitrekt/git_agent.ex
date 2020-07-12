@@ -66,7 +66,6 @@ defmodule GitRekt.GitAgent do
 
   @type agent :: Git.repo | GitRepo.t | pid
 
-  @type git_odb :: GitOdb.t
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
@@ -86,6 +85,9 @@ defmodule GitRekt.GitAgent do
     GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
+  @spec get_agent(GitRepo.t) :: agent
+  defdelegate get_agent(repo), to: GitRepo
+
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
   """
@@ -95,25 +97,25 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the ODB.
   """
-  @spec odb(agent) :: {:ok, git_odb}
+  @spec odb(agent) :: {:ok, GitOdb.t}
   def odb(agent), do: exec(agent, :odb)
 
   @doc """
   Return the raw data of the `odb` object with the given `oid`.
   """
-  @spec odb_read(agent, git_odb, Git.oid) :: {:ok, map} | {:error, term}
+  @spec odb_read(agent, GitOdb.t, Git.oid) :: {:ok, map} | {:error, term}
   def odb_read(agent, odb, oid), do: exec(agent, {:odb_read, odb, oid})
 
   @doc """
   Writes the given `data` into the `odb`.
   """
-  @spec odb_write(agent, git_odb, binary, atom) :: {:ok, Git.oid} | {:error, term}
+  @spec odb_write(agent, GitOdb.t, binary, atom) :: {:ok, Git.oid} | {:error, term}
   def odb_write(agent, odb, data, type), do: exec(agent, {:odb_write, odb, data, type})
 
   @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
   """
-  @spec odb_object_exists?(agent, git_odb, Git.oid) :: boolean
+  @spec odb_object_exists?(agent, GitOdb.t, Git.oid) :: boolean
   def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})
 
   @doc """
