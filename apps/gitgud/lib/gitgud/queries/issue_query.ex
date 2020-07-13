@@ -88,6 +88,8 @@ defmodule GitGud.IssueQuery do
       DBQueryable.query({__MODULE__, :count_repo_issues_by_status_query}, [repo_id, status, labels], opts)
       |> DB.all()
       |> Map.new(fn {status, count} -> {String.to_atom(status), count} end)
+      |> Map.put_new(:open, 0)
+      |> Map.put_new(:close, 0)
   end
 
   #
