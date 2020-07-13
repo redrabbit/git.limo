@@ -38,9 +38,8 @@
     </p>
     <%= if @repo.owner_id == @current_user.id do %>
       <p class="control">
-        <%= button "Delete repository", to: Routes.repo_path(@conn, :delete, @repo.owner, @repo), method: "delete", class: "button is-danger" %>
+        <%= button "Delete repository", to: Routes.repo_path(@conn, :delete, @repo.owner, @repo), method: "delete", class: "button is-danger", data: [confirm: "Once you delete a repository, there is no going back.\nPlease be certain."] %>
       </p>
     <% end %>
   </div>
 <% end %>
-
