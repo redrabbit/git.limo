@@ -45,7 +45,7 @@ defmodule GitGud.Web.Mixfile do
      {:gettext, "~> 0.17"},
      {:timex, "~> 3.6"},
      {:earmark, "~> 1.4"},
-     {:floki, "~> 0.26", only: :test},
+     {:floki, "~> 0.27", only: :test},
      {:gitgud, in_umbrella: true}]
   end
 
