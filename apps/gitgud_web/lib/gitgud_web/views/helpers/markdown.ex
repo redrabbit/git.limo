@@ -52,9 +52,9 @@ defmodule GitGud.Web.Markdown do
     |> List.flatten()
   end
 
-  defp transform_ast_node({tag, _attrs, _ast} = node, _opts) when tag in ["code"], do: node
-  defp transform_ast_node({tag, attrs, ast}, opts) do
-    {tag, attrs, transform_ast(ast, opts)}
+  defp transform_ast_node({tag, _attrs, _ast, %{}} = node, _opts) when tag in ["code"], do: node
+  defp transform_ast_node({tag, attrs, ast, %{}}, opts) do
+    {tag, attrs, transform_ast(ast, opts), %{}}
   end
 
   defp transform_ast_node(content, opts) when is_binary(content) do
@@ -78,11 +78,11 @@ defmodule GitGud.Web.Markdown do
           case match do
             "@" <> login ->
               if user = Enum.find(users, &(&1.login == login)), do:
-                {"a", [{"href", Routes.user_path(GitGud.Web.Endpoint, :show, user)}, {"class", "has-text-black"}], ["@#{login}"]}
+                {"a", [{"href", Routes.user_path(GitGud.Web.Endpoint, :show, user)}, {"class", "has-text-black"}], ["@#{login}"], %{}}
             "#" <> number_str ->
               number = String.to_integer(number_str)
               if issue = Enum.find(issues, &(&1.number == number)), do:
-                {"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue)}], ["##{number}"]}
+                {"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue)}], ["##{number}"], %{}}
             match ->
               cond do
                 String.starts_with?(match, ":") && String.ends_with?(match, ":") ->
@@ -91,7 +91,7 @@ defmodule GitGud.Web.Markdown do
                   if repo do
                     case GitAgent.revision(repo, match) do
                       {:ok, commit, _ref} ->
-                        {"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner, repo, commit)}], [{"code", [{"class", "has-text-link"}], [match]}]}
+                        {"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner, repo, commit)}], [{"code", [{"class", "has-text-link"}], [match]}], %{}}
                       {:error, _reason} ->
                         nil
                     end
