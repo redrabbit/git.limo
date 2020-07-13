@@ -42,6 +42,6 @@ defmodule GitGud.GraphQL.RepoMiddleware do
     resolution
     |> Map.update!(:context, &Map.put(&1, :repo, repo))
     |> Map.update!(:context, &Map.put(&1, :repo_agent, agent))
-    |> Map.update!(:context, &Map.put(&1, :repo_permissions, RepoQuery.permissions(&1.repo, &1[:current_user])))
+    |> Map.update!(:context, &Map.put(&1, :repo_perms, RepoQuery.permissions(&1.repo, &1[:current_user])))
   end
 end

@@ -225,7 +225,8 @@ defmodule GitGud.Repo do
 
   defimpl GitGud.AuthorizationPolicies do
     import GitGud.RepoQuery, only: [permissions: 2]
-    def can?(repo, user, action), do: action in permissions(repo, user)
+    def can?(_repo, _user, action, %{permissions: perms}), do: action in perms
+    def can?(repo, user, action, _opts), do: action in permissions(repo, user)
   end
 
   #

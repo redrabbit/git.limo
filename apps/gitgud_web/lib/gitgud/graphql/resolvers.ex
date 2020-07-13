@@ -33,7 +33,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
-  import GitGud.Authorization, only: [authorized?: 3]
+  import GitGud.Authorization, only: [authorized?: 3, authorized?: 4]
 
   import GitGud.Web.Markdown
 
@@ -550,12 +550,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec issue_editable(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def issue_editable(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case repo_permission?(ctx, :write) do
-      nil ->
-        {:ok, authorized?(ctx[:current_user], issue, :admin)}
-      granted ->
-        {:ok, granted}
-    end
+    {:ok, authorized?(ctx[:current_user], issue, :admin, Map.take(ctx, [:repo_perms]))}
   end
 
   @doc """
@@ -646,12 +641,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case repo_permission?(ctx, :write) do
-      nil ->
-        {:ok, authorized?(ctx[:current_user], comment, :admin)}
-      granted ->
-        {:ok, granted}
-    end
+    {:ok, authorized?(ctx[:current_user], comment, :admin, Map.take(ctx, [:repo_perms]))}
   end
 
   @doc """
@@ -659,12 +649,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_deletable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def comment_deletable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    case repo_permission?(ctx, :write) do
-      nil ->
-        {:ok, authorized?(ctx[:current_user], comment, :admin)}
-      granted ->
-        {:ok, granted}
-    end
+    {:ok, authorized?(ctx[:current_user], comment, :admin, Map.take(ctx, [:repo_perms]))}
   end
 
   @doc """
@@ -991,9 +976,6 @@ defmodule GitGud.GraphQL.Resolvers do
         {start_offset, limit}
     end
   end
-
-  defp repo_permission?(%{repo_permissions: perms}, perm), do: perm in perms
-  defp repo_permission?(_ctx, _perm), do: nil
 
   defp comment_subscription(%Issue{id: id}, action), do: {String.to_atom("issue_comment_#{action}"), id}
   defp comment_subscription(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}

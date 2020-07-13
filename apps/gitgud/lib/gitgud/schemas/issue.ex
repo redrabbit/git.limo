@@ -17,7 +17,7 @@ defmodule GitGud.Issue do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
-  import GitGud.Authorization, only: [authorized?: 3]
+  import GitGud.Authorization, only: [authorized?: 4]
 
   schema "issues" do
     belongs_to :repo, Repo
@@ -228,21 +228,22 @@ defmodule GitGud.Issue do
     alias GitGud.Issue
 
     # Owner can do everything
-    def can?(%Issue{author_id: user_id}, %User{id: user_id}, _action), do: true
+    def can?(%Issue{author_id: user_id}, %User{id: user_id}, _action, _opts), do: true
 
     # Verified users can write comments.
-    def can?(%Issue{}, user, :write), do: User.verified?(user)
+    def can?(%Issue{}, user, :write, _opts), do: User.verified?(user)
 
     # Maintainers with at least write permission can admin the issue.
-    def can?(%Issue{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
-    def can?(%Issue{repo_id: repo_id}, %User{} = user, :admin) do
+    def can?(%Issue{}, %User{}, :admin, %{repo_perms: repo_perms}), do: :write in repo_perms
+    def can?(%Issue{repo: %Repo{} = repo}, %User{} = user, :admin, opts), do: authorized?(user, repo, :write, opts)
+    def can?(%Issue{repo_id: repo_id}, %User{} = user, :admin, _opts) do
       if maintainer = User.verified?(user) && RepoQuery.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end
 
     # Everything-else is forbidden.
-    def can?(%Issue{}, _user, _actions), do: false
+    def can?(%Issue{}, _user, _actions, _opts), do: false
   end
 
   #

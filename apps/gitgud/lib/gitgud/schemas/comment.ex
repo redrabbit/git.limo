@@ -7,7 +7,7 @@ defmodule GitGud.Comment do
 
   import Ecto.Changeset
 
-  import GitGud.Authorization, only: [authorized?: 3]
+  import GitGud.Authorization, only: [authorized?: 4]
 
   alias GitGud.DB
   alias GitGud.User
@@ -138,17 +138,18 @@ defmodule GitGud.Comment do
     alias GitGud.Comment
 
     # Owner can do everything
-    def can?(%Comment{author_id: user_id}, %User{id: user_id}, _action), do: true
+    def can?(%Comment{author_id: user_id}, %User{id: user_id}, _action, _opts), do: true
 
     # Maintainers with at least write permission can admin the comment.
-    def can?(%Comment{repo: %Repo{} = repo}, %User{} = user, :admin), do: authorized?(user, repo, :write)
-    def can?(%Comment{repo_id: repo_id}, %User{} = user, :admin) do
+    def can?(%Comment{}, %User{}, :admin, %{repo_perms: repo_perms}), do: :write in repo_perms
+    def can?(%Comment{repo: %Repo{} = repo}, %User{} = user, :admin, opts), do: authorized?(user, repo, :write, opts)
+    def can?(%Comment{repo_id: repo_id}, %User{} = user, :admin, _opts) do
       if maintainer = User.verified?(user) && RepoQuery.maintainer(repo_id, user),
        do: maintainer.permission in ["write", "admin"],
      else: false
     end
 
     # Everything-else is forbidden.
-    def can?(%Comment{}, _user, _actions), do: false
+    def can?(%Comment{}, _user, _actions, _opts), do: false
   end
 end
