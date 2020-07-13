@@ -3,16 +3,16 @@
 <%= if Enum.empty?(@branches) do %>
   Nothing to see here.
 <% else %>
-  <%= with page <- paginate(@conn, sort_revisions_by_timestamp(@repo, @branches)) do %>
+  <%= with page <- paginate(@conn, sort_revisions_by_timestamp(@agent, @branches)) do %>
     <table class="table is-fullwidth">
       <tbody>
-        <%= for {branch, {commit, author}} <- batch_branches(@repo, page.slice) do %>
+        <%= for {branch, {commit, author}} <- batch_branches(@agent, page.slice) do %>
           <tr>
             <td>
               <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary" %> has-text-weight-medium">
                 <%= branch %>
               </a>
-              Updated <%= datetime_format(commit_timestamp(@repo, commit), "{relative}") %> by
+              Updated <%= datetime_format(commit_timestamp(@agent, commit), "{relative}") %> by
               <%= if Map.has_key?(author, :id) do %>
                 <a href="<%= Routes.user_path(@conn, :show, author) %>" class="tag user"><%= author %></a>
               <% else %>

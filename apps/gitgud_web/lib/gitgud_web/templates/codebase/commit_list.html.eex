@@ -11,7 +11,7 @@
 
 <%= with page <- paginate_cursor(@conn, @commits, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid)) do %>
   <div class="timeline commit-timeline">
-    <%= for {date, commits} <- chunk_by_timestamp(@repo, batch_commits(@repo, page.slice)) do %>
+    <%= for {date, commits} <- chunk_by_timestamp(@agent, batch_commits(@repo, @agent, page.slice)) do %>
       <div class="timeline-header is-size-7">
         <%= datetime_format(date, "{D} {Mshort} {YYYY}") %>
       </div>
@@ -30,9 +30,9 @@
                 </div>
                 <% end %>
                 <p class="has-text-weight-bold">
-                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@repo, commit) %></a>
+                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@agent, commit) %></a>
                 </p>
-                <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: commit, author: author, committer: committer, gpg_key: gpg_key %>
+                <%= render "_commit_signature.html", conn: @conn, agent: @agent, commit: commit, author: author, committer: committer, gpg_key: gpg_key %>
               </div>
               <div class="column has-text-right">
                 <p class="buttons is-pulled-right">

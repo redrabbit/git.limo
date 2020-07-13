@@ -1,7 +1,7 @@
 <%= cond do %>
   <% @author == @committer && Map.has_key?(@author, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
-    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
     <%= if assigns.gpg_key do %>
       <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
@@ -14,23 +14,23 @@
       <a href="<%= Routes.user_path(@conn, :show, @author) %>"><%= @author.login %></a>
     </div>
     authored and <a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= @committer.login %></a> committed
-    <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
     <%= if assigns.gpg_key do %>
       <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
   <% Map.has_key?(@author, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @author) %>" class="tag user"><%= @author %></a>
-    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
   <% Map.has_key?(@committer, :id) -> %>
     <a href="<%= Routes.user_path(@conn, :show, @committer) %>" class="tag user"><%= @committer %></a>
-    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
     <%= if assigns.gpg_key do %>
       <%= render "_commit_gpg_signature.html", conn: @conn, committer: @committer, gpg_key: @gpg_key %>
     <% end %>
   <% Map.take(@author, [:name, :email]) == Map.take(@committer, [:name, :email]) -> %>
     <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a>
-    committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
   <% true -> %>
     <a href="mailto:<%= @author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @author.email %>"><%= @author.name %></a>
-    authored and <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a> committed <%= datetime_format(commit_timestamp(@repo, @commit), "{relative}") %>
+    authored and <a href="mailto:<%= @committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @committer.email %>"><%= @committer.name %></a> committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
 <% end %>

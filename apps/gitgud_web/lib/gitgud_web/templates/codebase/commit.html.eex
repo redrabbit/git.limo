@@ -1,7 +1,7 @@
 <div class="columns">
   <div class="column">
     <div class="card">
-      <%= with {message_title, message_body} <- commit_message_format(@repo, @commit) do %>
+      <%= with {message_title, message_body} <- commit_message_format(@repo, @agent, @commit) do %>
         <header class="card-header">
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
@@ -37,8 +37,8 @@
               </div>
             </div>
           </div>
-          <%= with {author, committer} <- commit_author(@repo, @commit, :with_committer) do %>
-            <%= render "_commit_signature.html", conn: @conn, repo: @repo, commit: @commit, author: author, committer: committer, gpg_key: commit_gpg_key(@repo, @commit) %>
+          <%= with {author, committer} <- commit_author(@agent, @commit, :with_committer) do %>
+            <%= render "_commit_signature.html", conn: @conn, agent: @agent, commit: @commit, author: author, committer: committer, gpg_key: commit_gpg_key(@agent, @commit) %>
           <% end %>
           <%= if message_body do %>
             <div class="log-message"><%= message_body %></div>
@@ -51,13 +51,13 @@
 
 <div id="diff" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
   <div class="column">
-    <%= if stats = diff_stats(@repo, @diff) do %>
+    <%= if stats = diff_stats(@agent, @diff) do %>
       <p>Showing <%= stats.files_changed %> changed files with <%= stats.insertions %> additions and <%= stats.deletions %> deletions.</p>
     <% end %>
   </div>
 </div>
 
-<%= for delta <- diff_deltas_with_reviews(@repo, @commit, @diff) do %>
+<%= for delta <- diff_deltas_with_reviews(@repo, @agent, @commit, @diff) do %>
   <div class="columns">
     <div class="column is-12">
       <div class="card diff">

@@ -93,12 +93,13 @@ defmodule GitGud.RepoStorage do
   #
 
   defp map_git_meta_object({oid, %GitCommit{} = commit}, repo) do
-    with {:ok, author} <- GitAgent.commit_author(repo, commit),
-         {:ok, committer} <- GitAgent.commit_committer(repo, commit),
-         {:ok, message} <- GitAgent.commit_message(repo, commit),
-         {:ok, parents} <- GitAgent.commit_parents(repo, commit),
-       # {:ok, gpg_signature} <- GitAgent.commit_gpg_signature(repo, commit),
-         {:ok, timestamp} <- GitAgent.commit_timestamp(repo, commit) do
+    with {:ok, agent} <- GitAgent.unwrap(repo),
+         {:ok, author} <- GitAgent.commit_author(agent, commit),
+         {:ok, committer} <- GitAgent.commit_committer(agent, commit),
+         {:ok, message} <- GitAgent.commit_message(agent, commit),
+         {:ok, parents} <- GitAgent.commit_parents(agent, commit),
+       # {:ok, gpg_signature} <- GitAgent.commit_gpg_signature(agent, commit),
+         {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit) do
       {:commit, %{
         oid: oid,
         repo_id: repo.id,

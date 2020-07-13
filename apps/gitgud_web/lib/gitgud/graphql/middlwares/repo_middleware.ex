@@ -3,6 +3,8 @@ defmodule GitGud.GraphQL.RepoMiddleware do
 
   @behaviour Absinthe.Middleware
 
+  alias GitRekt.GitAgent
+
   alias GitGud.Repo
   alias GitGud.RepoQuery
   alias GitGud.GraphQL.Schema
@@ -19,7 +21,7 @@ defmodule GitGud.GraphQL.RepoMiddleware do
       Map.has_key?(ctx, :repo) ->
         resolution
       repo = RepoQuery.by_id(repo_id, viewer: ctx[:current_user]) ->
-        put_repo_permissions(resolution, repo)
+        put_repo_ctx(resolution, repo)
       true ->
         put_result(resolution, {:error, "this given repository id '#{Schema.to_relay_id(repo_id, Repo)}' is not valid"})
     end
@@ -27,7 +29,7 @@ defmodule GitGud.GraphQL.RepoMiddleware do
 
   def call(%Absinthe.Resolution{} = resolution, %Repo{} = repo) do
     resolution
-    |> put_repo_permissions(repo)
+    |> put_repo_ctx(repo)
     |> put_result({:ok, repo})
   end
 
@@ -35,9 +37,11 @@ defmodule GitGud.GraphQL.RepoMiddleware do
   # Helpers
   #
 
-  defp put_repo_permissions(resolution, repo) do
+  defp put_repo_ctx(resolution, repo) do
+    {:ok, agent} = GitAgent.unwrap(repo)
     resolution
     |> Map.update!(:context, &Map.put(&1, :repo, repo))
+    |> Map.update!(:context, &Map.put(&1, :repo_agent, agent))
     |> Map.update!(:context, &Map.put(&1, :repo_permissions, RepoQuery.permissions(&1.repo, &1[:current_user])))
   end
 end

@@ -85,8 +85,8 @@ defmodule GitRekt.GitAgent do
     GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
-  @spec get_agent(GitRepo.t) :: agent
-  defdelegate get_agent(repo), to: GitRepo
+  @spec unwrap(GitRepo.t) :: agent
+  defdelegate unwrap(repo), to: GitRepo, as: :get_agent
 
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
