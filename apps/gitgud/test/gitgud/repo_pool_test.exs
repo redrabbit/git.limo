@@ -18,9 +18,9 @@ defmodule GitGud.RepoPoolTest do
     assert {:error, {:already_started, ^pid}} = RepoPool.start_agent(repo)
   end
 
-  test "fetches repository from path", %{repo: repo} do
+  test "fetches repository from registry", %{repo: repo} do
     assert {:ok, pid} = RepoPool.start_agent(repo)
-    assert RepoPool.lookup(repo.owner.login, repo.name) == pid
+    assert RepoPool.lookup(repo) == pid
   end
 
   #
