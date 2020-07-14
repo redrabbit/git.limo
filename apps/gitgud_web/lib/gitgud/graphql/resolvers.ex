@@ -193,7 +193,7 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec user_repos(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
   def user_repos(args, %Absinthe.Resolution{source: user, context: ctx} = _info) do
     query = DBQueryable.query({RepoQuery, :user_repos_query}, user, viewer: ctx[:current_user])
-    Connection.from_query(query, &DB.all(&1), args)
+    Connection.from_query(query, &Enum.map(DB.all(&1), fn repo -> {:middleware, GitGud.GraphQL.RepoMiddleware, repo} end), args)
   end
 
   @doc """
