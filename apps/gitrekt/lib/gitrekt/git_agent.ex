@@ -530,8 +530,8 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(op, cache, cache_adapter_env(), agent, &exec/2)
-  defp exec({agent, cache}, op) when is_pid(agent), do: call_cache(op, cache, cache_adapter_env(), agent, &telemetry_exec(&2, fn -> GenServer.call(&1, {:nocache, &2, &3}, @default_config.timeout) end))
+  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec(op, fn -> call_cache(op, cache, cache_adapter_env(), agent, &call/2) end)
+  defp exec({agent, cache}, op) when is_pid(agent), do: telemetry_exec(op, fn -> call_cache(op, cache, cache_adapter_env(), agent, &GenServer.call(&1, {:nocache, &2, &3}, @default_config.timeout)) end)
   defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
   defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
   defp exec(repo, op) do
@@ -543,7 +543,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp telemetry_exec(op, callback) do
+  defp telemetry_exec(op, callback, meta \\ %{}) do
     {name, args} =
       if is_atom(op) do
         {op, []}
@@ -554,11 +554,11 @@ defmodule GitRekt.GitAgent do
     event_time = System.monotonic_time(:nanosecond)
     result = callback.()
     duration = System.monotonic_time(:nanosecond) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :call], %{duration: duration}, %{op: name, args: args})
+    :telemetry.execute([:gitrekt, :git_agent, :call], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
     result
   end
 
-  defp telemetry_stream(op, chunk_size, callback) do
+  defp telemetry_stream(op, chunk_size, callback, meta \\ %{}) do
     {name, args} =
       if is_atom(op) do
         {op, []}
@@ -569,11 +569,11 @@ defmodule GitRekt.GitAgent do
     event_time = System.monotonic_time(:nanosecond)
     result = callback.()
     duration = System.monotonic_time(:nanosecond) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, %{op: name, args: args, chunk_size: chunk_size})
+    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, Map.merge(meta, %{op: name, args: args, chunk_size: chunk_size}))
     result
   end
 
-  defp telemetry_cache(op, cache_adapter, fun, args) do
+  defp telemetry_cache(op, cache_adapter, fun, args, meta \\ %{}) do
     event_time = System.monotonic_time(:nanosecond)
     result = apply(cache_adapter, fun, args)
     if result do
@@ -585,7 +585,7 @@ defmodule GitRekt.GitAgent do
           [name|args] = Tuple.to_list(op)
           {name, args}
         end
-      :telemetry.execute([:gitrekt, :git_agent, fun], %{duration: duration}, %{op: name, args: args})
+      :telemetry.execute([:gitrekt, :git_agent, fun], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
       result
     end
   end
