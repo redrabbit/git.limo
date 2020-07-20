@@ -21,11 +21,11 @@ defmodule GitGud.RepoPool do
   @doc """
   Starts a `GitRekt.GitAgent` process for the given `repo`.
   """
-  @spec start_agent(Repo.t, term) :: {:ok, pid} | {:error, term}
-  def start_agent(repo, cache \\ nil) do
+  @spec start_agent(Repo.t, keyword) :: {:ok, pid} | {:error, term}
+  def start_agent(repo, opts \\ []) do
+    {cache, opts} = Keyword.pop(opts, :cache)
     via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}", cache}}
-    agent_opts = [name: via_registry, idle_timeout: 900_000]
-    agent_opts = cache && [{:cache, cache}|agent_opts] || agent_opts
+    agent_opts = Keyword.merge([name: via_registry, idle_timeout: 900_000], opts)
     DynamicSupervisor.start_child(__MODULE__, %{
       id: GitAgent,
       start: {GitAgent, :start_link, [RepoStorage.workdir(repo), agent_opts]},

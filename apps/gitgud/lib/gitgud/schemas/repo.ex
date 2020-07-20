@@ -211,8 +211,8 @@ defmodule GitGud.Repo do
         {:ok, agent}
       else
         workdir = RepoStorage.workdir(repo)
-        cache = GitAgent.init_cache(workdir)
-        case RepoPool.start_agent(repo, cache) do
+        cache = GitAgent.init_cache(workdir, [])
+        case RepoPool.start_agent(repo, cache: cache) do
           {:ok, pid} ->
             :ets.give_away(cache, pid, %{})
             {:ok, {pid, cache}}

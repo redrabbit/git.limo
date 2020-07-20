@@ -70,7 +70,6 @@ defmodule GitRekt.GitAgent do
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @default_config %{
-      cache: true,
       stream_chunk_size: 1_000,
       timeout: 60_000,
       idle_timeout: :infinity
@@ -389,25 +388,14 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
-        {config, cache} =
-          if cache = config.cache do
-            cache_adapter = cache_adapter_env()
-            config = Map.put(config, :cache, !!cache)
-            config = Map.put(config, :cache_adapter, cache_adapter)
-            if cache != true,
-              do: {config, cache},
-            else: {config, telemetry_cache({:init_cache, path}, cache_adapter, :init_cache, [path])}
-          else
-            {config, nil}
-          end
-        {:ok, {handle, config, cache}, config.idle_timeout}
+        {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
     end
   end
 
   @impl true
-  def init_cache(_path), do: :ets.new(__MODULE__, [:set, :protected])
+  def init_cache(_path, opts), do: :ets.new(__MODULE__, [:set, :protected] ++ opts)
 
   @impl true
   def fetch_cache(cache, op) when not is_nil(op) do
@@ -426,48 +414,40 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:references, glob, opts}, _from, {handle, config, _cache} = state) do
+  def handle_call({:cache, op, nil}, from, state), do: handle_call(op, from, state)
+  def handle_call({:cache, op, {cache_op, cache}}, _from, {handle, config} = state) do
+    case call(handle, op) do
+      {:ok, result} ->
+        call_cache_write(op, cache_op, cache, cache_adapter_env(), result)
+        {:reply, {:ok, result}, state, config.idle_timeout}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state, config.idle_timeout}
+    end
+  end
+
+  def handle_call({:references, glob, opts}, _from, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
     {:reply, call_stream({:references, glob, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  def handle_call({:history, obj, opts}, _from, {handle, config, _cache} = state) do
+  def handle_call({:history, obj, opts}, _from, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
     {:reply, call_stream({:history, obj, opts}, chunk_size, handle), state, config.idle_timeout}
   end
 
-  def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config, _cache} = state) do
+  def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config} = state) do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
     acc = if Enum.empty?(slice_stream.enum), do: :halt, else: slice_stream
     {:reply, {Enum.to_list(chunk_stream), acc}, state, config.idle_timeout}
   end
 
-  def handle_call({:nocache, op, nil}, _from, {handle, %{cache: true} = config, _cache} = state) do
-    {:reply, call(handle, op), state, config.idle_timeout}
-  end
-
-  def handle_call({:nocache, op, cache_op}, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
-    case call(handle, op) do
-      {:ok, result} ->
-        call_cache_write(op, cache_op, cache, cache_adapter, result)
-        {:reply, {:ok, result}, state, config.idle_timeout}
-      {:error, reason} ->
-        {:reply, {:error, reason}, state, config.idle_timeout}
-    end
-    {:reply, call(handle, op), state, config.idle_timeout}
-  end
-
-  def handle_call(op, _from, {handle, %{cache: true, cache_adapter: cache_adapter} = config, cache} = state) do
-    {:reply, call_cache(op, cache, cache_adapter, handle), state, config.idle_timeout}
-  end
-
-  def handle_call(op, _from, {handle, config, _cache} = state) do
+  def handle_call(op, _from, {handle, config} = state) do
     {:reply, call(handle, op), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_info({:"ETS-TRANSFER", cache, _heir, _gift_data}, {_handle, %{cache: true} = _config, cache} = state) do
+  def handle_info({:"ETS-TRANSFER", _cache, _heir, _heir_data}, {_handle, _config} = state) do
     {:noreply, state}
   end
 
@@ -491,9 +471,8 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
   def make_cache_key({:reference_delete, _name}), do: nil
   def make_cache_key({:revision, _spec}), do: nil
-  def make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
-  def make_cache_key({:tree, %GitRef{}}), do: nil
-  def make_cache_key({:tree, %GitTag{}}), do: nil
+  def make_cache_key({:object, _oid}), do: nil
+  def make_cache_key({:tree, _revision}), do: nil
   def make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
   def make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
   def make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_operation_item(revision), path}
@@ -502,6 +481,7 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:tree_entries_with_commit, %GitTag{}, _path}), do: nil
   def make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
   def make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
+  def make_cache_key({:tree_entry_target, _tree_entry}), do: nil
   def make_cache_key(:index), do: nil
   def make_cache_key({:index_add, _index, _entry}), do: nil
   def make_cache_key({:index_add, _index, _oid, _path, _file_size, _mode, _opts}), do: nil
@@ -516,8 +496,8 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:history, _revision, _opts}), do: nil
   def make_cache_key({:history_count, %GitRef{}, _opts}), do: nil
   def make_cache_key({:history_count, %GitTag{}, _opts}), do: nil
-  def make_cache_key({:peel, %GitRef{}, _target}), do: nil
-  def make_cache_key({:peel, %GitTag{}, _target}), do: nil
+  def make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
+  def make_cache_key({:peel, _target}), do: nil
   def make_cache_key({:pack, _oids}), do: nil
   def make_cache_key(op) do
       op
@@ -530,8 +510,8 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec(op, fn -> call_cache(op, cache, cache_adapter_env(), agent, &call/2) end)
-  defp exec({agent, cache}, op) when is_pid(agent), do: telemetry_exec(op, fn -> call_cache(op, cache, cache_adapter_env(), agent, &GenServer.call(&1, {:nocache, &2, &3}, @default_config.timeout)) end)
+  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec_cache(op, cache, cache_adapter_env(), agent)
+  defp exec({agent, cache}, op) when is_pid(agent), do: telemetry_exec_cache(op, cache, cache_adapter_env(), agent, &GenServer.call(&1, {:cache, &2, &3}, @default_config.timeout))
   defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
   defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
   defp exec(repo, op) do
@@ -544,18 +524,55 @@ defmodule GitRekt.GitAgent do
   end
 
   defp telemetry_exec(op, callback, meta \\ %{}) do
-    {name, args} =
-      if is_atom(op) do
-        {op, []}
-      else
-        [name|args] = Tuple.to_list(op)
-        {name, args}
-      end
     event_time = System.monotonic_time(:nanosecond)
     result = callback.()
     duration = System.monotonic_time(:nanosecond) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :call], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
+    {name, args} = map_operation(op)
+    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
     result
+  end
+
+  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback \\ &call/2)
+  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 2) do
+    event_time = System.monotonic_time(:nanosecond)
+    cache_op = cache_adapter.make_cache_key(op)
+    {response, meta} =
+      cond do
+        is_nil(cache_op) ->
+          {callback.(handle, op), %{}}
+        result = call_cache_read(op, cache_op, cache, cache_adapter) ->
+          {{:ok, result}, %{cache: true}}
+        true ->
+          case callback.(handle, op) do
+            {:ok, result} ->
+              call_cache_write(op, cache_op, cache, cache_adapter, result)
+              {{:ok, result}, %{}}
+            {:error, reason} ->
+              {{:error, reason}, %{}}
+          end
+      end
+    duration = System.monotonic_time(:nanosecond) - event_time
+    {name, args} = map_operation(op)
+    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
+    response
+  end
+
+  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 3) do
+    event_time = System.monotonic_time(:nanosecond)
+    cache_op = cache_adapter.make_cache_key(op)
+    {response, meta} =
+      cond do
+        is_nil(cache_op) ->
+          {callback.(handle, op, nil), %{}}
+        result = call_cache_read(op, cache_op, cache, cache_adapter) ->
+          {{:ok, result}, %{cache: true}}
+        true ->
+          {callback.(handle, op, {cache_op, cache}), %{}}
+      end
+    duration = System.monotonic_time(:nanosecond) - event_time
+    {name, args} = map_operation(op)
+    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
+    response
   end
 
   defp telemetry_stream(op, chunk_size, callback, meta \\ %{}) do
@@ -784,37 +801,6 @@ defmodule GitRekt.GitAgent do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- walk_insert(walk, oid_mask(oids)),
       do: Git.revwalk_pack(walk)
-  end
-
-  defp call_cache(op, cache, cache_adapter, handle, callback \\ &call/2)
-  defp call_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 2) do
-    cache_op = cache_adapter.make_cache_key(op)
-    cond do
-      is_nil(cache_op) ->
-        callback.(handle, op)
-      result = call_cache_read(op, cache_op, cache, cache_adapter) ->
-        {:ok, result}
-      true ->
-        case callback.(handle, op) do
-          {:ok, result} ->
-            call_cache_write(op, cache_op, cache, cache_adapter, result)
-            {:ok, result}
-          {:error, reason} ->
-            {:error, reason}
-        end
-    end
-  end
-
-  defp call_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 3) do
-    cache_op = cache_adapter.make_cache_key(op)
-    cond do
-      is_nil(cache_op) ->
-        callback.(handle, op, nil)
-      result = call_cache_read(op, cache_op, cache, cache_adapter) ->
-        {:ok, result}
-      true ->
-        callback.(handle, op, cache_op)
-    end
   end
 
   defp call_cache_read(_op, nil, _cache, _cache_adapter), do: nil
@@ -1199,6 +1185,13 @@ defmodule GitRekt.GitAgent do
   end
 
   defp cache_adapter_env, do: Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
+
+
+  defp map_operation(op) when is_atom(op), do: {op, []}
+  defp map_operation(op) do
+    [name|args] = Tuple.to_list(op)
+    {name, args}
+  end
 
   defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
   defp map_operation_item(%GitRef{oid: oid}), do: {:reference, oid}

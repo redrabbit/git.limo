@@ -3,18 +3,20 @@ defmodule GitGud.Telemetry do
 
   require Logger
 
-  def handle_event([:gitrekt, :git_agent, :call], %{duration: duration}, %{op: op, args: args}, _config) do
+  def handle_event([:gitrekt, :git_agent, :execute], %{duration: duration}, %{op: op, args: args} = meta, _config) do
     args = Enum.join(map_git_agent_op_args(op, args), ", ")
-    Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
-  end
-
-  def handle_event([:gitrekt, :git_agent, :init_cache], %{duration: duration}, %{args: [path]}, _config) do
-    Logger.debug("[Git Agent] init cache for #{path} in #{duration_inspect(duration)}")
+    if Map.get(meta, :cache),
+      do: Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)} ⚡"),
+    else: Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
   end
 
   def handle_event([:gitrekt, :git_agent, :stream], %{duration: duration}, %{op: op, args: args, chunk_size: chunk_size}, _config) do
     args = Enum.join(map_git_agent_op_args(op, args), ", ")
-    Logger.debug("[Git Agent] #{op}(#{args}) streamed next #{chunk_size} items in #{duration_inspect(duration)}")
+    Logger.debug("[Git Agent] #{op}(#{args}) streamed #{chunk_size} items in #{duration_inspect(duration)}")
+  end
+
+  def handle_event([:gitrekt, :git_agent, :init_cache], %{duration: duration}, %{args: [path]}, _config) do
+    Logger.debug("[Git Agent] init cache for #{path} in #{duration_inspect(duration)}")
   end
 
   def handle_event([:gitrekt, :git_agent, :fetch_cache], %{duration: duration}, %{op: op, args: args}, _config) do
@@ -81,9 +83,9 @@ defmodule GitGud.Telemetry do
   defp map_absinthe_input_value(%Absinthe.Blueprint.Input.List{items: items}), do: Enum.map(items, &map_absinthe_input_value/1)
   defp map_absinthe_input_value(%{value: value}), do: value
 
-  defp map_absinthe_field(i) when is_integer(i), do: [to_string(i)]
-  defp map_absinthe_field(%Absinthe.Blueprint.Document.Field{name: name}), do: [name]
-  defp map_absinthe_field(%Absinthe.Blueprint.Document.Operation{}), do: []
+# defp map_absinthe_field(i) when is_integer(i), do: [to_string(i)]
+# defp map_absinthe_field(%Absinthe.Blueprint.Document.Field{name: name}), do: [name]
+# defp map_absinthe_field(%Absinthe.Blueprint.Document.Operation{}), do: []
 # def map_absinthe_field(%Absinthe.Blueprint.Document.Operation{} = op) do
 #   %{name: name, args: args} = map_absinthe_op(op)
 #   args = Enum.join(map_absinthe_op_args(args), ", ")
