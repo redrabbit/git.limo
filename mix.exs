@@ -100,6 +100,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.CodebaseController,
           GitGud.Web.DateTimeFormatter,
           GitGud.Web.EmailController,
+          GitGud.Web.Emoji,
           GitGud.Web.Endpoint,
           GitGud.Web.ErrorHelpers,
           GitGud.Web.ErrorView,
