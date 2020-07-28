@@ -194,6 +194,8 @@ defmodule GitRekt.Git do
 
   @type pack          :: reference
 
+  @type worktree      :: reference
+
   @on_load :load_nif
 
   @nif_path Path.join(:code.priv_dir(:gitrekt), "geef_nif")
@@ -1062,6 +1064,22 @@ defmodule GitRekt.Git do
   """
   @spec pack_data(pack) :: {:ok, binary} | {:error, term}
   def pack_data(_pack) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Adds a new working tree for the given `repo`
+  """
+  @spec worktree_add(repo, binary, binary, binary | :undefined) :: {:ok, binary} | {:error, term}
+  def worktree_add(_repo, _name, _path, _ref) do
+    raise Code.LoadError, file: @nif_path_lib
+  end
+
+  @doc """
+  Prunes a working tree.
+  """
+  @spec worktree_prune(worktree) :: :ok | {:error, term}
+  def worktree_prune(_worktree) do
     raise Code.LoadError, file: @nif_path_lib
   end
 

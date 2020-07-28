@@ -17,6 +17,7 @@
 #include "reflog.h"
 #include "config.h"
 #include "pack.h"
+#include "worktree.h"
 #include "geef.h"
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +32,7 @@ ErlNifResourceType *geef_diff_type;
 ErlNifResourceType *geef_index_type;
 ErlNifResourceType *geef_config_type;
 ErlNifResourceType *geef_pack_type;
+ErlNifResourceType *geef_worktree_type;
 
 geef_atoms atoms;
 
@@ -39,41 +41,43 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	git_libgit2_init();
 
 	geef_repository_type = enif_open_resource_type(env, NULL,
-						     "repository_type", geef_repository_free, ERL_NIF_RT_CREATE, NULL);
+		"repository_type", geef_repository_free, ERL_NIF_RT_CREATE, NULL);
 
 	if (geef_repository_type == NULL)
 		return -1;
 
 	geef_odb_type = enif_open_resource_type(env, NULL,
-					      "odb_type", geef_odb_free, ERL_NIF_RT_CREATE, NULL);
+		"odb_type", geef_odb_free, ERL_NIF_RT_CREATE, NULL);
 
 	if (geef_odb_type == NULL)
 		return -1;
 
 	geef_ref_iter_type = enif_open_resource_type(env, NULL,
-		    "ref_iter_type", geef_ref_iter_free, ERL_NIF_RT_CREATE, NULL);
+		"ref_iter_type", geef_ref_iter_free, ERL_NIF_RT_CREATE, NULL);
 
 	if (geef_ref_iter_type == NULL)
 		return -1;
 
 	geef_object_type = enif_open_resource_type(env, NULL,
-						     "object_type", geef_object_free, ERL_NIF_RT_CREATE, NULL);
+		"object_type", geef_object_free, ERL_NIF_RT_CREATE, NULL);
 
 	geef_revwalk_type = enif_open_resource_type(env, NULL,
-		  "revwalk_type", geef_revwalk_free, ERL_NIF_RT_CREATE, NULL);
+		"revwalk_type", geef_revwalk_free, ERL_NIF_RT_CREATE, NULL);
 
 	geef_diff_type = enif_open_resource_type(env, NULL,
-		  "diff_type", geef_diff_free, ERL_NIF_RT_CREATE, NULL);
+		"diff_type", geef_diff_free, ERL_NIF_RT_CREATE, NULL);
 
 	geef_index_type = enif_open_resource_type(env, NULL,
-		  "index_type", geef_index_free, ERL_NIF_RT_CREATE, NULL);
+		"index_type", geef_index_free, ERL_NIF_RT_CREATE, NULL);
 
 	geef_config_type = enif_open_resource_type(env, NULL,
-		  "config_type", geef_config_free, ERL_NIF_RT_CREATE, NULL);
+		"config_type", geef_config_free, ERL_NIF_RT_CREATE, NULL);
 
 	geef_pack_type = enif_open_resource_type(env, NULL,
-		  "pack_type", geef_pack_free, ERL_NIF_RT_CREATE, NULL);
+		"pack_type", geef_pack_free, ERL_NIF_RT_CREATE, NULL);
 
+	geef_worktree_type = enif_open_resource_type(env, NULL,
+		"worktree_type", geef_worktree_free, ERL_NIF_RT_CREATE, NULL);
 
 	if (geef_repository_type == NULL)
 		return -1;
@@ -226,7 +230,7 @@ static ErlNifFunc geef_funcs[] =
 	{"repository_get_config", 1, geef_repository_config, 0},
 	{"odb_object_hash", 2, geef_odb_hash, 0},
 	{"odb_object_exists?", 2, geef_odb_exists, 0},
-  {"odb_read", 2, geef_odb_read, 0},
+	{"odb_read", 2, geef_odb_read, 0},
 	{"odb_write", 3, geef_odb_write, 0},
 	{"reference_list", 1, geef_reference_list, 0},
 	{"reference_peel", 3, geef_reference_peel, 0},
@@ -234,15 +238,15 @@ static ErlNifFunc geef_funcs[] =
 	{"reference_glob", 2, geef_reference_glob, 0},
 	{"reference_lookup", 2, geef_reference_lookup, 0},
 	{"reference_iterator", 2, geef_reference_iterator, 0},
-	{"reference_next",     1, geef_reference_next, 0},
+	{"reference_next", 1, geef_reference_next, 0},
 	{"reference_resolve", 2, geef_reference_resolve, 0},
 	{"reference_create", 5, geef_reference_create, 0},
 	{"reference_delete", 2, geef_reference_delete, 0},
 	{"reference_dwim", 2,   geef_reference_dwim, 0},
 	{"reference_log?", 2, geef_reference_has_log, 0},
-	{"reflog_count",       2, geef_reflog_count, 0},
-	{"reflog_read",       2, geef_reflog_read, 0},
-	{"reflog_delete",     2, geef_reflog_delete, 0},
+	{"reflog_count", 2, geef_reflog_count, 0},
+	{"reflog_read", 2, geef_reflog_read, 0},
+	{"reflog_delete", 2, geef_reflog_delete, 0},
 	{"oid_fmt", 1, geef_oid_fmt, 0},
 	{"oid_parse", 1, geef_oid_parse, 0},
 	{"object_repository", 1, geef_object_repository, 0},
@@ -262,8 +266,8 @@ static ErlNifFunc geef_funcs[] =
 	{"commit_header", 2, geef_commit_header, 0},
 	{"tree_bypath", 2, geef_tree_bypath, 0},
 	{"tree_byid", 2, geef_tree_byid, 0},
-	{"tree_nth",     2, geef_tree_nth, 0},
-	{"tree_count",   1, geef_tree_count, 0},
+	{"tree_nth", 2, geef_tree_nth, 0},
+	{"tree_count", 1, geef_tree_count, 0},
 	{"blob_size", 1, geef_blob_size, 0},
 	{"blob_content", 1, geef_blob_content, 0},
 	{"tag_list", 1, geef_tag_list, 0},
@@ -272,22 +276,22 @@ static ErlNifFunc geef_funcs[] =
 	{"tag_message", 1, geef_tag_message, 0},
 	{"tag_author", 1, geef_tag_author, 0},
 	{"library_version", 0, geef_library_version, 0},
-	{"revwalk_new",  1,    geef_revwalk_new, 0},
-	{"revwalk_push", 3,    geef_revwalk_push, 0},
-	{"revwalk_next", 1,    geef_revwalk_next, 0},
+	{"revwalk_new",  1, geef_revwalk_new, 0},
+	{"revwalk_push", 3, geef_revwalk_push, 0},
+	{"revwalk_next", 1, geef_revwalk_next, 0},
 	{"revwalk_sorting", 2, geef_revwalk_sorting, 0},
-  {"revwalk_simplify_first_parent", 1, geef_revwalk_simplify_first_parent, 0},
+	{"revwalk_simplify_first_parent", 1, geef_revwalk_simplify_first_parent, 0},
 	{"revwalk_reset", 1,   geef_revwalk_reset, 0},
 	{"revwalk_repository", 1, geef_revwalk_repository, 0},
 	{"revwalk_pack", 1, geef_revwalk_pack, 0},
 	{"pathspec_match_tree", 2, geef_pathspec_match_tree, 0},
-	{"diff_tree",   4, geef_diff_tree, 0},
-	{"diff_stats",  1, geef_diff_stats, 0},
+	{"diff_tree", 4, geef_diff_tree, 0},
+	{"diff_stats", 1, geef_diff_stats, 0},
 	{"diff_delta_count", 1, geef_diff_delta_count, 0},
 	{"diff_deltas", 1, geef_diff_deltas, 0},
 	{"diff_format", 2, geef_diff_format, 0},
-	{"index_new",   0, geef_index_new, 0},
-	{"index_read_tree",  2, geef_index_read_tree, 0},
+	{"index_new", 0, geef_index_new, 0},
+	{"index_read_tree", 2, geef_index_read_tree, 0},
 	{"index_write", 1, geef_index_write, 0},
 	{"index_write_tree", 1, geef_index_write_tree, 0},
 	{"index_write_tree", 2, geef_index_write_tree, 0},
@@ -305,11 +309,13 @@ static ErlNifFunc geef_funcs[] =
 	{"config_get_bool", 2, geef_config_get_bool, 0},
 	{"config_set_string", 3, geef_config_set_string, 0},
 	{"config_get_string", 2, geef_config_get_string, 0},
-	{"config_open",     1, geef_config_open, 0},
-	{"pack_new",    1, geef_pack_new, 0},
+	{"config_open", 1, geef_config_open, 0},
+	{"pack_new", 1, geef_pack_new, 0},
 	{"pack_insert_commit", 2, geef_pack_insert_commit, 0},
 	{"pack_insert_walk", 2, geef_pack_insert_walk, 0},
-	{"pack_data",   1, geef_pack_data, 0},
+	{"pack_data", 1, geef_pack_data, 0},
+	{"worktree_add", 4, geef_worktree_add, 0},
+	{"worktree_prune", 1, geef_worktree_prune, 0},
 };
 
 ERL_NIF_INIT(Elixir.GitRekt.Git, geef_funcs, load, NULL, upgrade, unload)
