@@ -127,7 +127,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @impl true
   def next(%__MODULE__{state: :done} = handle, []) do
     case odb_flush(handle) do
-      {:ok, _oids} ->
+      :ok ->
         if "report-status" in handle.caps,
           do: {handle, [], report_status(handle.cmds)},
         else: {handle, [], []}
