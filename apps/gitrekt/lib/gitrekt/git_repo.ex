@@ -8,6 +8,6 @@ defprotocol GitRekt.GitRepo do
   @doc """
   Returns the agent for the given `repo`.
   """
-  @spec get_agent(t) :: GitRekt.GitAgent.agent
+  @spec get_agent(t) :: {:ok, GitRekt.GitAgent.agent} | {:error, term}
   def get_agent(repo)
 end

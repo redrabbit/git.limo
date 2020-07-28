@@ -84,7 +84,7 @@ defmodule GitRekt.GitAgent do
     GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
-  @spec unwrap(GitRepo.t) :: agent
+  @spec unwrap(GitRepo.t) :: {:ok, agent} | {:error, term}
   defdelegate unwrap(repo), to: GitRepo, as: :get_agent
 
   @doc """
