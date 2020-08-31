@@ -20,6 +20,7 @@
               <%= select f, :public_email_id, verified_emails, prompt: "Don't show my email address", selected: @user.public_email_id %>
             </div>
           </div>
+          <%= error_tag f, :public_email %>
         </div>
         <% else %>
           <div class="field">
@@ -47,7 +48,7 @@
         <div class="control">
           <%= text_input f, :website_url, class: "input" %>
         </div>
-        <%= error_tag f, :url %>
+        <%= error_tag f, :website_url %>
       </div>
 
       <div class="field">

@@ -81,16 +81,30 @@ defmodule GitGud.Web.UserController do
   @spec update_profile(Plug.Conn.t, map) :: Plug.Conn.t
   def update_profile(conn, %{"profile" => profile_params} = _params) do
     user = DB.preload(current_user(conn), [:public_email, :emails])
-    case User.update(user, :profile, profile_params) do
-      {:ok, _user} ->
-        conn
-        |> put_flash(:info, "Profile updated.")
-        |> redirect(to: Routes.user_path(conn, :edit_profile))
-      {:error, changeset} ->
-        conn
-        |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-        |> put_status(:bad_request)
-        |> render("edit_profile.html", user: user, changeset: %{changeset|action: :update})
+    email_ownership_error? =
+      if email_id = profile_params["public_email_id"] do
+        email_id = String.to_integer(email_id)
+        !Enum.find(user.emails, &(&1.id == email_id))
+      end
+    unless email_ownership_error? do
+      case User.update(user, :profile, profile_params) do
+        {:ok, _user} ->
+          conn
+          |> put_flash(:info, "Profile updated.")
+          |> redirect(to: Routes.user_path(conn, :edit_profile))
+        {:error, changeset} ->
+          conn
+          |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+          |> put_status(:bad_request)
+          |> render("edit_profile.html", user: user, changeset: %{changeset|action: :update})
+      end
+    else
+      changeset = User.profile_changeset(user, profile_params)
+      changeset = Ecto.Changeset.add_error(changeset, :public_email, "invalid")
+      conn
+      |> put_flash(:error, "Something went wrong! Please check error(s) below.")
+      |> put_status(:bad_request)
+      |> render("edit_profile.html", user: user, changeset: %{changeset|action: :update})
     end
   end
 
