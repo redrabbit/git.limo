@@ -51,7 +51,7 @@
           <% end %>
           <%= navigation_item @conn, :repo, :index do %>
             <a href="<%= Routes.repo_path(@conn, :index, @user) %>">
-              <span class="icon"><i class="fa fa-cubes" aria-hidden="true"></i></span>
+              <span class="icon"><i class="fa fa-boxes" aria-hidden="true"></i></span>
               <span>Repositories <span class="tag"><%= Enum.count(@user.repos) %></span></span>
             </a>
           <% end %>
