@@ -379,6 +379,12 @@ defmodule GitRekt.GitAgent do
   @spec pack_create(agent, [Git.oid]) :: {:ok, binary} | {:error, term}
   def pack_create(agent, oids), do: exec(agent, {:pack, oids})
 
+  @doc """
+  Executes the given `cb` inside a transaction.
+  """
+  @spec transaction(agent, term, (Git.repo -> {:ok, term} | {:error, term})) :: {:ok, term} | {:error, term}
+  def transaction(agent, name \\ nil, cb), do: exec(agent, {:transaction, name, cb})
+
   #
   # Callbacks
   #
@@ -414,7 +420,10 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:cache, op, nil}, from, state), do: handle_call(op, from, state)
+  def handle_call({:cache, op, nil}, _from, {handle, config} = state) do
+    {:reply, call(handle, op), state, config.idle_timeout}
+  end
+
   def handle_call({:cache, op, {cache_op, cache}}, _from, {handle, config} = state) do
     case call(handle, op) do
       {:ok, result} ->
@@ -463,6 +472,8 @@ defmodule GitRekt.GitAgent do
   def make_cache_key({:history_count, %GitCommit{oid: oid}}), do: {:history_count, oid}
   def make_cache_key({:history_count, %GitRef{oid: oid}}), do: {:history_count, oid}
   def make_cache_key({:tree_entries_with_commit, %GitCommit{oid: oid}, path}), do: {:tree_entries_with_commit, oid, path}
+  def make_cache_key({:tree_entries_with_commit, %GitRef{oid: oid}, path}), do: {:tree_entries_with_commit, oid, path}
+  def make_cache_key({:transaction, name, _cb}) when not is_nil(name), do: {:transaction, name}
   def make_cache_key(_op), do: nil
 
   #
@@ -745,9 +756,9 @@ defmodule GitRekt.GitAgent do
 
   defp call(_handle, {:blob_content, %GitBlob{__ref__: blob}}), do: Git.blob_content(blob)
   defp call(_handle, {:blob_size, %GitBlob{__ref__: blob}}), do: Git.blob_size(blob)
-  defp call(handle, {:history, obj, opts}), do: walk_history(obj, handle, opts)
-  defp call(handle, {:history_count, obj}) do
-    case walk_history(obj, handle) do
+  defp call(handle, {:history, rev, opts}), do: walk_history(rev, handle, opts)
+  defp call(handle, {:history_count, rev}) do
+    case walk_history(rev, handle) do
       {:ok, stream} ->
         {:ok, Enum.count(stream.enum)}
       {:error, reason} ->
@@ -760,6 +771,15 @@ defmodule GitRekt.GitAgent do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- walk_insert(walk, oid_mask(oids)),
       do: Git.revwalk_pack(walk)
+  end
+
+  defp call(handle, {:transaction, _name, cb}) do
+    case cb.(handle) do
+      {:ok, result} ->
+        {:ok, result}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp call_cache_read(_op, nil, _cache, _cache_adapter), do: nil

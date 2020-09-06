@@ -216,6 +216,7 @@ defmodule GitGud.Repo do
             :ets.give_away(cache, pid, %{})
             {:ok, {pid, cache}}
           {:error, reason} ->
+            :ets.delete(cache)
             {:error, reason}
         end
       end
