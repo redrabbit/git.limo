@@ -36,7 +36,7 @@ defmodule GitGud.Web.Mixfile do
      {:phoenix_html, "~> 2.14"},
      {:phoenix_pubsub, "~> 2.0"},
      {:phoenix_live_reload, "~> 1.2", only: :dev},
-     {:phoenix_ecto, "~> 4.1"},
+     {:phoenix_ecto, "~> 4.2"},
      {:absinthe, "~> 1.5"},
      {:absinthe_relay, "~> 1.5"},
      {:absinthe_phoenix, "~> 2.0"},
@@ -45,7 +45,7 @@ defmodule GitGud.Web.Mixfile do
      {:gettext, "~> 0.17"},
      {:timex, "~> 3.6"},
      {:earmark, "~> 1.4"},
-     {:floki, "~> 0.27", only: :test},
+     {:floki, "~> 0.28", only: :test},
      {:gitgud, in_umbrella: true}]
   end
 
