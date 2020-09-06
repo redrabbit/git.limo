@@ -460,51 +460,10 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def make_cache_key(:empty?), do: nil
-  def make_cache_key(:odb), do: nil
-  def make_cache_key({:odb_read, _odb, _oid}), do: nil
-  def make_cache_key({:odb_write, _odb, _data, _type}), do: nil
-  def make_cache_key({:odb_object_exists?, _odb, _oid}), do: nil
-  def make_cache_key(:head), do: nil
-  def make_cache_key({:references, _glob, _opts}), do: nil
-  def make_cache_key({:reference, _name}), do: nil
-  def make_cache_key({:reference_create, _name, _type, _target, _force}), do: nil
-  def make_cache_key({:reference_delete, _name}), do: nil
-  def make_cache_key({:revision, _spec}), do: nil
-  def make_cache_key({:object, _oid}), do: nil
-  def make_cache_key({:tree, _revision}), do: nil
-  def make_cache_key({:tree_entry, %GitRef{}, _entry}), do: nil
-  def make_cache_key({:tree_entry, %GitTag{}, _entry}), do: nil
-  def make_cache_key({:tree_entry, revision, {:path, path}}), do: {:tree_entry, map_operation_item(revision), path}
-  def make_cache_key({:tree_entry, revision, {:oid, oid}}), do: {:tree_entry, map_operation_item(revision), oid}
-  def make_cache_key({:tree_entries_with_commit, %GitRef{}, _path}), do: nil
-  def make_cache_key({:tree_entries_with_commit, %GitTag{}, _path}), do: nil
-  def make_cache_key({:tree_entries, %GitRef{}, _path}), do: nil
-  def make_cache_key({:tree_entries, %GitTag{}, _path}), do: nil
-  def make_cache_key({:tree_entry_target, _tree_entry}), do: nil
-  def make_cache_key(:index), do: nil
-  def make_cache_key({:index_add, _index, _entry}), do: nil
-  def make_cache_key({:index_add, _index, _oid, _path, _file_size, _mode, _opts}), do: nil
-  def make_cache_key({:index_remove, _index, _path}), do: nil
-  def make_cache_key({:index_remove_dir, _index, _path}), do: nil
-  def make_cache_key({:index_read_tree, _index, _tree}), do: nil
-  def make_cache_key({:index_write_tree, _index}), do: nil
-  def make_cache_key({:diff, _obj1, _obj2, _opts}), do: nil
-  def make_cache_key({:diff_deltas, _diff}), do: nil
-  def make_cache_key({:diff_format, _diff, _format}), do: nil
-  def make_cache_key({:diff_stats, _diff}), do: nil
-  def make_cache_key({:history, _revision, _opts}), do: nil
-  def make_cache_key({:history_count, %GitRef{}, _opts}), do: nil
-  def make_cache_key({:history_count, %GitTag{}, _opts}), do: nil
-  def make_cache_key({:commit_create, _update_ref, _author, _committer, _message, _tree_oid, _parents_oids}), do: nil
-  def make_cache_key({:peel, _target}), do: nil
-  def make_cache_key({:pack, _oids}), do: nil
-  def make_cache_key(op) do
-      op
-      |> Tuple.to_list()
-      |> Enum.map(&map_operation_item/1)
-      |> List.to_tuple()
-  end
+  def make_cache_key({:history_count, %GitCommit{oid: oid}}), do: {:history_count, oid}
+  def make_cache_key({:history_count, %GitRef{oid: oid}}), do: {:history_count, oid}
+  def make_cache_key({:tree_entries_with_commit, %GitCommit{oid: oid}, path}), do: {:tree_entries_with_commit, oid, path}
+  def make_cache_key(_op), do: nil
 
   #
   # Helpers
@@ -1184,21 +1143,11 @@ defmodule GitRekt.GitAgent do
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end
 
-  defp cache_adapter_env, do: Keyword.get(Application.get_env(:gitrekt, GitRekt.GitAgent, []), :cache_adapter, __MODULE__)
-
+  defp cache_adapter_env, do: Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
 
   defp map_operation(op) when is_atom(op), do: {op, []}
   defp map_operation(op) do
     [name|args] = Tuple.to_list(op)
     {name, args}
   end
-
-  defp map_operation_item(items) when is_list(items), do: Enum.map(items, &map_operation_item/1)
-  defp map_operation_item(%GitRef{oid: oid}), do: {:reference, oid}
-  defp map_operation_item(%GitTag{oid: oid}), do: {:tag, oid}
-  defp map_operation_item(%GitCommit{oid: oid}), do: {:commit, oid}
-  defp map_operation_item(%GitTree{oid: oid}), do: {:tree, oid}
-  defp map_operation_item(%GitTreeEntry{oid: oid}), do: {:tree_entry, oid}
-  defp map_operation_item(%GitBlob{oid: oid}), do: {:blob, oid}
-  defp map_operation_item(item), do: item
 end
