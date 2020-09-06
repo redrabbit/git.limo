@@ -12,7 +12,7 @@
   <tbody>
     <%= unless Enum.empty?(@tree_path) do %>
       <tr>
-        <th colspan="3"><a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, Enum.drop(@tree_path, -1)) %>">..</a></th>
+        <th align="left" colspan="3"><a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, Enum.drop(@tree_path, -1)) %>"><span class="icon"></span>..</a></th>
       </tr>
     <% end %>
     <%= for entry <- tree_entries(@agent, @tree) do %>

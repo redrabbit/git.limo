@@ -183,7 +183,6 @@ textarea.textarea {
 .breadcrumb {
   display: inline-flex;
   .icon {
-    @extend .has-text-grey-lighter;
     padding-bottom: 0.5rem;
 
     &:first-child {

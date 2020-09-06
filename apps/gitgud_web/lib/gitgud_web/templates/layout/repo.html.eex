@@ -3,7 +3,17 @@
     <span class="icon is-large"><i class="fa fa-box-open"></i></span>
     <ul>
       <li><h1 class="title"><a href="<%= Routes.user_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.login %></a></h1></li>
-      <li><h1 class="title"><a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>"><%= @repo.name %></a></h1></li>
+      <li>
+        <h1 class="title">
+          <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
+            <%= @repo.name %>
+            <%= unless @repo.public do %>
+              &nbsp;
+              <span class="tag is-large has-text-grey-light"><i class="fa fa-lock"></i></span>
+            <% end %>
+          </a>
+        </h1>
+      </li>
     </ul>
   </nav>
 
