@@ -47,8 +47,8 @@ defmodule GitGud.SSHServer do
   defstruct [:conn, :chan, :user, :repo, :service, request_size: 0]
 
   @type t :: %__MODULE__{
-    conn: :ssh_connection.ssh_connection_ref,
-    chan: :ssh_connection.ssh_channel_id,
+    conn: :ssh.connection_ref,
+    chan: :ssh.channel_id,
     user: User.t,
     service: module,
     request_size: non_neg_integer

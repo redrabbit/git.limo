@@ -4,7 +4,7 @@ defmodule GitRekt.GitAgent do
 
   This module provides an API to manipulate Git repositories. In contrast to `GitRekt.Git`, it offers
   an abstraction for serializing Git commands via message passing. By doing so it allows multiple processes
-  to manipulate a single repository simultaneously.
+  to manipulate a single repository simultaneously (see “Thread safety” in `GitRekt.Git` module).
 
   At it core `GitRekt.GitAgent` implements `GenServer`. Therefore it makes it easy to fit into a supervision
   tree and furthermore, in a distributed environment.
@@ -37,13 +37,44 @@ defmodule GitRekt.GitAgent do
   IO.puts message
   ```
 
-  This look very similar to the original example altought the API is slightly different. You might have
-  noticed that the first argument of each Git function is an `agent`. In our example the agent is a PID
-  referencing a dedicated process started with `start_link/1`.
+  This look very similar to the original example altought the API is slightly different.
 
-  Note that replacing `start_link/1` with `GitRekt.Git.repository_open/1` in the above example would actually
-  return the exact same output. This works because `t:agent/0` can be either a `t:GitRekt.Git.repo/0`, a PID
-  or a user defined struct implementing the `GitRekt.GitRepo` protocol (more on that later).
+  You might have noticed that the first argument of each Git function is an `agent`. In our example the agent
+  is a PID referencing a dedicated process started with `start_link/1` but replacing `start_link/1` with
+  `GitRekt.Git.repository_open/1` would actually return the exact same output. This works because `t:agent/0`
+  can be either a `t:GitRekt.Git.repo/0` NIF ressource or the PID of an agent process (more on that later).
+
+  ## Transactions
+
+  You can execute a serie of commands inside a transaction.
+
+  In the following example, we use `transaction/2` to retrieve all informations for a given commit:
+
+  ```
+  {:ok, commit_info} = GitAgent.transaction(agent, fn repo ->
+    with {:ok, author} <- GitAgent.commit_author(repo, commit),
+         {:ok, committer} <- GitAgent.commit_committer(repo, commit),
+         {:ok, message} <- GitAgent.commit_message(repo, commit),
+         {:ok, parents} <- GitAgent.commit_parents(repo, commit),
+         {:ok, timestamp} <- GitAgent.commit_timestamp(repo, commit),
+         {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(repo, commit) do
+      {:ok, %{
+        oid: commit.oid,
+        author: author,
+        committer: committer,
+        message: message,
+        parents: Enum.to_list(parents),
+        timestamp: timestamp,
+        gpg_sig: gpg_sig
+      }}
+    end
+  end)
+  ```
+
+  Transactions provide a simple entry point for implementing more complex commands.
+
+  Note that the in the above example, `repo` is a `t:GitRekt.Git.repo/0` NIF resource which allows functions
+  available in `GitRekt.Git` and `GitRekt.GitAgent` to be used mutually inside a single transaction.
   """
   use GenServer
 
@@ -174,7 +205,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Creates a reference with the given `name` and `target`.
   """
-  @spec reference_create(agent, binary, :atom, Git.oid | binary, boolean) :: :ok | {:error, term}
+  @spec reference_create(agent, binary, atom, Git.oid | binary, boolean) :: :ok | {:error, term}
   def reference_create(agent, name, type, target, force \\ false), do: exec(agent, {:reference_create, name, type, target, force})
 
   @doc """

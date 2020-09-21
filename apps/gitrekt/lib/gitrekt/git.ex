@@ -34,14 +34,14 @@ defmodule GitRekt.Git do
   a commit by passing the exact reference path to `reference_peel/2`. In our example, this allows us to retrieve
   the commit *refs/heads/master* is pointing to.
 
-  This is one of many ways to fetch a given commit, `reference_lookup/2` and `reference_glob/2` offer similar
+  This is one of many ways to fetch a given revision, `reference_lookup/2` and `reference_glob/2` offer similar
   functionalities. There are other related functions such as `revparse_single/2` and `revparse_ext/2` which
   provide support for parsing [revspecs](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection).
 
-  ## Retrieve objects
+  ## Retrieve blobs & trees
 
-  In order to access the actual files and directories of a repository, we have to retrieve the Git tree object of
-  a given revision. Here we simply list files and folders at the root directory:
+  In order to access the actual files and directories of a repository, we have to retrieve the Git blob and tree
+  objects of a given revision. Here we simply list files and folders at the root directory:
 
   ```elixir
   # fetch commit tree
@@ -88,7 +88,7 @@ defmodule GitRekt.Git do
 
   ## Compare revisions
 
-  Now that we know how to access files and directories, it might be interesting to the determine the changes
+  Now that we know how to access files and directories, it might be interesting to determine the changes
   between two versions. In order to do so, we need to compare two tree objects from different revisions:
 
   ```elixir
@@ -124,13 +124,115 @@ defmodule GitRekt.Git do
   IO.puts patch
   ```
 
+  ## Commit changes
+
+  Committing changes to a repository is done in a serie of distinct steps.
+
+  First, we add a new blob object to the repository:
+
+  ```
+  # Blob content
+  blob_content = "Hello world\n"
+
+  # Open repository ODB
+  {:ok, odb} = Git.repository_get_odb(repo)
+
+  # Write new blob object
+  {:ok, blob_oid} = Git.odb_write(odb, blob_content, :blob)
+  ```
+
+  We create an in-memory index to stage our modifications (an index is a list of path names, each with
+  permissions and the SHA1 of a blob object). In order to create a new tree object reflecting our changes, we
+  have to assign our new blob object at a given path in the index and write the index back to the repository:
+
+  ```
+  # Blob path
+  blob_path = "README"
+
+  # Create new index
+  {:ok, index} = Git.index_new()
+
+  # Read last commit tree into index
+  :ok = Git.index_read_tree(index, tree)
+
+  # Add newly added blob object to index
+  :ok = Git.index_add(repo, index, blob_oid, blob_path, byte_size(blob_content), 0o100644)
+
+  # Write index
+  {:ok, tree_oid} = Git.index_write_tree(index)
+  ```
+
+  The repository now contains a new blob object and a new tree object reflecting our changes. We now have all the
+  ingredients for creating a commit and update the *master* branch accordingly:
+
+  ```
+  # Commit message
+  commit_message = "Add README"
+
+  # Fetch repository default signature for authoring and committing
+  {:ok, sig_name, sig_email, sig_ts, sig_tz} = Git.signature_default(repo)
+  commit_author = {sig_name, sig_email, sig_ts, sig_tz}
+  commit_committer = commit_author
+
+  # Fetch reference to update
+  {:ok, :commit, parent_oid, _parent} = Git.reference_peel(repo, "refs/heads/master")
+
+  # Create new commit
+  {:ok, commit_oid} = Git.commit_create(repo, :undefined, commit_author, commit_committer, :undefined, commit_message, tree_oid, [parent_oid])
+
+  # Update master branch to new commit
+  :ok = Git.reference_create(repo, "refs/heads/master", :oid, commit_oid)
+
+  IO.puts "File #{blob_path} added in commit #{Git.oid_fmt(commit_oid)}."
+  ```
+
+  We have created a commit pointing at the new tree object. The commit refers the newly created tree and requires two
+  user signatures (author and committer), a commit message and the commit ancestor(s).
+
+  Finally we have updated the *master* branch to point at our new commit.
+
+  ## Walk commit history
+
+  In order to walk the commit ancestry chain, we have a few functions at our disposal: `revwalk_new/1`,
+  `revwalk_push/2`, `revwalk_next/1`, `revwalk_reset/1`, etc.
+
+  ```
+  # create revision walk iterator
+  {:ok, revwalk} = Git.revwalk_new(repo)
+
+  # set root commit for traversal
+   :ok = Git.revwalk_push(walk, commit_oid)
+
+  # create (lazy) stream of ancestors from iterator
+  {:ok, stream} = Git.revwalk_stream(walk)
+
+  for ancestor_oid <- stream do
+    # fetch commit object
+    {:ok, :commit, commit} = Git.object_lookup(ancestor_oid)
+
+    # fetch commit message
+    {:ok, message} = Git.commit_message(commit)
+
+    IO.puts "#{Git.oid_fmt_short(ancestor_oid)} - #{message}"
+  end
+  ```
+
+  In this example `revwalk_new/1` returns a `t:revwalk/0`, a mutable *C-like* iteratable object. This means
+  that `revwalk_push/2` mutates the *revwalk* object instead of returning a new object.
+
+  The `revwalk_stream/1` function converts the *revwalk* iterator to a `t:Enumerable.t/0` we can then use to walk
+  the commit ancestry chain.
+
+  When iterating through a commit's history, `revwalk_sorting/2` and `revwalk_simplify_first_parent/1` provide
+  conveniences for sorting and filtering while `revwalk_push/3` can be used to hide specific commits.
+
   ## Thread safety
 
   Accessing a `t:repo/0` or any NIF allocated pointer (`t:blob/0`, `t:commit/0`, `t:config/0`, etc.) from multiple
   processes simultaneously is not safe. These pointers should never be shared across processes.
 
   In order to access a repository in a concurrent manner, each process has to initialize it's own repository
-  pointer using `repository_open/1`. Alternatively, the `GitRekt.GitAgent` module provides a similar API but
+  resource using `repository_open/1`. Alternatively, the `GitRekt.GitAgent` module provides a similar API but
   can use a dedicated process, so that its access can be serialized.
   """
 
