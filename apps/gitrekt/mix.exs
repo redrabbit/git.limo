@@ -3,7 +3,7 @@ defmodule GitRekt.Mixfile do
 
   def project do
     [app: :gitrekt,
-     version: "0.3.3",
+     version: "0.3.4",
      build_path: "../../_build",
      config_path: "../../config/config.exs",
      deps_path: "../../deps",
