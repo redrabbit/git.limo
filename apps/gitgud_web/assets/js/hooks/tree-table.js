@@ -39,7 +39,11 @@ export default () => {
         time.setAttribute("data", timestamp.format())
         time.dataset.tooltip = timestamp.format()
         time.innerHTML = timestamp.fromNow()
-        td.append(time)
+        let timeLink = document.createElement("a")
+        timeLink.href = commit.url
+        timeLink.classList.add("has-text-grey")
+        timeLink.append(time)
+        td.append(timeLink)
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
