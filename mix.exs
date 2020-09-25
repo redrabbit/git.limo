@@ -4,14 +4,22 @@ defmodule GitGud.Umbrella.Mixfile do
   @version "0.3.4"
 
   def project do
-    [apps_path: "apps",
-     version: @version,
-     name: "Git Gud",
-     start_permanent: Mix.env == :prod,
-     aliases: aliases(),
-     deps: deps(),
-     docs: docs(),
-     releases: [gitgud: [include_executables_for: [:unix], applications: [gitgud_web: :permanent, runtime_tools: :permanent]]]]
+    [
+      apps_path: "apps",
+      version: @version,
+      name: "Git Gud",
+      start_permanent: Mix.env == :prod,
+      aliases: aliases(),
+      deps: deps(),
+      docs: docs(),
+      releases: [
+        gitgud: [
+          applications: [gitgud_web: :permanent, runtime_tools: :permanent],
+          include_executables_for: [:unix],
+          steps: [:assemble, :tar]
+        ]
+      ]
+    ]
   end
 
   #
@@ -19,14 +27,18 @@ defmodule GitGud.Umbrella.Mixfile do
   #
 
   defp deps do
-    [{:benchee, "~> 1.0", only: :dev},
-     {:ex_doc, "~> 0.20", only: :dev}]
+    [
+      {:benchee, "~> 1.0", only: :dev},
+      {:ex_doc, "~> 0.20", only: :dev}
+    ]
   end
 
   defp aliases do
-    ["ecto.setup": ["ecto.create", "ecto.migrate", "run apps/gitgud/priv/db/seeds.exs"],
-     "ecto.reset": ["ecto.drop", "ecto.setup"],
-     test: ["ecto.create --quiet", "ecto.migrate", "test"]]
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run apps/gitgud/priv/db/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
   end
 
   defp docs do
