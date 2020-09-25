@@ -1172,7 +1172,7 @@ defmodule GitRekt.Git do
   @doc """
   Adds a new working tree for the given `repo`
   """
-  @spec worktree_add(repo, binary, binary, binary | :undefined) :: {:ok, binary} | {:error, term}
+  @spec worktree_add(repo, binary, binary, binary | :undefined) :: {:ok, worktree} | {:error, term}
   def worktree_add(_repo, _name, _path, _ref) do
     raise Code.LoadError, file: @nif_path_lib
   end

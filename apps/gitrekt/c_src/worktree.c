@@ -55,7 +55,8 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (override) {
 		if (git_reference_lookup(&ref, repo->repo, (char *) ref_bin.data) < 0)
 			return geef_error(env);
-		opts.ref = ref;
+		// TODO
+		//opts.ref = ref;
 		enif_release_binary(&ref_bin);
 	}
 
