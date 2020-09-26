@@ -72,7 +72,7 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "updates profile with valid params", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice", bio: "I love programming!", public_email_id: hd(user.emails).id, website_url: "http://www.example.com"})
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{name: "Alice", bio: "I love programming!", public_email_id: to_string(hd(user.emails).id), website_url: "http://www.example.com"})
       user = UserQuery.by_id(user.id, preload: :emails)
       assert user.name == "Alice"
       assert user.bio == "I love programming!"
@@ -84,7 +84,7 @@ defmodule GitGud.Web.UserControllerTest do
 
     test "fails to update profile with invalid public email", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{public_email_id: 0})
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{public_email_id: "0"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Profile</h2>)
