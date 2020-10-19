@@ -10,7 +10,7 @@ defmodule GitGud.RepoPoolTest do
   setup [:create_user, :create_repo]
 
   test "starts repository agent", %{repo: repo} do
-    assert {:ok, pid} = RepoPool.start_agent(repo)
+    assert {:ok, _pid} = RepoPool.start_agent(repo)
   end
 
   test "ensures pool cannot start duplicate repositories", %{repo: repo} do

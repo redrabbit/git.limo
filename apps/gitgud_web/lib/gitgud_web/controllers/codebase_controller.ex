@@ -66,9 +66,6 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
-  @doc """
-  Renders a blob creation form.
-  """
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do

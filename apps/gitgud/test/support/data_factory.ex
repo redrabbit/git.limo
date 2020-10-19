@@ -6,7 +6,7 @@ defmodule GitGud.DataFactory do
   alias GitGud.User
   alias GitGud.Repo
 
-  import Faker.Name, only: [name: 0]
+  import Faker.Person, only: [name: 0]
   import Faker.Company, only: [catch_phrase: 0]
   import Faker.Internet, only: [user_name: 0]
   import Faker.Lorem, only: [sentence: 1, paragraph: 1]
