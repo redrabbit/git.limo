@@ -10,15 +10,29 @@ jobs:
   build:
 
     name: Build and test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+
+    services:
+      db:
+        image: postgres:11
+        ports: ['5432:5432']
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Elixir
       uses: actions/setup-elixir@v1
       with:
-        elixir-version: '1.10.3' # Define the elixir version [required]
-        otp-version: '22.3' # Define the OTP version [required]
+        elixir-version: '1.10.3'
+        otp-version: '22.3'
+        experimental-otp: true
     - name: Install libgit2
       run: sudo apt-get install libgit2-dev
     - name: Restore dependencies cache
