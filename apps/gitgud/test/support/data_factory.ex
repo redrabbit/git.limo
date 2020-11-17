@@ -134,7 +134,7 @@ defmodule GitGud.DataFactory do
   #
 
   defp make_ssh_pair(bit_size) do
-    {rsa_priv, 0} = System.cmd("sh", ["-c", "openssl genrsa #{bit_size} 2>/dev/null"])
+    {rsa_priv, 0} = System.cmd("sh", ["-c", "openssl genrsa #{bit_size}"])
     {rsa_pubk, 0} = System.cmd("sh", ["-c", "echo \"#{rsa_priv}\" | openssl pkey -pubout | ssh-keygen -i -f /dev/stdin -m PKCS8"])
     {rsa_pubk, rsa_priv}
   end
