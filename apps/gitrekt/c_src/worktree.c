@@ -14,12 +14,7 @@ void geef_worktree_free(ErlNifEnv *env, void *cd)
 ERL_NIF_TERM
 geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-#if LIBGIT2_VER_MAJOR < 1 && LIBGIT2_VER_MINOR < 27
-    ErlNifBinary bin;
-	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
-		return geef_error(env);
-	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
-#else
+#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR < 27
     ErlNifBinary name_bin, path_bin, ref_bin;
 	int override;
 	geef_repository *repo;
@@ -85,18 +80,18 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_keep_resource(repo);
 
 	return enif_make_tuple2(env, atoms.ok, worktree_term);
+#else
+    ErlNifBinary bin;
+	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
+		return geef_error(env);
+	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
 #endif
 }
 
 ERL_NIF_TERM
 geef_worktree_prune(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-#if LIBGIT2_VER_MAJOR < 1 && LIBGIT2_VER_MINOR < 27
-    ErlNifBinary bin;
-	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
-		return geef_error(env);
-	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
-#else
+#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR < 27
 	geef_worktree *worktree;
 
 	if (!enif_get_resource(env, argv[0], geef_worktree_type, (void **) &worktree))
@@ -109,5 +104,10 @@ geef_worktree_prune(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	}
 
 	return atoms.ok;
+#else
+    ErlNifBinary bin;
+	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
+		return geef_error(env);
+	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
 #endif
 }
