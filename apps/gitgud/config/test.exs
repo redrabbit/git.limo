@@ -8,6 +8,13 @@ config :gitgud, GitGud.DB,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
+# Configure your database for GitHub Actions
+if System.get_env("GITHUB_ACTIONS") do
+  config :gitgud, GitGud.DB,
+    username: "postgres",
+    password: "postgres"
+end
+
 # Configure your SSH server
 config :gitgud,
   ssh_port: 9899,
