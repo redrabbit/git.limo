@@ -62,7 +62,7 @@ defmodule GitGud.DataFactory do
   Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key do
-    {rsa_pub, rsa_priv} = make_ssh_pair(128)
+    {rsa_pub, rsa_priv} = make_ssh_pair(512)
     %{name: callsign(), data: rsa_pub, __priv__: rsa_priv}
   end
 
