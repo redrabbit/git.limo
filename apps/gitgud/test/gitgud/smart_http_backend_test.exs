@@ -50,6 +50,8 @@ defmodule GitGud.SmartHTTPBackendTest do
     test "pushes initial commit", %{user: user, repo: repo, workdir: workdir} do
       readme_content = "##{repo.name}\r\n\r\n#{repo.description}"
       assert {_output, 0} = System.cmd("git", ["init"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["config", "user.name", "testbot"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["config", "user.email", "no-reply@git.limo"], cd: workdir)
       File.write!(Path.join(workdir, "README.md"), readme_content)
       assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
