@@ -7,8 +7,6 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
-  alias GitRekt.GitAgent
-
   alias GitGud.DB
   alias GitGud.Issue
   alias GitGud.IssueLabel
@@ -207,18 +205,13 @@ defmodule GitGud.Repo do
 
   defimpl GitRekt.GitRepo do
     def get_agent(repo) do
-      if agent = RepoPool.lookup(repo) do
-        {:ok, agent}
-      else
-        cache = GitAgent.init_cache(Path.join(repo.owner.login, repo.name), [])
-        case RepoPool.start_agent(repo, cache: cache) do
-          {:ok, pid} ->
-            :ets.give_away(cache, pid, %{})
-            {:ok, {pid, cache}}
-          {:error, reason} ->
-            :ets.delete(cache)
-            {:error, reason}
-        end
+      case RepoPool.start_agent(repo) do
+        {:ok, pid} ->
+          {:ok, pid}
+        {:error, {:already_started, pid}} ->
+          {:ok, pid}
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end

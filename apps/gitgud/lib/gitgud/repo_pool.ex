@@ -23,8 +23,7 @@ defmodule GitGud.RepoPool do
   """
   @spec start_agent(Repo.t, keyword) :: {:ok, pid} | {:error, term}
   def start_agent(repo, opts \\ []) do
-    {cache, opts} = Keyword.pop(opts, :cache)
-    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}", cache}}
+    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
     agent_opts = Keyword.merge([name: via_registry, idle_timeout: 900_000], opts)
     DynamicSupervisor.start_child(__MODULE__, %{
       id: GitAgent,
@@ -41,7 +40,6 @@ defmodule GitGud.RepoPool do
   def lookup(path) do
     case Registry.lookup(GitGud.RepoRegistry, path) do
       [{agent, nil}] -> agent
-      [{agent, cache}] -> {agent, cache}
       [] -> nil
     end
   end

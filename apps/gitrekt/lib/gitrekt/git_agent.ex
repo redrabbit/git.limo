@@ -51,13 +51,13 @@ defmodule GitRekt.GitAgent do
   In the following example, we use `transaction/2` to retrieve all informations for a given commit:
 
   ```
-  {:ok, commit_info} = GitAgent.transaction(agent, fn repo ->
-    with {:ok, author} <- GitAgent.commit_author(repo, commit),
-         {:ok, committer} <- GitAgent.commit_committer(repo, commit),
-         {:ok, message} <- GitAgent.commit_message(repo, commit),
-         {:ok, parents} <- GitAgent.commit_parents(repo, commit),
-         {:ok, timestamp} <- GitAgent.commit_timestamp(repo, commit),
-         {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(repo, commit) do
+  {:ok, commit_info} = GitAgent.transaction(agent, fn agent ->
+    with {:ok, author} <- GitAgent.commit_author(agent, commit),
+         {:ok, committer} <- GitAgent.commit_committer(agent, commit),
+         {:ok, message} <- GitAgent.commit_message(agent, commit),
+         {:ok, parents} <- GitAgent.commit_parents(agent, commit),
+         {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
+         {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(agent, commit) do
       {:ok, %{
         oid: commit.oid,
         author: author,
@@ -73,8 +73,6 @@ defmodule GitRekt.GitAgent do
 
   Transactions provide a simple entry point for implementing more complex commands.
 
-  Note that the in the above example, `repo` is a `t:GitRekt.Git.repo/0` NIF resource which allows functions
-  available in `GitRekt.Git` and `GitRekt.GitAgent` to be used mutually inside a single transaction.
   """
   use GenServer
 
@@ -95,7 +93,7 @@ defmodule GitRekt.GitAgent do
 
   @behaviour GitRekt.GitAgent.Cache
 
-  @type agent :: Git.repo | GitRepo.t | pid
+  @type agent :: pid | Git.repo
 
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
@@ -425,6 +423,7 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
+        config = Map.put(config, :cache, init_cache(path, []))
         {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
@@ -451,28 +450,14 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:cache, op, nil}, _from, {handle, config} = state) do
-    {:reply, call(handle, op), state, config.idle_timeout}
-  end
-
-  def handle_call({:cache, op, {cache_op, cache}}, _from, {handle, config} = state) do
-    case call(handle, op) do
-      {:ok, result} ->
-        call_cache_write(op, cache_op, cache, cache_adapter_env(), result)
-        {:reply, {:ok, result}, state, config.idle_timeout}
-      {:error, reason} ->
-        {:reply, {:error, reason}, state, config.idle_timeout}
-    end
-  end
-
   def handle_call({:references, glob, opts}, _from, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream({:references, glob, opts}, chunk_size, handle), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:references, glob, opts}, chunk_size), state, config.idle_timeout}
   end
 
   def handle_call({:history, obj, opts}, _from, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream({:history, obj, opts}, chunk_size, handle), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:history, obj, opts}, chunk_size), state, config.idle_timeout}
   end
 
   def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config} = state) do
@@ -482,15 +467,11 @@ defmodule GitRekt.GitAgent do
     {:reply, {Enum.to_list(chunk_stream), acc}, state, config.idle_timeout}
   end
 
-  def handle_call(op, _from, {handle, config} = state) do
-    {:reply, call(handle, op), state, config.idle_timeout}
+  def handle_call(op, _from, {handle, %{cache: cache} = config} = state) do
+    {:reply, call_cache(handle, op, cache), state, config.idle_timeout}
   end
 
   @impl true
-  def handle_info({:"ETS-TRANSFER", _cache, _heir, _heir_data}, {_handle, _config} = state) do
-    {:noreply, state}
-  end
-
   def handle_info(:timeout, {_handle, %{idle_timeout: :infinity}} = state) do
     {:noreply, state}
   end
@@ -500,10 +481,8 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def make_cache_key({:history_count, %GitCommit{oid: oid}}), do: {:history_count, oid}
   def make_cache_key({:history_count, %GitRef{oid: oid}}), do: {:history_count, oid}
-  def make_cache_key({:tree_entries_with_commit, %GitCommit{oid: oid}, path}), do: {:tree_entries_with_commit, oid, path}
-  def make_cache_key({:tree_entries_with_commit, %GitRef{oid: oid}, path}), do: {:tree_entries_with_commit, oid, path}
+  def make_cache_key({:history_count, %GitCommit{oid: oid}}), do: {:history_count, oid}
   def make_cache_key({:transaction, name, _cb}) when not is_nil(name), do: {:transaction, name}
   def make_cache_key(_op), do: nil
 
@@ -511,102 +490,9 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec_cache(op, cache, cache_adapter_env(), agent)
-  defp exec({agent, cache}, op) when is_pid(agent), do: telemetry_exec_cache(op, cache, cache_adapter_env(), agent, &GenServer.call(&1, {:cache, &2, &3}, @default_config.timeout))
-  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
   defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
-  defp exec(repo, op) do
-    case GitRepo.get_agent(repo) do
-      {:ok, agent} ->
-        exec(agent, op)
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp telemetry_exec(op, callback, meta \\ %{}) do
-    event_time = System.monotonic_time(:nanosecond)
-    result = callback.()
-    duration = System.monotonic_time(:nanosecond) - event_time
-    {name, args} = map_operation(op)
-    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
-    result
-  end
-
-  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback \\ &call/2)
-  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 2) do
-    event_time = System.monotonic_time(:nanosecond)
-    cache_op = cache_adapter.make_cache_key(op)
-    {response, meta} =
-      cond do
-        is_nil(cache_op) ->
-          {callback.(handle, op), %{}}
-        result = call_cache_read(op, cache_op, cache, cache_adapter) ->
-          {{:ok, result}, %{cache: true}}
-        true ->
-          case callback.(handle, op) do
-            {:ok, result} ->
-              call_cache_write(op, cache_op, cache, cache_adapter, result)
-              {{:ok, result}, %{}}
-            {:error, reason} ->
-              {{:error, reason}, %{}}
-          end
-      end
-    duration = System.monotonic_time(:nanosecond) - event_time
-    {name, args} = map_operation(op)
-    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
-    response
-  end
-
-  defp telemetry_exec_cache(op, cache, cache_adapter, handle, callback) when is_function(callback, 3) do
-    event_time = System.monotonic_time(:nanosecond)
-    cache_op = cache_adapter.make_cache_key(op)
-    {response, meta} =
-      cond do
-        is_nil(cache_op) ->
-          {callback.(handle, op, nil), %{}}
-        result = call_cache_read(op, cache_op, cache, cache_adapter) ->
-          {{:ok, result}, %{cache: true}}
-        true ->
-          {callback.(handle, op, {cache_op, cache}), %{}}
-      end
-    duration = System.monotonic_time(:nanosecond) - event_time
-    {name, args} = map_operation(op)
-    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
-    response
-  end
-
-  defp telemetry_stream(op, chunk_size, callback, meta \\ %{}) do
-    {name, args} =
-      if is_atom(op) do
-        {op, []}
-      else
-        [name|args] = Tuple.to_list(op)
-        {name, args}
-      end
-    event_time = System.monotonic_time(:nanosecond)
-    result = callback.()
-    duration = System.monotonic_time(:nanosecond) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, Map.merge(meta, %{op: name, args: args, chunk_size: chunk_size}))
-    result
-  end
-
-  defp telemetry_cache(op, cache_adapter, fun, args, meta \\ %{}) do
-    event_time = System.monotonic_time(:nanosecond)
-    result = apply(cache_adapter, fun, args)
-    if result do
-      duration = System.monotonic_time(:nanosecond) - event_time
-      {name, args} =
-        if is_atom(op) do
-          {op, []}
-        else
-          [name|args] = Tuple.to_list(op)
-          {name, args}
-        end
-      :telemetry.execute([:gitrekt, :git_agent, fun], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
-      result
-    end
-  end
+  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
+  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(agent, op, cache)
 
   defp call(handle, :empty?) do
     {:ok, Git.repository_empty?(handle)}
@@ -813,24 +699,60 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call_cache_read(_op, nil, _cache, _cache_adapter), do: nil
-  defp call_cache_read(op, cache_op, cache, cache_adapter) do
-    telemetry_cache(op, cache_adapter, :fetch_cache, [cache, cache_op])
+  def call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
+    call_cache({handle, cache}, op, cache)
   end
 
-  defp call_cache_write(_op, nil, _cache, _cache_adapter, _result), do: :ok
-  defp call_cache_write(op, cache_op, cache, cache_adapter, %Stream{} = result), do: call_cache_write(op, cache_op, cache, cache_adapter, Enum.to_list(result))
-  defp call_cache_write(op, cache_op, cache, cache_adapter, result) do
-    telemetry_cache(op, cache_adapter, :put_cache, [cache, cache_op, result])
+  def call_cache(handle, op, cache) do
+    cache_adapter = Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
+    if cache_key = cache_adapter.make_cache_key(op) do
+      if cache_result = cache_adapter.fetch_cache(cache, cache_key) do
+        {:ok, cache_result}
+      else
+        case call(handle, op) do
+          {:ok, result} ->
+            cache_adapter.put_cache(cache, cache_key, result)
+            {:ok, result}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    else
+      call(handle, op)
+    end
   end
 
-  defp call_stream(op, chunk_size, handle) do
+  defp call_stream(handle, op, chunk_size) do
     case call(handle, op) do
       {:ok, stream} ->
         {:ok, async_stream(op, stream, chunk_size)}
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp telemetry_exec(op, callback, meta \\ %{}) do
+    event_time = System.monotonic_time(:nanosecond)
+    result = callback.()
+    duration = System.monotonic_time(:nanosecond) - event_time
+    {name, args} = map_operation(op)
+    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
+    result
+  end
+
+  defp telemetry_stream(op, chunk_size, callback, meta \\ %{}) do
+    {name, args} =
+      if is_atom(op) do
+        {op, []}
+      else
+        [name|args] = Tuple.to_list(op)
+        {name, args}
+      end
+    event_time = System.monotonic_time(:nanosecond)
+    result = callback.()
+    duration = System.monotonic_time(:nanosecond) - event_time
+    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, Map.merge(meta, %{op: name, args: args, chunk_size: chunk_size}))
+    result
   end
 
   defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
@@ -1193,8 +1115,6 @@ defmodule GitRekt.GitAgent do
     entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
     {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
   end
-
-  defp cache_adapter_env, do: Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
 
   defp map_operation(op) when is_atom(op), do: {op, []}
   defp map_operation(op) do
