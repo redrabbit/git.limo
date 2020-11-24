@@ -50,6 +50,7 @@ defmodule GitGud.SmartHTTPBackend do
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
 
+  alias GitRekt.GitRepo
   alias GitRekt.WireProtocol
 
   alias GitGud.Account
@@ -147,7 +148,8 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
     if authorized?(conn, repo, exec) do
-      refs = WireProtocol.reference_discovery(repo, exec)
+      {:ok, agent} = GitRepo.get_agent(repo)
+      refs = WireProtocol.reference_discovery(agent, exec)
       info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
       conn
       |> put_resp_content_type("application/x-#{exec}-advertisement")

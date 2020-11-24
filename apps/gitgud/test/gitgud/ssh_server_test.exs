@@ -55,13 +55,14 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, head} = GitAgent.head(repo)
-      assert {:ok, commit} = GitAgent.peel(repo, head)
-      assert {:ok, "Initial commit\n"} = GitAgent.commit_message(repo, commit)
-      assert {:ok, tree} = GitAgent.tree(repo, commit)
-      assert {:ok, tree_entry} = GitAgent.tree_entry_by_path(repo, tree, "README.md")
-      assert {:ok, blob} = GitAgent.tree_entry_target(repo, tree_entry)
-      assert {:ok, ^readme_content} = GitAgent.blob_content(repo, blob)
+      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, head} = GitAgent.head(agent)
+      assert {:ok, commit} = GitAgent.peel(agent, head)
+      assert {:ok, "Initial commit\n"} = GitAgent.commit_message(agent, commit)
+      assert {:ok, tree} = GitAgent.tree(agent, commit)
+      assert {:ok, tree_entry} = GitAgent.tree_entry_by_path(agent, tree, "README.md")
+      assert {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+      assert {:ok, ^readme_content} = GitAgent.blob_content(agent, blob)
     end
 
     @tag :skip
@@ -70,7 +71,8 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, head} = GitAgent.head(repo)
+      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
@@ -82,7 +84,8 @@ defmodule GitGud.SSHServerTest do
     @tag :skip
     test "clones repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
-      assert {:ok, head} = GitAgent.head(repo)
+      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
     end
