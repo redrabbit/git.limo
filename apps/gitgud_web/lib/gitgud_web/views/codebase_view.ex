@@ -46,13 +46,6 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec repo_head(GitAgent.agent) :: GitRef.t | nil
-  def repo_head(agent) do
-    case GitAgent.head(agent) do
-      {:ok, branch} -> branch
-      {:error, _reason} -> nil
-    end
-  end
   @spec blob_content(GitAgent.agent, GitBlob.t) :: binary | nil
   def blob_content(agent, blob) do
     case GitAgent.blob_content(agent, blob) do
