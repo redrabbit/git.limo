@@ -390,9 +390,18 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),
-           {:ok, tree} <- GitAgent.tree(agent, object) do
-        breadcrumb = %{action: :tree, cwd?: true, tree?: true}
-        render(conn, "show.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: [], breadcrumb: breadcrumb, stats: stats(repo, agent, reference || object))
+           {:ok, tree} <- GitAgent.tree(agent, object),
+           {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
+        render(conn, "show.html",
+          breadcrumb: %{action: :tree, cwd?: true, tree?: true},
+          repo: repo,
+          revision: reference || object,
+          commit: commit,
+          tree: tree,
+          tree_entries: tree_entries,
+          tree_path: [],
+          stats: stats(repo, agent, reference || object)
+        )
       end
     end || {:error, :not_found}
   end
@@ -403,20 +412,22 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
-           {:ok, tree_entry_target} <- GitAgent.tree_entry_target(agent, tree_entry) do
-        case tree_entry_target do
-          %GitBlob{} ->
-            unless reference  do
-              conn
-              |> put_status(:moved_permanently)
-              |> redirect(to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
-            else
-              redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
-            end
-          %GitTree{} = tree ->
-            breadcrumb = %{action: :tree, cwd?: true, tree?: true}
-            render(conn, "tree.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: tree_path, breadcrumb: breadcrumb)
-        end
+           {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(agent, tree_entry),
+           {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
+        render(conn, "tree.html",
+          breadcrumb: %{action: :tree, cwd?: true, tree?: true},
+          repo: repo,
+          revision: reference || object,
+          commit: commit,
+          tree: tree,
+          tree_entries: tree_entries,
+          tree_path: tree_path
+        )
+      else
+        {:ok, %GitBlob{}} ->
+          redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
+        {:error, reason} ->
+          {:error, reason}
       end
     end || {:error, :not_found}
   end
@@ -431,20 +442,23 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
-           {:ok, tree_entry_target} <- GitAgent.tree_entry_target(agent, tree_entry) do
-        case tree_entry_target do
-          %GitTree{} ->
-            unless reference  do
-              conn
-              |> put_status(:moved_permanently)
-              |> redirect(to: Routes.codebase_path(conn, :tree, repo.owner, repo, revision, blob_path))
-            else
-              redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, blob_path))
-            end
-          %GitBlob{} = blob ->
-            breadcrumb = %{action: :tree, cwd?: true, tree?: false}
-            render(conn, "blob.html", repo: repo, agent: agent, revision: reference || object, commit: commit, blob: blob, tree_path: blob_path, breadcrumb: breadcrumb)
-        end
+           {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
+           {:ok, blob_content} <- GitAgent.blob_content(agent, blob),
+           {:ok, blob_size} <- GitAgent.blob_size(agent, blob) do
+        render(conn, "blob.html",
+          breadcrumb: %{action: :tree, cwd?: true, tree?: false},
+          repo: repo,
+          revision: reference || object,
+          commit: commit,
+          blob_content: blob_content,
+          blob_size: blob_size,
+          tree_path: blob_path
+        )
+      else
+        {:ok, %GitTree{}} ->
+          redirect(conn, to: Routes.codebase_path(conn, :tree, repo.owner, repo, revision, blob_path))
+        {:error, reason} ->
+          {:error, reason}
       end
     end || {:error, :not_found}
   end

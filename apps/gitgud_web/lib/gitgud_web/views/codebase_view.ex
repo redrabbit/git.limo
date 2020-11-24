@@ -15,7 +15,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
-  alias GitRekt.{GitCommit, GitTag, GitTree, GitTreeEntry, GitBlob, GitDiff, GitRef}
+  alias GitRekt.{GitCommit, GitTag, GitTreeEntry, GitDiff, GitRef}
 
   import Phoenix.Controller, only: [action_name: 1]
 
@@ -44,22 +44,6 @@ defmodule GitGud.Web.CodebaseView do
         ])
       ])
     ])
-  end
-
-  @spec blob_content(GitAgent.agent, GitBlob.t) :: binary | nil
-  def blob_content(agent, blob) do
-    case GitAgent.blob_content(agent, blob) do
-      {:ok, content} -> content
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec blob_size(GitAgent.agent, GitBlob.t) :: non_neg_integer | nil
-  def blob_size(agent, blob) do
-    case GitAgent.blob_size(agent, blob) do
-      {:ok, size} -> size
-      {:error, _reason} -> nil
-    end
   end
 
   @spec commit_author(GitAgent.agent, GitCommit.t) :: User.t | map | nil
@@ -188,25 +172,6 @@ defmodule GitGud.Web.CodebaseView do
       :update -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
       :delete -> Routes.codebase_path(conn, :confirm_delete, repo.owner, repo, "__rev__", tree_path)
       action -> Routes.codebase_path(conn, action, repo.owner, repo, "__rev__", tree_path)
-    end
-  end
-
-  @spec tree_entries(GitAgent.agent, GitTree.t) :: [GitTreeEntry.t]
-  def tree_entries(agent, tree) do
-    case GitAgent.tree_entries(agent, tree) do
-      {:ok, entries} -> entries
-      {:error, _reason} -> []
-    end
-  end
-
-  @spec tree_readme(GitAgent.agent, GitTree.t) :: binary | nil
-  def tree_readme(agent, tree) do
-    with {:ok, entry} <- GitAgent.tree_entry_by_path(agent, tree, "README.md"),
-         {:ok, blob} <- GitAgent.tree_entry_target(agent, entry),
-         {:ok, content} <- GitAgent.blob_content(agent, blob) do
-      markdown_safe(content)
-    else
-      {:error, _reason} -> nil
     end
   end
 
