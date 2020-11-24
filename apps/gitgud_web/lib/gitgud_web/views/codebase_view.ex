@@ -46,40 +46,6 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec breadcrumb_action(atom) :: atom
-  def breadcrumb_action(action) when action in [:new, :history], do: action
-  def breadcrumb_action(_action), do: :tree
-
-  @spec breadcrumb_pwd?(Plug.Conn.t) :: boolean
-  def breadcrumb_pwd?(conn) do
-    case Phoenix.Controller.action_name(conn) do
-      :edit -> false
-      :update -> false
-      _action -> :true
-    end
-  end
-
-  @spec breadcrumb_tree?(Plug.Conn.t) :: boolean
-  def breadcrumb_tree?(conn) do
-    %{agent: agent, revision: revision, tree_path: tree_path} = conn.assigns
-    action = Phoenix.Controller.action_name(conn)
-    cond do
-      tree_path == [] ->
-        true
-      action in [:blob, :confirm_delete, :delete] ->
-        false
-      action == :history ->
-        with {:ok, tree} <- GitAgent.tree(agent, revision),
-             {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)) do
-          tree_entry.type == :tree
-        else
-          {:error, reason} -> raise reason
-        end
-      true ->
-        true
-   end
-  end
-
   @spec repo_head(GitAgent.agent) :: GitRef.t | nil
   def repo_head(agent) do
     case GitAgent.head(agent) do

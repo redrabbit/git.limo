@@ -31,7 +31,8 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, head} <- GitAgent.head(agent),
            {:ok, commit} <- GitAgent.peel(agent, head, :commit),
            {:ok, tree} <- GitAgent.tree(agent, commit) do
-        render(conn, "show.html", repo: repo, agent: agent, revision: head, commit: commit, tree: tree, tree_path: [], stats: stats(repo, agent, head))
+        breadcrumb = %{action: :tree, cwd?: true, tree?: true}
+        render(conn, "show.html", repo: repo, agent: agent, revision: head, commit: commit, tree: tree, tree_path: [], breadcrumb: breadcrumb, stats: stats(repo, agent, head))
       else
         {:ok, true} ->
           if authorized?(user, repo, :read),
@@ -54,8 +55,9 @@ defmodule GitGud.Web.CodebaseController do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, tree} <- GitAgent.tree(agent, object) do
+          breadcrumb = %{action: :tree, cwd?: true, tree?: true}
           changeset = blob_commit_changeset(%{branch: branch_name}, %{})
-          render(conn, "new.html", repo: repo, agent: agent, revision: reference, tree: tree, tree_path: [], changeset: changeset, stats: stats(repo, agent, reference || object))
+          render(conn, "new.html", repo: repo, agent: agent, revision: reference, tree: tree, tree_path: [], changeset: changeset, breadcrumb: breadcrumb, stats: stats(repo, agent, reference || object))
         else
           {:ok, {_object, _reference}} ->
             {:error, :not_found}
@@ -74,8 +76,9 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
              {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(agent, tree_entry) do
+          breadcrumb = %{action: :tree, cwd?: true, tree?: true}
           changeset = blob_commit_changeset(%{branch: branch_name}, %{})
-          render(conn, "new.html", repo: repo, agent: agent, revision: reference, tree: tree, tree_path: tree_path, changeset: changeset)
+          render(conn, "new.html", repo: repo, agent: agent, revision: reference, tree: tree, tree_path: tree_path, changeset: changeset, breadcrumb: breadcrumb)
         else
           {:ok, {_object, _reference}} ->
             {:error, :not_found}
@@ -100,6 +103,7 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
              {:ok, commit} <- GitAgent.peel(agent, object, :commit),
              {:ok, tree} <- GitAgent.tree(agent, commit) do
+          breadcrumb = %{action: :tree, cwd?: true, tree?: true}
           changeset = blob_commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
             blob_name = blob_changeset_name(changeset)
@@ -110,7 +114,7 @@ defmodule GitGud.Web.CodebaseController do
                 conn
                 |> put_flash(:error, "Something went wrong! Please check error(s) below.")
                 |> put_status(:bad_request)
-                |> render("new.html", repo: repo, agent: agent, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert})
+                |> render("new.html", repo: repo, agent: agent, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert}, breadcrumb: breadcrumb)
               {:error, _reason} ->
                 blob_content = blob_changeset_content(changeset)
                 commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
@@ -136,7 +140,7 @@ defmodule GitGud.Web.CodebaseController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("new.html", repo: repo, agent: agent, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert})
+            |> render("new.html", repo: repo, agent: agent, revision: reference || object, tree: tree, tree_path: tree_path, changeset: %{changeset|action: :insert}, breadcrumb: breadcrumb)
           end
         end
       end || {:error, :unauthorized}
@@ -155,8 +159,9 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
+          breadcrumb = %{action: :tree, cwd?: false, tree?: true}
           changeset = blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: branch_name}, %{})
-          render(conn, "edit.html", repo: repo, agent: agent, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset)
+          render(conn, "edit.html", repo: repo, agent: agent, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset, breadcrumb: breadcrumb)
         else
           {:ok, {_object, _reference}} ->
             {:error, :not_found}
@@ -184,6 +189,7 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
+          breadcrumb = %{action: :tree, cwd?: false, tree?: true}
           changeset = blob_commit_changeset(%{name: tree_entry.name, content: blob_content}, commit_params)
           if changeset.valid? do # TODO
             blob_content = blob_changeset_content(changeset)
@@ -212,13 +218,13 @@ defmodule GitGud.Web.CodebaseController do
                 conn
                 |> put_flash(:error, "Something went wrong! Please check error(s) below.")
                 |> put_status(:bad_request)
-                |> render("edit.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :update})
+                |> render("edit.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :update}, breadcrumb: breadcrumb)
             end
           else
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("edit.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :update})
+            |> render("edit.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :update}, breadcrumb: breadcrumb)
           end
         end
       end || {:error, :unauthorized}
@@ -236,8 +242,9 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry) do
+          breadcrumb = %{action: :tree, cwd?: true, tree?: false}
           changeset = commit_changeset(%{branch: branch_name}, %{})
-          render(conn, "confirm_delete.html", repo: repo, agent: agent, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset)
+          render(conn, "confirm_delete.html", repo: repo, agent: agent, revision: reference, blob: blob, tree_path: blob_path, changeset: changeset, breadcrumb: breadcrumb)
         else
           {:ok, {_object, _reference}} ->
             {:error, :not_found}
@@ -265,6 +272,7 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, tree} <- GitAgent.tree(agent, commit),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry) do
+          breadcrumb = %{action: :tree, cwd?: true, tree?: false}
           changeset = commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
             commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
@@ -287,7 +295,7 @@ defmodule GitGud.Web.CodebaseController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("confirm_delete.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :delete})
+            |> render("confirm_delete.html", repo: repo, agent: agent, revision: reference || object, blob: blob, tree_path: blob_path, changeset: %{changeset|action: :delete}, breadcrumb: breadcrumb)
           end
         end
       end || {:error, :unauthorized}
@@ -342,8 +350,10 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, history} <- GitAgent.history(agent, object), do:
-        render(conn, "commit_list.html", repo: repo, agent: agent, revision: reference || object, commits: history, tree_path: [])
+           {:ok, history} <- GitAgent.history(agent, object) do
+        breadcrumb = %{action: :history, cwd?: true, tree?: true}
+        render(conn, "commit_list.html", repo: repo, agent: agent, revision: reference || object, commits: history, tree_path: [], breadcrumb: breadcrumb)
+      end
     end || {:error, :not_found}
   end
 
@@ -351,8 +361,12 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)), do:
-        render(conn, "commit_list.html", repo: repo, agent: agent, revision: reference || object, commits: history, tree_path: tree_path)
+           {:ok, tree} <- GitAgent.tree(agent, revision),
+           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)),
+           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)) do
+        breadcrumb = %{action: :history, cwd?: true, tree?: tree_entry.type == :tree}
+        render(conn, "commit_list.html", repo: repo, agent: agent, revision: reference || object, commits: history, tree_path: tree_path, breadcrumb: breadcrumb)
+      end
     end || {:error, :not_found}
   end
 
@@ -376,8 +390,10 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),
-           {:ok, tree} <- GitAgent.tree(agent, object), do:
-        render(conn, "show.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: [], stats: stats(repo, agent, reference || object))
+           {:ok, tree} <- GitAgent.tree(agent, object) do
+        breadcrumb = %{action: :tree, cwd?: true, tree?: true}
+        render(conn, "show.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: [], breadcrumb: breadcrumb, stats: stats(repo, agent, reference || object))
+      end
     end || {:error, :not_found}
   end
 
@@ -398,7 +414,8 @@ defmodule GitGud.Web.CodebaseController do
               redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
             end
           %GitTree{} = tree ->
-            render(conn, "tree.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: tree_path)
+            breadcrumb = %{action: :tree, cwd?: true, tree?: true}
+            render(conn, "tree.html", repo: repo, agent: agent, revision: reference || object, commit: commit, tree: tree, tree_path: tree_path, breadcrumb: breadcrumb)
         end
       end
     end || {:error, :not_found}
@@ -425,7 +442,8 @@ defmodule GitGud.Web.CodebaseController do
               redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, blob_path))
             end
           %GitBlob{} = blob ->
-            render(conn, "blob.html", repo: repo, agent: agent, revision: reference || object, commit: commit, blob: blob, tree_path: blob_path)
+            breadcrumb = %{action: :tree, cwd?: true, tree?: false}
+            render(conn, "blob.html", repo: repo, agent: agent, revision: reference || object, commit: commit, blob: blob, tree_path: blob_path, breadcrumb: breadcrumb)
         end
       end
     end || {:error, :not_found}
