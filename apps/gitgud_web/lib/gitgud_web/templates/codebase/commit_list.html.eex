@@ -30,7 +30,7 @@
                 </div>
                 <% end %>
                 <p class="has-text-weight-bold">
-                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@agent, commit) %></a>
+                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(@commit_info.message) %></a>
                 </p>
                 <%= render "_commit_signature.html", conn: @conn, agent: @agent, commit: commit, author: author, committer: committer, gpg_key: gpg_key %>
               </div>

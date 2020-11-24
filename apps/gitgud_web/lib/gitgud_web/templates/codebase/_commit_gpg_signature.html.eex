@@ -1,4 +1,4 @@
-<%= if @committer.id == @gpg_key.user_id && Enum.any?(@committer.emails, &(&1.verified && &1.address in @gpg_key.emails)) do %>
+<%= if @commit_info.committer.id == @commit_info.gpg_key.user_id && Enum.any?(@commit_info.committer.emails, &(&1.verified && &1.address in @commit_info.gpg_key.emails)) do %>
   <div class="popover">
     <div class="popover-trigger">
       <span class="icon is-small has-text-success">
@@ -17,13 +17,13 @@
         </header>
         <div class="box-content">
           <div class="committer">
-            <figure class="is-pulled-left"><a href="<%= Routes.user_path(@conn, :show, @committer) %>"><%= gravatar(@committer, size: 36) %></a></figure>
+            <figure class="is-pulled-left"><a href="<%= Routes.user_path(@conn, :show, @commit_info.committer) %>"><%= gravatar(@commit_info.committer, size: 36) %></a></figure>
             <ul>
-              <li><strong><%= @committer.name %></strong></li>
-              <li><a href=""><%= @committer.login %></a></li>
+              <li><strong><%= @commit_info.committer.name %></strong></li>
+              <li><a href=""><%= @commit_info.committer.login %></a></li>
             </ul>
           </div>
-          <p>GPG Key ID: <span class="gpg-key-id"><%= @gpg_key %></span></p>
+          <p>GPG Key ID: <span class="gpg-key-id"><%= @commit_info.gpg_key %></span></p>
           <hr />
           <a class="is-size-7">Learn about signing commits</a>
         </div>

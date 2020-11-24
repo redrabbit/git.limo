@@ -15,7 +15,7 @@ defmodule GitGud.Web.CodebaseView do
 
   alias Phoenix.Param
 
-  alias GitRekt.{GitCommit, GitTag, GitTreeEntry, GitDiff, GitRef}
+  alias GitRekt.{GitCommit, GitTag, GitTreeEntry, GitRef}
 
   import Phoenix.Controller, only: [action_name: 1]
 
@@ -46,34 +46,6 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec commit_author(GitAgent.agent, GitCommit.t) :: User.t | map | nil
-  def commit_author(agent, commit) do
-    if author = fetch_author(agent, commit) do
-      if user = UserQuery.by_email(author.email),
-        do: user,
-      else: author
-    end
-  end
-
-  @spec commit_author(GitAgent.agent, GitCommit.t, :with_committer) :: {User.t | map | nil, User.t | map | nil}
-  def commit_author(agent, commit, :with_committer) do
-    author = fetch_author(agent, commit)
-    author_user = UserQuery.by_email(author.email, preload: [:emails]) || author
-    committer = fetch_committer(agent, commit)
-    if author.email == committer.email,
-     do: {author_user, author_user},
-   else: {author_user, UserQuery.by_email(committer.email) || committer}
-  end
-
-  @spec commit_committer(GitAgent.agent, GitCommit.t) :: User.t | map | nil
-  def commit_committer(agent, commit) do
-    if committer = fetch_committer(agent, commit) do
-      if user = UserQuery.by_email(committer.email),
-        do: user,
-      else: committer
-    end
-  end
-
   @spec commit_timestamp(GitAgent.agent, GitCommit.t) :: DateTime.t | nil
   def commit_timestamp(agent, commit) do
     case GitAgent.commit_timestamp(agent, commit) do
@@ -82,54 +54,23 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec commit_message(GitAgent.agent, GitCommit.t) :: binary | nil
-  def commit_message(agent, commit) do
-    case GitAgent.commit_message(agent, commit) do
-      {:ok, message} -> message
-      {:error, _reason} -> nil
-    end
+  @spec commit_message_title(binary) :: binary | nil
+  def commit_message_title(message) do
+    List.first(String.split(message, "\n", trim: true, parts: 2))
   end
 
-  @spec commit_message_title(GitAgent.agent, GitCommit.t) :: binary | nil
-  def commit_message_title(agent, commit) do
-    if message = commit_message(agent, commit) do
-      List.first(String.split(message, "\n", trim: true, parts: 2))
-    end
+  @spec commit_message_body(binary) :: binary | nil
+  def commit_message_body(message) do
+    List.last(String.split(message, "\n", trim: true, parts: 2))
   end
 
-  @spec commit_message_body(GitAgent.agent, GitCommit.t) :: binary | nil
-  def commit_message_body(agent, commit) do
-    if message = commit_message(agent, commit) do
-      List.last(String.split(message, "\n", trim: true, parts: 2))
-    end
-  end
-
-  @spec commit_message_format(Repo.t, GitAgent.agent, GitCommit.t, keyword) :: {binary, binary | nil} | nil
-  def commit_message_format(repo, agent, commit, opts \\ []) do
-    if message = commit_message(agent, commit) do
-      issues = find_issue_references(message, repo)
-      parts = String.split(message, "\n", trim: true, parts: 2)
-      if length(parts) == 2,
-        do: {replace_issue_references(List.first(parts), repo, issues), wrap_message(List.last(parts), repo, issues, Keyword.get(opts, :wrap, :pre))},
-      else: {replace_issue_references(List.first(parts), repo, issues), nil}
-    end
-  end
-
-  @spec commit_line_reviews(Repo.t, GitCommit.t) :: CommitLineReview.t | nil
-  def commit_line_reviews(repo, commit) do
-    ReviewQuery.commit_line_reviews(repo, commit)
-  end
-
-  def commit_gpg_key(agent, %GitCommit{} = commit) do
-    case GitAgent.commit_gpg_signature(agent, commit) do
-      {:ok, gpg_sig} ->
-        gpg_sig
-        |> GPGKey.decode!()
-        |> GPGKey.parse!()
-        |> get_in([:sig, :sub_pack, :issuer])
-        |> GPGKeyQuery.by_key_id()
-      {:error, _reason} -> nil
-    end
+  @spec commit_message_format(Repo.t, binary, keyword) :: {binary, binary | nil} | nil
+  def commit_message_format(repo, message, opts \\ []) do
+    issues = find_issue_references(message, repo)
+    parts = String.split(message, "\n", trim: true, parts: 2)
+    if length(parts) == 2,
+      do: {replace_issue_references(List.first(parts), repo, issues), wrap_message(List.last(parts), repo, issues, Keyword.get(opts, :wrap, :pre))},
+    else: {replace_issue_references(List.first(parts), repo, issues), nil}
   end
 
   @spec revision_oid(GitAgent.git_revision) :: binary
@@ -175,43 +116,13 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_stats(GitAgent.agent, GitDiff.t) :: map | nil
-  def diff_stats(agent, diff) do
-    case GitAgent.diff_stats(agent, diff) do
-      {:ok, stats} -> stats
-      {:error, _reason} -> nil
-    end
-  end
-
-  @spec diff_deltas(GitAgent.agent, GitDiff.t) :: [map] | nil
-  def diff_deltas(agent, diff) do
-    case GitAgent.diff_deltas(agent, diff) do
-      {:ok, deltas} -> deltas
-      {:error, _reason} -> []
-    end
-  end
-
-  @spec diff_deltas_with_reviews(Repo.t, GitAgent.agent, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
-  def diff_deltas_with_reviews(repo, agent, %GitCommit{} = commit, diff), do: diff_deltas_with_reviews(repo, agent, ReviewQuery.commit_line_reviews(repo, commit), diff)
-  def diff_deltas_with_reviews(_repo, agent, line_reviews, diff) when is_list(line_reviews) do
-    Enum.map(diff_deltas(agent, diff), fn delta ->
+  @spec diff_deltas_with_reviews(Repo.t, [map], [CommitLineReview.t]) :: [map] | nil
+  def diff_deltas_with_reviews(_repo, deltas, line_reviews) do
+    Enum.map(deltas, fn delta ->
       reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
       Enum.reduce(reviews, delta, fn review, delta ->
         update_in(delta.hunks, fn hunks ->
           List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
-        end)
-      end)
-    end)
-  end
-
-  @spec diff_deltas_with_comments(Repo.t, GitAgent.agent, GitCommit.t | [CommitLineReview.t], GitDiff.t) :: [map] | nil
-  def diff_deltas_with_comments(repo, agent, %GitCommit{} = commit, diff), do: diff_deltas_with_comments(repo, agent, ReviewQuery.commit_line_reviews(repo, commit, preload: [comments: :author]), diff)
-  def diff_deltas_with_comments(_repo, agent, line_reviews, diff) when is_list(line_reviews) do
-    Enum.map(diff_deltas(agent, diff), fn delta ->
-      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
-      Enum.reduce(reviews, delta, fn review, delta ->
-        update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_review_comments_to_delta_line(&1, review.line, review.comments))
         end)
       end)
     end)
@@ -302,7 +213,7 @@ defmodule GitGud.Web.CodebaseView do
   def title(action, %{repo: repo, tree_path: path}) when action in [:edit, :update], do: "Edit #{Path.join(path)} · #{repo.owner.login}/#{repo.name}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
-  def title(:commit, %{repo: repo, agent: agent, commit: commit}), do: "#{commit_message_title(agent, commit)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
+  def title(:commit, %{repo: repo, commit: commit, commit_info: commit_info}), do: "#{commit_message_title(commit_info.title)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner.login}/#{repo.name} at #{Param.to_param(rev)}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
   def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
@@ -543,16 +454,7 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp attach_review_to_delta_line(hunk, line, review) do
-    update_in(hunk.lines, fn lines ->
-      List.update_at(lines, line, &Map.put(&1, :review, review))
-    end)
-  end
-
-
-  defp attach_review_comments_to_delta_line(hunk, line, comments) do
-    update_in(hunk.lines, fn lines ->
-      List.update_at(lines, line, &Map.put(&1, :comments, comments))
-    end)
+    update_in(hunk.lines, fn lines -> List.update_at(lines, line, &Map.put(&1, :review, review)) end)
   end
 
   defp zip_author({commit, author}, users) do
