@@ -492,7 +492,7 @@ defmodule GitRekt.GitAgent do
 
   defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
   defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
-  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(agent, op, cache)
+  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec(op, fn -> call_cache(agent, op, cache) end)
 
   defp call(handle, :empty?) do
     {:ok, Git.repository_empty?(handle)}
