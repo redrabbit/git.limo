@@ -14,7 +14,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.GPGKey
 
   alias GitRekt.GitAgent
-  alias GitRekt.{GitRef, GitBlob, GitTree, GitTreeEntry}
+  alias GitRekt.{GitRef, GitTag, GitBlob, GitTree, GitTreeEntry}
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
@@ -333,31 +333,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
-  Renders all branches of a repository.
-  """
-  @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
-  def branches(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, head} <- GitAgent.head(agent),
-           {:ok, branches} <- GitAgent.branches(agent), do:
-        render(conn, "branch_list.html", repo: repo, agent: agent, head: head, branches: Enum.to_list(branches))
-    end || {:error, :not_found}
-  end
-
-  @doc """
-  Renders all tags of a repository.
-  """
-  @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
-  def tags(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, tags} <- GitAgent.tags(agent), do:
-        render(conn, "tag_list.html", repo: repo, agent: agent, tags: Enum.to_list(tags))
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Renders a single commit.
   """
   @spec commit(Plug.Conn.t, map) :: Plug.Conn.t
@@ -365,69 +340,18 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, commit} <- GitAgent.object(agent, oid_parse(oid)),
-           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &commit_info(&1, commit)),
+           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, diff} <- GitAgent.diff(agent, hd(commit_info.parents), commit), # TODO
            {:ok, diff_stats} <- GitAgent.diff_stats(agent, diff),
            {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
         render(conn, "commit.html",
           repo: repo,
           commit: commit,
-          commit_info: commit_info_db(commit_info),
-          reviews: ReviewQuery.commit_line_reviews(repo, commit),
+          commit_info: resolve_db_commit_info(commit_info),
           diff_stats: diff_stats,
-          diff_deltas: diff_deltas
+          diff_deltas: diff_deltas,
+          reviews: ReviewQuery.commit_line_reviews(repo, commit)
         )
-      end
-    end || {:error, :not_found}
-  end
-
-  @doc """
-  Renders all commits for a specific revision.
-  """
-  @spec history(Plug.Conn.t, map) :: Plug.Conn.t
-  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, history} <- GitAgent.history(agent, object) do
-        render(conn, "commit_list.html",
-          breadcrumb: %{action: :history, cwd?: true, tree?: true},
-          repo: repo,
-          agent: agent,
-          revision: reference || object,
-          commits: history,
-          tree_path: []
-        )
-      end
-    end || {:error, :not_found}
-  end
-
-  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, tree} <- GitAgent.tree(agent, object),
-           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)),
-           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)) do
-        render(conn, "commit_list.html",
-          breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry.type == :tree},
-          repo: repo,
-          agent: agent,
-          revision: reference || object,
-          commits: history,
-          tree_path: tree_path
-        )
-      end
-    end || {:error, :not_found}
-  end
-
-  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      case GitAgent.head(repo) do
-        {:ok, reference} ->
-          redirect(conn, to: Routes.codebase_path(conn, :history, user_login, repo_name, reference, []))
-        {:error, reason} ->
-          {:error, reason}
       end
     end || {:error, :not_found}
   end
@@ -512,10 +436,122 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
+  @doc """
+  Renders all branches of a repository.
+  """
+  @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
+  def branches(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      with {:ok, agent} <- GitAgent.unwrap(repo),
+           {:ok, head} <- GitAgent.head(agent),
+           {:ok, branches} <- GitAgent.branches(agent),
+           {:ok, branches_authors} <- resolve_revisions_authors(agent, Enum.to_list(branches)) do
+        page = paginate(conn, Enum.sort_by(branches_authors, &elem(&1, 2), &>=/2))
+        branches_authors = resolve_revisions_authors_db(page.slice)
+        render(conn, "branch_list.html", repo: repo, head: head, page: %{page|slice: branches_authors})
+      end
+    end || {:error, :not_found}
+  end
+
+  @doc """
+  Renders all tags of a repository.
+  """
+  @spec tags(Plug.Conn.t, map) :: Plug.Conn.t
+  def tags(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      with {:ok, agent} <- GitAgent.unwrap(repo),
+           {:ok, tags} <- GitAgent.tags(agent) do
+        page = paginate(conn, Enum.reverse(tags))
+        case resolve_revisions_authors(agent, page.slice) do
+          {:ok, tags_authors} ->
+            tags_authors = resolve_revisions_authors_db(tags_authors)
+            render(conn, "tag_list.html", repo: repo, page: %{page|slice: tags_authors})
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end || {:error, :not_found}
+  end
+
+  @doc """
+  Renders all commits for a specific revision.
+  """
+  @spec history(Plug.Conn.t, map) :: Plug.Conn.t
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      with {:ok, agent} <- GitAgent.unwrap(repo),
+           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
+           {:ok, history} <- GitAgent.history(agent, object) do
+        page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
+        case resolve_commits_infos(agent, page.slice) do
+          {:ok, commits_infos} ->
+            commits_infos = resolve_commits_info_db(repo, commits_infos)
+            render(conn, "commit_list.html",
+              breadcrumb: %{action: :history, cwd?: true, tree?: true},
+              repo: repo,
+              revision: reference || object,
+              page: %{page|slice: commits_infos},
+              tree_path: []
+            )
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end || {:error, :not_found}
+  end
+
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      with {:ok, agent} <- GitAgent.unwrap(repo),
+           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
+           {:ok, tree} <- GitAgent.tree(agent, object),
+           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)),
+           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)) do
+        page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
+        case resolve_commits_infos(agent, page.slice) do
+          {:ok, commits_infos} ->
+            commits_infos = resolve_commits_info_db(repo, commits_infos)
+            render(conn, "commit_list.html",
+              breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry.type == :tree},
+              repo: repo,
+              revision: reference || object,
+              page: %{page|slice: commits_infos},
+              tree_path: tree_path
+            )
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end || {:error, :not_found}
+  end
+
+  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+      with {:ok, agent} <- GitAgent.unwrap(repo),
+           {:ok, head} <- GitAgent.head(agent),
+           {:ok, history} <- GitAgent.history(agent, head) do
+        page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
+        case resolve_commits_infos(agent, page.slice) do
+          {:ok, commits_infos} ->
+            commits_infos = resolve_commits_info_db(repo, commits_infos)
+            render(conn, "commit_list.html",
+              breadcrumb: %{action: :history, cwd?: true, tree?: true},
+              repo: repo,
+              revision: head,
+              page: %{page|slice: commits_infos},
+              tree_path: []
+            )
+          {:error, reason} ->
+            {:error, reason}
+        end
+      end
+    end || {:error, :not_found}
+  end
+
+
   #
   # Helpers
   #
-
 
   defp blob_changeset(blob, params) do
     types = %{name: :string, content: :string}
@@ -553,7 +589,34 @@ defmodule GitGud.Web.CodebaseController do
 
   defp commit_changeset_update_ref(changeset), do: "refs/heads/" <> Ecto.Changeset.fetch_field!(changeset, :branch)
 
-  defp commit_info(agent, commit) do
+  defp resolve_commits_infos(agent, commits) do
+    GitAgent.transaction(agent, fn agent ->
+      Enum.reduce_while(Enum.reverse(commits), {:ok, []}, &resolve_commit_info(agent, &1, &2))
+    end)
+  end
+
+  defp resolve_commits_info_db(repo, commits_infos) do
+    {commits, infos} = Enum.unzip(commits_infos)
+    users = UserQuery.by_email(Enum.uniq(Enum.flat_map(infos, &[&1.author.email, &1.committer.email])), preload: [:emails, :gpg_keys])
+    count = Map.new(ReviewQuery.commit_comment_count(repo, commits))
+    Enum.map(commits_infos, fn {commit, commit_info} ->
+      author = resolve_db_user(commit_info.author, users)
+      committer = resolve_db_user(commit_info.committer, users)
+      gpg_key = resolve_db_user_gpg_key(commit_info.gpg_sig, committer)
+      {commit, Map.merge(commit_info, %{author: author, committer: committer, gpg_key: gpg_key}), Map.get(count, commit.oid, 0)}
+    end)
+  end
+
+  defp resolve_commit_info(agent, commit, {:ok, acc}) do
+    case GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)) do
+         {:ok, commit_info} ->
+            {:cont, {:ok, [{commit, commit_info}|acc]}}
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+    end
+  end
+
+  defp resolve_commit_info(agent, commit) do
     with {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
          {:ok, message} <- GitAgent.commit_message(agent, commit),
          {:ok, author} <- GitAgent.commit_author(agent, commit),
@@ -575,19 +638,51 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp commit_info_db(commit_info) do
+  defp resolve_revisions_authors(agent, revs) do
+    GitAgent.transaction(agent, fn agent ->
+      Enum.reduce_while(Enum.reverse(revs), {:ok, []}, &resolve_revision_author(agent, &1, &2))
+    end)
+  end
+
+  defp resolve_revisions_authors_db(revs_authors) do
+    users = UserQuery.by_email(Enum.uniq(Enum.map(revs_authors, &(elem(&1, 1).email))), preload: :emails)
+    Enum.map(revs_authors, fn {rev, author, timestamp} ->
+      {rev, resolve_db_user(author, users), timestamp}
+    end)
+  end
+
+  defp resolve_revision_author(agent, %GitRef{} = rev, {:ok, acc}) do
+    with {:ok, commit} <- GitAgent.peel(agent, rev, :commit),
+         {:ok, author} <- GitAgent.commit_author(agent, commit) do
+      {:cont, {:ok, [{rev, author, author.timestamp}|acc]}}
+    else
+      {:error, reason} ->
+        {:halt, {:error, reason}}
+    end
+  end
+
+  defp resolve_revision_author(agent, %GitTag{} = tag, {:ok, acc}) do
+    case GitAgent.tag_author(agent, tag) do
+      {:ok, author} ->
+        {:cont, {:ok, [{tag, author, author.timestamp}|acc]}}
+      {:error, reason} ->
+        {:halt, {:error, reason}}
+    end
+  end
+
+  defp resolve_db_commit_info(commit_info) do
     users = UserQuery.by_email(Enum.uniq([commit_info.author.email, commit_info.committer.email]), preload: [:emails, :gpg_keys])
-    author = commit_info_user(commit_info.author, users)
-    committer = commit_info_user(commit_info.committer, users)
-    gpg_key = commit_info_gpg_key(commit_info.gpg_sig, committer)
+    author = resolve_db_user(commit_info.author, users)
+    committer = resolve_db_user(commit_info.committer, users)
+    gpg_key = resolve_db_user_gpg_key(commit_info.gpg_sig, committer)
     Map.merge(commit_info, %{author: author, committer: committer, gpg_key: gpg_key})
   end
 
-  defp commit_info_user(%{email: email} = map, users) do
+  defp resolve_db_user(%{email: email} = map, users) do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
 
-  defp commit_info_gpg_key(gpg_sig, %User{} = user) when not is_nil(gpg_sig) do
+  defp resolve_db_user_gpg_key(gpg_sig, %User{} = user) when not is_nil(gpg_sig) do
     gpg_key_id =
       gpg_sig
       |> GPGKey.decode!()
@@ -596,7 +691,7 @@ defmodule GitGud.Web.CodebaseController do
     Enum.find(user.gpg_keys, &String.ends_with?(&1.key_id, gpg_key_id))
   end
 
-  defp commit_info_gpg_key(_gpg_sig, _user), do: nil
+  defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
 
   defp stats(repo, agent, revision) do
     with {:ok, branches} <- GitAgent.branches(agent),

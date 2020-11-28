@@ -32,5 +32,5 @@
     committed <%= datetime_format(@commit_info.timestamp, "{relative}") %>
   <% true -> %>
     <a href="mailto:<%= @commit_info.author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @commit_info.author.email %>"><%= @commit_info.author.name %></a>
-    authored and <a href="mailto:<%= @commit_info.committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @commit_info.committer.email %>"><%= @commit_info.committer.name %></a> committed <%= datetime_format(commit_timestamp(@agent, @commit), "{relative}") %>
+    authored and <a href="mailto:<%= @commit_info.committer.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @commit_info.committer.email %>"><%= @commit_info.committer.name %></a> committed <%= datetime_format(@commit_info.timestamp, "{relative}") %>
 <% end %>

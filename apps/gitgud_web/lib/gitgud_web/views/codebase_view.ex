@@ -4,18 +4,13 @@ defmodule GitGud.Web.CodebaseView do
 
   alias GitRekt.GitAgent
 
-  alias GitGud.User
-  alias GitGud.UserQuery
   alias GitGud.Repo
-  alias GitGud.ReviewQuery
-  alias GitGud.GPGKey
-  alias GitGud.GPGKeyQuery
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
   alias Phoenix.Param
 
-  alias GitRekt.{GitCommit, GitTag, GitTreeEntry, GitRef}
+  alias GitRekt.{GitCommit, GitRef, GitTag}
 
   import Phoenix.Controller, only: [action_name: 1]
 
@@ -46,12 +41,14 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec commit_timestamp(GitAgent.agent, GitCommit.t) :: DateTime.t | nil
-  def commit_timestamp(agent, commit) do
-    case GitAgent.commit_timestamp(agent, commit) do
-      {:ok, timestamp} -> timestamp
-      {:error, _reason} -> nil
-    end
+  @spec chunk_commits_by_timestamp([{GitCommit.t, map, non_neg_integer}]) :: [{GitCommit.t, map, non_neg_integer}]
+  def chunk_commits_by_timestamp(commits) do
+    Enum.reduce(commits, [], fn {_commit, commit_info, _comment_count} = tuple, acc ->
+      timestamp = DateTime.to_date(commit_info.timestamp)
+      if idx = Enum.find_index(acc, &find_commit_timestamp(&1, timestamp)),
+        do: List.update_at(acc, idx, fn {timestamp, tuples} -> {timestamp, [tuple|tuples]} end),
+      else: [{timestamp, [tuple]}|acc]
+    end)
   end
 
   @spec commit_message_title(binary) :: binary | nil
@@ -71,6 +68,18 @@ defmodule GitGud.Web.CodebaseView do
     if length(parts) == 2,
       do: {replace_issue_references(List.first(parts), repo, issues), wrap_message(List.last(parts), repo, issues, Keyword.get(opts, :wrap, :pre))},
     else: {replace_issue_references(List.first(parts), repo, issues), nil}
+  end
+
+  @spec diff_deltas_with_reviews(Repo.t, [map], [CommitLineReview.t]) :: [map] | nil
+  def diff_deltas_with_reviews(_repo, deltas, line_reviews) do
+    Enum.map(deltas, fn delta ->
+      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
+      Enum.reduce(reviews, delta, fn review, delta ->
+        update_in(delta.hunks, fn hunks ->
+          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
+        end)
+      end)
+    end)
   end
 
   @spec revision_oid(GitAgent.git_revision) :: binary
@@ -116,59 +125,9 @@ defmodule GitGud.Web.CodebaseView do
     end
   end
 
-  @spec diff_deltas_with_reviews(Repo.t, [map], [CommitLineReview.t]) :: [map] | nil
-  def diff_deltas_with_reviews(_repo, deltas, line_reviews) do
-    Enum.map(deltas, fn delta ->
-      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
-      Enum.reduce(reviews, delta, fn review, delta ->
-        update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
-        end)
-      end)
-    end)
-  end
-
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do
     highlight_language(Path.extname(path))
-  end
-
-  @spec batch_commits(Repo.t, GitAgent.t, Enumerable.t) :: [{GitCommit.t, User.t | map, boolean, non_neg_integer}]
-  def batch_commits(repo, agent, commits) do
-    batch_commits_comments_count(repo, agent, commits)
-  end
-
-  @spec batch_branches(GitAgent.agent, Enumerable.t) :: [{GitRef.t, {GitCommit.t, User.t | map}}]
-  def batch_branches(agent, references_commits) do
-    {references, commits} = Enum.unzip(references_commits)
-    commits_authors = batch_commits_authors(agent, commits)
-    Enum.zip(references, commits_authors)
-  end
-
-  @spec batch_tags(GitAgent.agent, Enumerable.t) :: [{GitRef.t | GitTag.t, {GitCommit.t, User.t | map}}]
-  def batch_tags(agent, tags_commits) do
-    {tags, commits} = Enum.unzip(tags_commits)
-    authors = Enum.map(tags_commits, &fetch_author(agent, &1))
-    users = query_users(authors)
-    Enum.zip(tags, Enum.map(Enum.zip(commits, authors), &zip_author(&1, users)))
-  end
-
-  @spec sort_revisions_by_timestamp(GitAgent.agent, Enumerable.t) :: [{GitRef.t | GitTag.t, GitCommit.t}]
-  def sort_revisions_by_timestamp(agent, revisions) do
-    commits = Enum.map(revisions, &fetch_commit(agent, &1))
-    Enum.sort_by(Enum.zip(revisions, commits), &commit_timestamp(agent, elem(&1, 1)), &compare_timestamps/2)
-  end
-
-  @spec sort_tree_entries_by_name(Enumerable.t) :: [{GitTreeEntry.t, GitCommit.t}]
-  def sort_tree_entries_by_name(tree_entries_commits) do
-    Enum.sort_by(tree_entries_commits, fn {tree_entry, _commit} -> tree_entry.name end)
-  end
-
-  @spec chunk_by_timestamp(GitAgent.agent, Enumerable.t) :: Enumerable.t
-  def chunk_by_timestamp(agent, commits) do
-    agent
-    |> chunk_batched_commits_by_timestamp(commits)
-    |> order_commits_chunks()
   end
 
   @spec find_issue_references(binary, Repo.t) :: [Issue.t]
@@ -224,169 +183,12 @@ defmodule GitGud.Web.CodebaseView do
   # Helpers
   #
 
-  defp batch_commits_authors(agent, commits) do
-    authors = Enum.map(commits, &fetch_author(agent, &1))
-    users = query_users(authors)
-    Enum.map(Enum.zip(commits, authors), &zip_author(&1, users))
-  end
-
-  defp batch_commits_committers(agent, commits) do
-    authors = Enum.map(commits, &fetch_author(agent, &1))
-    authors_emails = Enum.map(authors, &(&1.email))
-    all_committers = Map.new(commits, &{&1.oid, fetch_committer(agent, &1)})
-    committers = Enum.filter(all_committers, fn {_oid, committer} -> committer.email in authors_emails end)
-    committers = Enum.into(committers, %{})
-    users = query_users(authors ++ Map.values(committers))
-    commits
-    |> Enum.zip(authors)
-    |> Enum.map(fn {commit, author} -> {commit, author, Map.get(committers, commit.oid, all_committers[commit.oid] || author)} end)
-    |> Enum.map(&zip_author(&1, users))
-  end
-
-  defp batch_commits_gpg_sign(agent, commits) do
-    batch = batch_commits_committers(agent, commits)
-    commits = Enum.filter(batch, fn
-      {_commit, _author, %User{}} -> true
-      {_commit, _author, _committer} -> false
-    end)
-    commits_gpg_key_ids = Enum.map(commits, fn {commit, _author, _committer} ->
-      case GitAgent.commit_gpg_signature(agent, commit) do
-        {:ok, gpg_sig} ->
-          gpg_key_id =
-            gpg_sig
-            |> GPGKey.decode!()
-            |> GPGKey.parse!()
-            |> get_in([:sig, :sub_pack, :issuer])
-          {commit.oid, gpg_key_id}
-        {:error, _reason} ->
-          nil
-      end
-    end)
-    commits_gpg_key_ids = Enum.reject(commits_gpg_key_ids, &is_nil/1)
-    commits_gpg_key_ids = Enum.into(commits_gpg_key_ids, %{})
-    gpg_keys =
-      commits_gpg_key_ids
-      |> Map.values()
-      |> Enum.uniq()
-      |> GPGKeyQuery.by_key_id()
-    gpg_map = Map.new(commits_gpg_key_ids, fn {oid, gpg_key_id} ->
-      {oid, Enum.find(gpg_keys, &(binary_part(&1.key_id, 20, -8) == gpg_key_id))}
-    end)
-    Enum.map(batch, fn
-      {commit, author, %User{} = committer} ->
-        {commit, author, committer, gpg_map[commit.oid]}
-      {commit, author, committer} ->
-        {commit, author, committer, nil}
-    end)
-  end
-
-  defp batch_commits_comments_count(repo, agent, commits) do
-    aggregator = Map.new(ReviewQuery.commit_comment_count(repo, commits))
-    Enum.map(batch_commits_gpg_sign(agent, commits), fn {commit, author, committer, gpg_key} -> {commit, author, committer, gpg_key, aggregator[commit.oid] || 0} end)
-  end
-
-  defp fetch_commit(agent, obj) do
-    case GitAgent.peel(agent, obj, :commit) do
-      {:ok, commit} -> commit
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_author(agent, %GitRef{} = reference) do
-    case GitAgent.peel(agent, reference) do
-      {:ok, object} ->
-        fetch_author(agent, object)
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_author(agent, %GitCommit{} = commit) do
-    case GitAgent.commit_author(agent, commit) do
-      {:ok, sig} -> sig
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_author(agent, %GitTag{} = tag) do
-    case GitAgent.tag_author(agent, tag) do
-      {:ok, sig} -> sig
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_author(agent, {%GitRef{} = _reference, commit}) do
-    fetch_author(agent, commit)
-  end
-
-  defp fetch_author(agent, {%GitTag{} = tag, _commit}) do
-    fetch_author(agent, tag)
-  end
-
-  defp fetch_committer(agent, %GitRef{} = reference) do
-    case GitAgent.peel(agent, reference, :commit) do
-      {:ok, commit} ->
-        fetch_committer(agent, commit)
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_committer(agent, %GitTag{} = tag) do
-    case GitAgent.peel(agent, tag, :commit) do
-      {:ok, commit} ->
-        fetch_committer(agent, commit)
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_committer(agent, %GitCommit{} = commit) do
-    case GitAgent.commit_committer(agent, commit) do
-      {:ok, sig} -> sig
-      {:error, _reason} -> nil
-    end
-  end
-
-  defp fetch_committer(agent, {%GitRef{} = _reference, commit}) do
-    fetch_committer(agent, commit)
-  end
-
-  defp fetch_timestamp(agent, %GitCommit{} = commit) do
-    case GitAgent.commit_timestamp(agent, commit) do
-      {:ok, timestamp} -> timestamp
-      {:error, _reason} -> nil
-    end
+  defp attach_review_to_delta_line(hunk, line, review) do
+    update_in(hunk.lines, fn lines -> List.update_at(lines, line, &Map.put(&1, :review, review)) end)
   end
 
   defp find_commit_timestamp({timestamp, _}, timestamp), do: true
   defp find_commit_timestamp({_, _}, _), do: false
-
-  defp chunk_batched_commits_by_timestamp(agent, commits) do
-    Enum.reduce(commits, [], fn {commit, _author, _committer, _gpg_key, _comment_count} = tuple, acc ->
-      timestamp = DateTime.to_date(fetch_timestamp(agent, commit))
-      idx = Enum.find_index(acc, &find_commit_timestamp(&1, timestamp))
-      if idx,
-        do: List.update_at(acc, idx, fn {timestamp, tuples} -> {timestamp, [tuple|tuples]} end),
-      else: [{timestamp, [tuple]}|acc]
-    end)
-  end
-
-  defp order_commits_chunks(chunks) do
-    chunks
-    |> Enum.reverse()
-    |> Enum.map(fn {timestamp, commits} -> {timestamp, Enum.reverse(commits)} end)
-  end
-
-  defp query_users(authors) do
-    authors
-    |> Enum.map(&(&1.email))
-    |> Enum.uniq()
-    |> UserQuery.by_email(preload: :emails)
-    |> Enum.flat_map(&flatten_user_emails/1)
-    |> Map.new()
-  end
-
-  defp flatten_user_emails(user) do
-    Enum.map(user.emails, &{&1.address, user})
-  end
 
   for line <- File.stream!(highlight_languages) do
     [language|extensions] = String.split(String.trim(line), ~r/\s/, trim: true)
@@ -396,6 +198,13 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp highlight_language(_extension), do: "plaintext"
+
+  defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
+  defp lines_assemble([word|rest], max, line_length, line, acc) do
+    if line_length + 1 + String.length(word) > max,
+      do: lines_assemble(rest, max, String.length(word), word, [line|acc]),
+    else: lines_assemble(rest, max, line_length + 1 + String.length(word), line <> " " <> word, acc)
+  end
 
   defp wrap_message(content, repo, issues, :pre) do
     content = String.trim(content)
@@ -436,37 +245,5 @@ defmodule GitGud.Web.CodebaseView do
       [word|rest] = String.split(content, ~r/\s+/, trim: true)
       Enum.intersperse(lines_assemble(rest, max_line_length, String.length(word), word, []), tag(:br))
     end
-  end
-
-  defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
-  defp lines_assemble([word|rest], max, line_length, line, acc) do
-    if line_length + 1 + String.length(word) > max,
-      do: lines_assemble(rest, max, String.length(word), word, [line|acc]),
-    else: lines_assemble(rest, max, line_length + 1 + String.length(word), line <> " " <> word, acc)
-  end
-
-  defp compare_timestamps(one, two) do
-    case DateTime.compare(one, two) do
-      :gt -> true
-      :eq -> false
-      :lt -> false
-    end
-  end
-
-  defp attach_review_to_delta_line(hunk, line, review) do
-    update_in(hunk.lines, fn lines -> List.update_at(lines, line, &Map.put(&1, :review, review)) end)
-  end
-
-  defp zip_author({commit, author}, users) do
-    {commit, Map.get(users, author.email, author)}
-  end
-
-  defp zip_author({commit, author, author}, users) do
-    user = Map.get(users, author.email, author)
-    {commit, user, user}
-  end
-
-  defp zip_author({commit, author, committer}, users) do
-    {commit, Map.get(users, author.email, author), Map.get(users, committer.email, committer)}
   end
 end

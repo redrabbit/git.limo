@@ -28,6 +28,12 @@ defmodule GitGud.Web do
       ]
 
       import GitGud.Web.Gettext
+      import GitGud.Web.PaginationHelpers, only: [
+        paginate: 2,
+        paginate: 3,
+        paginate_cursor: 4,
+        paginate_cursor: 5
+      ]
     end
   end
 

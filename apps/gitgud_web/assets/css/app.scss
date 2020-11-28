@@ -659,6 +659,16 @@ table {
   }
 }
 
+table.branches-table, table.tags-table {
+  tr td {
+    width: 100%;
+
+    &:first-child {
+      width: auto;
+    }
+  }
+}
+
 table.commits-table {
   width: 100%;
   table-layout: fixed;

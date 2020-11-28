@@ -1,28 +1,26 @@
 <h2 class="subtitle">Tags</h2>
 
-<%= if Enum.empty?(@tags) do %>
-  Nothing to see here.
+<%= unless Enum.empty?(@page.slice) do %>
+  <table class="table tags-table is-fullwidth">
+    <tbody>
+      <%= for {tag, author, timestamp} <- @page.slice do %>
+        <tr>
+          <td>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-medium"><%= tag %></a>
+          </td>
+          <td>
+            tagged <%= datetime_format(timestamp, "{relative}") %> by
+            <%= if Map.has_key?(author, :id) do %>
+              <a href="<%= Routes.user_path(@conn, :show, author) %>" class="tag user"><%= author %></a>
+            <% else %>
+              <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= pagination(@conn, @page) %>
 <% else %>
-  <%= with page <- paginate(@conn, sort_revisions_by_timestamp(@agent, @tags)) do %>
-    <table class="table is-fullwidth">
-      <tbody>
-        <%= for {tag, {commit, author}} <- batch_tags(@agent, page.slice) do %>
-          <tr>
-            <td>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-medium">
-                <%= tag %>
-              </a>
-              <%= if Map.has_key?(author, :id) do %>
-                <a href="<%= Routes.user_path(@conn, :show, author) %>" class="tag user"><%= author %></a>
-              <% else %>
-                <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
-              <% end %>
-              tagged this <%= datetime_format(commit_timestamp(@agent, commit), "{relative}") %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <%= pagination(@conn, page) %>
-  <% end %>
+  Nothing to see here.
 <% end %>
