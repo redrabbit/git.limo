@@ -156,25 +156,45 @@ defmodule GitRekt.GitAgent do
   Returns all Git branches.
   """
   @spec branches(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
-  def branches(agent, opts \\ []), do: exec(agent, {:references, "refs/heads/*", opts})
+  def branches(agent, opts \\ [])do
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:references, "refs/heads/*", opts}),
+    else: exec(agent, {:references_with_commit, "refs/heads/*", opts})
+  end
 
   @doc """
   Returns the Git branch with the given `name`.
   """
-  @spec branch(agent, binary) :: {:ok, GitRef.t} | {:error, term}
-  def branch(agent, name), do: exec(agent, {:reference, "refs/heads/" <> name, :undefined})
+  @spec branch(agent, binary, keyword) :: {:ok, GitRef.t | {GitRef.t, GitCommit.t}} | {:error, term}
+  def branch(agent, name, opts \\ []) do
+    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:reference, "refs/heads/" <> name, :undefined}),
+    else: exec(agent, {:reference_with_commit, "refs/heads/" <> name})
+  end
 
   @doc """
   Returns all Git tags.
   """
   @spec tags(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
-  def tags(agent, opts \\ []), do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)})
+  def tags(agent, opts \\ []) do
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)}),
+    else: exec(agent, {:references_with_commit, "refs/tags/*", Keyword.put(opts, :target, :tag)})
+  end
 
   @doc """
   Returns the Git tag with the given `name`.
   """
-  @spec tag(agent, binary) :: {:ok, GitRef.t | GitTag.t} | {:error, term}
-  def tag(agent, name), do: exec(agent, {:reference, "refs/tags/" <> name, :tag})
+  @spec tag(agent, binary, keyword) :: {:ok, GitRef.t | GitTag.t | {GitRef.t | GitTag.t, GitCommit.t}} | {:error, term}
+  def tag(agent, name, opts \\ []) do
+    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:reference, "refs/tags/" <> name, :tag}),
+    else: exec(agent, {:reference_with_commit, "refs/tags/" <> name, :tag})
+  end
 
   @doc """
   Returns the Git tag author of the given `tag`.
@@ -192,13 +212,23 @@ defmodule GitRekt.GitAgent do
   Returns all Git references matching the given `glob`.
   """
   @spec references(agent, binary | :undefined, keyword) :: {:ok, Enumerable.t} | {:error, term}
-  def references(agent, glob \\ :undefined, opts \\ []), do: exec(agent, {:references, glob, opts})
+  def references(agent, glob \\ :undefined, opts \\ []) do
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:references, glob, opts}),
+    else: exec(agent, {:references_with_commit, glob, opts})
+  end
 
   @doc """
   Returns the Git reference with the given `name`.
   """
-  @spec reference(agent, binary) :: {:ok, GitRef.t} | {:error, term}
-  def reference(agent, name), do: exec(agent, {:reference, name, :undefined})
+  @spec reference(agent, binary, keyword) :: {:ok, GitRef.t | {GitRef.t, GitCommit.t}} | {:error, term}
+  def reference(agent, name, opts \\ []) do
+    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:reference, name, :undefined}),
+    else: exec(agent, {:reference_with_commit, name, :undefined})
+  end
 
   @doc """
   Creates a reference with the given `name` and `target`.
@@ -300,17 +330,23 @@ defmodule GitRekt.GitAgent do
   Returns the Git tree entry for the given `revision` and `path`.
   """
   @spec tree_entry_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}} | {:error, term}
-  def tree_entry_by_path(agent, revision, path, opts \\ [])
-  def tree_entry_by_path(agent, revision, path, [with_commit: true] = _opts), do: exec(agent, {:tree_entry_with_commit, revision, path})
-  def tree_entry_by_path(agent, revision, path, _opts), do: exec(agent, {:tree_entry, revision, {:path, path}})
+  def tree_entry_by_path(agent, revision, path, opts \\ []) do
+    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:tree_entry, revision, {:path, path}}),
+    else: exec(agent, {:tree_entry_with_commit, revision, {:path, path}})
+  end
 
   @doc """
   Returns the Git tree entries for the given `revision` and `path`.
   """
   @spec tree_entries_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, [GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}]} | {:error, term}
-  def tree_entries_by_path(agent, revision, path \\ :root, opts \\ [])
-  def tree_entries_by_path(agent, revision, path, [with_commit: true] = _opts), do: exec(agent, {:tree_entries_with_commit, revision, path})
-  def tree_entries_by_path(agent, revision, path, _opts), do: exec(agent, {:tree_entries, revision, path})
+  def tree_entries_by_path(agent, revision, path \\ :root, opts \\ []) do
+    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:tree_entries, revision, path}),
+    else: exec(agent, {:tree_entries_with_commit, revision, path})
+  end
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
@@ -498,19 +534,6 @@ defmodule GitRekt.GitAgent do
     {:ok, Git.repository_empty?(handle)}
   end
 
-  defp call(handle, :odb) do
-    case Git.repository_get_odb(handle) do
-      {:ok, odb} ->
-        {:ok, resolve_odb(odb)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp call(_handle, {:odb_read, %GitOdb{__ref__: odb}, oid}), do: Git.odb_read(odb, oid)
-  defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
-  defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}), do: Git.odb_object_exists?(odb, oid)
-
   defp call(handle, :head) do
     case Git.reference_resolve(handle, "HEAD") do
       {:ok, name, shorthand, oid} ->
@@ -529,10 +552,21 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp call(handle, {:references_with_commit, glob, opts}) do
+    case Git.reference_stream(handle, glob) do
+      {:ok, stream} ->
+        stream = Stream.map(stream, &resolve_reference_peel!(&1, Keyword.get(opts, :target, :undefined), handle))
+        stream = Stream.map(stream, &{&1, resolve_peel!(&1, :commit, handle)})
+        {:ok, stream}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp call(handle, {:reference, "refs/" <> _suffix = name, target}) do
     case Git.reference_lookup(handle, name) do
       {:ok, shorthand, :oid, oid} ->
-        {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
+        fetch_reference_target({name, shorthand, :oid, oid}, target, handle)
       {:error, reason} ->
         {:error, reason}
     end
@@ -541,10 +575,24 @@ defmodule GitRekt.GitAgent do
   defp call(handle, {:reference, shorthand, target}) do
     case Git.reference_dwim(handle, shorthand) do
       {:ok, name, :oid, oid} ->
-        {:ok, resolve_reference_peel!({name, shorthand, :oid, oid}, target, handle)}
+        fetch_reference_target({name, shorthand, :oid, oid}, target, handle)
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp call(handle, {:reference_with_commit, "refs/" <> _suffix = name, target}) do
+    with {:ok, shorthand, :oid, oid} <- Git.reference_lookup(handle, name),
+         {:ok, ref} <- fetch_reference_target({name, shorthand, :oid, oid}, target, handle),
+         {:ok, commit} <- fetch_target(ref, :commit, handle), do:
+      {:ok, {ref, commit}}
+  end
+
+  defp call(handle, {:reference_with_commit, shorthand, target}) do
+    with {:ok, name, :oid, oid} <- Git.reference_dwim(handle, shorthand),
+         {:ok, ref} <- fetch_reference_target({name, shorthand, :oid, oid}, target, handle),
+         {:ok, commit} <- fetch_target(ref, :commit, handle), do:
+      {:ok, {ref, commit}}
   end
 
   defp call(handle, {:reference_create, name, type, target, force}), do: Git.reference_create(handle, name, type, target, force)
@@ -559,6 +607,19 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp call(handle, :odb) do
+    case Git.repository_get_odb(handle) do
+      {:ok, odb} ->
+        {:ok, resolve_odb(odb)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp call(_handle, {:odb_read, %GitOdb{__ref__: odb}, oid}), do: Git.odb_read(odb, oid)
+  defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
+  defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}), do: Git.odb_object_exists?(odb, oid)
+
   defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do
       {:ok, obj_type, obj} ->
@@ -569,6 +630,31 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(handle, {:tree, obj}), do: fetch_tree(obj, handle)
+
+  defp call(handle, {:tree_entry, obj, spec}), do: fetch_tree_entry(obj, spec, handle)
+  defp call(handle, {:tree_entry_with_commit, obj, spec}) do
+    with {:ok, tree_entry} <- fetch_tree_entry(obj, spec, handle),
+         {:ok, commit} <- fetch_tree_entry_commit(obj, spec, handle), do:
+      {:ok, {tree_entry, commit}}
+  end
+
+  defp call(handle, {:tree_entries, tree}), do: fetch_tree_entries(tree, handle)
+  defp call(handle, {:tree_entries, rev, :root}), do: fetch_tree_entries(rev, handle)
+  defp call(handle, {:tree_entries, rev, path}), do: fetch_tree_entries(rev, path, handle)
+  defp call(handle, {:tree_entries_with_commit, rev, :root}) do
+    with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
+      zip_tree_entries_commits(tree_entries, commits, "", handle)
+  end
+
+  defp call(handle, {:tree_entries_with_commit, rev, path}) do
+    with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
+         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
+      zip_tree_entries_commits(tree_entries, commits, path, handle)
+  end
+
+  defp call(handle, {:tree_entry_target, %GitTreeEntry{} = tree_entry}), do: fetch_target(tree_entry, :undefined, handle)
+
   defp call(handle, {:diff, obj1, obj2, opts}), do: fetch_diff(obj1, obj2, handle, opts)
   defp call(_handle, {:diff_format, %GitDiff{__ref__: diff}, format}), do: Git.diff_format(diff, format)
   defp call(_handle, {:diff_deltas, %GitDiff{__ref__: diff}}) do
@@ -589,29 +675,6 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call(handle, {:tree_entry, obj, spec}), do: fetch_tree_entry(obj, spec, handle)
-  defp call(handle, {:tree_entry_with_commit, obj, path}) do
-    with {:ok, tree_entry} <- fetch_tree_entry(obj, {:path, path}, handle),
-         {:ok, commit} <- fetch_tree_entry_commit(obj, path, handle), do:
-      {:ok, {tree_entry, commit}}
-  end
-
-  defp call(handle, {:tree_entry_target, %GitTreeEntry{} = tree_entry}), do: fetch_target(tree_entry, :undefined, handle)
-  defp call(handle, {:tree_entries, tree}), do: fetch_tree_entries(tree, handle)
-  defp call(handle, {:tree_entries, rev, :root}), do: fetch_tree_entries(rev, handle)
-  defp call(handle, {:tree_entries, rev, path}), do: fetch_tree_entries(rev, path, handle)
-  defp call(handle, {:tree_entries_with_commit, rev, :root}) do
-    with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
-      zip_tree_entries_commits(tree_entries, commits, "", handle)
-  end
-
-  defp call(handle, {:tree_entries_with_commit, rev, path}) do
-    with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
-      zip_tree_entries_commits(tree_entries, commits, path, handle)
-  end
-
   defp call(handle, :index) do
     case Git.repository_get_index(handle) do
       {:ok, index} -> {:ok, resolve_index(index)}
@@ -620,7 +683,20 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(_handle, {:index_add, %GitIndex{__ref__: index}, %GitIndexEntry{} = entry}) do
-    Git.index_add(index, {entry.ctime, entry.mtime, entry.dev, entry.ino, entry.mode, entry.uid, entry.gid, entry.file_size, entry.oid, entry.flags, entry.flags_extended, entry.path})
+    Git.index_add(index, {
+      entry.ctime,
+      entry.mtime,
+      entry.dev,
+      entry.ino,
+      entry.mode,
+      entry.uid,
+      entry.gid,
+      entry.file_size,
+      entry.oid,
+      entry.flags,
+      entry.flags_extended,
+      entry.path
+    })
   end
 
   defp call(_handle, {:index_add, %GitIndex{__ref__: index}, oid, path, file_size, mode, opts}) do
@@ -645,6 +721,7 @@ defmodule GitRekt.GitAgent do
   defp call(_handle, {:index_remove_dir, %GitIndex{__ref__: index}, path}), do: Git.index_remove_dir(index, path)
   defp call(_handle, {:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}), do: Git.index_read_tree(index, tree)
   defp call(handle, {:index_write_tree, %GitIndex{__ref__: index}}), do: Git.index_write_tree(index, handle)
+
   defp call(_handle, {:author, obj}), do: fetch_author(obj)
   defp call(_handle, {:committer, obj}), do: fetch_committer(obj)
   defp call(_handle, {:message, obj}), do: fetch_message(obj)
@@ -673,6 +750,7 @@ defmodule GitRekt.GitAgent do
 
   defp call(_handle, {:blob_content, %GitBlob{__ref__: blob}}), do: Git.blob_content(blob)
   defp call(_handle, {:blob_size, %GitBlob{__ref__: blob}}), do: Git.blob_size(blob)
+
   defp call(handle, {:history, rev, opts}), do: walk_history(rev, handle, opts)
   defp call(handle, {:history_count, rev}) do
     case walk_history(rev, handle) do
@@ -684,6 +762,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(handle, {:peel, obj, target}), do: fetch_target(obj, target, handle)
+
   defp call(handle, {:pack, oids}) do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- walk_insert(walk, oid_mask(oids)),
@@ -769,27 +848,26 @@ defmodule GitRekt.GitAgent do
     %GitRef{oid: oid, name: shorthand, prefix: prefix, type: resolve_reference_type(prefix)}
   end
 
-  defp resolve_reference_peel!({_name, _shorthand, _type, _target} = ref, target, handle) do
-    ref
-    |> resolve_reference()
-    |> resolve_reference_peel!(target, handle)
-  end
+  defp resolve_reference_type("refs/heads/"), do: :branch
+  defp resolve_reference_type("refs/tags/"), do: :tag
 
-  defp resolve_reference_peel!(ref, :undefined, _handle), do: ref
-  defp resolve_reference_peel!(%GitRef{type: :branch} = ref, _target, _handle), do: ref
-  defp resolve_reference_peel!(%GitRef{type: :tag} = ref, target, handle) do
-    case fetch_target(ref, target, handle) do
-      {:ok, %GitTag{} = tag} ->
-        tag
-      {:ok, %GitCommit{oid: oid}} ->
-        struct(ref, oid: oid)
-      {:error, _reason} ->
-        ref
+  defp resolve_reference_peel!(ref, target, handle) do
+    case fetch_reference_target(resolve_reference(ref), target, handle) do
+      {:ok, target} ->
+        target
+      {:error, reason} ->
+        raise RuntimeError, message: reason
     end
   end
 
-  defp resolve_reference_type("refs/heads/"), do: :branch
-  defp resolve_reference_type("refs/tags/"), do: :tag
+  defp resolve_peel!(obj, target, handle) do
+    case fetch_target(obj, target, handle) do
+      {:ok, target} ->
+        target
+      {:error, reason} ->
+        raise RuntimeError, message: reason
+    end
+  end
 
   defp resolve_object({blob, :blob, oid}), do: %GitBlob{oid: oid, __ref__: blob}
   defp resolve_object({commit, :commit, oid}), do: %GitCommit{oid: oid, __ref__: commit}
@@ -835,6 +913,23 @@ defmodule GitRekt.GitAgent do
         resolve_object({obj, obj_type, oid})
       {:error, reason} ->
         raise RuntimeError, message: reason
+    end
+  end
+
+  defp fetch_reference_target({_name, _shorthand, _type, _target} = ref, target, handle) do
+    fetch_reference_target(resolve_reference(ref), target, handle)
+  end
+
+  defp fetch_reference_target(ref, :undefined, _handle), do: {:ok, ref}
+  defp fetch_reference_target(%GitRef{type: :branch} = ref, _target, _handle), do: {:ok, ref}
+  defp fetch_reference_target(%GitRef{type: :tag} = ref, target, handle) do
+    case fetch_target(ref, target, handle) do
+      {:ok, %GitTag{} = tag} ->
+        {:ok, tag}
+      {:ok, %GitCommit{oid: oid}} ->
+        {:ok, struct(ref, oid: oid)}
+      {:error, _reason} ->
+        {:ok, ref}
     end
   end
 
@@ -892,7 +987,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp fetch_tree_entry_commit(rev, path, handle) do
+  defp fetch_tree_entry_commit(rev, {:path, path}, handle) do
     case walk_history(rev, handle, pathspec: path) do
       {:ok, stream} ->
         stream = Stream.take(stream, 1)
