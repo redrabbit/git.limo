@@ -29,7 +29,7 @@
 <div id="blob" class="card blob" data-repo-id="<%= to_relay_id(@repo) %>" data-commit-oid="<%= oid_fmt(@commit.oid) %>" data-blob-path="<%= unless Enum.empty?(@tree_path), do: Path.join(@tree_path) %>">
   <header class="card-header">
     <div class="card-header-title">
-      <span class="has-text-grey">
+      <span class="has-text-dark">
         <span class="icon is-small"><i class="fa fa-spin fa-spinner-third"></i></span>
         <span class="loading-ellipsis">Loading commit</span>
       </span>

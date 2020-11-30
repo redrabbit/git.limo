@@ -1,12 +1,12 @@
 <div class="columns">
   <div class="column">
-    <div class="card">
+    <div class="card card-commit">
       <%= with {message_title, message_body} <- commit_message_format(@repo, @commit_info.message) do %>
         <header class="card-header">
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
-              <button class="commit-oid button is-small is-white has-text-weight-bold">
+              <button class="commit-oid button is-small is-dark is-inverted has-text-weight-bold">
                 <span class="is-family-monospace"><%= oid_fmt(@commit.oid) %></span>
               </button>
               <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
@@ -26,12 +26,14 @@
           <div class="commit-parents">
             <div class="field is-grouped">
               <div class="control">
-                <label class="label">Parents:</label>
+                <%= if parent_count = Enum.count(@commit_info.parents) do %>
+                  <label class="label"><%= parent_count %> parent<%= if parent_count > 1 do %>s<% end %>:</label>
+                <% end %>
               </div>
               <div class="control">
                 <div class="buttons">
                   <%= for parent <- @commit_info.parents do %>
-                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button is-small is-white has-text-grey-light has-text-weight-bold"><%= parent %></a>
+                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button is-small is-link is-inverted has-text-weight-bold"><%= parent %></a>
                   <% end %>
                 </div>
               </div>
@@ -49,9 +51,7 @@
 
 <div id="diff" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
   <div class="column">
-    <%= if stats = @diff_stats do %>
-      <p>Showing <%= stats.files_changed %> changed files with <%= stats.insertions %> additions and <%= stats.deletions %> deletions.</p>
-    <% end %>
+    <p>Showing <strong class="has-text-dark"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger"><%= @diff_stats.deletions %> deletions</strong>.</p>
   </div>
 </div>
 
@@ -62,6 +62,11 @@
         <header class="card-header">
           <p class="card-header-title"><%= delta.new_file.path %></p>
           <p class="card-header-icon buttons">
+            <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, Path.split(delta.old_file.path)) %>" class="button is-small is-link is-inverted">
+              <span class="icon">
+                <i class="fa fa-history"></i>
+              </span>
+            </a>
             <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-link is-inverted">
               <span class="icon">
                 <i class="fa fa-code"></i>

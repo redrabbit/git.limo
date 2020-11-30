@@ -22,28 +22,28 @@ export default () => {
         const messageTitle = commit.message.split("\n", 1)[0].trim()
         const thead = table.tHead
         let tr = thead.rows[0]
-        let td = tr.cells[0]
-        td.colSpan = 2
-        ReactDOM.render(React.createElement(CommitSignature, {author: commit.author, committer: commit.committer}), td)
-        let commitLink = document.createElement("a")
-        commitLink.href = commit.url
-        commitLink.classList.add("has-text-grey")
-        commitLink.appendChild(document.createTextNode(messageTitle))
-        td.innerHTML += "&nbsp;"
-        td.append(commitLink)
-        td = tr.insertCell(1)
-        td.classList.add("has-text-right")
-        td.classList.add("has-text-grey")
-        let time = document.createElement("time")
-        time.classList.add("tooltip")
-        time.setAttribute("data", timestamp.format())
-        time.dataset.tooltip = timestamp.format()
-        time.innerHTML = timestamp.fromNow()
-        let timeLink = document.createElement("a")
-        timeLink.href = commit.url
-        timeLink.classList.add("has-text-grey")
-        timeLink.append(time)
-        td.append(timeLink)
+        let td, commitLink, time
+        if(tr.cells.length == 1) {
+          td = tr.cells[0]
+          td.colSpan = 2
+          ReactDOM.render(React.createElement(CommitSignature, {author: commit.author, committer: commit.committer}), td)
+          commitLink = document.createElement("a")
+          commitLink.href = commit.url
+          commitLink.classList.add("has-text-dark")
+          commitLink.appendChild(document.createTextNode(messageTitle))
+          td.innerHTML += "&nbsp;"
+          td.append(commitLink)
+          td = tr.insertCell(1)
+          td.classList.add("has-text-right")
+          td.classList.add("has-text-dark")
+          time = document.createElement("time")
+          time.classList.add("tooltip")
+          time.setAttribute("data", timestamp.format())
+          time.dataset.tooltip = timestamp.format()
+          time.innerHTML = timestamp.fromNow()
+          td.append(time)
+        }
+
         response.node.object.treeEntriesWithLastCommit.edges.forEach(edge => {
           const {treeEntry, commit} = edge.node
           const timestamp = moment.utc(commit.timestamp)
@@ -54,12 +54,12 @@ export default () => {
           td = tr.insertCell(1)
           commitLink = document.createElement("a")
           commitLink.href = commit.url
-          commitLink.classList.add("has-text-grey")
+          commitLink.classList.add("has-text-dark")
           commitLink.appendChild(document.createTextNode(messageTitle))
           td.append(commitLink)
           td = tr.insertCell(2)
           td.classList.add("has-text-right")
-          td.classList.add("has-text-grey")
+          td.classList.add("has-text-dark")
           time = document.createElement("time")
           time.classList.add("tooltip")
           time.setAttribute("data", timestamp.format())

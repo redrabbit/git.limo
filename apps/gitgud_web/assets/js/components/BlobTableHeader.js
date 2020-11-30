@@ -19,12 +19,10 @@ class BlobTableHeader extends React.Component {
       <header className="card-header">
         <div className="card-header-title">
           <CommitSignature author={author} committer={committer} />
-          &nbsp;<a href={commit.url} className="has-text-grey">{messageTitle}</a>
+          &nbsp;<a href={commit.url} className="has-text-dark">{messageTitle}</a>
         </div>
-        <div className="card-header-icon">
-          <a href={commit.url}>
-            <time className="tooltip has-text-grey" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
-          </a>
+        <div className="card-header-icon has-text-dark">
+          <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
         </div>
       </header>
     )

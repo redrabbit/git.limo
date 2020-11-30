@@ -7,45 +7,53 @@
       <%= render "_tree_breadcrumb.html", assigns %>
     </div>
   </div>
+  <div class="level-right">
+    <div class="level-item">
+      <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">
+        Browse <%= if @breadcrumb.tree? do %>files<% else %>file<% end %></a>
+    </div>
+  </div>
 </nav>
 
-<div class="timeline commit-timeline">
-  <%= for {date, commits} <- chunk_commits_by_timestamp(@page.slice) do %>
-    <div class="timeline-header is-size-7"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></div>
-    <%= for {commit, commit_info, comment_count} <- commits do %>
-      <div class="timeline-item">
-        <div class="timeline-marker"></div>
-          <div class="timeline-content">
-          <div class="columns">
-            <div class="column is-three-quarters">
-              <%= if comment_count > 0 do %>
-                <div class="is-pulled-right">
-                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-white">
-                    <span class="icon"><i class="fa fa-comment-alt"></i></span>
-                    <span><%= comment_count %></span>
+<%= unless Enum.empty?(@page.slice) do %>
+  <div class="timeline commit-timeline">
+    <%= for {date, commits} <- chunk_commits_by_timestamp(@page.slice) do %>
+      <div class="timeline-header is-size-7"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></div>
+      <%= for {commit, commit_info, comment_count} <- commits do %>
+        <div class="timeline-item">
+          <div class="timeline-marker"></div>
+            <div class="timeline-content">
+            <div class="columns">
+              <div class="column is-three-quarters">
+                <%= if comment_count > 0 do %>
+                  <div class="is-pulled-right">
+                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-white">
+                      <span class="icon"><i class="fa fa-comment-alt"></i></span>
+                      <span><%= comment_count %></span>
+                    </a>
+                  </div>
+                <% end %>
+                <p class="has-text-weight-bold">
+                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit_info.message) %></a>
+                </p>
+                <%= render "_commit_signature.html", conn: @conn, commit: commit, commit_info: commit_info %>
+              </div>
+              <div class="column has-text-right">
+                <p class="buttons is-pulled-right">
+                  <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-link is-inverted has-text-weight-bold"><%= commit %></a>
+                  <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, @tree_path) %>" class="button is-small is-link is-inverted">
+                    <span class="icon"><i class="fa fa-code"></i></span>
                   </a>
-                </div>
-              <% end %>
-              <p class="has-text-weight-bold">
-                <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>"><%= commit_message_title(commit_info.message) %></a>
-              </p>
-              <%= render "_commit_signature.html", conn: @conn, commit: commit, commit_info: commit_info %>
-            </div>
-            <div class="column has-text-right">
-              <p class="buttons is-pulled-right">
-                <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-white has-text-grey-light has-text-weight-bold"><%= commit %></a>
-                <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, @tree_path) %>" class="button is-small is-link is-inverted">
-                  <span class="icon">
-                    <i class="fa fa-code"></i>
-                  </span>
-                </a>
-              </p>
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      <% end %>
+      <div class="timeline-item is-spacer"></div>
     <% end %>
-    <div class="timeline-item is-spacer"></div>
-  <% end %>
-</div>
-<%= pagination(@conn, @page) %>
+  </div>
+  <%= pagination(@conn, @page) %>
+<% else %>
+  Nothing to see here.
+<% end %>

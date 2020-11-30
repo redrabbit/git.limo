@@ -34,6 +34,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, false} <- GitAgent.empty?(agent),
            {:ok, head} <- GitAgent.head(agent),
            {:ok, commit} <- GitAgent.peel(agent, head, :commit),
+           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, commit),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
         render(conn, "show.html",
@@ -41,6 +42,7 @@ defmodule GitGud.Web.CodebaseController do
           repo: repo,
           revision: head,
           commit: commit,
+          commit_info: resolve_db_commit_info(commit_info),
           tree_entries: tree_entries,
           tree_path: [],
           stats: stats(repo, agent, head)
@@ -365,11 +367,14 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, object),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
         render(conn, "show.html",
           breadcrumb: %{action: :tree, cwd?: true, tree?: true},
           repo: repo,
+          commit: commit,
+          commit_info: resolve_db_commit_info(commit_info),
           revision: reference || object,
           commit: commit,
           tree_entries: tree_entries,

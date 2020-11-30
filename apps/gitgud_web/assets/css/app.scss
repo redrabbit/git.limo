@@ -195,10 +195,17 @@ textarea.textarea {
   float: right;
   margin-right: -0.74rem;
 
-  label {
-    font-weight: 400;
+  .control {
+    label {
+      font-weight: 400;
+    }
+
+    .buttons .button.is-small {
+      margin-top: -0.2rem;
+    }
   }
 }
+
 .commit-timeline {
   margin-bottom: 1.5rem;
 
@@ -328,6 +335,10 @@ textarea.textarea {
       height: .1rem;
     }
   }
+}
+
+.tooltip {
+  line-height: 24px;
 }
 
 .message {
@@ -602,6 +613,19 @@ table {
   }
 }
 
+.card-commit {
+  .card-header {
+    .card-header-title {
+      max-width: 58%;
+      overflow-x: hidden;
+      display: inline;
+      line-height: 28px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
 .card.blob, .card.diff {
   .card-content {
     overflow-x: scroll;
@@ -651,7 +675,7 @@ table {
 }
 
 .log-message {
-  margin-top: 1rem;
+  margin-top: 2rem;
 
   pre {
     padding: 0;
