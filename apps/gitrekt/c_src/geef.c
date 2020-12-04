@@ -15,6 +15,7 @@
 #include "signature.h"
 #include "revparse.h"
 #include "reflog.h"
+#include "graph.h"
 #include "config.h"
 #include "pack.h"
 #include "worktree.h"
@@ -247,6 +248,7 @@ static ErlNifFunc geef_funcs[] =
 	{"reflog_count", 2, geef_reflog_count, 0},
 	{"reflog_read", 2, geef_reflog_read, 0},
 	{"reflog_delete", 2, geef_reflog_delete, 0},
+	{"graph_ahead_behind", 3, geef_graph_ahead_behind, 0},
 	{"oid_fmt", 1, geef_oid_fmt, 0},
 	{"oid_parse", 1, geef_oid_parse, 0},
 	{"object_repository", 1, geef_object_repository, 0},

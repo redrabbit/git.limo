@@ -243,6 +243,12 @@ defmodule GitRekt.GitAgent do
   def reference_delete(agent, name), do: exec(agent, {:reference_delete, name})
 
   @doc """
+  Returns the number of unique commits between two commit objects.
+  """
+  @spec graph_ahead_behind(agent, Git.oid, Git.oid) :: {:ok, {non_neg_integer, non_neg_integer}} | {:error, term}
+  def graph_ahead_behind(agent, local, upstream), do: exec(agent, {:graph_ahead_behind, local, upstream})
+
+  @doc """
   Returns the Git object with the given `oid`.
   """
   @spec object(agent, Git.oid) :: {:ok, git_object} | {:error, term}
@@ -607,6 +613,15 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp call(handle, {:graph_ahead_behind, local, upstream}) do
+    case Git.graph_ahead_behind(handle, local, upstream) do
+      {:ok, ahead, behind} ->
+        {:ok, {ahead, behind}}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp call(handle, :odb) do
     case Git.repository_get_odb(handle) do
       {:ok, odb} ->
@@ -769,14 +784,7 @@ defmodule GitRekt.GitAgent do
       do: Git.revwalk_pack(walk)
   end
 
-  defp call(handle, {:transaction, _name, cb}) do
-    case cb.(handle) do
-      {:ok, result} ->
-        {:ok, result}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
+  defp call(handle, {:transaction, _name, cb}), do: cb.(handle)
 
   def call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
     call_cache({handle, cache}, op, cache)
@@ -789,6 +797,8 @@ defmodule GitRekt.GitAgent do
         {:ok, cache_result}
       else
         case call(handle, op) do
+          :ok ->
+            :ok
           {:ok, result} ->
             cache_adapter.put_cache(cache, cache_key, result)
             {:ok, result}

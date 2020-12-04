@@ -520,6 +520,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Returns the number of unique commits between two commit objects.
+  """
+  @spec graph_ahead_behind(repo, oid, oid) :: {:ok, non_neg_integer, non_neg_integer}
+  def graph_ahead_behind(_repo, _local, _upstream) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
   Returns the OID of an object `type` and raw `data`.
 
   The resulting SHA-1 OID will be the identifier for the data buffer as if the data buffer it were to written to the ODB.
