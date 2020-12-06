@@ -13,6 +13,7 @@ defmodule GitGud.Repo do
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.RepoPool
+  alias GitGud.RepoStats
   alias GitGud.RepoStorage
 
   import Ecto.Changeset
@@ -26,6 +27,7 @@ defmodule GitGud.Repo do
     has_many :issues, Issue
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete
     many_to_many :contributors, User, join_through: "repositories_contributors", on_replace: :delete
+    embeds_one :stats, RepoStats, on_replace: :delete
     timestamps()
     field :pushed_at, :naive_datetime
   end
@@ -38,6 +40,8 @@ defmodule GitGud.Repo do
     public: boolean,
     description: binary,
     maintainers: [User.t],
+    contributors: [User.t],
+    stats: RepoStats.t,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
@@ -120,7 +124,8 @@ defmodule GitGud.Repo do
   @spec update!(t, map|keyword) :: t
   def update!(%__MODULE__{} = repo, params) do
     case update(repo, params) do
-      {:ok, repo} -> repo
+      {:ok, repo} ->
+        repo
       {:error, %Ecto.Changeset{} = changeset} ->
         raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
       {:error, reason} ->
@@ -132,16 +137,36 @@ defmodule GitGud.Repo do
   Updates the given `repo` associated issues labels with the given `params`.
   """
   @spec update_issue_labels(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update_issue_labels(repo, params) do
-    DB.update(issue_labels_changeset(repo, Map.new(params)))
-  end
+  def update_issue_labels(repo, params), do: DB.update(issue_labels_changeset(repo, Map.new(params)))
 
   @doc """
   Similar to `update_issue_labels/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec update_issue_labels!(t, map|keyword) :: t
-  def update_issue_labels!(repo, params) do
-    DB.update!(issue_labels_changeset(repo, Map.new(params)))
+  def update_issue_labels!(repo, params), do: DB.update!(issue_labels_changeset(repo, Map.new(params)))
+
+  @doc """
+  Updates the given `repo` associated stats with the given `params`.
+  """
+  @spec update_stats(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update_stats(repo, params) do
+    DB.update(stats_changeset(repo, %{
+      stats: Map.new(params),
+      pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
+    }))
+  end
+
+  @doc """
+  Similar to `update_stats/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec update_stats!(t, map|keyword) :: t
+  def update_stats!(repo, params) do
+    case update_stats(repo, params) do
+      {:ok, repo} ->
+        repo
+      {:error, %Ecto.Changeset{} = changeset} ->
+        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -197,6 +222,16 @@ defmodule GitGud.Repo do
     |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
     |> cast(params, [])
     |> cast_assoc(:issue_labels, with: &IssueLabel.changeset/2)
+  end
+
+  @doc """
+  Returns a repository changeset for manipulating associated stats.
+  """
+  @spec stats_changeset(t, map) :: Ecto.Changeset.t
+  def stats_changeset(%__MODULE__{} = repo, params \\ %{}) do
+    repo
+    |> cast(params, [:pushed_at])
+    |> cast_embed(:stats, with: &RepoStats.changeset/2)
   end
 
   #

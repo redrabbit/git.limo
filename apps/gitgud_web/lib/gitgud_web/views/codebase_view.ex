@@ -41,9 +41,9 @@ defmodule GitGud.Web.CodebaseView do
     ])
   end
 
-  @spec chunk_commits_by_timestamp([{GitCommit.t, map, non_neg_integer}]) :: [{GitCommit.t, map, non_neg_integer}]
+  @spec chunk_commits_by_timestamp([{GitCommit.t, map, non_neg_integer}]) :: [{Date, [{GitCommit.t, map, non_neg_integer}]}]
   def chunk_commits_by_timestamp(commits) do
-    Enum.reduce(commits, [], fn {_commit, commit_info, _comment_count} = tuple, acc ->
+    Enum.reduce(Enum.reverse(commits), [], fn {_commit, commit_info, _comment_count} = tuple, acc ->
       timestamp = DateTime.to_date(commit_info.timestamp)
       if idx = Enum.find_index(acc, &find_commit_timestamp(&1, timestamp)),
         do: List.update_at(acc, idx, fn {timestamp, tuples} -> {timestamp, [tuple|tuples]} end),

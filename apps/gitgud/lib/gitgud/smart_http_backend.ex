@@ -145,7 +145,6 @@ defmodule GitGud.SmartHTTPBackend do
     else: send_resp(conn, :not_found, "Not found")
   end
 
-
   defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
     if authorized?(conn, repo, exec) do
       {:ok, agent} = GitRepo.get_agent(repo)
@@ -167,7 +166,7 @@ defmodule GitGud.SmartHTTPBackend do
       service = WireProtocol.skip(service)
       case git_stream_pack(conn, service) do
         {:ok, conn} ->
-        halt(conn)
+          halt(conn)
         {:error, _reason} ->
           conn
           |> send_resp(:internal_server_error, "Something went wrong")

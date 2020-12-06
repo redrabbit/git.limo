@@ -15,13 +15,15 @@ defmodule GitGud.RepoStorage do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
+  alias GitGud.RepoStats
   alias GitGud.GPGKey
 
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
-  import Ecto.Changeset, only: [change: 2]
   import Ecto.Query, only: [from: 2, select: 3]
+
+  require Logger
 
   @doc """
   Initializes a new Git repository for the given `repo`.
@@ -59,21 +61,23 @@ defmodule GitGud.RepoStorage do
   It is responsible for writing objects and references to the underlying Git repository.
   """
   @spec push(Repo.t, User.t, ReceivePack.t) :: :ok | {:error, term}
-  def push(%Repo{} = repo, %User{} = user, %ReceivePack{} = receive_pack) do
+  def push(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
     with {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
          {:ok, meta} <- push_meta_objects(objs, repo, user),
           :ok <- ReceivePack.apply_cmds(receive_pack),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
-      dispatch_events(repo, receive_pack.cmds, meta)
+         {:ok, stats} <- make_stats(agent, repo.stats, cmds),
+         {:ok, repo} <- Repo.update_stats(repo, stats), do:
+      dispatch_events(repo, cmds, meta)
   end
 
   @doc """
   Pushes the given `commit` to the given `repo`.
   """
-  @spec push_commit(Repo.t, User.t, ReceivePack.cmd, GitCommit.t) :: :ok | {:error, term}
-  def push_commit(%Repo{} = repo, %User{} = user, cmd, %GitCommit{oid: oid} = commit) do
+  @spec push_commit(Repo.t, User.t, GitAgent.t, GitCommit.t, ReceivePack.cmd) :: :ok | {:error, term}
+  def push_commit(%Repo{} = repo, %User{} = user, agent, %GitCommit{oid: oid} = commit, cmd) do
     with {:ok, meta} <- push_meta_objects([{oid, commit}], repo, user),
-         {:ok, repo} <- DB.update(change(repo, %{pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})), do:
+         {:ok, stats} <- make_stats(agent, repo.stats, [cmd]),
+         {:ok, repo} <- Repo.update_stats(repo, stats), do:
       dispatch_events(repo, [cmd], meta)
   end
 
@@ -97,8 +101,12 @@ defmodule GitGud.RepoStorage do
          {:ok, committer} <- GitAgent.commit_committer(agent, commit),
          {:ok, message} <- GitAgent.commit_message(agent, commit),
          {:ok, parents} <- GitAgent.commit_parents(agent, commit),
-       # {:ok, gpg_signature} <- GitAgent.commit_gpg_signature(agent, commit),
          {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit) do
+      gpg_sig =
+        case GitAgent.commit_gpg_signature(agent, commit) do
+          {:ok, gpg_sig} -> gpg_sig
+          {:error, _reason} -> nil
+        end
       {:commit, %{
         oid: oid,
         repo_id: repo.id,
@@ -108,7 +116,7 @@ defmodule GitGud.RepoStorage do
         author_email: author.email,
         committer_name: committer.name,
         committer_email: committer.email,
-      # gpg_key_id: gpg_signature,
+        gpg_key_id: extract_commit_gpg_key_id(gpg_sig),
         committer_at: timestamp,
       }}
     else
@@ -130,7 +138,7 @@ defmodule GitGud.RepoStorage do
       author_email: strip_utf8(author["email"]),
       committer_name: strip_utf8(committer["name"]),
       committer_email: strip_utf8(committer["email"]),
-      gpg_key_id: extract_commit_gpg_key_id(commit),
+      gpg_key_id: extract_commit_gpg_key_id(commit["gpgsig"]),
       committed_at: author["time"],
     }}
   end
@@ -199,6 +207,45 @@ defmodule GitGud.RepoStorage do
     end)
   end
 
+  defp make_stats(agent, nil, cmds), do: make_stats(agent, %RepoStats{}, cmds)
+  defp make_stats(agent, stats, cmds) do
+    with {:ok, stats_refs} <- make_stats_refs(agent, stats.refs, cmds) do
+      {:ok, %{refs: stats_refs}}
+    end
+  end
+
+  defp make_stats_refs(agent, nil, cmds), do: make_stats_refs(agent, %{}, cmds)
+  defp make_stats_refs(agent, refs, cmds) do
+    Enum.reduce_while(cmds, {:ok, refs}, fn cmd, {:ok, refs} ->
+      case make_stats_ref(agent, refs, cmd) do
+        {:ok, stats} ->
+          {:cont, {:ok, stats}}
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp make_stats_ref(agent, refs, {:create, _oid, ref_name}) do
+    with {:ok, ref} <- GitAgent.reference(agent, ref_name),
+         {:ok, count} <- GitAgent.history_count(agent, ref) do
+      {:ok, Map.put(refs, ref_name, %{"count" => count})}
+    end
+  end
+
+  defp make_stats_ref(agent, refs, {:update, old_oid, new_oid, ref_name}) do
+    if Map.has_key?(refs, ref_name) do
+      case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
+        {:ok, {ahead, behind}} ->
+          {:ok, update_in(refs, [ref_name, "count"], &(&1+ ahead + behind))}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, "Cannot update reference #{ref_name} in stats."}
+    end
+  end
+
   defp dispatch_events(_repo, _cmds, meta) do
     dispatch_issue_reference_events(meta)
   end
@@ -246,13 +293,12 @@ defmodule GitGud.RepoStorage do
     |> Map.update!("time", &DateTime.to_naive(DateTime.from_unix!(String.to_integer(&1))))
   end
 
-  defp extract_commit_gpg_key_id(commit) do
-    if gpg_signature = commit["gpgsig"] do
-      gpg_signature
-      |> GPGKey.decode!()
-      |> GPGKey.parse!()
-      |> get_in([:sig, :sub_pack, :issuer])
-    end
+  defp extract_commit_gpg_key_id(nil), do: nil
+  defp extract_commit_gpg_key_id(gpg_sig) do
+    gpg_sig
+    |> GPGKey.decode!()
+    |> GPGKey.parse!()
+    |> get_in([:sig, :sub_pack, :issuer])
   end
 
   defp meta_reference_issue?({{:issue_reference, _issue_id}, _val}), do: true

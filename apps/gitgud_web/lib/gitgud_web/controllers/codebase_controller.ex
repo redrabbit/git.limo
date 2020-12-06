@@ -8,13 +8,17 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
+  alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.RepoStats
   alias GitGud.RepoStorage
   alias GitGud.ReviewQuery
   alias GitGud.GPGKey
 
   alias GitRekt.GitAgent
   alias GitRekt.{GitRef, GitTag, GitBlob, GitTree, GitTreeEntry}
+
+  require Logger
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
@@ -67,14 +71,13 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :contributors) do
       if authorized?(user, repo, :write) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
-             {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision) do
+             {:ok, {_object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision) do
           render(conn, "new.html",
             breadcrumb: %{action: :tree, cwd?: true, tree?: true},
             changeset: blob_commit_changeset(%{branch: branch_name}, %{}),
             repo: repo,
             revision: reference,
-            tree_path: [],
-            stats: stats(repo, agent, reference || object)
+            tree_path: []
           )
         else
           {:ok, {_object, _reference}} ->
@@ -151,7 +154,7 @@ defmodule GitGud.Web.CodebaseController do
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                      {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                      :ok <- RepoStorage.push_commit(repo, user, {:update, old_ref.oid, commit.oid, commit_update_ref}, commit) do
+                      :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit.oid, commit_update_ref}) do
                   conn
                   |> put_flash(:info, "File #{blob_name} created.")
                   |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
@@ -233,7 +236,7 @@ defmodule GitGud.Web.CodebaseController do
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                      {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                      :ok <- RepoStorage.push_commit(repo, user, {:update, old_ref.oid, commit.oid, commit_update_ref}, commit) do
+                      :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit.oid, commit_update_ref}) do
                   conn
                   |> put_flash(:info, "File #{blob_name} updated.")
                   |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
@@ -313,7 +316,7 @@ defmodule GitGud.Web.CodebaseController do
                  {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                  {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                  {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                  :ok <- RepoStorage.push_commit(repo, user, {:update, old_ref.oid, commit.oid, commit_update_ref}, commit) do
+                  :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit_oid, commit_update_ref}) do
               conn
               |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
               |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
@@ -698,11 +701,37 @@ defmodule GitGud.Web.CodebaseController do
 
   defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
 
-  defp stats(repo, agent, revision) do
+  defp stats(%Repo{stats: %RepoStats{refs: stats_refs}} = repo, agent, revision) when is_map(stats_refs) do
+    rev_stats =
+      case revision do
+        %GitRef{} = ref ->
+          Map.get(stats_refs, to_string(ref), %{})
+        rev ->
+          case GitAgent.history_count(agent, rev) do
+            {:ok, commit_count} -> %{"count" => commit_count}
+            {:error, _reason} -> %{}
+          end
+      end
+    rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
+    %{
+      branches: Enum.count(Map.get(rev_groups, "heads", [])),
+      tags: Enum.count(Map.get(rev_groups, "tags", [])),
+      commits: rev_stats["count"] || 0,
+      contributors: RepoQuery.count_contributors(repo)
+    }
+  end
+
+  defp stats(%Repo{} = repo, agent, revision) do
+    Logger.warn("repository #{repo.owner.login}/#{repo.name} does not have stats")
     with {:ok, branches} <- GitAgent.branches(agent),
          {:ok, tags} <- GitAgent.tags(agent),
-         {:ok, history_count} <- GitAgent.history_count(agent, revision) do
-      %{branches: Enum.count(branches), tags: Enum.count(tags), commits: history_count, contributors: RepoQuery.count_contributors(repo)}
+         {:ok, commit_count} <- GitAgent.history_count(agent, revision) do
+      %{
+        branches: Enum.count(branches),
+        tags: Enum.count(tags),
+        commits: commit_count,
+        contributors: RepoQuery.count_contributors(repo)
+      }
     else
       {:error, _reason} ->
         %{commits: 0, branches: 0, tags: 0, contributors: 0}
