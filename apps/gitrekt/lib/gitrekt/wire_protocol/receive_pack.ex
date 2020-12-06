@@ -62,9 +62,15 @@ defmodule GitRekt.WireProtocol.ReceivePack do
       {:delete, _old_oid, name} ->
         :ok = GitAgent.reference_delete(agent, name)
     end)
-    if GitAgent.empty?(agent),
-      do: GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", true),
-    else: :ok
+
+    case GitAgent.empty?(agent) do
+      {:ok, true} ->
+        GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", true)
+      {:ok, false} ->
+        :ok
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -144,16 +150,13 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   # Helpers
   #
 
-  defp odb_flush(%__MODULE__{cmds: []}), do: {:ok, []}
+  defp odb_flush(%__MODULE__{cmds: [], pack: []}), do: :ok
+  defp odb_flush(%__MODULE__{callback: {module, args}} = handle), do: apply(module, :push, args ++ [handle])
   defp odb_flush(%__MODULE__{callback: nil} = handle) do
-    with {:ok, oids} <- apply_pack(handle),
-          :ok <- apply_cmds(handle), do:
-      {:ok, oids}
-  end
-
-  defp odb_flush(%__MODULE__{callback: callback} = handle) do
-    {module, args} = callback
-    apply(module, :push, args ++ [handle])
+    case apply_pack(handle) do
+      {:ok, _oids} -> apply_cmds(handle)
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   defp odb_object_match?({type, _oid}, type), do: true

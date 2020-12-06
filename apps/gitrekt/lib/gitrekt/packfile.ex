@@ -51,8 +51,7 @@ defmodule GitRekt.Packfile do
     end
   end
 
-  defp unpack_obj_next(max, max, rest, acc) do
-    <<_checksum::binary-20, rest::binary>> = rest
+  defp unpack_obj_next(max, max, <<_checksum::binary-20, rest::binary>>, acc) do
     {Enum.reverse(acc), rest}
   end
 

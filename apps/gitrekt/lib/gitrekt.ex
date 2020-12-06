@@ -27,6 +27,10 @@ defmodule GitRekt do
     defimpl Inspect do
       def inspect(ref, _opts), do: "<GitRef:#{ref.prefix}#{ref.name}>"
     end
+
+    defimpl String.Chars do
+      def to_string(ref), do: Path.join(ref.prefix, ref.name)
+    end
   end
 
   defmodule GitTag do
