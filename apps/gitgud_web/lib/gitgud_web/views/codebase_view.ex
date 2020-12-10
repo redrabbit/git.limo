@@ -27,9 +27,9 @@ defmodule GitGud.Web.CodebaseView do
     revision_oid = revision_oid(revision)
     revision_name = revision_name(revision)
     revision_type = revision_type(revision)
-    revision_href = revision_href(conn, revision)
-    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, action_href: revision_action_href(conn), branch_href: revision_href(conn, :branches), tag_href: revision_href(conn, :tags)], [class: "branch-select"], do: [
-      content_tag(:a, [class: "button", href: revision_href], do: [
+    revision_action = revision_action(conn)
+    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, action: revision_action], [class: "branch-select"], do: [
+      content_tag(:p, [class: "button"], do: [
         content_tag(:span, [], do: [
           "#{String.capitalize(to_string(revision_type))}: ",
           content_tag(:span, revision_name, class: "has-text-weight-semibold")
@@ -99,31 +99,8 @@ defmodule GitGud.Web.CodebaseView do
   def revision_type(%GitTag{} = _object), do: :tag
   def revision_type(%GitRef{type: type} = _object), do: type
 
-  @spec revision_href(Plug.Conn.t, GitAgent.git_revision | atom) :: binary
-  def revision_href(conn, revision_type) when is_atom(revision_type), do: Routes.codebase_path(conn, revision_type, conn.path_params["user_login"], conn.path_params["repo_name"])
-  def revision_href(conn, revision) do
-    repo = conn.assigns.repo
-    case revision_type(revision) do
-      :branch ->
-        Routes.codebase_path(conn, :branches, repo.owner, repo)
-      :tag ->
-        Routes.codebase_path(conn, :tags, repo.owner, repo)
-      :commit ->
-        Routes.codebase_path(conn, :history, repo.owner, repo, revision, [])
-    end
-  end
-
-  @spec revision_action_href(Plug.Conn.t) :: binary
-  def revision_action_href(conn) do
-    %{repo: repo, tree_path: tree_path} = conn.assigns
-    case action_name(conn) do
-      :show -> Routes.codebase_path(conn, :tree, repo.owner, repo, "__rev__", tree_path)
-      :create -> Routes.codebase_path(conn, :new, repo.owner, repo, "__rev__", tree_path)
-      :update -> Routes.codebase_path(conn, :edit, repo.owner, repo, "__rev__", tree_path)
-      :delete -> Routes.codebase_path(conn, :confirm_delete, repo.owner, repo, "__rev__", tree_path)
-      action -> Routes.codebase_path(conn, action, repo.owner, repo, "__rev__", tree_path)
-    end
-  end
+  @spec revision_action(Plug.Conn.t) :: binary
+  def revision_action(conn), do: conn.assigns.breadcrumb.action
 
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do

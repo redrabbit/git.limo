@@ -613,14 +613,29 @@ table {
   }
 }
 
-.card-commit {
-  .card-header {
+.card.commit, .card.blob {
+  .card-header.ellipsis {
     .card-header-title {
-      max-width: 58%;
       overflow-x: hidden;
       display: inline;
       line-height: 28px;
       text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+.card.commit {
+  .card-header.ellipsis {
+    .card-header-icon {
+      min-width: 422px;
+    }
+  }
+}
+
+.card.blob {
+  .card-header.ellipsis {
+    .card-header-icon {
       white-space: nowrap;
     }
   }
@@ -712,6 +727,9 @@ table.tree-table {
       line-height: 47px;
       border-width: 0 0 1px;
       background-color: $light;
+      white-space: nowrap;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
     }
   }
 

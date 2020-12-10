@@ -17,12 +17,12 @@ class BranchSelect extends React.Component {
     return (
       <div className="dropdown is-right" ref={this.dropdown}>
         <div className="dropdown-trigger">
-          <button className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
+          <p className="button" aria-haspopup="true" aria-controls="dropdown-menu" onClick={this.handleToggle}>
             <span>{this.props.type.charAt(0).toUpperCase() + this.props.type.slice(1)}: <span className="has-text-weight-semibold">{this.props.name}</span></span>
             <span className="icon is-small">
               <i className="fa fa-angle-down" aria-hidden="true"></i>
             </span>
-          </button>
+          </p>
         </div>
         <div className="dropdown-menu">
           {this.state.toggled && this.renderDropdown()}
@@ -64,7 +64,7 @@ class BranchSelect extends React.Component {
           if(error) {
             return <div>{error.message}</div>
           } else if(props) {
-            const edge = props.node.refs.edges.find(edge => edge.node.oid == this.props.oid)
+            const [user_login, repo_name, _action, _revision, ...tree] = window.location.pathname.split("/").filter(dirname => dirname != "")
             return (
               <nav className="panel">
                 <div className="panel-heading">
@@ -76,23 +76,23 @@ class BranchSelect extends React.Component {
                   </p>
                 </div>
                 <p className="panel-tabs">
-                  <a className={this.state.type == "BRANCH" ? "is-active" : ""} onClick={() => this.setState({type: "BRANCH"})}>Branches</a>
-                  <a className={this.state.type == "TAG" ? "is-active" : ""} onClick={() => this.setState({type: "TAG"})}>Tags</a>
+                  <a className={this.state.type == "BRANCH" ? "is-active" : ""} onClick={() => this.setState({filter: "", type: "BRANCH"})}>Branches</a>
+                  <a className={this.state.type == "TAG" ? "is-active" : ""} onClick={() => this.setState({filter: "", type: "TAG"})}>Tags</a>
                 </p>
                 {props.node.refs.edges.filter(edge =>
                   edge.node.type == this.state.type
                 ).filter(edge =>
                   edge.node.name.includes(this.state.filter)
                 ).sort((a, b) => a.node.target.timestamp < b.node.target.timestamp).map(edge =>
-                  <a key={edge.node.oid} href={this.props.actionHref.replace("__rev__", edge.node.name)} className={"panel-block" + (this.props.oid == edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
+                  <a key={edge.node.oid} href={"/" + [user_login, repo_name, this.props.action, edge.node.name, ...tree].join("/")} className={"panel-block" + (this.props.oid === edge.node.oid ? " is-active" : "")}>{edge.node.name}</a>
                 )}
                 <div className="panel-block">
                   {(() => {
                     switch(this.state.type) {
                       case "BRANCH":
-                        return <a className="button is-small is-light is-fullwidth" href={this.props.branchHref}>all branches</a>
+                        return <a className="button is-small is-light is-fullwidth" href={"/" + [user_login, repo_name, "branches"].join("/")}>all branches</a>
                       case "TAG":
-                        return <a className="button is-small is-light is-fullwidth" href={this.props.tagHref}>all tags</a>
+                        return <a className="button is-small is-light is-fullwidth" href={"/" + [user_login, repo_name, "tags"].join("/")}>all tags</a>
                     }
                   })()}
                 </div>

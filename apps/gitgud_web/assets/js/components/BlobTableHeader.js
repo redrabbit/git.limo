@@ -16,12 +16,12 @@ class BlobTableHeader extends React.Component {
     const {author, committer} = commit
     const messageTitle = commit.message.split("\n", 1)[0].trim()
     return (
-      <header className="card-header">
+      <header className="card-header ellipsis">
         <div className="card-header-title">
           <CommitSignature author={author} committer={committer} />
           &nbsp;<a href={commit.url} className="has-text-dark">{messageTitle}</a>
         </div>
-        <div className="card-header-icon has-text-dark">
+        <div className="card-header-icon has-text-right has-text-dark">
           <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{timestamp.fromNow()}</time>
         </div>
       </header>

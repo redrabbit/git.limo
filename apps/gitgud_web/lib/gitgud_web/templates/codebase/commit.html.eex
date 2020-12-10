@@ -1,8 +1,8 @@
 <div class="columns">
-  <div class="column">
-    <div class="card card-commit">
+  <div class="column is-full">
+    <div class="card commit">
       <%= with {message_title, message_body} <- commit_message_format(@repo, @commit_info.message) do %>
-        <header class="card-header">
+        <header class="card-header ellipsis">
           <p class="card-header-title"><span><%= message_title %></span></p>
           <div class="card-header-icon">
             <div class="buttons">
@@ -50,14 +50,14 @@
 </div>
 
 <div id="diff" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
-  <div class="column">
+  <div class="column is-full">
     <p>Showing <strong class="has-text-dark"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger"><%= @diff_stats.deletions %> deletions</strong>.</p>
   </div>
 </div>
 
 <%= for delta <- diff_deltas_with_reviews(@repo, @diff_deltas, @reviews) do %>
   <div class="columns">
-    <div class="column is-12">
+    <div class="column is-full">
       <div class="card diff">
         <header class="card-header">
           <p class="card-header-title"><%= delta.new_file.path %></p>
