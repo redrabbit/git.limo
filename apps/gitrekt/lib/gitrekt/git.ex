@@ -893,7 +893,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns a *PACK* file for the given `walk`.
   """
-  @spec revwalk_repository(revwalk) :: {:ok, binary} | {:error, term}
+  @spec revwalk_pack(revwalk) :: {:ok, binary} | {:error, term}
   def revwalk_pack(_walk) do
     raise Code.LoadError, file: nif_path() <> ".so"
   end
