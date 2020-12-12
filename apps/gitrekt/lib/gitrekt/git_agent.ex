@@ -658,14 +658,17 @@ defmodule GitRekt.GitAgent do
   defp call(handle, {:tree_entries, rev, path}), do: fetch_tree_entries(rev, path, handle)
   defp call(handle, {:tree_entries_with_commit, rev, :root}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, handle), do:
-      zip_tree_entries_commits(tree_entries, commits, "", handle)
+         {:ok, commits} <- fetch_tree_entries_commits(rev, handle),
+         {:ok, _root_commit, tree_entries_with_commit} <- zip_tree_entries_commits(tree_entries, commits, "", handle), do:
+      {:ok, tree_entries_with_commit}
   end
 
   defp call(handle, {:tree_entries_with_commit, rev, path}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle), do:
-      zip_tree_entries_commits(tree_entries, commits, path, handle)
+         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle),
+         {:ok, root_tree_entry} <- fetch_tree_entry(rev, {:path, path}, handle),
+         {:ok, root_commit, tree_entries_with_commit} <- zip_tree_entries_commits(tree_entries, commits, path, handle), do:
+      {:ok, [{root_tree_entry, root_commit}|tree_entries_with_commit]}
   end
 
   defp call(handle, {:tree_entry_target, %GitTreeEntry{} = tree_entry}), do: fetch_target(tree_entry, :undefined, handle)
@@ -1206,19 +1209,20 @@ defmodule GitRekt.GitAgent do
 
   defp zip_tree_entries_commits(tree_entries, commits, path, handle) do
     path_map = Map.new(tree_entries, &{Path.join(path, &1.name), &1})
-    {missing_entries, tree_entries_commits} = Enum.reduce_while(commits, {path_map, []}, &zip_tree_entries_commit(&1, &2, handle))
+    {missing_entries, root_commit, tree_entries_commits} = Enum.reduce_while(commits, {path_map, nil, []}, &zip_tree_entries_commit(&1, &2, handle))
     if Enum.empty?(missing_entries),
-      do: {:ok, tree_entries_commits},
-    else: {:ok, tree_entries_commits ++ Enum.map(missing_entries, fn {_path, tree_entry} -> {tree_entry, nil} end)}
+      do: {:ok, root_commit, tree_entries_commits},
+    else: {:ok, root_commit, tree_entries_commits ++ Enum.map(missing_entries, fn {_path, tree_entry} -> {tree_entry, nil} end)}
   end
 
-  defp zip_tree_entries_commit(_commit, {map, acc}, _handle) when map == %{} do
-    {:halt, {%{}, acc}}
+  defp zip_tree_entries_commit(_commit, {path_map, root, acc}, _handle) when path_map == %{} do
+    {:halt, {path_map, root, Enum.reverse(acc)}}
   end
 
-  defp zip_tree_entries_commit(commit, {path_map, acc}, handle) do
+  defp zip_tree_entries_commit(commit, {path_map, nil, acc}, handle), do: zip_tree_entries_commit(commit, {path_map, commit, acc}, handle)
+  defp zip_tree_entries_commit(commit, {path_map, root, acc}, handle) do
     entries = Enum.filter(path_map, fn {path, _entry} -> pathspec_match_commit(commit, [path], handle) end)
-    {:cont, Enum.reduce(entries, {path_map, acc}, fn {path, entry}, {path_map, acc} -> {Map.delete(path_map, path), [{entry, commit}|acc]} end)}
+    {:cont, Enum.reduce(entries, {path_map, root, acc}, fn {path, entry}, {path_map, root, acc} -> {Map.delete(path_map, path), root, [{entry, commit}|acc]} end)}
   end
 
   defp map_operation(op) when is_atom(op), do: {op, []}
