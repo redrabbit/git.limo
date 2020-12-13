@@ -1,7 +1,10 @@
 export default () => {
   document.querySelectorAll("article.message").forEach(flash => {
-    flash.querySelector("button.delete").addEventListener("click", event => {
-      flash.remove()
-    })
+    let deleteButton = flash.querySelector("button.delete");
+    if(deleteButton) {
+      deleteButton.addEventListener("click", event => {
+        flash.remove()
+      })
+    }
   })
 }

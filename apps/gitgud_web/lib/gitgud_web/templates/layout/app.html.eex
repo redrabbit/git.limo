@@ -56,7 +56,7 @@
 
     <main class="container">
       <%= if info = get_flash(@conn, :info) do %>
-        <article class="message is-primary is-small">
+        <article class="message is-primary is-small is-fixed">
           <div class="message-header">
             <p>Info</p>
             <button class="delete is-small" aria-label="delete"></button>
@@ -65,7 +65,7 @@
         </article>
       <% end %>
       <%= if error = get_flash(@conn, :error) do %>
-        <article class="message is-danger is-small">
+        <article class="message is-danger is-small is-fixed">
           <div class="message-header">
             <p>Error</p>
             <button class="delete is-small" aria-label="delete"></button>

@@ -22,5 +22,7 @@
   </table>
   <%= pagination(@conn, @page) %>
 <% else %>
-  Nothing to see here.
+  <article class="message is-light">
+    <div class="message-body">This repository has no tags.</div>
+  </article>
 <% end %>

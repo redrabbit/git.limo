@@ -5,15 +5,8 @@ defmodule GitGud.Web.RepoView do
   alias GitGud.User
   alias GitGud.Repo
 
-  @spec sort_user_repos([Repo.t]) :: [Repo.t]
-  def sort_user_repos(repos) do
-    Enum.sort_by(repos, &(&1.pushed_at), fn
-      %NaiveDateTime{} = one, %NaiveDateTime{} = two ->
-        NaiveDateTime.compare(one, two) != :lt
-      one, two ->
-        one <= two
-    end)
-  end
+  @spec sort_repos([Repo.t]) :: [Repo.t]
+  def sort_repos(repos), do: Enum.reverse(Enum.sort_by(repos, &(elem(&1, 0).pushed_at)))
 
   @spec title(atom, map) :: binary
   def title(:index, %{current_user: %User{id: user_id}, user: %User{id: user_id}}), do: "Your repositories"

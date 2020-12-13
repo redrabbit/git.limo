@@ -12,7 +12,9 @@
 </div>
 
 <%= if Enum.empty?(@user.ssh_keys) do %>
-  <p>Nothing to see here.</p>
+  <article class="message is-light">
+    <div class="message-body">You have not imported any SSH keys.</div>
+  </article>
 <% else %>
   <%= for ssh_key <- @user.ssh_keys do %>
     <div class="columns">

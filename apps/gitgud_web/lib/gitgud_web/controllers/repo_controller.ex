@@ -7,6 +7,7 @@ defmodule GitGud.Web.RepoController do
 
   alias GitGud.UserQuery
   alias GitGud.Repo
+  alias GitGud.RepoStats
   alias GitGud.RepoQuery
 
   plug :ensure_authenticated when action != :index
@@ -21,7 +22,7 @@ defmodule GitGud.Web.RepoController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login} = _params) do
     if user = UserQuery.by_login(user_login, preload: [:public_email, :repos], viewer: current_user(conn)),
-      do: render(conn, "index.html", user: user),
+      do: render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1)})),
     else: {:error, :not_found}
   end
 
@@ -107,4 +108,19 @@ defmodule GitGud.Web.RepoController do
       end || {:error, :unauthorized}
     end   || {:error, :not_found}
   end
+
+  #
+  # Helpers
+  #
+
+  defp stats(%Repo{stats: %RepoStats{refs: stats_refs}} = repo) when is_map(stats_refs) do
+    rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
+    %{
+      branches: Enum.count(Map.get(rev_groups, "heads", [])),
+      tags: Enum.count(Map.get(rev_groups, "tags", [])),
+      contributors: RepoQuery.count_contributors(repo)
+    }
+  end
+
+  defp stats(%Repo{}), do: nil
 end

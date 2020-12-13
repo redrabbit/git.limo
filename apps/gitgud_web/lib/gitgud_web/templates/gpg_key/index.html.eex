@@ -12,7 +12,9 @@
 </div>
 
 <%= if Enum.empty?(@user.gpg_keys) do %>
-  <p>Nothing to see here.</p>
+  <article class="message is-light">
+    <div class="message-body">You have not imported any GPG keys.</div>
+  </article>
 <% else %>
   <%= for gpg_key <- @user.gpg_keys do %>
     <div class="columns">

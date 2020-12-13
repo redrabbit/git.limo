@@ -180,7 +180,7 @@ class CommentForm extends React.Component {
           return (
             <div className="comment-preview">
               <input type="hidden" name={this.state.inputName} value={this.state.body} />
-              <div className="content">Nothing to see here.</div>
+              <div className="content"></div>
             </div>
           )
         }

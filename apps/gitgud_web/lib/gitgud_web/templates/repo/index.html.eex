@@ -10,7 +10,7 @@
         <%= if verified?(@current_user) do %>
           <a class="button is-success" href="<%= Routes.repo_path(@conn, :new) %>">New</a>
         <% else %>
-          <a class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</a>
+          <p class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</p>
         <% end %>
       </div>
     </div>
@@ -18,21 +18,43 @@
 </div>
 
 <%= if Enum.empty?(@user.repos) do %>
-  Nothing to see here.
+  <article class="message is-light">
+    <%= if authenticated?(@conn) && @current_user.id == @user.id do %>
+      <div class="message-body">You have not created any repositories.</div>
+    <% else %>
+      <div class="message-body">This user has no repositories.</div>
+    <% end %>
+  </article>
 <% else %>
-  <%= for repo <- sort_user_repos(@user.repos) do %>
+  <%= for {repo, stats} <- sort_repos(@repos) do %>
     <div class="columns">
       <div class="column is-full">
         <div class="repo card">
           <header class="card-header">
-            <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %></a>
-            <a class="card-header-icon has-text-grey" href="<%= Routes.codebase_path @conn, :show, @user, repo %>">
-            <%= if repo.pushed_at do %>
-              <span>Updated <%= datetime_format(repo.pushed_at, "{relative}") %></span>
-            <% else %>
-              <span>Never updated</span>
+            <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %><%= unless repo.public do %>&nbsp;<span class="tag has-text-grey-light"><i class="fa fa-lock"></i></span><% end %></a>
+            <%= if stats do %>
+              <div class="card-header-icon has-text-grey">
+                <div class="buttons">
+                  <a href="<%= Routes.codebase_path @conn, :history, @user, repo %>" class="button is-small is-white">
+                    <span class="icon has-text-grey-dark"><i class="fa fa-history" aria-hidden="true"></i></span>
+                    <span><%= datetime_format(repo.pushed_at, "{relative}") %></span>
+                  </a>
+                  <a href="<%= Routes.codebase_path @conn, :branches, @user, repo %>" class="button is-small is-white">
+                    <span class="icon has-text-grey-dark"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
+                    <span><%= stats.branches %></span>
+                  </a>
+
+                  <a href="<%= Routes.codebase_path @conn, :tags, @user, repo %>" class="button is-small is-white">
+                    <span class="icon has-text-grey-dark"><i class="fa fa-tags" aria-hidden="true"></i></span>
+                    <span><%= stats.tags %></span>
+                  </a>
+                  <p class="button is-small is-white">
+                    <span class="icon has-text-grey-dark"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
+                    <span><%= stats.contributors %></span>
+                  </p>
+                </div>
+              </div>
             <% end %>
-            </a>
           </header>
           <div class="card-content">
             <div class="content"><%= repo.description %></div>

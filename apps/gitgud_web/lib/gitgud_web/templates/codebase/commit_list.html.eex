@@ -55,5 +55,7 @@
   </div>
   <%= pagination(@conn, @page) %>
 <% else %>
-  Nothing to see here.
+  <article class="message is-light">
+    <div class="message-body">No commit ancestors found.</div>
+  </article>
 <% end %>

@@ -10,7 +10,7 @@
         <%= if verified?(@current_user) do %>
           <a class="button is-success" href="<%= Routes.issue_path(@conn, :new, @repo.owner, @repo) %>">New</a>
         <% else %>
-          <a class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</a>
+          <p class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</p>
         <% end %>
       </div>
     </div>
@@ -133,7 +133,11 @@
         <% end %>
       <% else %>
         <tr>
-          <td colspan="3">Nothing to see here.</td>
+          <td colspan="3">
+            <article class="message is-light">
+              <div class="message-body">No issues found.</div>
+            </article>
+          </td>
         </tr>
       <% end %>
     </tbody>
