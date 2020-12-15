@@ -118,6 +118,7 @@ defmodule GitGud.Web.RepoController do
     %{
       branches: Enum.count(Map.get(rev_groups, "heads", [])),
       tags: Enum.count(Map.get(rev_groups, "tags", [])),
+      issues: GitGud.IssueQuery.count_repo_issues(repo, status: :open),
       contributors: RepoQuery.count_contributors(repo)
     }
   end
