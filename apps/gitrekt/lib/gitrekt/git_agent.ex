@@ -532,9 +532,9 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op) when is_pid(agent), do: telemetry_exec(op, fn -> GenServer.call(agent, op, @default_config.timeout) end)
-  defp exec(agent, op) when is_reference(agent), do: telemetry_exec(op, fn -> call(agent, op) end)
-  defp exec({agent, cache}, op) when is_reference(agent), do: telemetry_exec(op, fn -> call_cache(agent, op, cache) end)
+  defp exec(agent, op) when is_pid(agent), do: GenServer.call(agent, op, @default_config.timeout)
+  defp exec(agent, op) when is_reference(agent), do: call(agent, op)
+  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(agent, op, cache)
 
   defp call(handle, :empty?) do
     {:ok, Git.repository_empty?(handle)}
@@ -796,13 +796,17 @@ defmodule GitRekt.GitAgent do
   def call_cache(handle, op, cache) do
     cache_adapter = Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
     if cache_key = cache_adapter.make_cache_key(op) do
+      event_time = System.monotonic_time(:microsecond)
       if cache_result = cache_adapter.fetch_cache(cache, cache_key) do
+        telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time}, %{cache: cache_key})
         {:ok, cache_result}
       else
         case call(handle, op) do
           :ok ->
+            telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time})
             :ok
           {:ok, result} ->
+            telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time})
             cache_adapter.put_cache(cache, cache_key, result)
             {:ok, result}
           {:error, reason} ->
@@ -810,7 +814,7 @@ defmodule GitRekt.GitAgent do
         end
       end
     else
-      call(handle, op)
+      telemetry(:execute, op, fn -> call(handle, op) end)
     end
   end
 
@@ -823,27 +827,15 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp telemetry_exec(op, callback, meta \\ %{}) do
-    event_time = System.monotonic_time(:nanosecond)
-    result = callback.()
-    duration = System.monotonic_time(:nanosecond) - event_time
+  defp telemetry(event_name, op, measurements, meta \\ %{})
+  defp telemetry(event_name, op, measurements, meta) when is_map(measurements) do
     {name, args} = map_operation(op)
-    :telemetry.execute([:gitrekt, :git_agent, :execute], %{duration: duration}, Map.merge(meta, %{op: name, args: args}))
-    result
+    :telemetry.execute([:gitrekt, :git_agent, event_name], measurements, Map.merge(%{op: name, args: args}, meta))
   end
 
-  defp telemetry_stream(op, chunk_size, callback, meta \\ %{}) do
-    {name, args} =
-      if is_atom(op) do
-        {op, []}
-      else
-        [name|args] = Tuple.to_list(op)
-        {name, args}
-      end
-    event_time = System.monotonic_time(:nanosecond)
-    result = callback.()
-    duration = System.monotonic_time(:nanosecond) - event_time
-    :telemetry.execute([:gitrekt, :git_agent, :stream], %{duration: duration}, Map.merge(meta, %{op: name, args: args, chunk_size: chunk_size}))
+  defp telemetry(event_name, op, callback, meta) do
+    {duration, result} = :timer.tc(callback)
+    telemetry(event_name, op, %{duration: duration}, meta)
     result
   end
 
@@ -1201,7 +1193,7 @@ defmodule GitRekt.GitAgent do
       fn :halt ->
           {:halt, agent}
          stream ->
-          telemetry_stream(op, chunk_size, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end)
+          telemetry(:stream, op, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end, %{chunk_size: chunk_size})
       end,
       &(&1)
     )
