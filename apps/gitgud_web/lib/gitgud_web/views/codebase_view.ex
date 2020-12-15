@@ -12,8 +12,6 @@ defmodule GitGud.Web.CodebaseView do
 
   alias GitRekt.{GitCommit, GitRef, GitTag}
 
-  import Phoenix.Controller, only: [action_name: 1]
-
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
