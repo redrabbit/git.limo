@@ -83,9 +83,8 @@ defmodule GitGud.IssueQuery do
   def count_repo_issues_by_status(repo, opts \\ [])
   def count_repo_issues_by_status(%Repo{id: repo_id}, opts), do: count_repo_issues_by_status(repo_id, opts)
   def count_repo_issues_by_status(repo_id, opts) do
-      {status, opts} = Keyword.pop(opts, :status, @queryable_status)
       {labels, opts} = Keyword.pop(opts, :labels, [])
-      DBQueryable.query({__MODULE__, :count_repo_issues_by_status_query}, [repo_id, status, labels], opts)
+      DBQueryable.query({__MODULE__, :count_repo_issues_by_status_query}, [repo_id, @queryable_status, labels], opts)
       |> DB.all()
       |> Map.new(fn {status, count} -> {String.to_atom(status), count} end)
       |> Map.put_new(:open, 0)
