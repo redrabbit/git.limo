@@ -1,4 +1,3 @@
-export BlobTable from "./BlobTable"
 export BlobTableHeader from "./BlobTableHeader"
 export BranchSelect from "./BranchSelect"
 export Comment from "./Comment"
