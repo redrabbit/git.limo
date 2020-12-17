@@ -6,7 +6,7 @@ export default () => {
     let ellipsis
     let truncate = levelRight ? levelRight.offsetLeft + levelRight.offsetWidth - level.offsetWidth
                               : breadcrumb.offsetLeft + breadcrumb.offsetWidth - level.offsetWidth
-    while(truncate > 0) {
+    while(truncate > 1) {
       const items = breadcrumb.querySelectorAll("ul li")
       const item = items[fromIndex]
       if(!ellipsis) {
