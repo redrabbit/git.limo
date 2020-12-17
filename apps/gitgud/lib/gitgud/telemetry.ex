@@ -54,6 +54,7 @@ defmodule GitGud.Telemetry do
   defp map_git_agent_op_args(:references_with_commit, [:undefined, opts]), do: Enum.map(opts, &inspect/1)
   defp map_git_agent_op_args(:reference_create, [name, :oid, oid, force]), do: [inspect(name), inspect(:oid), inspect_oid(oid), inspect(force)]
   defp map_git_agent_op_args(:object, [oid]), do: [inspect_oid(oid)]
+  defp map_git_agent_op_args(:graph_ahead_behind, [oid, oid]), do: [inspect_oid(oid), inspect_oid(oid)]
   defp map_git_agent_op_args(:commit_create, [update_ref, author, committer, message, tree_oid, parents_oids]), do: [inspect(update_ref), inspect(author), inspect(committer), inspect(message), inspect_oid(tree_oid), inspect(Enum.map(parents_oids, &inspect_oid/1))]
   defp map_git_agent_op_args(:tree_entry, [revision, {:oid, oid}]), do: [inspect(revision), inspect({:oid, inspect_oid(oid)})]
   defp map_git_agent_op_args(:index_add, [index, oid, path, file_size, mode, opts]), do: [inspect(index), inspect_oid(oid), inspect(path), inspect(file_size), inspect(mode), inspect(opts)]
