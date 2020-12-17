@@ -55,7 +55,7 @@ defmodule GitGud.RepoStorage do
   end
 
   @doc """
-  Writes the given `receive_pack` objects and references to the given `repo`.
+  Pushes the given `receive_pack` to the given `repo`.
 
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
   It is responsible for writing objects and references to the underlying Git repository.
@@ -63,22 +63,19 @@ defmodule GitGud.RepoStorage do
   @spec push(Repo.t, User.t, ReceivePack.t) :: :ok | {:error, term}
   def push(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
     with {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
-         {:ok, meta} <- push_meta_objects(objs, repo, user),
-          :ok <- ReceivePack.apply_cmds(receive_pack),
-         {:ok, stats} <- make_stats(agent, repo.stats, cmds),
-         {:ok, repo} <- Repo.update_stats(repo, stats), do:
-      dispatch_events(repo, cmds, meta)
+          :ok <- ReceivePack.apply_cmds(receive_pack), do:
+      push(repo, user, agent, cmds, objs)
   end
 
   @doc """
-  Pushes the given `commit` to the given `repo`.
+  Pushes the given `cmds` and `objs` to the given `repo`.
   """
-  @spec push_commit(Repo.t, User.t, GitAgent.t, GitCommit.t, ReceivePack.cmd) :: :ok | {:error, term}
-  def push_commit(%Repo{} = repo, %User{} = user, agent, %GitCommit{oid: oid} = commit, cmd) do
-    with {:ok, meta} <- push_meta_objects([{oid, commit}], repo, user),
-         {:ok, stats} <- make_stats(agent, repo.stats, [cmd]),
+  @spec push(Repo.t, User.t, GitAgent.t, [ReceivePack.cmd], [term]) :: :ok | {:error, term}
+  def push(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
+    with {:ok, meta} <- push_meta_objects(repo, user, objs),
+         {:ok, stats} <- make_stats(agent, repo.stats, cmds),
          {:ok, repo} <- Repo.update_stats(repo, stats), do:
-      dispatch_events(repo, [cmd], meta)
+      dispatch_events(repo, cmds, meta)
   end
 
   @doc """
@@ -145,8 +142,8 @@ defmodule GitGud.RepoStorage do
 
   defp map_git_meta_object(_obj, _repo), do: nil
 
-  defp push_meta_objects(objs, repo, user) do
-    case DB.transaction(write_git_meta_objects(objs, repo, user), timeout: :infinity) do
+  defp push_meta_objects(repo, user, objs) do
+    case DB.transaction(write_git_meta_objects(repo, user, objs), timeout: :infinity) do
       {:ok, multi_results} ->
         {:ok, multi_results}
       {:error, reason} ->
@@ -154,19 +151,19 @@ defmodule GitGud.RepoStorage do
     end
   end
 
-  defp write_git_meta_objects(objs, repo, user) do
+  defp write_git_meta_objects(repo, user, objs) do
     objs
     |> Enum.map(&map_git_meta_object(&1, repo))
     |> Enum.reject(&is_nil/1)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(&1, &2, repo, user))
+    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(repo, user, &1, &2))
   end
 
-  defp write_git_meta_objects_multi({:commit, commits}, multi, repo, user) do
-    batch = batch_commits_users(commits)
+  defp write_git_meta_objects_multi(repo, user, {:commit, commits}, multi) do
+    batch = {user, batch_commits_users(commits)}
     multi
-    |> insert_contributors_multi(repo, {user, batch}, commits)
-    |> reference_issues_multi(repo, {user, batch}, commits)
+    |> insert_contributors_multi(repo, batch, commits)
+    |> reference_issues_multi(repo, batch, commits)
   end
 
   defp batch_commits_users(commits) do

@@ -131,8 +131,8 @@ defmodule GitGud.Web.CodebaseController do
           changeset = blob_commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
             blob_name = blob_changeset_name(changeset)
-            blob_path = Path.join(tree_path ++ [blob_name])
-            case GitAgent.tree_entry_by_path(agent, tree, blob_path) do
+            blob_path = tree_path ++ [blob_name]
+            case GitAgent.tree_entry_by_path(agent, tree, Path.join(blob_path)) do
               {:ok, _tree_entry} ->
                 changeset = Ecto.Changeset.add_error(changeset, :name, "has already been taken")
                 conn
@@ -149,15 +149,15 @@ defmodule GitGud.Web.CodebaseController do
                       :ok <- GitAgent.index_read_tree(agent, index, tree),
                      {:ok, odb} <- GitAgent.odb(agent),
                      {:ok, blob_oid} <- GitAgent.odb_write(agent, odb, blob_content, :blob),
-                      :ok <- GitAgent.index_add(agent, index, blob_oid, blob_path, byte_size(blob_content), 0o100644),
+                      :ok <- GitAgent.index_add(agent, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
                      {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                      {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                      :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit.oid, commit_update_ref}) do
+                      :ok <- RepoStorage.push(repo, user, agent, [{:update, old_ref.oid, commit.oid, commit_update_ref}], [{commit_oid, commit}]) do
                   conn
                   |> put_flash(:info, "File #{blob_name} created.")
-                  |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+                  |> redirect(to: Routes.codebase_path(conn, :blob, user_login, repo_name, Path.basename(commit_update_ref), blob_path))
                 end
             end
           else
@@ -236,10 +236,10 @@ defmodule GitGud.Web.CodebaseController do
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                      {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                      :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit.oid, commit_update_ref}) do
+                      :ok <- RepoStorage.push(repo, user, agent, [{:update, old_ref.oid, commit.oid, commit_update_ref}], [{commit_oid, commit}]) do
                   conn
                   |> put_flash(:info, "File #{blob_name} updated.")
-                  |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+                  |> redirect(to: Routes.codebase_path(conn, :blob, user_login, repo_name, Path.basename(commit_update_ref), blob_path))
                 end
               {:changes, new_name} ->
                 changeset = Ecto.Changeset.add_error(changeset, :name, "Cannot rename #{changeset.data.name} to #{new_name}")
@@ -305,6 +305,7 @@ defmodule GitGud.Web.CodebaseController do
           breadcrumb = %{action: :tree, cwd?: true, tree?: false}
           changeset = commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
+            tree_path = Enum.drop(blob_path, -1)
             commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
             commit_committer_sig = commit_author_sig
             commit_message = commit_changeset_message(changeset)
@@ -316,10 +317,10 @@ defmodule GitGud.Web.CodebaseController do
                  {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
                  {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
                  {:ok, commit} <- GitAgent.object(agent, commit_oid),
-                  :ok <- RepoStorage.push_commit(repo, user, agent, commit, {:update, old_ref.oid, commit_oid, commit_update_ref}) do
+                  :ok <- RepoStorage.push(repo, user, agent, [{:update, old_ref.oid, commit_oid, commit_update_ref}], [{commit_oid, commit}]) do
               conn
               |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
-              |> redirect(to: Routes.codebase_path(conn, :commit, user_login, repo_name, oid_fmt(commit_oid)))
+              |> redirect(to: Routes.codebase_path(conn, :tree, user_login, repo_name, Path.basename(commit_update_ref), tree_path))
             end
           else
             conn
