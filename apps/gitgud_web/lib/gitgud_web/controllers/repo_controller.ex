@@ -9,6 +9,7 @@ defmodule GitGud.Web.RepoController do
   alias GitGud.Repo
   alias GitGud.RepoStats
   alias GitGud.RepoQuery
+  alias GitGud.IssueQuery
 
   plug :ensure_authenticated when action != :index
   plug :put_layout, :user_profile when action == :index
@@ -118,7 +119,7 @@ defmodule GitGud.Web.RepoController do
     %{
       branches: Enum.count(Map.get(rev_groups, "heads", [])),
       tags: Enum.count(Map.get(rev_groups, "tags", [])),
-      issues: GitGud.IssueQuery.count_repo_issues(repo, status: :open),
+      issues: IssueQuery.count_repo_issues(repo, status: :open),
       contributors: RepoQuery.count_contributors(repo)
     }
   end
