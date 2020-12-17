@@ -838,7 +838,7 @@ table.blob-table {
 }
 
 .thread, .inline-comments {
-  .comment, .comment-form {
+  .comment, .comment-form, .comment-placeholder {
     @extend .box;
     max-width: 753px;
 
@@ -876,7 +876,7 @@ table.blob-table {
     .timeline-content {
       width: 100%;
 
-      .comment, .comment-form {
+      .comment, .comment-form, .comment-placeholder {
         position: relative;
         margin: 0 0 0 -4rem;
       }
