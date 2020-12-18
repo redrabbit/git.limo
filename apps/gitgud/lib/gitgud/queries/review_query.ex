@@ -62,7 +62,7 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns the number of comments for the given `repo` and `commit`.
   """
-  @spec commit_comment_count(Repot.t, GitCommit.t) :: non_neg_integer
+  @spec commit_comment_count(Repot.t, GitCommit.t|[GitCommit.t]) :: non_neg_integer | {Git.oid, non_neg_integer()}
   def commit_comment_count(%Repo{id: repo_id} = _repo, %GitCommit{oid: oid} = _commit) do
     DB.one(DBQueryable.query({__MODULE__, :commit_comment_count_query}, [repo_id, oid]))
   end
@@ -97,7 +97,7 @@ defmodule GitGud.ReviewQuery do
   end
 
   def query(:commit_comment_count_query, [repo_id, commit_oid]) do
-    from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), group_by: r.commit_oid, select: {r.commit_oid, count(c.id)}
+    from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: count(c.id)
   end
 
   def query(:comments_query, [%{id: review_id, __struct__: struct} = _review]), do: query(:comments_query, [{struct, review_id}])
