@@ -49,18 +49,45 @@
   </div>
 </div>
 
-<div id="diff" class="columns" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
-  <div class="column is-full">
-    <p>Showing <strong class="has-text-dark"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger"><%= @diff_stats.deletions %> deletions</strong>.</p>
+<div id="diff-stats" class="columns diff-stats" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
+  <div class="column is-three-quarters">
+    <p class="button is-white">
+      <span>Showing <strong class="has-text-dark is-family-monospace"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success is-family-monospace"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger is-family-monospace"><%= @diff_stats.deletions %> deletions</strong>.</span>
+    </p>
+
+  </div>
+  <div class="column is-one-quarter has-text-right">
+    <%= if @comment_count > 0 do %>
+      <a href="#review" class="button is-small is-white">
+        <span class="icon"><i class="fa fa-comment-alt"></i></span>
+        <span><%= @comment_count %></span>
+      </a>
+    <% end %>
   </div>
 </div>
+
+<table class="table diff-stats-table is-fullwidth">
+  <tbody>
+    <%= for delta <- @diff_deltas do %>
+      <tr>
+        <td>
+          <span class="icon"><i class="fa fa-file"></i></span>
+          <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><%= delta.new_file.path %></a>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
 
 <%= for delta <- diff_deltas_with_reviews(@repo, @diff_deltas, @reviews) do %>
   <div class="columns">
     <div class="column is-full">
-      <div class="card diff">
+      <div id="diff-<%= oid_fmt(delta.new_file.oid) %>" class="card diff">
         <header class="card-header">
-          <p class="card-header-title"><%= delta.new_file.path %></p>
+          <div class="card-header-title">
+            <a class="button is-white"><span class="icon"><i class="fa fa-angle-down" aria-hidden="true"></i></span></a>
+            <%= delta.new_file.path %>
+          </div>
           <p class="card-header-icon buttons">
             <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, Path.split(delta.old_file.path)) %>" class="button is-small is-link is-inverted">
               <span class="icon">

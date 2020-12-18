@@ -123,7 +123,7 @@
             </td>
             <td class="has-text-right">
               <%= if comment_count > 1 do %>
-              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>" class="button is-white">
+              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>" class="button is-small is-white">
                 <span class="icon"><i class="fa fa-comment-alt"></i></span>
                 <span><%= comment_count-1 %></span>
               </a>

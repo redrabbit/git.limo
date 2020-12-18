@@ -30,7 +30,7 @@
             </td>
           </tr>
           <%= if review = line[:review] do %>
-            <%= react_component("commit-line-review", [review_id: to_relay_id(review)], [tag: :tr, class: "inline-comments"]) do %>
+            <%= react_component("commit-line-review", [review_id: to_relay_id(review)], [tag: :tr, id: "review", class: "inline-comments"]) do %>
               <td colspan="4">
                 <div class="timeline">
                   <div class="timeline-item">

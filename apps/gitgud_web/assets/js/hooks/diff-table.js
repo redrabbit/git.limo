@@ -6,9 +6,9 @@ import {currentUser} from "../auth"
 import {CommitLineReview} from "../components"
 
 export default () => {
-  const diff = document.getElementById("diff")
-  if(diff) {
-    const {repoId, commitOid} = diff.dataset
+  const diffStats = document.getElementById("diff-stats")
+  if(diffStats) {
+    const {repoId, commitOid} = diffStats.dataset
     CommitLineReview.subscribeNewLineReviews(repoId, commitOid, {
       onNext: response => {
         const {id, blobOid, hunk, line} = response.commitLineReviewCreate
