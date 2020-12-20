@@ -676,8 +676,6 @@ table {
     border-bottom: 1px solid $grey-lighter;
     .card-header-title {
       padding-left: .24em;
-      font-family: $family-monospace;
-      font-size: .9em;
     }
   }
 
@@ -1011,9 +1009,4 @@ table.diff-table {
 
 table.diff-stats-table {
   margin-top: -1.5rem;
-  tbody tr td:first-child {
-    font-family: $family-monospace;
-    font-size: .9em;
-    font-weight: bold;
-  }
 }
