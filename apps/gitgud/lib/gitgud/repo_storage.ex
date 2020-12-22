@@ -34,10 +34,10 @@ defmodule GitGud.RepoStorage do
   end
 
   @doc """
-  Renames the given `repo`.
+  Updates the workdir for the given `repo`.
   """
   @spec rename(Repo.t, Repo.t) :: {:ok, Path.t} | {:error, term}
-  def rename(%Repo{} = repo, %Repo{} = old_repo) do
+  def rename(%Repo{} = old_repo, %Repo{} = repo) do
     old_workdir = workdir(old_repo)
     new_workdir = workdir(repo)
     case File.rename(old_workdir, new_workdir) do
@@ -47,7 +47,7 @@ defmodule GitGud.RepoStorage do
   end
 
   @doc """
-  Removes associated data for the given `repo`.
+  Removes Git objects and references associated to the given `repo`.
   """
   @spec cleanup(Repo.t) :: {:ok, [Path.t]} | {:error, term}
   def cleanup(%Repo{} = repo) do
@@ -57,22 +57,26 @@ defmodule GitGud.RepoStorage do
   @doc """
   Pushes the given `receive_pack` to the given `repo`.
 
-  This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` on each push command.
-  It is responsible for writing objects and references to the underlying Git repository.
+  This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` when pushing changes. It is
+  responsible for writing Git objects and references to the underlying ODB.
   """
-  @spec push(Repo.t, User.t, ReceivePack.t) :: :ok | {:error, term}
-  def push(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
-    with {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
+  @spec push_pack(Repo.t, User.t, ReceivePack.t) :: :ok | {:error, term}
+  def push_pack(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
+    with  :ok <- check_pack(repo, user, receive_pack),
+         {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
           :ok <- ReceivePack.apply_cmds(receive_pack), do:
-      push(repo, user, agent, cmds, objs)
+      push_meta(repo, user, agent, cmds, objs)
   end
 
   @doc """
-  Pushes the given `cmds` and meta `objs` to the given `repo`.
+  Pushes meta informations for the given `cmds` and `objs` to the given `repo`.
+
+  This function is called after all necessary Git objects and references have been written to the ODB. It is
+  reponsible for writing meta informations to the database.
   """
-  @spec push(Repo.t, User.t, GitAgent.agent, [ReceivePack.cmd], [any]) :: :ok | {:error, term}
-  def push(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
-    with {:ok, meta} <- push_meta_objects(repo, user, objs),
+  @spec push_meta(Repo.t, User.t, GitAgent.agent, [ReceivePack.cmd], [any]) :: :ok | {:error, term}
+  def push_meta(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
+    with {:ok, meta} <- push_meta_objects(repo, user, agent, objs),
          {:ok, stats} <- make_stats(agent, repo.stats, cmds),
          {:ok, repo} <- Repo.update_stats(repo, stats), do:
       dispatch_events(repo, cmds, meta)
@@ -92,9 +96,34 @@ defmodule GitGud.RepoStorage do
   # Helpers
   #
 
-  defp map_git_meta_object({oid, %GitCommit{} = commit}, repo) do
-    with {:ok, agent} <- GitAgent.unwrap(repo),
-         {:ok, author} <- GitAgent.commit_author(agent, commit),
+  defp check_pack(_repo, _user, _receive_pack), do: :ok
+
+  defp push_meta_objects(repo, user, agent, objs) do
+    case DB.transaction(write_git_meta_objects(repo, user, agent, objs), timeout: :infinity) do
+      {:ok, multi_results} ->
+        {:ok, multi_results}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp write_git_meta_objects(repo, user, agent, objs) do
+    objs
+    |> Enum.map(&map_git_meta_object(agent, &1))
+    |> Enum.reject(&is_nil/1)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(repo, user, &1, &2))
+  end
+
+  defp write_git_meta_objects_multi(repo, user, {:commit, commits}, multi) do
+    batch = {user, batch_commits_users(commits)}
+    multi
+    |> insert_contributors_multi(repo, batch, commits)
+    |> reference_issues_multi(repo, batch, commits)
+  end
+
+  defp map_git_meta_object(agent, {oid, %GitCommit{} = commit}) do
+    with {:ok, author} <- GitAgent.commit_author(agent, commit),
          {:ok, committer} <- GitAgent.commit_committer(agent, commit),
          {:ok, message} <- GitAgent.commit_message(agent, commit),
          {:ok, parents} <- GitAgent.commit_parents(agent, commit),
@@ -106,7 +135,6 @@ defmodule GitGud.RepoStorage do
         end
       {:commit, %{
         oid: oid,
-        repo_id: repo.id,
         parents: Enum.map(parents, &(&1.oid)),
         message: message,
         author_name: author.name,
@@ -122,13 +150,12 @@ defmodule GitGud.RepoStorage do
     end
   end
 
-  defp map_git_meta_object({oid, {:commit, data}}, repo) do
+  defp map_git_meta_object(_agent, {oid, {:commit, data}}) do
     commit = extract_commit_props(data)
     author = extract_commit_author(commit)
     committer = extract_commit_committer(commit)
     {:commit, %{
       oid: oid,
-      repo_id: repo.id,
       parents: extract_commit_parents(commit),
       message: strip_utf8(commit["message"]),
       author_name: strip_utf8(author["name"]),
@@ -140,31 +167,7 @@ defmodule GitGud.RepoStorage do
     }}
   end
 
-  defp map_git_meta_object(_obj, _repo), do: nil
-
-  defp push_meta_objects(repo, user, objs) do
-    case DB.transaction(write_git_meta_objects(repo, user, objs), timeout: :infinity) do
-      {:ok, multi_results} ->
-        {:ok, multi_results}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp write_git_meta_objects(repo, user, objs) do
-    objs
-    |> Enum.map(&map_git_meta_object(&1, repo))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
-    |> Enum.reduce(Multi.new(), &write_git_meta_objects_multi(repo, user, &1, &2))
-  end
-
-  defp write_git_meta_objects_multi(repo, user, {:commit, commits}, multi) do
-    batch = {user, batch_commits_users(commits)}
-    multi
-    |> insert_contributors_multi(repo, batch, commits)
-    |> reference_issues_multi(repo, batch, commits)
-  end
+  defp map_git_meta_object(_agent, _obj), do: nil
 
   defp batch_commits_users(commits) do
     emails = Enum.uniq(Enum.flat_map(commits, &[&1.author_email, &1.committer_email]))

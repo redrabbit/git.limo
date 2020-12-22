@@ -11,6 +11,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
+  @service_name "git-receive-pack"
+
   @null_oid String.duplicate("0", 40)
   @null_iter {0, 0, ""}
 
@@ -97,20 +99,17 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.agent, "git-receive-pack")}
+    {%{handle|state: :done}, lines, reference_discovery(handle.agent, @service_name)}
   end
 
-  @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :update_req}, lines, reference_discovery(handle.agent, "git-receive-pack")}
+    {%{handle|state: :update_req}, lines, reference_discovery(handle.agent, @service_name)}
   end
 
-  @impl true
   def next(%__MODULE__{state: :update_req} = handle, [:flush|lines]) do
     {%{handle|state: :done}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :update_req} = handle, lines) do
     {_shallows, lines} = Enum.split_while(lines, &odb_object_match?(&1, :shallow))
     {cmds, lines} = Enum.split_while(lines, &is_binary/1)
@@ -119,24 +118,21 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     {%{handle|state: :pack, caps: caps, cmds: parse_cmds(cmds)}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :pack} = handle, lines) do
     {read_pack(handle, lines), [], []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :buffer} = handle, pack) do
     {lines, ""} = Packfile.parse(pack, handle.iter)
     {%{handle|state: :pack}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :done} = handle, []) do
     case odb_flush(handle) do
       :ok ->
-        if "report-status" in handle.caps,
-          do: {handle, [], report_status(handle.cmds)},
-        else: {handle, [], []}
+        {handle, [], report_status(handle)}
+      {:error, reason} ->
+        {handle, [], ["unpack #{inspect reason}"]}
     end
   end
 
@@ -151,7 +147,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   #
 
   defp odb_flush(%__MODULE__{cmds: [], pack: []}), do: :ok
-  defp odb_flush(%__MODULE__{callback: {module, args}} = handle), do: apply(module, :push, args ++ [handle])
+  defp odb_flush(%__MODULE__{callback: {module, args}} = handle), do: apply(module, :push_pack, args ++ [handle])
   defp odb_flush(%__MODULE__{callback: nil} = handle) do
     case apply_pack(handle) do
       {:ok, _oids} -> apply_cmds(handle)
@@ -169,8 +165,10 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
-  defp report_status(cmds) do
-    List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush])
+  defp report_status(%__MODULE__{caps: caps, cmds: cmds}) do
+    if "report-status" in caps,
+      do: List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush]),
+    else: []
   end
 
   defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}

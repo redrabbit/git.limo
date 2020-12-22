@@ -1,4 +1,7 @@
 defmodule GitGud.RepoStats do
+  @moduledoc """
+  Git repository stats schema and helper functions.
+  """
   use Ecto.Schema
 
   import Ecto.Changeset

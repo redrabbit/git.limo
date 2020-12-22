@@ -10,6 +10,8 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   import GitRekt.WireProtocol, only: [reference_discovery: 2]
 
+  @service_name "git-upload-pack"
+
   defstruct [:agent, state: :disco, caps: [], wants: [], haves: []]
 
   @type t :: %__MODULE__{
@@ -26,20 +28,17 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.agent, "git-upload-pack")}
+    {%{handle|state: :done}, lines, reference_discovery(handle.agent, @service_name)}
   end
 
-  @impl true
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :upload_req}, lines, reference_discovery(handle.agent, "git-upload-pack")}
+    {%{handle|state: :upload_req}, lines, reference_discovery(handle.agent, @service_name)}
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_req} = handle, [:flush|lines]) do
     {%{handle|state: :done}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_req} = handle, lines) do
     {wants, lines} = Enum.split_while(lines, &obj_match?(&1, :want))
     {caps, wants} = parse_caps(wants)
@@ -48,22 +47,18 @@ defmodule GitRekt.WireProtocol.UploadPack do
     {%{handle|state: :upload_haves, caps: caps, wants: parse_cmds(wants)}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, []) do
     {%{handle|state: :done}, [], []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, [:flush|lines]) do
     {handle, lines, ack_haves(handle.haves, handle.caps) ++ [:nak]}
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, [:done|lines]) do
     next(%{handle|state: :pack}, lines)
   end
 
-  @impl true
   def next(%__MODULE__{state: :upload_haves} = handle, lines) do
     {:ok, odb} = GitAgent.odb(handle.agent)
     {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
@@ -77,7 +72,6 @@ defmodule GitRekt.WireProtocol.UploadPack do
     {%{handle|haves: haves}, lines, []}
   end
 
-  @impl true
   def next(%__MODULE__{state: :pack} = handle, []) do
     if Enum.empty?(handle.haves) do
       {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants)
@@ -96,7 +90,6 @@ defmodule GitRekt.WireProtocol.UploadPack do
     end
   end
 
-  @impl true
   def next(%__MODULE__{state: :done} = handle, []) do
     {handle, [], []}
   end

@@ -316,8 +316,8 @@ defmodule GitGud.Repo do
 
   defp rename(_db, %{repo: repo}, changeset) do
     unless get_change(changeset, :name),
-      do: {:ok, :noop},
-    else: RepoStorage.rename(repo, changeset.data)
+      do: {:ok, RepoStorage.workdir(repo)},
+    else: RepoStorage.rename(changeset.data, repo)
   end
 
   defp cleanup(_db, %{repo: repo}), do: RepoStorage.cleanup(repo)

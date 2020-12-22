@@ -35,7 +35,7 @@ defmodule GitGud.RepoStorageTest do
     test "moves repository", %{repo: old_repo} do
       changeset = Ecto.Changeset.change(old_repo, name: old_repo.name <> "_new")
       assert {:ok, new_repo} = DB.update(changeset)
-      assert {:ok, new_workdir} = RepoStorage.rename(new_repo, old_repo)
+      assert {:ok, new_workdir} = RepoStorage.rename(old_repo, new_repo)
       assert RepoStorage.workdir(new_repo) == new_workdir
       refute File.dir?(RepoStorage.workdir(old_repo))
       assert File.dir?(RepoStorage.workdir(new_repo))
