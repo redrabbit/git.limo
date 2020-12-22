@@ -198,7 +198,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   defp apply_pack_obj(agent, odb, {:delta_reference, {base_oid, _base_obj_size, _result_obj_size, _cmds} = delta_ref}, mode) do
-    {:ok, obj_type, obj_data} = GitAgent.odb_read(agent, odb, base_oid)
+    {:ok, {obj_type, obj_data}} = GitAgent.odb_read(agent, odb, base_oid)
     apply_pack_obj(agent, odb, resolve_delta_object({obj_type, obj_data}, delta_ref), mode)
   end
 

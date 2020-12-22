@@ -39,10 +39,11 @@ defmodule GitRekt.GitAgent do
 
   This look very similar to the original example altought the API is slightly different.
 
-  You might have noticed that the first argument of each Git function is an `agent`. In our example the agent
-  is a PID referencing a dedicated process started with `start_link/1` but replacing `start_link/1` with
-  `GitRekt.Git.repository_open/1` would actually return the exact same output. This works because `t:agent/0`
-  can be either a `t:GitRekt.Git.repo/0` NIF ressource or the PID of an agent process (more on that later).
+  You might have noticed that the first argument of each Git function is an agent. In our example the agent
+  is a PID referencing a dedicated process started with `start_link/1`.
+
+  Note that in the above example, replacing `start_link/1` with `GitRekt.Git.repository_open/1` would return
+  the exact same output. This works because the given `t:agent/0` can either be a PID or a `t:GitRekt.Git.repo/0`.
 
   ## Transactions
 
@@ -71,8 +72,8 @@ defmodule GitRekt.GitAgent do
   end)
   ```
 
-  Transactions provide a simple entry point for implementing more complex commands.
-
+  Transactions provide a simple entry point for implementing more complex commands. The function is
+  executed by the agent in a single pass; avoiding the costs of making six consecutive `GenServer.call/3`.
   """
   use GenServer
 
@@ -131,7 +132,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Return the raw data of the `odb` object with the given `oid`.
   """
-  @spec odb_read(agent, GitOdb.t, Git.oid) :: {:ok, map} | {:error, term}
+  @spec odb_read(agent, GitOdb.t, Git.oid) :: {:ok, {Git.obj_type, binary}} | {:error, term}
   def odb_read(agent, odb, oid), do: exec(agent, {:odb_read, odb, oid})
 
   @doc """
@@ -143,7 +144,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
   """
-  @spec odb_object_exists?(agent, GitOdb.t, Git.oid) :: boolean
+  @spec odb_object_exists?(agent, GitOdb.t, Git.oid) :: {:ok, boolean} | {:error, term}
   def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})
 
   @doc """
@@ -405,7 +406,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
   """
-  @spec diff(agent, git_object, git_object, keyword) :: {:ok, GitDiff.t} | {:error, term}
+  @spec diff(agent, GitTree.t | git_revision, GitTree.t | git_revision, keyword) :: {:ok, GitDiff.t} | {:error, term}
   def diff(agent, obj1, obj2, opts \\ []), do: exec(agent, {:diff, obj1, obj2, opts})
 
   @doc """
@@ -631,9 +632,19 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call(_handle, {:odb_read, %GitOdb{__ref__: odb}, oid}), do: Git.odb_read(odb, oid)
+  defp call(_handle, {:odb_read, %GitOdb{__ref__: odb}, oid}) do
+    case Git.odb_read(odb, oid) do
+      {:ok, obj_type, obj_data} ->
+        {:ok, {obj_type, obj_data}}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
-  defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}), do: Git.odb_object_exists?(odb, oid)
+  defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}) do
+    {:ok, Git.odb_object_exists?(odb, oid)}
+  end
 
   defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do
@@ -789,11 +800,11 @@ defmodule GitRekt.GitAgent do
 
   defp call(handle, {:transaction, _name, cb}), do: cb.(handle)
 
-  def call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
+  defp call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
     call_cache({handle, cache}, op, cache)
   end
 
-  def call_cache(handle, op, cache) do
+  defp call_cache(handle, op, cache) do
     cache_adapter = Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
     if cache_key = cache_adapter.make_cache_key(op) do
       event_time = System.monotonic_time(:microsecond)

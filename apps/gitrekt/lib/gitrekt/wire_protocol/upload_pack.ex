@@ -67,7 +67,14 @@ defmodule GitRekt.WireProtocol.UploadPack do
   def next(%__MODULE__{state: :upload_haves} = handle, lines) do
     {:ok, odb} = GitAgent.odb(handle.agent)
     {haves, lines} = Enum.split_while(lines, &obj_match?(&1, :have))
-    {%{handle|haves: Enum.filter(parse_cmds(haves), &GitAgent.odb_object_exists?(handle.agent, odb, &1))}, lines, []}
+    haves =
+      Enum.filter(parse_cmds(haves), fn have ->
+        case GitAgent.odb_object_exists?(handle.agent, odb, have) do
+          {:ok, exists?} -> exists?
+          {:error, reason} -> raise reason
+        end
+      end)
+    {%{handle|haves: haves}, lines, []}
   end
 
   @impl true

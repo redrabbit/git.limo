@@ -68,9 +68,9 @@ defmodule GitGud.RepoStorage do
   end
 
   @doc """
-  Pushes the given `cmds` and `objs` to the given `repo`.
+  Pushes the given `cmds` and meta `objs` to the given `repo`.
   """
-  @spec push(Repo.t, User.t, GitAgent.t, [ReceivePack.cmd], [term]) :: :ok | {:error, term}
+  @spec push(Repo.t, User.t, GitAgent.agent, [ReceivePack.cmd], [any]) :: :ok | {:error, term}
   def push(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
     with {:ok, meta} <- push_meta_objects(repo, user, objs),
          {:ok, stats} <- make_stats(agent, repo.stats, cmds),

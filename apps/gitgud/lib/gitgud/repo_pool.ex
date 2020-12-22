@@ -1,6 +1,6 @@
 defmodule GitGud.RepoPool do
   @moduledoc """
-  Conveniences for working with a pool of repository processes.
+  Pool of Git repository processes.
   """
   use DynamicSupervisor
 

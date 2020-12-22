@@ -21,7 +21,7 @@ defmodule GitGud.SSHServer do
 
   ## Authentication
 
-  A registered `GitGud.User` must authenticate with following methods:
+  A registered `GitGud.User` must authenticate with one of following methods:
 
   * *public-key* - if any of the associated `GitGud.SSHKey` matches.
   * *password* - if the given credentials are correct.
