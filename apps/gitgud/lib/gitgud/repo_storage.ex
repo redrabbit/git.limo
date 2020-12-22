@@ -234,7 +234,7 @@ defmodule GitGud.RepoStorage do
     if Map.has_key?(refs, ref_name) do
       case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
         {:ok, {ahead, behind}} ->
-          {:ok, update_in(refs, [ref_name, "count"], &(&1+ ahead + behind))}
+          {:ok, update_in(refs, [ref_name, "count"], &(&1 + ahead - behind))}
         {:error, reason} ->
           {:error, reason}
       end
