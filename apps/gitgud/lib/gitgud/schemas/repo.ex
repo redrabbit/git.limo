@@ -27,7 +27,7 @@ defmodule GitGud.Repo do
     has_many :issues, Issue
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete
     many_to_many :contributors, User, join_through: "repositories_contributors", on_replace: :delete
-    embeds_one :stats, RepoStats, on_replace: :delete
+    has_one :stats, RepoStats, on_replace: :update
     timestamps()
     field :pushed_at, :naive_datetime
   end
@@ -149,25 +149,13 @@ defmodule GitGud.Repo do
   Updates the given `repo` associated stats with the given `params`.
   """
   @spec update_stats(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update_stats(repo, params) do
-    DB.update(stats_changeset(repo, %{
-      stats: Map.new(params),
-      pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
-    }))
-  end
+  def update_stats(repo, params), do: DB.update(stats_changeset(repo, Map.new(params)))
 
   @doc """
   Similar to `update_stats/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
   @spec update_stats!(t, map|keyword) :: t
-  def update_stats!(repo, params) do
-    case update_stats(repo, params) do
-      {:ok, repo} ->
-        repo
-      {:error, %Ecto.Changeset{} = changeset} ->
-        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
-    end
-  end
+  def update_stats!(repo, params), do: DB.update!(stats_changeset(repo, Map.new(params)))
 
   @doc """
   Deletes the given `repo`.
@@ -230,8 +218,9 @@ defmodule GitGud.Repo do
   @spec stats_changeset(t, map) :: Ecto.Changeset.t
   def stats_changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
-    |> cast(params, [:pushed_at])
-    |> cast_embed(:stats, with: &RepoStats.changeset/2)
+    |> cast(params, [])
+    |> cast_assoc(:stats, with: &RepoStats.changeset/2)
+    |> put_change(:pushed_at, NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
   end
 
   #

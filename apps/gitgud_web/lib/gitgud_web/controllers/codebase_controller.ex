@@ -33,7 +33,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec show(Plug.Conn.t, map) :: Plug.Conn.t
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :contributors) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :stats) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, false} <- GitAgent.empty?(agent),
            {:ok, head} <- GitAgent.head(agent),
@@ -68,7 +68,7 @@ defmodule GitGud.Web.CodebaseController do
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :contributors) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :write) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {_object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision) do
@@ -368,7 +368,7 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
   def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :contributors) do
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :stats) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, :commit),

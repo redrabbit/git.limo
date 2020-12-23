@@ -76,8 +76,9 @@ defmodule GitGud.RepoStorage do
   """
   @spec push_meta(Repo.t, User.t, GitAgent.agent, [ReceivePack.cmd], [any]) :: :ok | {:error, term}
   def push_meta(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
+    repo = DB.preload(repo, :stats)
     with {:ok, meta} <- push_meta_objects(repo, user, agent, objs),
-         {:ok, stats} <- make_stats(agent, repo.stats, cmds),
+         {:ok, stats} <- make_stats(repo, user, agent, cmds),
          {:ok, repo} <- Repo.update_stats(repo, stats), do:
       dispatch_events(repo, cmds, meta)
   end
@@ -207,17 +208,19 @@ defmodule GitGud.RepoStorage do
     end)
   end
 
-  defp make_stats(agent, nil, cmds), do: make_stats(agent, %RepoStats{}, cmds)
-  defp make_stats(agent, stats, cmds) do
-    with {:ok, stats_refs} <- make_stats_refs(agent, stats.refs, cmds) do
-      {:ok, %{refs: stats_refs}}
+  defp make_stats(%Repo{id: repo_id, stats: nil} = repo, user, agent, cmds), do: make_stats(struct(repo, stats: %RepoStats{repo_id: repo_id}), user, agent, cmds)
+  defp make_stats(%Repo{id: repo_id, stats: stats}, _user, agent, cmds) do
+    with {:ok, stats_refs} <- make_stats_refs(stats.refs, agent, cmds) do
+
+      stats = %{repo_id: repo_id, refs: stats_refs}
+      {:ok, %{stats: stats}}
     end
   end
 
-  defp make_stats_refs(agent, nil, cmds), do: make_stats_refs(agent, %{}, cmds)
-  defp make_stats_refs(agent, refs, cmds) do
+  defp make_stats_refs(nil, agent, cmds), do: make_stats_refs(%{}, agent, cmds)
+  defp make_stats_refs(refs, agent, cmds) do
     Enum.reduce_while(cmds, {:ok, refs}, fn cmd, {:ok, refs} ->
-      case make_stats_ref(agent, refs, cmd) do
+      case make_stats_ref(refs, agent, cmd) do
         {:ok, stats} ->
           {:cont, {:ok, stats}}
         {:error, reason} ->
@@ -226,14 +229,14 @@ defmodule GitGud.RepoStorage do
     end)
   end
 
-  defp make_stats_ref(agent, refs, {:create, _oid, ref_name}) do
+  defp make_stats_ref(refs, agent, {:create, _oid, ref_name}) do
     with {:ok, ref} <- GitAgent.reference(agent, ref_name),
          {:ok, count} <- GitAgent.history_count(agent, ref) do
       {:ok, Map.put(refs, ref_name, %{"count" => count})}
     end
   end
 
-  defp make_stats_ref(agent, refs, {:update, old_oid, new_oid, ref_name}) do
+  defp make_stats_ref(refs, agent, {:update, old_oid, new_oid, ref_name}) do
     if Map.has_key?(refs, ref_name) do
       case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
         {:ok, {ahead, behind}} ->
