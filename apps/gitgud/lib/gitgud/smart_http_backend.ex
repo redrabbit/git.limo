@@ -117,8 +117,8 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp authorized?(conn, repo, "git-upload-pack"),  do: authorized?(conn, repo, :read)
-  defp authorized?(conn, repo, "git-receive-pack"), do: authorized?(conn, repo, :write)
+  defp authorized?(conn, repo, "git-upload-pack"), do: authorized?(conn, repo, :pull)
+  defp authorized?(conn, repo, "git-receive-pack"), do: authorized?(conn, repo, :push)
   defp authorized?(conn, repo, action), do: Authorization.authorized?(conn.assigns[:current_user], repo, action)
 
   defp basic_authentication(conn, _opts) do

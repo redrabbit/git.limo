@@ -10,7 +10,9 @@ defmodule GitGud.IssueQuery do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.RepoQuery
   alias GitGud.Issue
   alias GitGud.IssueLabel
   alias GitGud.Comment
@@ -89,6 +91,22 @@ defmodule GitGud.IssueQuery do
       |> Map.new(fn {status, count} -> {String.to_atom(status), count} end)
       |> Map.put_new(:open, 0)
       |> Map.put_new(:close, 0)
+  end
+
+  @doc """
+  Returns a list of permissions for the given `issue` and `user`.
+  """
+  @spec permissions(Issue.t, User.t | nil, [atom] | nil):: [atom]
+  def permissions(%Issue{} = issue, user, repo_perms \\ nil) do
+    repo_perms = repo_perms || repo_perms(issue, user)
+    cond do
+      :admin in repo_perms ->
+        [:comment, :close, :reopen, :edit_title, :edit_labels]
+      is_struct(user, User) && issue.author_id == user.id ->
+        [:comment, :close, :reopen]
+      true ->
+        [:comment]
+    end
   end
 
   #
@@ -190,4 +208,7 @@ defmodule GitGud.IssueQuery do
   defp join_preload(query, preload, _viewer) do
     preload(query, ^preload)
   end
+
+  defp repo_perms(%Issue{repo: %Repo{} = repo}, user), do: RepoQuery.permissions(repo, user)
+  defp repo_perms(%Issue{repo_id: repo_id}, user), do: RepoQuery.permissions(repo_id, user)
 end

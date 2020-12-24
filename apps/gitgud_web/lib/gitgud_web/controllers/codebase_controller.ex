@@ -53,9 +53,7 @@ defmodule GitGud.Web.CodebaseController do
         )
       else
         {:ok, true} ->
-          if authorized?(user, repo, :read),
-            do: render(conn, "initialize.html", repo: repo),
-          else: {:error, :not_found}
+          render(conn, "initialize.html", repo: repo)
         {:error, reason} ->
           {:error, reason}
       end

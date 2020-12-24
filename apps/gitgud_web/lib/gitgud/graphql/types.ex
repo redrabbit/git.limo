@@ -221,8 +221,8 @@ defmodule GitGud.GraphQL.Types do
     @desc "A list of events for this issue."
     field :events, list_of(:issue_event)
 
-    @desc "Returns `true` if the current viewer can edit the issue; otherwise, returns `false`."
-    field :editable, non_null(:boolean), resolve: &Resolvers.issue_editable/3
+    @desc "A list of permissions for this issue."
+    field :permissions, list_of(:string), resolve: &Resolvers.issue_permissions/3
 
     @desc "The creation timestamp of the comment."
     field :inserted_at, non_null(:naive_datetime)

@@ -62,7 +62,6 @@ defmodule GitGud.GPGKeyQuery do
   @impl true
   def alter_query(query, [], _viewer), do: query
 
-  @impl true
   def alter_query(query, [preload|tail], viewer) do
     query
     |> join_preload(preload, viewer)

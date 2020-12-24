@@ -8,5 +8,5 @@ defprotocol GitGud.AuthorizationPolicies do
   @doc """
   Returns `true` if `user` is allowed to perform `action` on `resource`; otherwhise returns `false`.
   """
-  def can?(resource, user, action, opts)
+  def can?(resource, user, action)
 end

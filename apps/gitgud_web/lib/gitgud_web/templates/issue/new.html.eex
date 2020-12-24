@@ -31,19 +31,22 @@
 
   </div>
   <div class="column is-one-quarter">
-    <aside class="menu is-sticky">
-      <div class="issue-label-select">
-        <div class="menu-label">Labels</div>
-          <div class="field">
-            <div class="control is-expanded">
-              <div class="select is-multiple is-fullwidth">
-                <%= multiple_select(f, :labels, Enum.map(@repo.issue_labels, &[key: &1.name, value: &1.id, data_color: &1.color]), selected: []) %>
+    <%= if authorized?(@conn, @repo, :admin) do %>
+      <aside class="menu is-sticky">
+        <div class="issue-label-select">
+          <div class="menu-label">Labels</div>
+            <div class="field">
+              <div class="control is-expanded">
+                <div class="select is-multiple is-fullwidth">
+                  <%= multiple_select(f, :labels, Enum.map(@repo.issue_labels, &[key: &1.name, value: &1.id, data_color: &1.color]), selected: []) %>
+                </div>
               </div>
+              <%= error_tag f, :labels %>
             </div>
-            <%= error_tag f, :labels %>
           </div>
         </div>
-      </div>
+      </aside>
+    <% end %>
   </div>
 </div>
 

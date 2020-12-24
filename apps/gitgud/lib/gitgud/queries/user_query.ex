@@ -73,22 +73,6 @@ defmodule GitGud.UserQuery do
   end
 
   @doc """
-  Returns the number of registered users.
-  """
-  @spec count_total() :: non_neg_integer
-  def count_total do
-    DB.one(query(:count_query, [:total]))
-  end
-
-  @doc """
-  Returns the number of verified users.
-  """
-  @spec count_verified() :: non_neg_integer
-  def count_verified() do
-    DB.one(query(:count_query, [:verified]))
-  end
-
-  @doc """
   Returns a list of users matching the given `input`.
   """
   @spec search(binary, keyword) :: [User.t]
@@ -139,14 +123,6 @@ defmodule GitGud.UserQuery do
     from(u in User, as: :user, where: fragment("similarity(?, ?) > ?", u.login, ^input, ^threshold) and not is_nil(u.primary_email_id), order_by: fragment("similarity(?, ?) DESC", u.login, ^input))
   end
 
-  def query(:count_query, [:total]) do
-    from(u in User, as: :user, select: count(u.id))
-  end
-
-  def query(:count_query, [:verified]) do
-    from(u in User, as: :user, where: not is_nil(u.primary_email_id), select: count(u.id))
-  end
-
   @impl true
   def alter_query(query, [], _viewer), do: query
 
@@ -179,13 +155,19 @@ defmodule GitGud.UserQuery do
     |> preload([public_email: e], [public_email: e])
   end
 
+  defp join_preload(query, :repos, :admin) do
+    query
+    |> join(:left, [user: u], r in assoc(u, :repos), as: :repos)
+    |> preload([repos: r], [repos: r])
+  end
+
   defp join_preload(query, :repos, nil) do
     query
     |> join(:left, [user: u], r in assoc(u, :repos), on: r.public == true and not is_nil(r.pushed_at), as: :repos)
     |> preload([repos: r], [repos: r])
   end
 
-  defp join_preload(query, :repos, viewer) do
+  defp join_preload(query, :repos, %User{} = viewer) do
     query
     |> join(:left, [user: u], m in Maintainer, on: m.user_id == ^viewer.id, as: :maintainer)
     |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)

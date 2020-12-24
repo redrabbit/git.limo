@@ -33,8 +33,6 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
-  import GitGud.Authorization, only: [authorized?: 3, authorized?: 4]
-
   import GitGud.Web.Markdown
 
   @doc """
@@ -545,12 +543,9 @@ defmodule GitGud.GraphQL.Resolvers do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
-  @doc """
-  Returns `true` if the viewer can edit a given `issue`; otherwise, returns `false`.
-  """
-  @spec issue_editable(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
-  def issue_editable(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, authorized?(ctx[:current_user], issue, :admin, Map.take(ctx, [:repo_perms]))}
+  @spec issue_permissions(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, [atom]} | {:error, term}
+  def issue_permissions(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, IssueQuery.permissions(issue, ctx[:current_user], ctx[:repo_perms])}
   end
 
   @doc """
@@ -641,7 +636,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_editable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def comment_editable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, authorized?(ctx[:current_user], comment, :admin, Map.take(ctx, [:repo_perms]))}
+    {:ok, authorized?(ctx[:current_user], comment, :edit, ctx[:repo_perms])}
   end
 
   @doc """
@@ -649,7 +644,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec comment_deletable(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, boolean} | {:error, term}
   def comment_deletable(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, authorized?(ctx[:current_user], comment, :admin, Map.take(ctx, [:repo_perms]))}
+    {:ok, authorized?(ctx[:current_user], comment, :delete, ctx[:repo_perms])}
   end
 
   @doc """
@@ -701,7 +696,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def create_issue_comment(%{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
-      if authorized?(user, issue, :write) do
+      if authorized?(user, issue, :comment, ctx[:repo_perms]) do
         case Issue.add_comment(issue, user, body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, issue_comment_create: issue.id)
@@ -720,7 +715,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def close_issue(%{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
-      if authorized?(user, issue, :admin) do
+      if authorized?(user, issue, :close, ctx[:repo_perms]) do
         case Issue.close(issue, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
@@ -739,7 +734,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def reopen_issue(%{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
-      if authorized?(user, issue, :admin) do
+      if authorized?(user, issue, :reopen, ctx[:repo_perms]) do
         case Issue.reopen(issue, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
@@ -758,7 +753,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def update_issue_title(%{id: id, title: title} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
-      if authorized?(user, issue, :admin) do
+      if authorized?(user, issue, :edit_title, ctx[:repo_perms]) do
         case Issue.update_title(issue, title, user_id: user.id) do
           {:ok, issue} ->
             publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
@@ -777,7 +772,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def update_issue_labels(%{id: id} = args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: :labels) do
-      if authorized?(user, issue, :admin) do
+      if authorized?(user, issue, :edit_labels, ctx[:repo_perms]) do
         labels_push = Map.get(args, :push, [])
         labels_pull = Map.get(args, :pull, [])
         case Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: user.id) do
@@ -819,7 +814,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def update_comment(%{id: id, body: body} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
-      if authorized?(user, comment, :admin) do
+      if authorized?(user, comment, :edit, ctx[:repo_perms]) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.update_rev(comment, user, body: body) do
           {:ok, comment} ->
@@ -854,7 +849,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def delete_comment(%{id: id} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     user = ctx[:current_user]
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
-      if authorized?(user, comment, :admin) do
+      if authorized?(user, comment, :delete, ctx[:repo_perms]) do
         thread = GitGud.CommentQuery.thread(comment)
         case Comment.delete(comment) do
           {:ok, comment} ->
@@ -950,6 +945,9 @@ defmodule GitGud.GraphQL.Resolvers do
   #
   # Helpers
   #
+
+  defp authorized?(user, %Issue{} = issue, action, repo_perms), do: action in IssueQuery.permissions(issue, user, repo_perms)
+  defp authorized?(user, %Comment{} = issue, action, repo_perms), do: action in CommentQuery.permissions(issue, user, repo_perms)
 
   defp flatten_user_emails(user) do
     Enum.map(user.emails, &{&1.address, user})

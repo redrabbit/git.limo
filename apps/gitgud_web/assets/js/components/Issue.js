@@ -56,7 +56,7 @@ class Issue extends React.Component {
       author: null,
       status: null,
       insertedAt: null,
-      editable: false,
+      permissions: [],
       comments: [],
       events: [],
       labels: [],
@@ -98,7 +98,7 @@ class Issue extends React.Component {
               url
             }
             insertedAt
-            editable
+            permissions
             comments(first: 50) {
               edges {
                 node {
@@ -177,7 +177,7 @@ class Issue extends React.Component {
           status: response.node.status,
           author: response.node.author,
           insertedAt: response.node.insertedAt,
-          editable: response.node.editable,
+          permissions: response.node.permissions,
           comments: response.node.comments.edges.map(edge => edge.node),
           labels: response.node.labels.map(label => label.id),
           events: response.node.events,
@@ -187,6 +187,7 @@ class Issue extends React.Component {
         this.subscribePresence()
         this.subscribeEvents()
         this.subscribeComments()
+        console.log(this.state)
       })
   }
 
@@ -374,7 +375,7 @@ class Issue extends React.Component {
   }
 
   render() {
-    const {title, titleEdit, number, insertedAt, author, editable} = this.state
+    const {title, titleEdit, number, insertedAt, author, permissions} = this.state
     if(number) {
       const timestamp = moment.utc(insertedAt)
       return (
@@ -404,7 +405,7 @@ class Issue extends React.Component {
                   <div className="control is-expanded">
                     <h1 className="title">{title} <span className="has-text-grey-light">#{number}</span></h1>
                   </div>
-                  {editable &&
+                  {permissions.includes("edit_title") &&
                     <div className="control">
                       <button className="button" onClick={() => this.setState({titleEdit: true})}>Edit</button>
                     </div>
@@ -425,7 +426,7 @@ class Issue extends React.Component {
             </div>
             <div className="column is-one-quarter">
               <aside className="menu is-sticky">
-                <IssueLabelSelect labels={this.state.repoLabels} selectedLabels={this.state.labels} editable={editable} onSubmit={this.handleLabelsSelection} />
+                <IssueLabelSelect labels={this.state.repoLabels} selectedLabels={this.state.labels} editable={permissions.includes("edit_labels")} onSubmit={this.handleLabelsSelection} />
               </aside>
             </div>
           </div>
@@ -521,15 +522,18 @@ class Issue extends React.Component {
   }
 
   renderForm() {
-    const {status, editable} = this.state
-    if(!editable) {
-      return <CommentForm action="new" repoId={this.state.repoId} onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
+    const {status, permissions} = this.state
+    if(status == "open") {
+      if(permissions.includes("close")) {
+        return <CommentForm action="close" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onClose={this.handleClose} />
+      } else {
+        return <CommentForm action="new" repoId={this.state.repoId} onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
+      }
     } else {
-      switch(status) {
-        case "open":
-          return <CommentForm action="close" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onClose={this.handleClose} />
-        case "close":
-          return <CommentForm action="reopen" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onReopen={this.handleReopen} />
+      if(permissions.includes("reopen")) {
+        return <CommentForm action="reopen" repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onReopen={this.handleReopen} />
+      } else {
+        return <CommentForm action="new" repoId={this.state.repoId} onTyping={this.handleFormTyping} onSubmit={this.handleFormSubmit} />
       }
     }
   }
@@ -632,7 +636,7 @@ class Issue extends React.Component {
       mutation IssueCloseMutation($id: ID!) {
         closeIssue(id: $id) {
           status
-          editable
+          permissions
         }
       }
     `
@@ -640,7 +644,7 @@ class Issue extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: response => this.setState({status: response.closeIssue.status, editable: response.closeIssue.editable}),
+      onCompleted: response => this.setState({status: response.closeIssue.status, permissions: response.closeIssue.permissions}),
       onError: error => console.error(error)
     })
   }
@@ -655,7 +659,7 @@ class Issue extends React.Component {
       mutation IssueReopenMutation($id: ID!) {
         reopenIssue(id: $id) {
           status
-          editable
+          permissions
         }
       }
     `
@@ -663,7 +667,7 @@ class Issue extends React.Component {
     commitMutation(environment, {
       mutation,
       variables,
-      onCompleted: response => this.setState({status: response.reopenIssue.status, editable: response.reopenIssue.editable}),
+      onCompleted: response => this.setState({status: response.reopenIssue.status, permissions: response.reopenIssue.permissions}),
       onError: error => console.error(error)
     })
   }

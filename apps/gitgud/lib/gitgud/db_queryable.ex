@@ -50,7 +50,7 @@ defmodule GitGud.DBQueryable do
     {offset, opts} = Keyword.pop(opts, :offset)
     {limit, opts} = Keyword.pop(opts, :limit)
     {preloads, opts} = Keyword.pop(opts, :preload, [])
-    {viewer, opts} = Keyword.pop(opts, :viewer)
+    {viewer, opts} = Keyword.pop(opts, :viewer, :admin)
     {{order_by, {offset, limit}, List.wrap(preloads), viewer}, opts}
   end
 end

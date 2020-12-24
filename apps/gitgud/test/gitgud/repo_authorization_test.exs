@@ -13,30 +13,30 @@ defmodule GitGud.RepoAuthorizationTest do
   setup [:create_users, :create_repos]
 
   test "anon can query public repositories", %{users: users} do
-    assert Enum.all?(RepoQuery.user_repos(users), &(&1.public))
+    assert Enum.all?(RepoQuery.user_repos(users, viewer: nil), &(&1.public))
   end
 
-  test "anon has :read access to public repositories", %{repos: repos} do
+  test "anon can :pull public repositories", %{repos: repos} do
     for repo <- Enum.filter(repos, &(&1.public)) do
-      assert Authorization.authorized?(nil, repo, :read)
+      assert Authorization.authorized?(nil, repo, :pull)
     end
   end
 
-  test "anon does not have :read access to private repositories", %{repos: repos} do
+  test "anon cannot :pull private repositories", %{repos: repos} do
     for repo <- Enum.filter(repos, &(!&1.public)) do
-      refute Authorization.authorized?(nil, repo, :read)
+      refute Authorization.authorized?(nil, repo, :pull)
     end
   end
 
-  test "anon does not have :write access to public repositories", %{repos: repos} do
+  test "anon cannot :push to public repositories", %{repos: repos} do
     for repo <- Enum.filter(repos, &(&1.public)) do
-      refute Authorization.authorized?(nil, repo, :write)
+      refute Authorization.authorized?(nil, repo, :push)
     end
   end
 
-  test "anon does not have :write access to private repositories", %{repos: repos} do
+  test "anon cannot :push to private repositories", %{repos: repos} do
     for repo <- Enum.filter(repos, &(!&1.public)) do
-      refute Authorization.authorized?(nil, repo, :write)
+      refute Authorization.authorized?(nil, repo, :push)
     end
   end
 
@@ -91,26 +91,26 @@ defmodule GitGud.RepoAuthorizationTest do
     end
   end
 
-  test "anon is only authorized to see public repositories", %{repos: repos} do
+  test "anon is only authorized to pull public repositories", %{repos: repos} do
     {public, private} = Enum.split_with(repos, &(&1.public))
-    assert Authorization.filter(nil, public, :read) == public
-    assert Enum.empty?(Authorization.filter(nil, private, :read))
-    assert Enum.empty?(Authorization.filter(nil, public, :write))
-    assert Enum.empty?(Authorization.filter(nil, private, :write))
+    assert Authorization.filter(nil, public, :pull) == public
+    assert Enum.empty?(Authorization.filter(nil, private, :pull))
+    assert Enum.empty?(Authorization.filter(nil, public, :push))
+    assert Enum.empty?(Authorization.filter(nil, private, :push))
   end
 
-  test "user has :read, :write and :admin access to private repositories he owns", %{repos: repos} do
+  test "user has :pull, :push and :admin permissions to private repositories he owns", %{repos: repos} do
     for repo <- Enum.filter(repos, &(!&1.public)) do
-      assert Authorization.authorized?(repo.owner, repo, :read)
-      assert Authorization.authorized?(repo.owner, repo, :write)
+      assert Authorization.authorized?(repo.owner, repo, :pull)
+      assert Authorization.authorized?(repo.owner, repo, :push)
       assert Authorization.authorized?(repo.owner, repo, :admin)
     end
   end
 
-  test "user has only :read access to private repositories he maintains", %{repos: repos} do
+  test "user can pull private repositories he maintains", %{repos: repos} do
     for repo <- Enum.filter(repos, &(!&1.public)) do
-      assert Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :read))
-      refute Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :write))
+      assert Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :pull))
+      refute Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :push))
       refute Enum.all?(repo.maintainers, &Authorization.authorized?(&1, repo, :admin))
     end
   end

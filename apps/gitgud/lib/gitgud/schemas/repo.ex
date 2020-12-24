@@ -13,6 +13,7 @@ defmodule GitGud.Repo do
   alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.RepoPool
+  alias GitGud.RepoQuery
   alias GitGud.RepoStats
   alias GitGud.RepoStorage
 
@@ -241,9 +242,7 @@ defmodule GitGud.Repo do
   end
 
   defimpl GitGud.AuthorizationPolicies do
-    import GitGud.RepoQuery, only: [permissions: 2]
-    def can?(_repo, _user, action, %{permissions: perms}), do: action in perms
-    def can?(repo, user, action, _opts), do: action in permissions(repo, user)
+    def can?(repo, user, action), do: action in RepoQuery.permissions(repo, user)
   end
 
   #

@@ -160,8 +160,8 @@ defmodule GitGud.SSHServer do
   # Helpers
   #
 
-  defp authorized?(user, repo, "git-upload-pack"),  do: Authorization.authorized?(user, repo, :read)
-  defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :write)
+  defp authorized?(user, repo, "git-upload-pack"), do: Authorization.authorized?(user, repo, :pull)
+  defp authorized?(user, repo, "git-receive-pack"), do: Authorization.authorized?(user, repo, :push)
 
   defp daemon_opts(system_dir) do
     [key_cb: {__MODULE__, []},

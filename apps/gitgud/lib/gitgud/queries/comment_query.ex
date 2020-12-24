@@ -8,6 +8,9 @@ defmodule GitGud.CommentQuery do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.User
+  alias GitGud.Repo
+  alias GitGud.RepoQuery
   alias GitGud.Comment
   alias GitGud.CommentRevision
 
@@ -47,6 +50,19 @@ defmodule GitGud.CommentQuery do
     DB.one(DBQueryable.query({__MODULE__, :revisions_query}, [id], opts))
   end
 
+  @doc """
+  Returns a list of permissions for the given `issue` and `user`.
+  """
+  @spec permissions(Comment.t, User.t | nil, [atom] | nil):: [atom]
+  def permissions(comment, user, repo_perms \\ nil)
+  def permissions(%Comment{author_id: user_id}, %User{id: user_id}, _repo_perms), do: [:edit, :delete]
+  def permissions(%Comment{} = comment, user, repo_perms) do
+    repo_perms = repo_perms || repo_perms(comment, user)
+    if :admin in repo_perms,
+      do: [:edit, :delete],
+    else: []
+  end
+
   #
   # Callbacks
   #
@@ -71,7 +87,6 @@ defmodule GitGud.CommentQuery do
   @impl true
   def alter_query(query, [], _viewer), do: query
 
-  @impl true
   def alter_query(query, [preload|tail], viewer) do
     query
     |> join_preload(preload, viewer)
@@ -94,4 +109,7 @@ defmodule GitGud.CommentQuery do
 
   defp thread_struct("issues_comments"), do: GitGud.Issue
   defp thread_struct("commit_line_reviews_comments"), do: GitGud.CommitLineReview
+
+  defp repo_perms(%Comment{repo: %Repo{} = repo}, user), do: RepoQuery.permissions(repo, user)
+  defp repo_perms(%Comment{repo_id: repo_id}, user), do: RepoQuery.permissions(repo_id, user)
 end

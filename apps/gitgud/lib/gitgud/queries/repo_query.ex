@@ -68,30 +68,6 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns the total number of repositories.
-  """
-  @spec count_total() :: non_neg_integer
-  def count_total do
-    DB.one(query(:count_query, [:total]))
-  end
-
-  @doc """
-  Returns the number of public repositories.
-  """
-  @spec count_public() :: non_neg_integer
-  def count_public do
-    DB.one(query(:count_query, [:public]))
-  end
-
-  @doc """
-  Returns the number of private repositories.
-  """
-  @spec count_private() :: non_neg_integer
-  def count_private do
-    DB.one(query(:count_query, [:private]))
-  end
-
-  @doc """
   Returns the number of contributors for the given `repo`.
   """
   @spec count_contributors(Repo.t | pos_integer) :: non_neg_integer
@@ -133,17 +109,17 @@ defmodule GitGud.RepoQuery do
   @doc """
   Returns a list of permissions for the given `repo` and `user`.
   """
-  @spec permissions(Repo.t, User.t | nil):: [atom]
+  @spec permissions(Repo.t | pos_integer, User.t | nil):: [atom]
   def permissions(repo, user)
-  def permissions(%Repo{public: true, pushed_at: %NaiveDateTime{}}, nil), do: [:read]
+  def permissions(%Repo{public: true, pushed_at: %NaiveDateTime{}}, nil), do: [:pull]
   def permissions(%Repo{}, nil), do: []
-  def permissions(%Repo{owner_id: user_id}, %User{id: user_id}), do: [:read, :write, :admin]
-  def permissions(%Repo{} = repo, %User{} = user) do
+  def permissions(%Repo{owner_id: user_id}, %User{id: user_id}), do: [:pull, :push, :admin]
+  def permissions(repo, %User{} = user) do
     if maintainer = maintainer(repo, user) do
       case maintainer.permission do
-        "read" -> [:read]
-        "write" -> [:read, :write]
-        "admin" -> [:read, :write, :admin]
+        "admin" -> [:pull, :push, :admin]
+        "write" -> [:pull, :push]
+        "read" -> [:pull]
       end
     end || []
   end
@@ -198,34 +174,27 @@ defmodule GitGud.RepoQuery do
     from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
   end
 
-  def query(:count_query, [:total]) do
-    from(r in Repo, as: :repo, select: count(r.id))
-  end
-
-  def query(:count_query, [:public]) do
-    from(r in Repo, as: :repo, where: r.public == true, select: count(r.id))
-  end
-
-  def query(:count_query, [:private]) do
-    from(r in Repo, as: :repo, where: r.public == false, select: count(r.id))
-  end
-
   def query(:count_query, [repo_id, :contributors]) do
     from(c in "repositories_contributors", where: c.repo_id == ^repo_id, select: count(c))
   end
 
   @impl true
+  def alter_query(query, preloads, :admin), do: preload(query, [], ^preloads)
+
   def alter_query(query, preloads, nil) do
     query
     |> where([repo: r], r.public == true and not is_nil(r.pushed_at))
     |> preload([], ^preloads)
   end
 
-  @impl true
-  def alter_query(query, preloads, viewer) do
+  def alter_query(query, preloads, %User{} = viewer) do
     query
     |> join(:left, [repo: r], m in Maintainer, on: r.id == m.repo_id, as: :maintainer)
     |> where([repo: r, maintainer: m], (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
     |> preload([], ^preloads)
   end
+
+  #
+  # Helpers
+  #
 end
