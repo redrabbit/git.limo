@@ -47,20 +47,32 @@ class Comment extends React.Component {
         <div className="comment">
           <header className="comment-header">
               <div className="buttons is-pulled-right">
-                {editable && comment.editable &&
-                  <button className="button is-small" onClick={this.handleUpdateClick}>
+                {comment.editable && (editable ?
+                  <button className="button is-light is-small tooltip" data-tooltip="Edit comment" onClick={this.handleUpdateClick}>
                     <span className="icon is-small">
                       <i className="fa fa-pen"></i>
                     </span>
                   </button>
-                }
-                {deletable && comment.deletable &&
-                  <button className="button is-small" onClick={this.handleDeleteClick}>
+                :
+                  <button className="button is-light is-small" disabled="disabled">
+                    <span className="icon is-small">
+                      <i className="fa fa-pen"></i>
+                    </span>
+                  </button>
+                )}
+                {comment.deletable && (deletable ?
+                  <button className="button is-light is-small tooltip" data-tooltip="Delete comment" onClick={this.handleDeleteClick}>
                     <span className="icon is-small">
                       <i className="fa fa-trash"></i>
                     </span>
                   </button>
-                }
+                :
+                  <button className="button is-light is-small" disabled="disabled">
+                    <span className="icon is-small">
+                      <i className="fa fa-trash"></i>
+                    </span>
+                  </button>
+                )}
               </div>
             <a className="tag user" href={comment.author.url}><img className="avatar is-small" src={comment.author.avatarUrl} width={24} />{comment.author.login}</a> commented <time className="tooltip" dateTime={timestamp.format()}  data-tooltip={timestamp.format()}>{this.state.timestamp}</time>
           </header>

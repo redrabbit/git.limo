@@ -187,7 +187,6 @@ class Issue extends React.Component {
         this.subscribePresence()
         this.subscribeEvents()
         this.subscribeComments()
-        console.log(this.state)
       })
   }
 
