@@ -24,6 +24,7 @@ defmodule GitGud.GPGKeyQuery do
   Returns a GPG key for the given `key_id`.
   """
   @spec by_key_id(binary, keyword) :: GPGKey.t | nil
+  @spec by_key_id([binary], keyword) :: [GPGKey.t]
   def by_key_id(key_id, opts \\ [])
   def by_key_id(key_ids, opts) when is_list(key_ids) do
     DB.all(DBQueryable.query({__MODULE__, :gpg_keys_query}, [key_ids], opts))

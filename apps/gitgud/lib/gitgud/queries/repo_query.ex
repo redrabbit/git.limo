@@ -31,10 +31,23 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
+  Returns a repository for the given `path`.
+  """
+  @spec by_path(Path.t, keyword) :: Repo.t | nil
+  def by_path(path, opts \\ []) do
+    path = Path.relative_to(path, Application.fetch_env!(:gitgud, :git_root))
+    case Path.split(path) do
+      [login, name] ->
+        user_repo(login, name, opts)
+      _path ->
+        nil
+    end
+  end
+
+  @doc """
   Returns a list of repositories for the given `user`.
   """
-  @spec user_repos(user_param, keyword) :: [Repo.t]
-  @spec user_repos([user_param], keyword) :: [Repo.t]
+  @spec user_repos(user_param | [user_param], keyword) :: [Repo.t]
   def user_repos(user, opts \\ [])
   def user_repos(users, opts) when is_list(users) do
     DB.all(DBQueryable.query({__MODULE__, :user_repos_query}, [users], opts))
@@ -51,20 +64,6 @@ defmodule GitGud.RepoQuery do
   def user_repo(user, name, opts \\ [])
   def user_repo(user, name, opts) do
     DB.one(DBQueryable.query({__MODULE__, :user_repo_query}, [user, name], opts))
-  end
-
-  @doc """
-  Returns a repository for the given `path`.
-  """
-  @spec by_path(Path.t, keyword) :: Repo.t | nil
-  def by_path(path, opts \\ []) do
-    path = Path.relative_to(path, Application.fetch_env!(:gitgud, :git_root))
-    case Path.split(path) do
-      [login, name] ->
-        user_repo(login, name, opts)
-      _path ->
-        nil
-    end
   end
 
   @doc """
@@ -129,8 +128,8 @@ defmodule GitGud.RepoQuery do
   #
 
   @impl true
-  def query(:repo_query, [id]) when is_list(id) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id in ^id, preload: [owner: u])
+  def query(:repo_query, [ids]) when is_list(ids) do
+    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id in ^ids, preload: [owner: u])
   end
 
   def query(:repo_query, [id]) when is_integer(id) do
@@ -193,8 +192,4 @@ defmodule GitGud.RepoQuery do
     |> where([repo: r, maintainer: m], (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
     |> preload([], ^preloads)
   end
-
-  #
-  # Helpers
-  #
 end

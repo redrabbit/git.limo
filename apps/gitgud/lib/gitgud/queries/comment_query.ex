@@ -20,7 +20,7 @@ defmodule GitGud.CommentQuery do
   Returns a comment for the given `id`.
   """
   @spec by_id(pos_integer, keyword) :: Comment.t | nil
-  def by_id(id, opts \\ []) when is_integer(id) do
+  def by_id(id, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :comment_query}, [id], opts))
   end
 
@@ -36,7 +36,7 @@ defmodule GitGud.CommentQuery do
   Returns a comment revision for the given `id`.
   """
   @spec revision(pos_integer) :: CommentRevision.t | nil
-  def revision(id, opts \\ []) when is_integer(id) do
+  def revision(id, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :revision_query}, [id], opts))
   end
 
@@ -47,7 +47,7 @@ defmodule GitGud.CommentQuery do
   def revisions(comment, opts \\ [])
   def revisions(%Comment{id: id}, opts), do: revisions(id, opts)
   def revisions(id, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :revisions_query}, [id], opts))
+    DB.all(DBQueryable.query({__MODULE__, :revisions_query}, [id], opts))
   end
 
   @doc """
@@ -68,19 +68,19 @@ defmodule GitGud.CommentQuery do
   #
 
   @impl true
-  def query(:comment_query, [id]) do
+  def query(:comment_query, [id]) when is_integer(id) do
     from(r in Comment, as: :comment, where: r.id == ^id)
   end
 
-  def query(:thread_query, [id, table]) do
+  def query(:thread_query, [id, table]) when is_integer(id) do
     from r in thread_struct(table), join: t in ^table, on: [comment_id: ^id], where: t.thread_id == r.id
   end
 
-  def query(:revision_query, [id]) do
+  def query(:revision_query, [id]) when is_integer(id) do
     from(r in CommentRevision, as: :revision, where: r.id == ^id)
   end
 
-  def query(:revisions_query, [id]) do
+  def query(:revisions_query, [id]) when is_integer(id) do
     from(r in CommentRevision, as: :revision, where: r.comment_id == ^id)
   end
 

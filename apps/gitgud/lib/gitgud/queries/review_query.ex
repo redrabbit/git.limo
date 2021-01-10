@@ -76,32 +76,32 @@ defmodule GitGud.ReviewQuery do
   #
 
   @impl true
-  def query(:commit_line_review_query, [id]) do
+  def query(:commit_line_review_query, [id]) when is_integer(id) do
     from(r in CommitLineReview, as: :review, where: r.id == ^id)
   end
 
-  def query(:commit_line_review_query, [repo_id, id]) do
+  def query(:commit_line_review_query, [repo_id, id]) when is_integer(repo_id) and is_integer(id) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.id == ^id)
   end
 
-  def query(:commit_line_review_query, [repo_id, commit_oid, blob_oid, hunk, line]) do
+  def query(:commit_line_review_query, [repo_id, commit_oid, blob_oid, hunk, line]) when is_integer(repo_id) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid and r.blob_oid == ^blob_oid and r.hunk == ^hunk and r.line == ^line)
   end
 
-  def query(:commit_line_reviews_query, [repo_id, commit_oid]) do
+  def query(:commit_line_reviews_query, [repo_id, commit_oid]) when is_integer(repo_id) do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
 
-  def query(:commit_comment_count_query, [repo_id, commit_oids]) when is_list(commit_oids) do
+  def query(:commit_comment_count_query, [repo_id, commit_oids]) when is_integer(repo_id) and is_list(commit_oids) do
     from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: {r.commit_oid, count(c.id)}
   end
 
-  def query(:commit_comment_count_query, [repo_id, commit_oid]) do
+  def query(:commit_comment_count_query, [repo_id, commit_oid]) when is_integer(repo_id) do
     from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: count(c.id)
   end
 
   def query(:comments_query, [%{id: review_id, __struct__: struct} = _review]), do: query(:comments_query, [{struct, review_id}])
-  def query(:comments_query, [{CommitLineReview, review_id}]) do
+  def query(:comments_query, [{CommitLineReview, review_id}]) when is_integer(review_id) do
     from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
   end
 

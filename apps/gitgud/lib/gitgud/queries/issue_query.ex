@@ -114,11 +114,11 @@ defmodule GitGud.IssueQuery do
   #
 
   @impl true
-  def query(:issue_query, [id]) do
+  def query(:issue_query, [id]) when is_integer(id) do
     from(i in Issue, as: :issue, where: i.id == ^id)
   end
 
-  def query(:repo_issue_query, [repo_id, number]) when is_integer(number) do
+  def query(:repo_issue_query, [repo_id, number]) when is_integer(repo_id) and is_integer(number) do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.number == ^number)
   end
 
@@ -128,21 +128,21 @@ defmodule GitGud.IssueQuery do
     query(:repo_issues_query, [repo_id, numbers])
   end
 
-  def query(:repo_issues_query, [repo_id, params]) when is_map(params) do
+  def query(:repo_issues_query, [repo_id, params]) when is_integer(repo_id) and is_map(params) do
     Enum.reduce(Map.get(params, :search, []), query(:repo_issues_query, [repo_id, Map.get(params, :status, @queryable_status), Map.get(params, :labels, [])]), fn search_term, query ->
       where(query, [issue: i], ilike(i.title, ^"%#{search_term}%"))
     end)
   end
 
-  def query(:repo_issues_query, [repo_id, status]) when status in @queryable_status do
+  def query(:repo_issues_query, [repo_id, status]) when is_integer(repo_id) and status in @queryable_status do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
-  def query(:repo_issues_query, [repo_id, [status]]) when status in @queryable_status do
+  def query(:repo_issues_query, [repo_id, [status]]) when is_integer(repo_id) and status in @queryable_status do
     from(i in Issue, as: :issue, where: i.repo_id == ^repo_id and i.status == ^to_string(status))
   end
 
-  def query(:repo_issues_query, [repo_id, params]) when is_list(params) do
+  def query(:repo_issues_query, [repo_id, params]) when is_integer(repo_id) and is_list(params) do
     cond do
       Enum.empty?(params -- @queryable_status) ->
         from(i in Issue, as: :issue, where: i.repo_id == ^repo_id)
@@ -172,7 +172,7 @@ defmodule GitGud.IssueQuery do
     |> select([issue: i, comment: c], {i, count(c.id, :distinct)})
   end
 
-  def query(:repo_labels_query, [repo_id]) do
+  def query(:repo_labels_query, [repo_id]) when is_integer(repo_id) do
     from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end
 
