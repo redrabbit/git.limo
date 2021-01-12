@@ -104,7 +104,7 @@ defmodule GitGud.RepoQuery do
   def permissions(%Repo{public: true, pushed_at: %NaiveDateTime{}}, nil), do: [:pull]
   def permissions(%Repo{}, nil), do: []
   def permissions(%Repo{owner_id: user_id}, %User{id: user_id}), do: [:pull, :push, :admin]
-  def permissions(repo, %User{} = user) do
+  def permissions(repo, user) do
     if maintainer = maintainer(repo, user) do
       case maintainer.permission do
         "admin" -> [:pull, :push, :admin]
