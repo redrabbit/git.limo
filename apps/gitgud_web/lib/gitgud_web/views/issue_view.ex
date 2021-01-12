@@ -12,8 +12,6 @@ defmodule GitGud.Web.IssueView do
 
   import GitGud.Web.IssueLabelView, only: [label_button: 2, label_button: 3]
 
-  def render("show.html", %{issue: issue}), do: react_component("issue", issue_id: to_relay_id(issue))
-
   @spec encode_search_query(Enumerable.t) :: binary
   def encode_search_query(params) when is_list(params) do
     params
@@ -64,6 +62,22 @@ defmodule GitGud.Web.IssueView do
 
   def status_icon(:close, attrs) do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), Keyword.merge([class: "icon has-text-danger"], attrs, fn _k, v1, v2 -> "#{v1} #{v2}" end))
+  end
+
+  @spec status_label(Issue.t | atom) :: iodata
+  def status_label(%Issue{status: status}), do: status_label(String.to_atom(status))
+  def status_label(:open) do
+    content_tag(:p, [
+      content_tag(:span, content_tag(:i, [], class: "fa fa-exclamation-circle"), class: "icon"),
+      content_tag(:span, "Open")
+    ], class: "tag is-success")
+  end
+
+  def status_label(:close) do
+    content_tag(:p, [
+      content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
+      content_tag(:span, "Closed")
+    ], class: "tag is-danger")
   end
 
   @spec count_issues(Plug.Conn.t | Repo.t, atom) :: non_neg_integer()
