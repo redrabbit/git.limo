@@ -22,9 +22,13 @@ defmodule GitGud.Web.RepoController do
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login} = _params) do
-    if user = UserQuery.by_login(user_login, preload: [:public_email, repos: :stats], viewer: current_user(conn)),
-      do: render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1)})),
-    else: {:error, :not_found}
+    if user = UserQuery.by_login(user_login, preload: [:public_email, repos: :stats], viewer: current_user(conn)) do
+      stats = %{
+        contributors: RepoQuery.count_contributors(user.repos),
+        issues: IssueQuery.count_repo_issues(user.repos, status: :open)
+      }
+      render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1, stats)}))
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -68,7 +72,7 @@ defmodule GitGud.Web.RepoController do
         changeset = Repo.changeset(repo)
         render(conn, "edit.html", repo: repo, changeset: changeset)
       end || {:error, :unauthorized}
-    end   || {:error, :not_found}
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -91,7 +95,7 @@ defmodule GitGud.Web.RepoController do
             |> render("edit.html", repo: repo, changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
-    end   || {:error, :not_found}
+    end || {:error, :not_found}
   end
 
   @doc """
@@ -107,22 +111,22 @@ defmodule GitGud.Web.RepoController do
         |> put_flash(:info, "Repository '#{repo.owner.login}/#{repo.name}' deleted.")
         |> redirect(to: Routes.user_path(conn, :show, user))
       end || {:error, :unauthorized}
-    end   || {:error, :not_found}
+    end || {:error, :not_found}
   end
 
   #
   # Helpers
   #
 
-  defp stats(%Repo{stats: %RepoStats{refs: stats_refs}} = repo) when is_map(stats_refs) do
+  defp stats(%Repo{id: repo_id, stats: %RepoStats{refs: stats_refs}}, batch) when is_map(stats_refs) do
     rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
     %{
       branches: Enum.count(Map.get(rev_groups, "heads", [])),
       tags: Enum.count(Map.get(rev_groups, "tags", [])),
-      issues: IssueQuery.count_repo_issues(repo, status: :open),
-      contributors: RepoQuery.count_contributors(repo)
+      issues: Map.get(batch.issues, repo_id, 0),
+      contributors: Map.get(batch.contributors, repo_id, 0)
     }
   end
 
-  defp stats(%Repo{}), do: nil
+  defp stats(%Repo{}, _contributors), do: nil
 end

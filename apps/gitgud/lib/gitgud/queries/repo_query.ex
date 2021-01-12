@@ -67,15 +67,6 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns the number of contributors for the given `repo`.
-  """
-  @spec count_contributors(Repo.t | pos_integer) :: non_neg_integer
-  def count_contributors(%Repo{id: repo_id} = _repo), do: count_contributors(repo_id)
-  def count_contributors(repo_id) do
-    DB.one(query(:count_query, [repo_id, :contributors]))
-  end
-
-  @doc """
   Returns a list of users matching the given `input`.
   """
   @spec search(binary, keyword) :: [User.t]
@@ -123,6 +114,31 @@ defmodule GitGud.RepoQuery do
     end || []
   end
 
+  @doc """
+  Returns the number of contributors for the given `repo`.
+  """
+  @spec count_contributors(Repo.t | pos_integer) :: non_neg_integer
+  @spec count_contributors([Repo.t | pos_integer]) :: %{pos_integer => non_neg_integer}
+  def count_contributors(%Repo{id: repo_id} = _repo), do: count_contributors(repo_id)
+  def count_contributors(repo_id) when is_integer(repo_id) do
+    DB.one(query(:count_query, [repo_id, :contributors]))
+  end
+
+  def count_contributors(repos) when is_list(repos) do
+    repo_ids =
+      Enum.map(repos, fn
+        %Repo{id: repo_id} ->
+          repo_id
+        repo_id when is_integer(repo_id) ->
+          repo_id
+      end)
+    count_map =
+      query(:count_query, [repo_ids, :contributors])
+      |> DB.all()
+      |> Map.new()
+    Map.new(repo_ids, &{&1, Map.get(count_map, &1, 0)})
+  end
+
   #
   # Callbacks
   #
@@ -151,8 +167,8 @@ defmodule GitGud.RepoQuery do
 
   def query(:user_repos_query, [users]) when is_list(users) do
     cond do
-      Enum.all?(users, &is_map/1) ->
-        user_ids = Enum.map(users, &Map.fetch!(&1, :id))
+      Enum.all?(users, &is_struct(&1, User)) ->
+        user_ids = Enum.map(users, &(&1.id))
         from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^user_ids, preload: [owner: u])
       Enum.all?(users, &is_integer/1) ->
         from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
@@ -165,16 +181,20 @@ defmodule GitGud.RepoQuery do
     from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: fragment("similarity(?, ?) > ?", r.name, ^input, ^threshold), order_by: fragment("similarity(?, ?) DESC", r.name, ^input), preload: [owner: u])
   end
 
-  def query(:maintainers_query, [repo_id]) do
+  def query(:maintainers_query, [repo_id]) when is_integer(repo_id) do
     from(m in Maintainer, join: u in assoc(m, :user), where: m.repo_id == ^repo_id, preload: [user: u])
   end
 
-  def query(:maintainer_query, [repo_id, user_id]) do
+  def query(:maintainer_query, [repo_id, user_id]) when is_integer(repo_id) and is_integer(user_id) do
     from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
   end
 
-  def query(:count_query, [repo_id, :contributors]) do
+  def query(:count_query, [repo_id, :contributors]) when is_integer(repo_id) do
     from(c in "repositories_contributors", where: c.repo_id == ^repo_id, select: count(c))
+  end
+
+  def query(:count_query, [repo_ids, :contributors]) when is_list(repo_ids) do
+    from(c in "repositories_contributors", where: c.repo_id in ^repo_ids, group_by: c.repo_id, select: {c.repo_id, count(c)})
   end
 
   @impl true
