@@ -581,16 +581,16 @@ defmodule GitGud.Web.CodebaseController do
 
   defp blob_changeset_content(changeset), do: Ecto.Changeset.fetch_field!(changeset, :content)
 
-  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
-    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
-    {blob_content, name}
-  end
-
   defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README.md" = name} = tree_entry) do
     {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
     {:ok, blob_content} = GitAgent.blob_content(agent, blob)
     {GitGud.Web.Markdown.markdown_safe(blob_content), name}
+  end
+
+  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
+    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
+    {blob_content, name}
   end
 
   defp tree_readme(_agent, %GitTreeEntry{}), do: nil
