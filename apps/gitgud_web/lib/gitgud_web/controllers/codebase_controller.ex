@@ -512,22 +512,22 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, tree} <- GitAgent.tree(agent, object),
-           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, tree, Path.join(tree_path)),
            {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)) do
         page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
-        case resolve_commits_infos(agent, page.slice) do
-          {:ok, commits_infos} ->
-            commits_infos = resolve_commits_info_db(repo, commits_infos)
-            render(conn, "commit_list.html",
-              breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry.type == :tree},
-              repo: repo,
-              revision: reference || object,
-              page: %{page|slice: commits_infos},
-              tree_path: tree_path
-            )
-          {:error, reason} ->
-            {:error, reason}
+        if tree_entry = Enum.find_value(page.slice, &commit_tree_entry(agent, &1, tree_path)) do
+          case resolve_commits_infos(agent, page.slice) do
+            {:ok, commits_infos} ->
+              commits_infos = resolve_commits_info_db(repo, commits_infos)
+              render(conn, "commit_list.html",
+                breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry.type == :tree},
+                repo: repo,
+                revision: reference || object,
+                page: %{page|slice: commits_infos},
+                tree_path: tree_path
+              )
+            {:error, reason} ->
+              {:error, reason}
+          end
         end
       end
     end || {:error, :not_found}
@@ -596,6 +596,15 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp commit_changeset_update_ref(changeset), do: "refs/heads/" <> Ecto.Changeset.fetch_field!(changeset, :branch)
+
+  defp commit_tree_entry(agent, commit, tree_path) do
+    case GitAgent.tree_entry_by_path(agent, commit, Path.join(tree_path)) do
+      {:ok, tree_entry} ->
+        tree_entry
+      {:error, _reason} ->
+        nil
+    end
+  end
 
   defp resolve_commits_infos(agent, commits) do
     GitAgent.transaction(agent, fn agent ->
