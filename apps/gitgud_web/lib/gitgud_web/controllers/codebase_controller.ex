@@ -41,14 +41,16 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, commit),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
+        tree_entries = Enum.to_list(tree_entries)
         render(conn, "show.html",
           breadcrumb: %{action: :tree, cwd?: true, tree?: true},
           repo: repo,
           revision: head,
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info),
-          tree_entries: tree_entries,
           tree_path: [],
+          tree_entries: tree_entries,
+          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1)),
           stats: stats(repo, agent, head)
         )
       else
@@ -373,15 +375,16 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, object),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
+        tree_entries = Enum.to_list(tree_entries)
         render(conn, "show.html",
           breadcrumb: %{action: :tree, cwd?: true, tree?: true},
           repo: repo,
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info),
           revision: reference || object,
-          commit: commit,
-          tree_entries: tree_entries,
           tree_path: [],
+          tree_entries: tree_entries,
+          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1)),
           stats: stats(repo, agent, reference || object)
         )
       end
@@ -396,13 +399,15 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
            {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(agent, tree_entry),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
+        tree_entries = Enum.to_list(tree_entries)
         render(conn, "tree.html",
           breadcrumb: %{action: :tree, cwd?: true, tree?: true},
           repo: repo,
           revision: reference || object,
           commit: commit,
+          tree_path: tree_path,
           tree_entries: tree_entries,
-          tree_path: tree_path
+          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1))
         )
       else
         {:ok, %GitBlob{}} ->
@@ -575,6 +580,20 @@ defmodule GitGud.Web.CodebaseController do
   defp blob_changeset_name(changeset), do: Ecto.Changeset.fetch_field!(changeset, :name)
 
   defp blob_changeset_content(changeset), do: Ecto.Changeset.fetch_field!(changeset, :content)
+
+  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
+    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
+    {blob_content, name}
+  end
+
+  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README.md" = name} = tree_entry) do
+    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
+    {GitGud.Web.Markdown.markdown_safe(blob_content), name}
+  end
+
+  defp tree_readme(_agent, %GitTreeEntry{}), do: nil
 
   defp commit_signature(user, timestamp) do
     user = DB.preload(user, :primary_email)

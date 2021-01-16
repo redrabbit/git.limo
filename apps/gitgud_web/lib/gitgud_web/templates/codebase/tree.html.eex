@@ -20,3 +20,19 @@
 </nav>
 
 <%= render "_tree_table.html", assigns %>
+
+<%= with {readme, filename} <- @tree_readme do %>
+<div class="card">
+  <header class="card-header">
+    <div class="card-header-title"><%= filename %></div>
+      <p class="card-header-icon buttons">
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, @revision, @tree_path ++ [filename]) %>" class="button is-small is-link is-inverted">
+          <span class="icon"><i class="fa fa-code"></i></span>
+        </a>
+      </p>
+  </header>
+  <div class="card-content">
+    <div class="content"><%= readme %></div>
+  </div>
+</div>
+<% end %>
