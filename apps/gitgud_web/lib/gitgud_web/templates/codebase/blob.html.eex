@@ -8,7 +8,7 @@
     </div>
   </div>
   <div class="level-right">
-    <%= if authorized?(@conn, @repo, :write) && revision_branch?(@revision) do %>
+    <%= if revision_editable?(@conn) && authorized?(@conn, @repo, :push) do %>
       <div class="level-item">
         <div class="field has-addons">
           <div class="control">

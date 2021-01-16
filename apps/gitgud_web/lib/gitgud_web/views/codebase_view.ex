@@ -83,10 +83,6 @@ defmodule GitGud.Web.CodebaseView do
   @spec revision_oid(GitAgent.git_revision) :: binary
   def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
 
-  @spec revision_branch?(GitAgent.git_revision) :: boolean
-  def revision_branch?(%GitRef{type: :branch} = _revision), do: true
-  def revision_branch?(_revision), do: false
-
   @spec revision_name(GitAgent.git_revision) :: binary
   def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
   def revision_name(%GitRef{name: name} = _object), do: name
@@ -99,6 +95,15 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec revision_action(Plug.Conn.t) :: binary
   def revision_action(conn), do: conn.assigns.breadcrumb.action
+
+  @spec revision_editable?(Plug.Conn.t) :: boolean
+  def revision_editable?(conn) do
+    case revision_type(conn.assigns.revision) do
+      :commit -> false
+      :branch -> true
+      :tag -> false
+    end
+  end
 
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do

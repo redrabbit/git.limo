@@ -67,7 +67,7 @@ defmodule GitGud.Web.CodebaseController do
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {_object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision) do
           render(conn, "new.html",
@@ -90,7 +90,7 @@ defmodule GitGud.Web.CodebaseController do
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, %GitTreeEntry{type: :tree}} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)) do
@@ -120,7 +120,7 @@ defmodule GitGud.Web.CodebaseController do
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path, "commit" => commit_params} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
              {:ok, commit} <- GitAgent.peel(agent, object, :commit),
@@ -175,7 +175,7 @@ defmodule GitGud.Web.CodebaseController do
   def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
@@ -207,7 +207,7 @@ defmodule GitGud.Web.CodebaseController do
   def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
              {:ok, commit} <- GitAgent.peel(agent, object, :commit),
@@ -263,7 +263,7 @@ defmodule GitGud.Web.CodebaseController do
   def confirm_delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)) do
@@ -294,7 +294,7 @@ defmodule GitGud.Web.CodebaseController do
   def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :write) do
+      if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
              {:ok, commit} <- GitAgent.peel(agent, object, :commit),
