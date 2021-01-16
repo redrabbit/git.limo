@@ -71,8 +71,8 @@
     <%= for delta <- @diff_deltas do %>
       <tr>
         <td>
-          <span class="icon"><i class="fa fa-file"></i></span>
-          <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><%= delta.new_file.path %></a>
+
+          <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
         </td>
       </tr>
     <% end %>
