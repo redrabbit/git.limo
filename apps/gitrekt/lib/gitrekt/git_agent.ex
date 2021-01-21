@@ -45,6 +45,43 @@ defmodule GitRekt.GitAgent do
   Note that in the above example, replacing `start_link/1` with `GitRekt.Git.repository_open/1` would return
   the exact same output. This works because the given `t:agent/0` can either be a PID or a `t:GitRekt.Git.repo/0`.
 
+  ## Cache
+
+  `GitRekt.GitAgent` implements a very basic caching mechanism built on top of Erlang Term Storage (ETS).
+
+  When a Git command is executed successfully, the agent is able to cache the result of the command.
+  Further calls will retrieve results from the cache without having to run low-level `GitRekt.Git` functions.
+
+  We'll use `history_count/2` as an example because it is a relatively expensive operation:
+
+  ```
+  # fetch commit for HEAD
+  {:ok, head} = GitAgent.head(agent)
+  {:ok, commit} = GitAgent.peel(agent, head)
+
+  # count the number of ancestors and store result to cache
+  {:ok, count} = GitAgent.history_count(agent, commit)
+
+  # same thing, but retrieve result from cache
+  {:ok, count} = GitAgent.history_count(agent, commit)
+  ```
+
+  Here's the corresponding log output:
+
+  ```log
+  [debug] [Git Agent] head() executed in 95 µs
+  [debug] [Git Agent] peel(<GitRef:refs/heads/master>, :commit) executed in 41 µs
+  [debug] [Git Agent] history_count(<GitCommit:fad48c4>) executed in 568.0 ms
+  [debug] [Git Agent] history_count(<GitCommit:fad48c4>) executed in ⚡ 3 µs
+  ```
+
+  We can clearly see that the second call only need a fraction of the time to return.
+
+  Note that the default implemententation is quite restrictive and only caches results for `history_count/2`
+  and named transactions (more on that later).
+
+  See `GitRekt.GitAgent.Cache` for more details on how to implement your own caching behaviour.
+
   ## Transactions
 
   You can execute a serie of commands inside a transaction.
@@ -52,13 +89,13 @@ defmodule GitRekt.GitAgent do
   In the following example, we use `transaction/2` to retrieve all informations for a given commit:
 
   ```
-  {:ok, commit_info} = GitAgent.transaction(agent, fn agent ->
+  GitAgent.transaction(agent, fn agent ->
     with {:ok, author} <- GitAgent.commit_author(agent, commit),
-         {:ok, committer} <- GitAgent.commit_committer(agent, commit),
-         {:ok, message} <- GitAgent.commit_message(agent, commit),
-         {:ok, parents} <- GitAgent.commit_parents(agent, commit),
-         {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
-         {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(agent, commit) do
+        {:ok, committer} <- GitAgent.commit_committer(agent, commit),
+        {:ok, message} <- GitAgent.commit_message(agent, commit),
+        {:ok, parents} <- GitAgent.commit_parents(agent, commit),
+        {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
+        {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(agent, commit) do
       {:ok, %{
         oid: commit.oid,
         author: author,
@@ -74,6 +111,46 @@ defmodule GitRekt.GitAgent do
 
   Transactions provide a simple entry point for implementing more complex commands. The function is
   executed by the agent in a single pass; avoiding the costs of making six consecutive `GenServer.call/3`.
+
+  You can also use transactions to cache the result of a serie of commands. Let's wrap our previous example
+  in a function and give the transaction an unique identifier.
+
+  ```
+  def commit_info(agent, commit) do
+    # identifier: {:commit_info, oid}
+    GitAgent.transaction(agent, {:commit_info, commit.oid}, fn agent -> ... end)
+  end
+  ```
+
+  By using a unique identifier, we tell `GitRekt.GitAgent` that the result of our function should be cached.
+
+  Here's the log output for two consecutive `commit_info/2` calls:
+
+  ```log
+  [debug] [Git Agent] author(<GitCommit:b662d32>) executed in 6 µs
+  [debug] [Git Agent] committer(<GitCommit:b662d32>) executed in 5 µs
+  [debug] [Git Agent] message(<GitCommit:b662d32>) executed in 1 µs
+  [debug] [Git Agent] commit_parents(<GitCommit:b662d32>) executed in 4 µs
+  [debug] [Git Agent] commit_timestamp(<GitCommit:b662d32>) executed in 11 µs
+  [debug] [Git Agent] commit_gpg_signature(<GitCommit:b662d32>) executed in 6 µs
+  [debug] [Git Agent] transaction(:commit_info, "b662d32") executed in 361 µs
+  [debug] [Git Agent] transaction(:commit_info, "b662d32") executed in ⚡ 3 µs
+  ```
+
+  We can observe that the first call executes the different commands one by one and cache the result while
+  the second one fetches the result directly from the cache without having to actually run the transaction.
+
+  Note that `transaction/3` can be called recursively and still benefit from caching:
+
+  ```
+  def commit_list_info(agent, commit, limit \\ 5) do
+    # identifier: {:commit_info, oid, limit}
+    GitAgent.transaction(agent, {:commit_list_info, commit.oid, limit} fn agent ->
+      {:ok, history} = GitAgent.history(agent, commit)
+      {:ok, Enum.map(Enum.take(limit), &commit_info(agent, &1))}
+    end)
+  end
+  ```
   """
   use GenServer
 
@@ -142,7 +219,7 @@ defmodule GitRekt.GitAgent do
   def odb_write(agent, odb, data, type), do: exec(agent, {:odb_write, odb, data, type})
 
   @doc """
-  Returns `true` if the given `oid` exists in `odb`; elsewhise returns `false`.
+  Returns `true` if the given `oid` exists in `odb`; elsewise returns `false`.
   """
   @spec odb_object_exists?(agent, GitOdb.t, Git.oid) :: {:ok, boolean} | {:error, term}
   def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})

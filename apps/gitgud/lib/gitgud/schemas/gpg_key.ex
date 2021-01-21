@@ -178,6 +178,10 @@ defmodule GitGud.GPGKey do
 
   @doc """
   Deletes the given `gpg_key`.
+
+  ```elixir
+  {:ok, gpg_key} = GitGud.GPGKey.delete(gpg_key)
+  ```
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = gpg_key) do
@@ -193,7 +197,7 @@ defmodule GitGud.GPGKey do
   end
 
   @doc """
-  Returns a GPG key changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = gpg_key, params \\ %{}) do

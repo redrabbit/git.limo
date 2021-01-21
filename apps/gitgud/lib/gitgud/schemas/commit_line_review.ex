@@ -1,6 +1,8 @@
 defmodule GitGud.CommitLineReview do
   @moduledoc """
   Git commit review schema and helper functions.
+
+  A `GitGud.CommitLineReview` represents a comment and it's replies for a given commit line.
   """
 
   use Ecto.Schema
@@ -41,6 +43,20 @@ defmodule GitGud.CommitLineReview do
 
   @doc """
   Adds a new comment.
+
+  ```elixir
+  {:ok, comment} = GitGud.CommitLineReview.add_comment(
+    repo,
+    commit_oid,
+    blob_oid,
+    hunk,
+    line,
+    author,
+    "This is the **new** comment message."
+  )
+  ```
+
+  This function validates the given parameters using `changeset/2` and `GitGud.Comment.changeset/2`.
   """
   @spec add_comment(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, term}
   def add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, opts \\ []) do
@@ -55,7 +71,7 @@ defmodule GitGud.CommitLineReview do
   end
 
   @doc """
-  Returns a commit line review changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = commit_line_review, params \\ %{}) do

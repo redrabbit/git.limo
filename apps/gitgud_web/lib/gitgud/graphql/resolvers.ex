@@ -91,7 +91,7 @@ defmodule GitGud.GraphQL.Resolvers do
 
   def node(%{id: id, type: :commit_line_review}, %{context: ctx} = info, opts) do
     {preload, opts} = Keyword.pop(opts, :preload, :repo)
-    if review = ReviewQuery.commit_line_review_by_id(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user], preload: preload)),
+    if review = ReviewQuery.commit_line_review(String.to_integer(id), Keyword.merge(opts, viewer: ctx[:current_user], preload: preload)),
       do: {:ok, review},
     else: node(%{id: id}, info)
   end
@@ -816,7 +816,7 @@ defmodule GitGud.GraphQL.Resolvers do
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
       if authorized?(user, comment, :edit, ctx[:repo_perms]) do
         thread = GitGud.CommentQuery.thread(comment)
-        case Comment.update_rev(comment, user, body: body) do
+        case Comment.update(comment, user, body: body) do
           {:ok, comment} ->
             publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :update))
             {:ok, comment}

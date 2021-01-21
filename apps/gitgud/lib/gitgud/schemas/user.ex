@@ -1,6 +1,8 @@
 defmodule GitGud.User do
   @moduledoc """
   User account schema and helper functions.
+
+  A user is an individual's account that owns repositories and can make new content.
   """
 
   use Ecto.Schema
@@ -39,8 +41,8 @@ defmodule GitGud.User do
     login: binary,
     name: binary,
     account: Account.t,
-    primary_email: Email.t,
-    public_email: Email.t,
+    primary_email: Email.t | nil,
+    public_email: Email.t | nil,
     emails: [Email.t],
     repos: [Repo.t],
     bio: binary,
@@ -48,6 +50,7 @@ defmodule GitGud.User do
     website_url: binary,
     avatar_url: binary,
     ssh_keys: [SSHKey.t],
+    gpg_keys: [GPGKey.t],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
   }
@@ -109,8 +112,7 @@ defmodule GitGud.User do
   {:ok, user} = GitGud.User.update(user, :primary_email, email)
   ```
   """
-  @spec update(t, atom, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  @spec update(t, atom, struct) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update(t, atom, struct | map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update(%__MODULE__{} = user, changeset_type, params) do
     DB.update(update_changeset(user, changeset_type, params))
   end
@@ -118,8 +120,7 @@ defmodule GitGud.User do
   @doc """
   Similar to `update/3`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update!(t, atom, map|keyword) :: t
-  @spec update!(t, atom, struct) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  @spec update!(t, atom, struct | map | keyword) :: t
   def update!(%__MODULE__{} = user, changeset_type, params) do
     DB.update!(update_changeset(user, changeset_type, params))
   end
@@ -127,7 +128,11 @@ defmodule GitGud.User do
   @doc """
   Deletes the given `user`.
 
-  User associations (emails, repositories, etc.) will automatically be deleted.
+  ```elixir
+  {:ok, user} = GitGud.User.delete(user)
+  ```
+
+  User associations (repositories, comments, etc.) will automatically be deleted.
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = user) do
@@ -150,14 +155,14 @@ defmodule GitGud.User do
   def verified?(nil), do: false
 
   @doc """
-  Returns a registration changeset for the given `params`.
+  Returns a changeset for the given registration `params`.
   """
   @spec registration_changeset(t, map) :: Ecto.Changeset.t
   def registration_changeset(%__MODULE__{} = user, params \\ %{}) do
     user
     |> cast(params, [:login, :name, :bio, :website_url, :location])
-    |> cast_assoc(:account, required: true, with: &Account.registration_changeset/2)
-    |> cast_assoc(:emails, required: true, with: &Email.registration_changeset/2)
+    |> cast_assoc(:account, required: true, with: &Account.changeset/2)
+    |> cast_assoc(:emails, required: true, with: &Email.changeset/2)
     |> validate_required([:login, :name])
     |> validate_login()
     |> verify_oauth2_email()
@@ -166,7 +171,7 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Returns a profile changeset for the given `params`.
+  Returns a changeset for the given profile `params`.
   """
   @spec profile_changeset(t, map) :: Ecto.Changeset.t
   def profile_changeset(%__MODULE__{} = user, params \\ %{}) do
@@ -179,9 +184,10 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Returns an email changeset for the given `email`.
+  Returns a changeset for the given `email`.
   """
   @spec email_changeset(t, :primary_email | :public_email, Email.t) :: Ecto.Changeset.t
+  def email_changeset(user, email_type, email)
   def email_changeset(%__MODULE__{} = user, :primary_email, email) do
     user
     |> struct(primary_email: nil)
@@ -197,7 +203,9 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Returns a password changeset for the given `params`.
+  Returns a changeset for the given password `params`.
+
+  See `GitGud.Account.password_changeset/2` for more details.
   """
   @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = user, params \\ %{}) do
@@ -207,7 +215,9 @@ defmodule GitGud.User do
   end
 
   @doc """
-  Returns an OAuth2.0 changeset for the given `params`.
+  Returns a changeset for the given OAuth2.0 `params`.
+
+  See `GitGud.Account.oauth2_changeset/2` for more details.
   """
   @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
   def oauth2_changeset(%__MODULE__{} = user, params \\ %{}) do

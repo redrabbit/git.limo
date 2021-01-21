@@ -1,6 +1,8 @@
 defmodule GitGud.Repo do
   @moduledoc """
-  Git repository schema and helper functions.
+  Repository schema and helper functions.
+
+  A repository contains the content for a project.
   """
 
   use Ecto.Schema
@@ -57,10 +59,10 @@ defmodule GitGud.Repo do
   }
 
   @doc """
-  Creates a new repository.
+  Creates and initialize a new repository.
 
   ```elixir
-  {:ok, repo, git_handle} = GitGud.Repo.create(
+  {:ok, repo} = GitGud.Repo.create(
     owner_id: user.id,
     name: "gitgud",
     description: "GitHub clone entirely written in Elixir.",
@@ -69,6 +71,9 @@ defmodule GitGud.Repo do
   ```
 
   This function validates the given `params` using `changeset/2`.
+
+  By default a bare Git repository will be initialized (see `GitGud.RepoStorage.init/2`). If you prefer to
+  create a non-bare repository, you can set the `:bare` option to `false`.
   """
   @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(params, opts \\ []) do
@@ -135,7 +140,13 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Updates the given `repo` associated issues labels with the given `params`.
+  Updates the associated issues labels for given `repo` with the given `params`.
+
+  ```elixir
+  {:ok, repo} = GitGud.Repo.update_issue_labels(repo, issue_labels_params)
+  ```
+
+  This function validates the given `params` using `issue_labels_changeset/2`.
   """
   @spec update_issue_labels(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_issue_labels(repo, params), do: DB.update(issue_labels_changeset(repo, Map.new(params)))
@@ -147,7 +158,13 @@ defmodule GitGud.Repo do
   def update_issue_labels!(repo, params), do: DB.update!(issue_labels_changeset(repo, Map.new(params)))
 
   @doc """
-  Updates the given `repo` associated stats with the given `params`.
+  Updates the associated stats for the given `repo` with the given `params`.
+
+  ```elixir
+  {:ok, repo} = GitGud.Repo.update_stats(repo, stats_params)
+  ```
+
+  This function validates the given `params` using `stats_changeset/2`.
   """
   @spec update_stats(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_stats(repo, params), do: DB.update(stats_changeset(repo, Map.new(params)))
@@ -160,6 +177,10 @@ defmodule GitGud.Repo do
 
   @doc """
   Deletes the given `repo`.
+
+  ```elixir
+  {:ok, repo} = GitGud.Repo.delete(repo)
+  ```
 
   Repository associations (maintainers, issues, etc.) and related Git data will automatically be deleted.
   """
@@ -187,7 +208,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns a repository changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repo, params \\ %{}) do
@@ -203,7 +224,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns a repository changeset for manipulating associated issue labels.
+  Returns a changeset for manipulating associated issue labels.
   """
   @spec issue_labels_changeset(t, map) :: Ecto.Changeset.t
   def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) do
@@ -214,7 +235,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Returns a repository changeset for manipulating associated stats.
+  Returns a changeset for manipulating associated stats.
   """
   @spec stats_changeset(t, map) :: Ecto.Changeset.t
   def stats_changeset(%__MODULE__{} = repo, params \\ %{}) do

@@ -2,7 +2,7 @@ defmodule GitGud.Maintainer do
   @moduledoc """
   Repository maintainer schema and helper functions.
 
-  A `GitGud.Maintainer` is primarly used to associate `GitGud.User` to `GitGud.Repo`.
+  A `GitGud.Maintainer` is used to grant `GitGud.Repo` permissions to a given `GitGud.User`.
 
   Each repository maintainer also has a permission defining which actions he is able to perform
   on the repository. Following permissions are available:
@@ -11,8 +11,7 @@ defmodule GitGud.Maintainer do
   * `:write` -- can read, clone and push to the repository.
   * `:admin` -- can read, clone, push and administrate the repository.
 
-  By default, a newly created repository maintainer has `:read` permission. Use `update_permission/2`
-  to change a maintainer's permission.
+  By default, a newly created repository maintainer has `:read` permission.
   """
 
   use Ecto.Schema
@@ -65,6 +64,12 @@ defmodule GitGud.Maintainer do
 
   @doc """
   Updates the `permission` of the given `maintainer`.
+
+  ```elixir
+  {:ok, maintainer} = GitGud.Maintainer.update_permission(maintainer, :write)
+  ```
+
+  This function validates the given `permission` using `changeset/2`.
   """
   @spec update_permission(t, binary) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_permission(%__MODULE__{} = maintainer, permission) do
@@ -73,6 +78,12 @@ defmodule GitGud.Maintainer do
 
   @doc """
   Updates the `permission` of the given `user` for the given `repo`.
+
+  ```elixir
+  {:ok, maintainer} = GitGud.Maintainer.update_permission(repo, user, :write)
+  ```
+
+  This function validates the given `permission` using `changeset/2`.
   """
   @spec update_permission(Repo.t, User.t, binary) :: {:ok, t} | :error
   def update_permission(%Repo{id: repo_id} = _repo, %User{id: user_id} = _user, permission) do
@@ -104,6 +115,10 @@ defmodule GitGud.Maintainer do
 
   @doc """
   Deletes the given `maintainer`.
+
+  ```elixir
+  {:ok, maintainer} = GitGud.Maintainer.delete(maintainer)
+  ```
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = maintainer) do
@@ -119,7 +134,7 @@ defmodule GitGud.Maintainer do
   end
 
   @doc """
-  Returns a maintainer changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = maintainer, params \\ %{}) do

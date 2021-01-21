@@ -20,8 +20,8 @@ defmodule GitGud.ReviewQuery do
   @doc """
   Returns a commit line review for the given `id`.
   """
-  @spec commit_line_review_by_id(pos_integer, keyword) :: CommitLineReview.t | nil
-  def commit_line_review_by_id(id, opts \\ []) do
+  @spec commit_line_review(pos_integer, keyword) :: CommitLineReview.t | nil
+  def commit_line_review(id, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :commit_line_review_query}, [id], opts))
   end
 

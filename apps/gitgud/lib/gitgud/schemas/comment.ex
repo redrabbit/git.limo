@@ -1,6 +1,8 @@
 defmodule GitGud.Comment do
   @moduledoc """
   Comment schema and helper functions.
+
+  A `GitGud.Comment` represents a comment in a discussion.
   """
 
   use Ecto.Schema
@@ -63,9 +65,15 @@ defmodule GitGud.Comment do
 
   @doc """
   Updates the given `comment` with the given `params` and inserts a comment revision as well.
+
+  ```elixir
+  {:ok, comment} = GitGud.Comment.update(comment, author, body: "This is the **new** comment message.")
+  ```
+
+  This function validates the given `params` using `changeset/2`.
   """
-  @spec update_rev(t, User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update_rev(%__MODULE__{} = comment, author, params) do
+  @spec update(t, User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def update(%__MODULE__{} = comment, author, params) do
     changeset = changeset(comment, Map.new(params))
     if get_change(changeset, :body) do
       old_comment_body = comment.body
@@ -87,11 +95,11 @@ defmodule GitGud.Comment do
   end
 
   @doc """
-  Similar to `update_rev/3`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `update/3`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec update_rev!(t, User.t, map|keyword) :: t
-  def update_rev!(%__MODULE__{} = comment, author, params) do
-    case update_rev(comment, author, params) do
+  @spec update!(t, User.t, map|keyword) :: t
+  def update!(%__MODULE__{} = comment, author, params) do
+    case update(comment, author, params) do
       {:ok, comment} ->
         comment
       {:error, changeset} ->
@@ -101,6 +109,10 @@ defmodule GitGud.Comment do
 
   @doc """
   Deletes the given `comment`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Comment.delete(comment)
+  ```
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = comment) do
@@ -116,7 +128,7 @@ defmodule GitGud.Comment do
   end
 
   @doc """
-  Returns a comment changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = comment, params \\ %{}) do

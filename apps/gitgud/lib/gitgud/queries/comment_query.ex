@@ -27,7 +27,7 @@ defmodule GitGud.CommentQuery do
   @doc """
   Returns the thread associated to the given `comment`.
   """
-  @spec thread(Comment.t) :: struct | nil
+  @spec thread(Comment.t, keyword) :: struct | nil
   def thread(%Comment{id: id, thread_table: table} = _comment, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :thread_query}, [id, table], opts))
   end
@@ -35,7 +35,7 @@ defmodule GitGud.CommentQuery do
   @doc """
   Returns a comment revision for the given `id`.
   """
-  @spec revision(pos_integer) :: CommentRevision.t | nil
+  @spec revision(pos_integer, keyword) :: CommentRevision.t | nil
   def revision(id, opts \\ []) do
     DB.one(DBQueryable.query({__MODULE__, :revision_query}, [id], opts))
   end
@@ -43,7 +43,7 @@ defmodule GitGud.CommentQuery do
   @doc """
   Returns all the comment revision for the given `comment`.
   """
-  @spec revisions(Comment.t | pos_integer) :: [CommentRevision.t]
+  @spec revisions(Comment.t | pos_integer, keyword) :: [CommentRevision.t]
   def revisions(comment, opts \\ [])
   def revisions(%Comment{id: id}, opts), do: revisions(id, opts)
   def revisions(id, opts) do
@@ -51,7 +51,7 @@ defmodule GitGud.CommentQuery do
   end
 
   @doc """
-  Returns a list of permissions for the given `issue` and `user`.
+  Returns a list of permissions for the given `comment` and `user`.
   """
   @spec permissions(Comment.t, User.t | nil, [atom] | nil):: [atom]
   def permissions(comment, user, repo_perms \\ nil)

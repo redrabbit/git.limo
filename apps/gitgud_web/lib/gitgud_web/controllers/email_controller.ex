@@ -21,7 +21,7 @@ defmodule GitGud.Web.EmailController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, _params) do
     user = DB.preload(current_user(conn), :emails)
-    changeset = Email.registration_changeset(%Email{})
+    changeset = Email.changeset(%Email{})
     render(conn, "index.html", user: user, changeset: changeset)
   end
 
@@ -127,18 +127,18 @@ defmodule GitGud.Web.EmailController do
           conn
           |> put_status(:bad_request)
           |> put_flash(:error, "Invalid verification email.")
-          |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
+          |> render("index.html", user: user, changeset: Email.changeset(%Email{}))
         end
       {:error, :invalid} ->
         conn
         |> put_status(:bad_request)
         |> put_flash(:error, "Invalid verification token.")
-        |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
+        |> render("index.html", user: user, changeset: Email.changeset(%Email{}))
       {:error, :expired} ->
         conn
         |> put_status(:bad_request)
         |> put_flash(:error, "Verification token expired.")
-        |> render("index.html", user: user, changeset: Email.registration_changeset(%Email{}))
+        |> render("index.html", user: user, changeset: Email.changeset(%Email{}))
     end
   end
 end

@@ -93,7 +93,7 @@ defmodule GitRekt.WireProtocol do
   def skip(service), do: apply(service.__struct__, :skip, [service])
 
   @doc """
-  Returns `true` if `service` is done; elsewhise returns `false`.
+  Returns `true` if `service` is done; elsewise returns `false`.
   """
   @spec done?(struct) :: boolean
   def done?(service), do: service.state == :done

@@ -35,7 +35,7 @@ defmodule GitGud.Account do
   }
 
   @doc """
-  Returns the matching user for the given credentials; elsewhise returns `nil`.
+  Returns the matching user for the given credentials; elsewise returns `nil`.
 
   ```elixir
   if user = GitGud.Account.check_credentials("redrabbit", "qwertz") do
@@ -58,10 +58,10 @@ defmodule GitGud.Account do
   end
 
   @doc """
-  Returns a registration changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
-  @spec registration_changeset(t, map) :: Ecto.Changeset.t
-  def registration_changeset(%__MODULE__{} = account, params \\ %{}) do
+  @spec changeset(t, map) :: Ecto.Changeset.t
+  def changeset(%__MODULE__{} = account, params \\ %{}) do
     account
     |> cast(params, [:user_id, :password])
     |> cast_assoc(:oauth2_providers)
@@ -71,7 +71,7 @@ defmodule GitGud.Account do
   end
 
   @doc """
-  Returns a password changeset for the given `params`.
+  Returns a changeset for the given password `params`.
   """
   @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = account, params \\ %{}) do
@@ -84,7 +84,7 @@ defmodule GitGud.Account do
   end
 
   @doc """
-  Returns an OAuth2.0 changeset for the given `params`.
+  Returns a changeset for the given OAuth2.0 `params`.
   """
   @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
   def oauth2_changeset(%__MODULE__{} = account, params \\ %{}) do

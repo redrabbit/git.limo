@@ -50,7 +50,15 @@ defmodule GitGud.Issue do
   Creates a new issue with the given `params`.
 
   ```elixir
-  {:ok, issue} = GitGud.Issue.create(repo_id: repo.id, author_id: user.id, title: "Help me!", comments: [author_id: user.id, body: "I really need help."])
+  {:ok, issue} = GitGud.Issue.create(
+    repo_id: repo.id,
+    author_id: user.id,
+    title: "Help me!",
+    comments: [
+      author_id: user.id,
+      body: "I really need help."
+    ]
+  )
   ```
 
   This function validates the given `params` using `changeset/2`.
@@ -69,7 +77,30 @@ defmodule GitGud.Issue do
   end
 
   @doc """
+  Adds a new comment.
+
+  ```elixir
+  {:ok, comment} = GitGud.Issue.add_comment(issue, author, "This is the **new** comment message.")
+  ```
+
+  This function validates the given parameters using `GitGud.Comment.changeset/2`.
+  """
+  @spec add_comment(t, User.t, binary) :: {:ok, Comment.t} | {:error, term}
+  def add_comment(%__MODULE__{} = issue, author, body) do
+    case DB.transaction(insert_issue_comment(issue.repo_id, issue.id, author.id, body)) do
+      {:ok, %{comment: comment}} ->
+        {:ok, struct(comment, issue: issue, author: author)}
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Closes the given `issue`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Issue.close(issue)
+  ```
   """
   @spec close(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def close(issue, opts \\ [])
@@ -99,6 +130,10 @@ defmodule GitGud.Issue do
 
   @doc """
   Reopens the given `issue`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Issue.reopen(issue)
+  ```
   """
   @spec reopen(t) :: {:ok, t} | {:error, term}
   def reopen(issue, opts \\ [])
@@ -128,6 +163,10 @@ defmodule GitGud.Issue do
 
   @doc """
   Updates the title of the given `issue`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Issue.update_title(issue, "This is the new title")
+  ```
   """
   @spec update_title(t, binary, keyword) :: {:ok, t} | {:error, term}
   def update_title(issue, title, opts \\ [])
@@ -157,6 +196,10 @@ defmodule GitGud.Issue do
 
   @doc """
   Updates the labels of the given `issue`.
+
+  ```elixir
+  {:ok, comment} = GitGud.Issue.update_labels(issue, {labels_push, labels_pull})
+  ```
   """
   @spec update_labels(t, {[pos_integer], [pos_integer]}, keyword) :: {:ok, t} | {:error, term}
   def update_labels(%__MODULE__{} = issue, {labels_push, labels_pull} = _changes, opts \\ []) do
@@ -192,20 +235,7 @@ defmodule GitGud.Issue do
   end
 
   @doc """
-  Adds a new comment.
-  """
-  @spec add_comment(t, User.t, binary) :: {:ok, Comment.t} | {:error, term}
-  def add_comment(%__MODULE__{} = issue, author, body) do
-    case DB.transaction(insert_issue_comment(issue.repo_id, issue.id, author.id, body)) do
-      {:ok, %{comment: comment}} ->
-        {:ok, struct(comment, issue: issue, author: author)}
-      {:error, _operation, reason, _changes} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Returns an issue changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = issue, params \\ %{}) do

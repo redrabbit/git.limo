@@ -22,6 +22,8 @@ defmodule GitGud.GPGKeyQuery do
 
   @doc """
   Returns a GPG key for the given `key_id`.
+
+  Note that this function support 32 bit and 64 bit key ids.
   """
   @spec by_key_id(binary, keyword) :: GPGKey.t | nil
   @spec by_key_id([binary], keyword) :: [GPGKey.t]

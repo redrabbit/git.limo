@@ -2,14 +2,8 @@ defmodule GitGud.Email do
   @moduledoc """
   Email schema and helper functions.
 
-  An `GitGud.Email` is used for a many different tasks such as user authentication & verification,
-  email notifications, identification of Git commit authors, etc.
-
-  Every `GitGud.User` has **at least one** email address. In order to be taken in account, an email address
-  must be verified first. See `verify/1` for more details.
-
-  Once verified, an email address can be used to authenticate users (see `GitGud.Account.check_credentials/2`)
-  and resolve Git commit authors.
+  A `GitGud.Email` is used for different tasks such as user authentication & verification, notifications,
+  identification of Git commit authors & commiters, etc.
   """
 
   use Ecto.Schema
@@ -47,11 +41,11 @@ defmodule GitGud.Email do
   {:ok, email} = GitGud.Email.create(user_id: user.id, address: "m.flach@almightycouch.com")
   ```
 
-  This function validates the given `params` using `registration_changeset/2`.
+  This function validates the given `params` using `changeset/2`.
   """
   @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    DB.insert(registration_changeset(%__MODULE__{}, Map.new(params)))
+    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
@@ -59,11 +53,18 @@ defmodule GitGud.Email do
   """
   @spec create!(map|keyword) :: t
   def create!(params) do
-    DB.insert!(registration_changeset(%__MODULE__{}, Map.new(params)))
+    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
   end
 
   @doc """
   Verifies the given `email`.
+
+  ```elixir
+  {:ok, email} = GitGud.Email.verify(email)
+  ```
+
+  This function verifies the given `email` and ensures that the associated user
+  is updated accordingly.
   """
   @spec verify(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def verify(%__MODULE__{} = email) do
@@ -88,6 +89,10 @@ defmodule GitGud.Email do
 
   @doc """
   Deletes the given `email`.
+
+  ```elixir
+  {:ok, email} = GitGud.Email.delete(email)
+  ```
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = email) do
@@ -103,10 +108,10 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Returns an email registration changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
-  @spec registration_changeset(t, map) :: Ecto.Changeset.t
-  def registration_changeset(%__MODULE__{} = email, params \\ %{}) do
+  @spec changeset(t, map) :: Ecto.Changeset.t
+  def changeset(%__MODULE__{} = email, params \\ %{}) do
     email
     |> cast(params, [:user_id, :address])
     |> validate_required([:address])
@@ -117,7 +122,7 @@ defmodule GitGud.Email do
   end
 
   @doc """
-  Returns an email verification changeset for the given `params`.
+  Returns a changeset for verifying the given `email`.
   """
   @spec verification_changeset(t) :: Ecto.Changeset.t
   def verification_changeset(%__MODULE__{} = email) do

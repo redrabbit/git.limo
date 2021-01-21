@@ -29,7 +29,7 @@ defmodule GitGud.IssueLabel do
   }
 
   @doc """
-  Returns a label changeset for the given `params`.
+  Returns a changeset for the given `params`.
   """
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = label, params \\ %{}) do

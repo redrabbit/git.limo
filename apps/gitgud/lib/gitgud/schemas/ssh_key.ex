@@ -2,7 +2,7 @@ defmodule GitGud.SSHKey do
   @moduledoc """
   Secure Shell (SSH) authentication key schema and helper functions.
 
-  An `GitGud.SSHKey` is used to authenticate users via *Public Key Authentication* in `GitGud.SSHServer`.
+  A `GitGud.SSHKey` is used essentially to authenticate SSH users via *Public Key Authentication*.
   """
 
   use Ecto.Schema
@@ -36,7 +36,11 @@ defmodule GitGud.SSHKey do
   Creates a new SSH key with the given `params`.
 
   ```elixir
-  {:ok, ssh_key} = GitGud.SSHKey.create(user_id: user.id, name: "My SSH Key", data: "ssh-rsa AAAAB3NzaC1yc2...")
+  {:ok, ssh_key} = GitGud.SSHKey.create(
+    user_id: user.id,
+    name: "My SSH Key",
+    data: "ssh-rsa AAAAB3NzaC1yc2..."
+  )
   ```
 
   This function validates the given `params` using `changeset/2`.
@@ -56,6 +60,10 @@ defmodule GitGud.SSHKey do
 
   @doc """
   Deletes the given `ssh_key`.
+
+  ```elixir
+  {:ok, ssh_key} = GitGud.SSHKey.delete(ssh_key)
+  ```
   """
   @spec delete(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def delete(%__MODULE__{} = ssh_key) do
@@ -71,7 +79,11 @@ defmodule GitGud.SSHKey do
   end
 
   @doc """
-  Updates the `:used_at` timestamp for the the given `ssh_key`.
+  Updates the timestamp for the the given `ssh_key`.
+
+  ```elixir
+  {:ok, ssh_key} = GitGud.SSHKey.update_timestamp(ssh_key)
+  ```
   """
   @spec update_timestamp(t) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def update_timestamp(%__MODULE__{} = ssh_key) do
@@ -87,7 +99,7 @@ defmodule GitGud.SSHKey do
   end
 
   @doc """
-  Returns a SSH key changeset for the given `params`.
+  Returns a changeset for the given key `params`.
 
   If `:name` is omitted and the given public key contains a comment, the comment will be used as `:name`.
 
