@@ -1,4 +1,4 @@
-defmodule GitRekt.GitAgent.Cache do
+defmodule GitRekt.Cache do
   @moduledoc """
   Behaviour for caching Git operations.
   """

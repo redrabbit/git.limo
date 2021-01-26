@@ -142,8 +142,9 @@ defmodule GitGud.Umbrella.Mixfile do
         ],
         "Git low-level APIs": [
           GitRekt,
+          GitRekt.Cache,
+          GitRekt.Git,
           GitRekt.GitAgent,
-          GitRekt.GitAgent.Cache,
           GitRekt.GitRepo,
           GitRekt.GitOdb,
           GitRekt.GitCommit,
@@ -155,7 +156,6 @@ defmodule GitGud.Umbrella.Mixfile do
           GitRekt.GitTreeEntry,
           GitRekt.GitIndex,
           GitRekt.GitIndexEntry,
-          GitRekt.Git,
           GitRekt.Packfile,
           GitRekt.WireProtocol,
           GitRekt.WireProtocol.ReceivePack,

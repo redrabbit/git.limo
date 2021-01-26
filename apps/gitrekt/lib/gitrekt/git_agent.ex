@@ -80,7 +80,7 @@ defmodule GitRekt.GitAgent do
   Note that the default implemententation is quite restrictive and only caches results for `history_count/2`
   and named transactions (more on that later).
 
-  See `GitRekt.GitAgent.Cache` for more details on how to implement your own caching behaviour.
+  See `GitRekt.Cache` for more details on how to implement your own caching behaviour.
 
   ## Transactions
 
@@ -169,7 +169,7 @@ defmodule GitRekt.GitAgent do
     GitDiff
   }
 
-  @behaviour GitRekt.GitAgent.Cache
+  @behaviour GitRekt.Cache
 
   @type agent :: pid | Git.repo
 
