@@ -34,7 +34,7 @@ defmodule GitGud.Mixfile do
   defp deps do
     [
       {:absinthe, "~> 1.5", optional: true},
-      {:argon2_elixir, "~> 2.3"},
+      {:argon2_elixir, "~> 2.4"},
       {:ecto, "~> 3.5"},
       {:ecto_sql, "~> 3.5"},
       {:faker, "~> 0.16", only: :test},

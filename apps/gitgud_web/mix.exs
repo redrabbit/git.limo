@@ -34,7 +34,7 @@ defmodule GitGud.Web.Mixfile do
 
   defp deps do
     [
-      {:absinthe, "~> 1.5"},
+      {:absinthe, "~> 1.6", override: true},
       {:absinthe_relay, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
       {:bamboo, "~> 1.6"},
