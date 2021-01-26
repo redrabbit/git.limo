@@ -9,7 +9,7 @@ config :gitgud_web, GitGud.Web.Endpoint,
   check_origin: false,
   watchers: [
     node: [
-      "node_modules/webpack/bin/webpack.js", "--mode", "development",  "--watch-stdin", "--color",
+      "node_modules/webpack/bin/webpack.js", "--mode", "development",  "--watch", "--color",
       cd: Path.expand("../assets", __DIR__)
     ]
   ],
