@@ -11,6 +11,7 @@ defmodule GitGud.RepoQuery do
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.Maintainer
+  alias GitGud.IssueLabel
 
   import Ecto.Query
 
@@ -45,6 +46,15 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
+  Returns a single repository for the given `user` and `name`.
+  """
+  @spec user_repo(user_param, binary, keyword) :: Repo.t | nil
+  def user_repo(user, name, opts \\ [])
+  def user_repo(user, name, opts) do
+    DB.one(DBQueryable.query({__MODULE__, :user_repo_query}, [user, name], opts))
+  end
+
+  @doc """
   Returns a list of repositories for the given `user`.
   """
   @spec user_repos(user_param | [user_param], keyword) :: [Repo.t]
@@ -58,30 +68,12 @@ defmodule GitGud.RepoQuery do
   end
 
   @doc """
-  Returns a single repository for the given `user` and `name`.
-  """
-  @spec user_repo(user_param, binary, keyword) :: Repo.t | nil
-  def user_repo(user, name, opts \\ [])
-  def user_repo(user, name, opts) do
-    DB.one(DBQueryable.query({__MODULE__, :user_repo_query}, [user, name], opts))
-  end
-
-  @doc """
   Returns a list of users matching the given `input`.
   """
   @spec search(binary, keyword) :: [User.t]
   def search(input, opts \\ []) do
     {threshold, opts} = Keyword.pop(opts, :similarity, 0.3)
     DB.all(DBQueryable.query({__MODULE__, :search_query}, [input, threshold], opts))
-  end
-
-  @doc """
-  Returns a list of associated `GitGud.Maintainer` for the given `repo`.
-  """
-  @spec maintainers(Repo.t | pos_integer) :: [Maintainer.t]
-  def maintainers(%Repo{id: repo_id} = _repo), do: maintainers(repo_id)
-  def maintainers(repo_id) do
-    DB.all(query(:maintainers_query, [repo_id]))
   end
 
   @doc """
@@ -94,6 +86,26 @@ defmodule GitGud.RepoQuery do
     if maintainer = DB.one(query(:maintainer_query, [repo_id, user_id])) do
       struct(maintainer, user: user)
     end
+  end
+
+  @doc """
+  Returns a list of associated `GitGud.Maintainer` for the given `repo`.
+  """
+  @spec maintainers(Repo.t | pos_integer) :: [Maintainer.t]
+  def maintainers(%Repo{id: repo_id} = _repo), do: maintainers(repo_id)
+  def maintainers(repo_id) do
+    DB.all(query(:maintainers_query, [repo_id]))
+  end
+
+
+  @doc """
+  Returns a list of associated `GitGud.IssueLabel` for the given `repo`.
+  """
+  @spec issue_labels(Repo.t | pos_integer, keyword) :: [IssueLabel.t]
+  def issue_labels(repo, opts \\ [])
+  def issue_labels(%Repo{id: repo_id}, opts), do: issue_labels(repo_id, opts)
+  def issue_labels(repo_id, opts) do
+    DB.all(DBQueryable.query({__MODULE__, :issue_labels_query}, [repo_id], opts))
   end
 
   @doc """
@@ -187,6 +199,10 @@ defmodule GitGud.RepoQuery do
 
   def query(:maintainer_query, [repo_id, user_id]) when is_integer(repo_id) and is_integer(user_id) do
     from(m in Maintainer, where: m.repo_id == ^repo_id and m.user_id == ^user_id)
+  end
+
+  def query(:issue_labels_query, [repo_id]) when is_integer(repo_id) do
+    from(l in IssueLabel, as: :issue_label, where: l.repo_id == ^repo_id, order_by: l.name)
   end
 
   def query(:count_query, [repo_id, :contributors]) when is_integer(repo_id) do

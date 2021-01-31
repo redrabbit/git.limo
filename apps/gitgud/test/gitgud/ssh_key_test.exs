@@ -11,6 +11,7 @@ defmodule GitGud.SSHKeyTest do
     assert {:ok, ssh_key} = SSHKey.create(factory(:ssh_key, user))
     assert [{key, _attrs}] = :public_key.ssh_decode(ssh_key.data, :public_key)
     assert ssh_key.fingerprint == to_string(:public_key.ssh_hostkey_fingerprint(key))
+    refute ssh_key.used_at
   end
 
   test "fails to create a new ssh authentication key with invalid public key", %{user: user} do
@@ -23,6 +24,11 @@ defmodule GitGud.SSHKeyTest do
 
   describe "when ssh authentication key exists" do
     setup :create_ssh_key
+
+    test "updates timestamp", %{ssh_key: ssh_key1} do
+      assert {:ok, ssh_key2} = SSHKey.update_timestamp(ssh_key1)
+      assert ssh_key2.used_at
+    end
 
     test "deletes key", %{ssh_key: ssh_key1} do
       assert {:ok, ssh_key2} = SSHKey.delete(ssh_key1)

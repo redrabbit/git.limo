@@ -32,7 +32,7 @@ defmodule GitGud.RepoStorageTest do
   describe "when Git repository exists" do
     setup :init_repo
 
-    test "moves repository", %{repo: old_repo} do
+    test "renames repository", %{repo: old_repo} do
       changeset = Ecto.Changeset.change(old_repo, name: old_repo.name <> "_new")
       assert {:ok, new_repo} = DB.update(changeset)
       assert {:ok, new_workdir} = RepoStorage.rename(old_repo, new_repo)
@@ -42,7 +42,7 @@ defmodule GitGud.RepoStorageTest do
       File.rm_rf(RepoStorage.workdir(new_repo))
     end
 
-    test "removes repository", %{repo: repo} do
+    test "cleans up repository", %{repo: repo} do
       assert {:ok, [workdir|_files]} = RepoStorage.cleanup(repo)
       assert RepoStorage.workdir(repo) == workdir
       refute File.dir?(workdir)

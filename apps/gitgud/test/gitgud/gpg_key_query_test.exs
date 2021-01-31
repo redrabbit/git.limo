@@ -8,19 +8,22 @@ defmodule GitGud.GPGKeyQueryTest do
 
   setup [:create_users, :create_gpg_keys]
 
+  @tag :skip
   test "gets single gpg key by id", %{gpg_keys: gpg_keys} do
     for gpg_key <- gpg_keys do
       assert gpg_key.id == GPGKeyQuery.by_id(gpg_key.id).id
     end
   end
 
+  @tag :skip
   test "gets single gpg key by key id", %{gpg_keys: gpg_keys} do
     for gpg_key <- gpg_keys do
       assert gpg_key.id == GPGKeyQuery.by_key_id(gpg_key.key_id).id
     end
   end
 
-  test "gets multiple gpg keys by key id", %{gpg_keys: gpg_keys} do
+  @tag :skip
+  test "gets multiple gpg keys by key ids", %{gpg_keys: gpg_keys} do
     results = GPGKeyQuery.by_key_id(Enum.map(gpg_keys, &(&1.key_id)))
     assert Enum.count(results) == length(gpg_keys)
     assert Enum.all?(results, &(&1.id in Enum.map(gpg_keys, fn gpg_key -> gpg_key.id end)))

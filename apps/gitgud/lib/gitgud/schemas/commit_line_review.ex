@@ -12,6 +12,7 @@ defmodule GitGud.CommitLineReview do
   alias GitRekt.Git
 
   alias GitGud.DB
+  alias GitGud.User
   alias GitGud.Repo
   alias GitGud.Comment
 
@@ -58,15 +59,28 @@ defmodule GitGud.CommitLineReview do
 
   This function validates the given parameters using `changeset/2` and `GitGud.Comment.changeset/2`.
   """
-  @spec add_comment(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, term}
-  def add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, opts \\ []) do
-    case DB.transaction(insert_review_comment(repo.id, commit_oid, blob_oid, hunk, line, author.id, body)) do
+  @spec add_comment(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
+  def add_comment(%Repo{id: repo_id} = repo, commit_oid, blob_oid, hunk, line, %User{id: author_id} = author, body, opts \\ []) do
+    case DB.transaction(insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author_id, body)) do
       {:ok, %{review: review, comment: comment}} ->
         if Keyword.get(opts, :with_review, false),
           do: {:ok, struct(review, repo: repo), struct(comment, repo: repo, author: author)},
         else: {:ok, struct(comment, repo: repo, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
+    end
+  end
+
+  @doc """
+  Similar to `add_comment/8`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec add_comment!(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary, keyword) :: Comment.t
+  def add_comment!(repo, commit_oid, blob_oid, hunk, line, author, body, opts \\ []) do
+    case add_comment(repo, commit_oid, blob_oid, hunk, line, author, body, opts) do
+      {:ok, comment} ->
+        comment
+      {:error, changeset} ->
+        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
   end
 

@@ -352,7 +352,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
         render(conn, "commit.html",
           repo: repo,
-          comment_count: ReviewQuery.commit_comment_count(repo, commit),
+          comment_count: ReviewQuery.count_comments(repo, commit),
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info),
           diff_stats: diff_stats,
@@ -634,7 +634,7 @@ defmodule GitGud.Web.CodebaseController do
   defp resolve_commits_info_db(repo, commits_infos) do
     {commits, infos} = Enum.unzip(commits_infos)
     users = UserQuery.by_email(Enum.uniq(Enum.flat_map(infos, &[&1.author.email, &1.committer.email])), preload: [:emails, :gpg_keys])
-    count = Map.new(ReviewQuery.commit_comment_count(repo, commits))
+    count = Map.new(ReviewQuery.count_comments(repo, commits))
     Enum.map(commits_infos, fn {commit, commit_info} ->
       author = resolve_db_user(commit_info.author, users)
       committer = resolve_db_user(commit_info.committer, users)

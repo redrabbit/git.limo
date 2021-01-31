@@ -64,6 +64,19 @@ defmodule GitGud.RepoAuthorizationTest do
     end
   end
 
+  test "user can preload private repositories he owns", %{users: users} do
+    for user <- users do
+      {public, private} =
+        user.id
+        |> UserQuery.by_id(viewer: user, preload: :repos)
+        |> Map.fetch!(:repos)
+        |> Enum.split_with(&(&1.public))
+      assert length(public) == 1
+      assert length(private) == 1
+      assert Enum.all?(private, &(user.id  == &1.owner_id))
+    end
+  end
+
   test "user can preload private repositories he maintains", %{users: users} do
     for user <- users do
       {public, private} =
@@ -75,19 +88,6 @@ defmodule GitGud.RepoAuthorizationTest do
       assert length(public) == 3
       assert length(private) == 2
       assert Enum.all?(private, fn repo -> user.id in Enum.map(repo.maintainers, &(&1.id)) end)
-    end
-  end
-
-  test "user can preload private repositories he owns", %{users: users} do
-    for user <- users do
-      {public, private} =
-        user.id
-        |> UserQuery.by_id(viewer: user, preload: :repos)
-        |> Map.fetch!(:repos)
-        |> Enum.split_with(&(&1.public))
-      assert length(public) == 1
-      assert length(private) == 1
-      assert Enum.all?(private, &(user.id  == &1.owner_id))
     end
   end
 

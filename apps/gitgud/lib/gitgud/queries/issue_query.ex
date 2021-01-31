@@ -14,7 +14,6 @@ defmodule GitGud.IssueQuery do
   alias GitGud.Repo
   alias GitGud.RepoQuery
   alias GitGud.Issue
-  alias GitGud.IssueLabel
   alias GitGud.Comment
 
   import Ecto.Query
@@ -57,16 +56,6 @@ defmodule GitGud.IssueQuery do
   def repo_issues_with_comments_count(repo_id, opts) do
     {params, opts} = Keyword.split(opts, [:numbers, :status, :labels, :search])
     DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, Map.new(params)], opts))
-  end
-
-  @doc """
-  Returns all issue labels for the given `repo`.
-  """
-  @spec repo_labels(Repo.t | pos_integer, keyword) :: [IssueLabel.t]
-  def repo_labels(repo, opts \\ [])
-  def repo_labels(%Repo{id: repo_id}, opts), do: repo_labels(repo_id, opts)
-  def repo_labels(repo_id, opts) do
-    DB.all(DBQueryable.query({__MODULE__, :repo_labels_query}, [repo_id], opts))
   end
 
   @doc """
@@ -204,10 +193,6 @@ defmodule GitGud.IssueQuery do
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
     |> select([issue: i, comment: c], {i, count(c.id, :distinct)})
-  end
-
-  def query(:repo_labels_query, [repo_id]) when is_integer(repo_id) do
-    from(l in IssueLabel, as: :label, where: l.repo_id == ^repo_id)
   end
 
   def query(:count_repo_issues_query, [repo_ids|_] = args) when is_list(repo_ids) do

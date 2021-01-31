@@ -7,12 +7,14 @@ defmodule GitGud.GPGKeyTest do
 
   setup :create_user
 
+  @tag :skip
   test "creates a new gpg key with valid params", %{user: user} do
     assert {:ok, gpg_key} = GPGKey.create(factory(:gpg_key, user))
     assert byte_size(gpg_key.key_id) == 20
     assert Enum.all?(user.emails, &(&1.address in gpg_key.emails))
   end
 
+  @tag :skip
   test "fails to create a new gpg key with invalid public key", %{user: user} do
     params = factory(:gpg_key, user)
     assert {:error, changeset} = GPGKey.create(Map.delete(params, :data))
@@ -24,6 +26,7 @@ defmodule GitGud.GPGKeyTest do
   describe "when gpg key exists" do
     setup :create_gpg_key
 
+    @tag :skip
     test "deletes key", %{gpg_key: gpg_key1} do
       assert {:ok, gpg_key2} = GPGKey.delete(gpg_key1)
       assert gpg_key2.__meta__.state == :deleted

@@ -21,6 +21,7 @@ defmodule GitGud.Web.GPGKeyControllerTest do
     assert html_response(conn, 401) =~ "Unauthorized"
   end
 
+  @tag :skip
   test "creates gpg authentication key with valid params", %{conn: conn, user: user} do
     gpg_key_params = factory(:gpg_key, user)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
@@ -29,6 +30,7 @@ defmodule GitGud.Web.GPGKeyControllerTest do
     assert redirected_to(conn) == Routes.gpg_key_path(conn, :index)
   end
 
+  @tag :skip
   test "fails to create gpg authentication key with invalid public key", %{conn: conn, user: user} do
     gpg_key_params = factory(:gpg_key, user)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
@@ -40,6 +42,7 @@ defmodule GitGud.Web.GPGKeyControllerTest do
   describe "when gpg authentication keys exist" do
     setup :create_gpg_keys
 
+    @tag :skip
     test "renders user gpg authentication keys", %{conn: conn, user: user, gpg_keys: gpg_keys} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.gpg_key_path(conn, :index))
@@ -49,6 +52,7 @@ defmodule GitGud.Web.GPGKeyControllerTest do
       end
     end
 
+    @tag :skip
     test "deletes keys", %{conn: conn, user: user, gpg_keys: gpg_keys} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       for gpg_key <- gpg_keys do

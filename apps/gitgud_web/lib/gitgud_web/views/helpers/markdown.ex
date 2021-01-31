@@ -131,5 +131,5 @@ defmodule GitGud.Web.Markdown do
 
   defp hexadecimal_char?(c) when c in ?a..?f, do: true
   defp hexadecimal_char?(c) when c in ?0..?9, do: true
-  defp hexadecimal_char?(c), do: IO.inspect(c) && false
+  defp hexadecimal_char?(_c), do: false
 end

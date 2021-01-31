@@ -51,13 +51,6 @@ defmodule GitGud.Web.UserControllerTest do
   describe "when user exists" do
     setup :create_user
 
-  # test "renders profile", %{conn: conn, user: user} do
-  #   conn = get(conn, Routes.user_path(conn, :show, user))
-  #   assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
-  #   assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
-  #   assert html_response(conn, 200) =~ ~s(Nothing to see here.)
-  # end
-
     test "renders profile edit form if authenticated", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.user_path(conn, :edit_profile))
@@ -90,9 +83,9 @@ defmodule GitGud.Web.UserControllerTest do
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Profile</h2>)
     end
 
-    test "fails to update profile with invalid url", %{conn: conn, user: user} do
+    test "fails to update profile with invalid website url", %{conn: conn, user: user} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{website_url: "http:example.com"})
+      conn = put(conn, Routes.user_path(conn, :update_profile), profile: %{website_url: "example.com"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
       assert html_response(conn, 400) =~ ~s(<h1 class="title">Settings</h1>)
       assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Profile</h2>)

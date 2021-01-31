@@ -228,7 +228,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec repo_issue_labels(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, [IssueLabel.t]}
   def repo_issue_labels(repo, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, IssueQuery.repo_labels(repo.id, viewer: ctx[:current_user])}
+    {:ok, RepoQuery.issue_labels(repo.id, viewer: ctx[:current_user])}
   end
 
   @doc """

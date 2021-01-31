@@ -4,6 +4,7 @@ defmodule GitGud.RepoQueryTest do
 
   alias GitGud.User
   alias GitGud.Repo
+  alias GitGud.Maintainer
   alias GitGud.RepoStorage
   alias GitGud.RepoQuery
 
@@ -15,10 +16,16 @@ defmodule GitGud.RepoQueryTest do
     end
   end
 
-  test "gets multiple repositories by id", %{repos: repos} do
+  test "gets multiple repositories by ids", %{repos: repos} do
     results = RepoQuery.by_id(Enum.map(repos, &(&1.id)))
     assert Enum.count(results) == length(repos)
     assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
+  end
+
+  test "gets single repository by path", %{repos: repos} do
+    for repo <- repos do
+      assert repo.id == RepoQuery.by_path(RepoStorage.workdir(repo), preload: :maintainers).id
+    end
   end
 
   test "gets single user repository", %{repos: repos} do
@@ -56,9 +63,37 @@ defmodule GitGud.RepoQueryTest do
     assert Enum.all?(results, fn repo -> repo.id in Enum.map(repos, &(&1.id)) end)
   end
 
-  test "gets single repository by path", %{repos: repos} do
+  test "gets single maintainer from repository", %{repos: repos} do
     for repo <- repos do
-      assert repo.id == RepoQuery.by_path(RepoStorage.workdir(repo), preload: :maintainers).id
+      admin = RepoQuery.maintainer(repo, repo.owner)
+      assert admin.user == repo.owner
+      assert admin.permission == "admin"
+    end
+  end
+
+  test "gets multiple maintainers from repository", %{users: users, repos: repos} do
+    for {user, repos} <- Enum.group_by(repos, &(&1.owner)) do
+      for repo <- repos do
+        maintainers =
+          users
+          |> Enum.reject(&(&1.id == user.id))
+          |> Enum.map(&Maintainer.create!(repo_id: repo.id, user_id: &1.id))
+        results = RepoQuery.maintainers(repo)
+        assert length(results) == length(maintainers) + 1
+        for maintainer <- results do
+          if maintainer.user_id == user.id do
+            assert maintainer.permission == "admin"
+          else
+            assert maintainer.permission == "read"
+          end
+        end
+      end
+    end
+  end
+
+  test "gets issues labels from repository", %{repos: repos} do
+    for repo <- repos do
+      assert RepoQuery.issue_labels(repo) == Enum.sort_by(repo.issue_labels, &(&1.name), :asc)
     end
   end
 

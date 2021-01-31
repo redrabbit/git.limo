@@ -8,6 +8,14 @@ defmodule GitGud.RepoTest do
 
   setup :create_user
 
+    @issue_labels %{
+      "bug" => "ee0701",
+      "question" => "cc317c",
+      "duplicate" => "cccccc",
+      "help wanted" => "33aa3f",
+      "invalid" => "e6e6e6"
+    }
+
   test "creates a new repository with valid params", %{user: user} do
     assert {:ok, repo} = Repo.create(factory(:repo, user))
     assert user.id in Enum.map(repo.maintainers, &(&1.id))
@@ -62,6 +70,34 @@ defmodule GitGud.RepoTest do
       assert {:ok, repo2} = Repo.update(repo1, maintainers: [user2|repo1.maintainers])
       assert user1.id in Enum.map(repo2.maintainers, &(&1.id))
       assert user2.id in Enum.map(repo2.maintainers, &(&1.id))
+    end
+
+    test "ensures repository has default issue labels", %{repo: repo} do
+      for issue_label <- repo.issue_labels do
+        assert @issue_labels[issue_label.name] == issue_label.color
+      end
+    end
+
+    test "updates issue labels with valid params", %{repo: repo1} do
+      assert {:ok, repo2} = Repo.update_issue_labels(repo1, issue_labels: [
+        %{repo_id: repo1.id, name: "bug", color: "ff0000"},
+        %{repo_id: repo1.id, name: "question", color: "dfdfdf"}
+      ])
+      assert length(repo2.issue_labels) == 2
+      assert Enum.find(repo2.issue_labels, &(&1.name == "bug")).color == "ff0000"
+      assert Enum.find(repo2.issue_labels, &(&1.name == "question")).color == "dfdfdf"
+    end
+
+    test "fails to update issue labels without mandatory params", %{repo: repo1} do
+      assert {:error, changeset} = Repo.update_issue_labels(repo1, issue_labels: [
+        %{repo_id: repo1.id, color: "ff0000"},
+        %{repo_id: repo1.id, name: "question"}
+      ])
+      issue_labels_errors = Enum.reject(errors_on(changeset).issue_labels, &Enum.empty?/1)
+      assert issue_labels_errors == [
+        %{name: ["can't be blank"]},
+        %{color: ["can't be blank"]}
+      ]
     end
 
     test "deletes repository", %{repo: repo1} do

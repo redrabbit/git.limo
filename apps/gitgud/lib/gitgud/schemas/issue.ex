@@ -85,7 +85,7 @@ defmodule GitGud.Issue do
 
   This function validates the given parameters using `GitGud.Comment.changeset/2`.
   """
-  @spec add_comment(t, User.t, binary) :: {:ok, Comment.t} | {:error, term}
+  @spec add_comment(t, User.t, binary) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
   def add_comment(%__MODULE__{} = issue, author, body) do
     case DB.transaction(insert_issue_comment(issue.repo_id, issue.id, author.id, body)) do
       {:ok, %{comment: comment}} ->
@@ -213,8 +213,8 @@ defmodule GitGud.Issue do
        do: Multi.delete_all(multi, :issue_labels_pull, from(l in "issues_labels", where: l.issue_id == ^issue.id and l.label_id in ^labels_pull)),
      else: multi
     query = from(i in __MODULE__, where: i.id == ^issue.id, select: i)
-    event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull, updated_at: NaiveDateTime.utc_now()], opts)), %{type: "labels_update", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
-    multi = Multi.update_all(multi, :issue, query, push: [events: event])
+    event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull], opts)), %{type: "labels_update", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
+    multi = Multi.update_all(multi, :issue, query, set: [updated_at: event.timestamp], push: [events: event])
     case DB.transaction(multi) do
       {:ok, %{issue: {1, [issue]}}} ->
         {:ok, DB.preload(issue, :labels)}
@@ -241,7 +241,7 @@ defmodule GitGud.Issue do
   def changeset(%__MODULE__{} = issue, params \\ %{}) do
     issue
     |> cast(params, [:repo_id, :author_id, :title])
-    |> cast_assoc(:comments, with: &Comment.changeset/2)
+    |> cast_assoc(:comments, with: &Comment.changeset/2, required: true)
     |> validate_required([:repo_id, :author_id, :title])
     |> put_labels()
     |> assoc_constraint(:repo)

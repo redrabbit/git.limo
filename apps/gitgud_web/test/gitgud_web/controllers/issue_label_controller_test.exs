@@ -45,7 +45,7 @@ defmodule GitGud.Web.IssueLabelControllerTest do
       end
     end
 
-    test "updates label", %{conn: conn, user: user, repo: repo} do
+    test "updates label with valid params", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       [%{id: issue_label_id}|issue_labels_params] = Enum.map(repo.issue_labels, &Map.take(&1, [:id, :name, :color]))
       issue_labels_params = [%{id: issue_label_id, name: "test", color: "ff0000"}|issue_labels_params]
@@ -58,6 +58,14 @@ defmodule GitGud.Web.IssueLabelControllerTest do
       end
     end
 
+    test "fails to update label with invalid params", %{conn: conn, user: user, repo: repo} do
+      conn = Plug.Test.init_test_session(conn, user_id: user.id)
+      issue_labels_params = [%{name: "test"}]
+      conn = put(conn, Routes.issue_label_path(conn, :update, user, repo), repo: %{issue_labels: Map.new(Enum.with_index(issue_labels_params), fn {label, index} -> {index, label} end)})
+      assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
+      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Issue labels</h2>)
+    end
+
     test "deletes label", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       [_issue_label|issue_labels_params] = Enum.map(repo.issue_labels, &Map.take(&1, [:id, :name, :color]))
@@ -68,15 +76,6 @@ defmodule GitGud.Web.IssueLabelControllerTest do
       for issue_label <- repo.issue_labels do
         assert Enum.find(issue_labels_params, &(issue_label.name == &1.name && issue_label.color == &1.color))
       end
-    end
-
-
-    test "fails to update issue label with invalid params", %{conn: conn, user: user, repo: repo} do
-      conn = Plug.Test.init_test_session(conn, user_id: user.id)
-      issue_labels_params = [%{name: "test"}]
-      conn = put(conn, Routes.issue_label_path(conn, :update, user, repo), repo: %{issue_labels: Map.new(Enum.with_index(issue_labels_params), fn {label, index} -> {index, label} end)})
-      assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Issue labels</h2>)
     end
   end
 
