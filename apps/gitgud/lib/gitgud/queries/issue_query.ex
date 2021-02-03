@@ -48,14 +48,14 @@ defmodule GitGud.IssueQuery do
   end
 
   @doc """
-  Returns all issues and their number of comments for the given `repo`.
+  Returns all issues with number of replies for the given `repo`.
   """
-  @spec repo_issues_with_comments_count(Repo.t | pos_integer, keyword) :: [{Issue.t, pos_integer}]
-  def repo_issues_with_comments_count(repo, opts \\ [])
-  def repo_issues_with_comments_count(%Repo{id: repo_id}, opts), do: repo_issues_with_comments_count(repo_id, opts)
-  def repo_issues_with_comments_count(repo_id, opts) do
+  @spec repo_issues_with_reply_count(Repo.t | pos_integer, keyword) :: [{Issue.t, pos_integer}]
+  def repo_issues_with_reply_count(repo, opts \\ [])
+  def repo_issues_with_reply_count(%Repo{id: repo_id}, opts), do: repo_issues_with_reply_count(repo_id, opts)
+  def repo_issues_with_reply_count(repo_id, opts) do
     {params, opts} = Keyword.split(opts, [:numbers, :status, :labels, :search])
-    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_comments_count_query}, [repo_id, Map.new(params)], opts))
+    DB.all(DBQueryable.query({__MODULE__, :repo_issues_with_reply_count_query}, [repo_id, Map.new(params)], opts))
   end
 
   @doc """
@@ -188,7 +188,7 @@ defmodule GitGud.IssueQuery do
     |> having([issue: i, labels: l], fragment("array_agg(?) @> (?)::varchar[]", l.name, ^labels))
   end
 
-  def query(:repo_issues_with_comments_count_query, args) do
+  def query(:repo_issues_with_reply_count_query, args) do
     query(:repo_issues_query, args)
     |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
     |> group_by([issue: i], i.id)
