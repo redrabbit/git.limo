@@ -738,19 +738,16 @@ table.tree-table {
       line-height: 47px;
       border-width: 0 0 1px;
       background-color: $light;
-      white-space: nowrap;
-      overflow-x: hidden;
-      text-overflow: ellipsis;
+      &:last-child {
+        white-space: nowrap;
+      }
     }
   }
 
   tbody {
     tr {
-      td:first-child {
-        white-space:nowrap;
-      }
-      td:last-child {
-        white-space:nowrap;
+      td:first-child, td:last-child {
+        white-space: nowrap;
       }
     }
   }
