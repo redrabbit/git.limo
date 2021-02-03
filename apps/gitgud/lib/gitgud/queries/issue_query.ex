@@ -217,22 +217,10 @@ defmodule GitGud.IssueQuery do
   end
 
   @impl true
-  def alter_query(query, [], _viewer), do: query
+  def alter_query(query,  _viewer), do: query
 
   @impl true
-  def alter_query(query, [preload|tail], viewer) do
-    query
-    |> join_preload(preload, viewer)
-    |> alter_query(tail, viewer)
-  end
-
-  #
-  # Helpers
-  #
-
-  defp join_preload(query, preload, _viewer) do
-    preload(query, ^preload)
-  end
+  def preload_query(query, preloads, _viewer), do: preload(query, [], ^preloads)
 
   defp repo_perms(%Issue{repo: %Repo{} = repo}, user), do: RepoQuery.permissions(repo, user)
   defp repo_perms(%Issue{repo_id: repo_id}, user), do: RepoQuery.permissions(repo_id, user)

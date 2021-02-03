@@ -202,7 +202,7 @@ defmodule GitGud.RepoQuery do
   end
 
   def query(:issue_labels_query, [repo_id]) when is_integer(repo_id) do
-    from(l in IssueLabel, as: :issue_label, where: l.repo_id == ^repo_id, order_by: l.name)
+    from(l in IssueLabel, as: :issue_label, where: l.repo_id == ^repo_id)
   end
 
   def query(:count_query, [repo_id, :contributors]) when is_integer(repo_id) do
@@ -214,18 +214,18 @@ defmodule GitGud.RepoQuery do
   end
 
   @impl true
-  def alter_query(query, preloads, :admin), do: preload(query, [], ^preloads)
-
-  def alter_query(query, preloads, nil) do
-    query
-    |> where([repo: r], r.public == true and not is_nil(r.pushed_at))
-    |> preload([], ^preloads)
-  end
-
-  def alter_query(query, preloads, %User{} = viewer) do
+  def alter_query(query, %User{} = viewer) when query.from.as == :repo do
     query
     |> join(:left, [repo: r], m in Maintainer, on: r.id == m.repo_id, as: :maintainer)
     |> where([repo: r, maintainer: m], (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
-    |> preload([], ^preloads)
   end
+
+  def alter_query(query, nil) when query.from.as == :repo do
+    where(query, [repo: r], r.public == true and not is_nil(r.pushed_at))
+  end
+
+  def alter_query(query, _viewer), do: query
+
+  @impl true
+  def preload_query(query, preloads, _viewer), do: preload(query, [], ^preloads)
 end

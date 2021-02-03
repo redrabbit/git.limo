@@ -124,13 +124,16 @@ defmodule GitGud.UserQuery do
   end
 
   @impl true
-  def alter_query(query, [], _viewer), do: query
+  def alter_query(query, _viewer), do: query
 
   @impl true
-  def alter_query(query, [preload|tail], viewer) do
+  def preload_query(query, [], _viewer), do: query
+
+  @impl true
+  def preload_query(query, [preload|tail], viewer) do
     query
     |> join_preload(preload, viewer)
-    |> alter_query(tail, viewer)
+    |> preload_query(tail, viewer)
   end
 
   #
@@ -155,9 +158,10 @@ defmodule GitGud.UserQuery do
     |> preload([public_email: e], [public_email: e])
   end
 
-  defp join_preload(query, :repos, :admin) do
+  defp join_preload(query, :repos, %User{} = viewer) do
     query
-    |> join(:left, [user: u], r in assoc(u, :repos), as: :repos)
+    |> join(:left, [user: u], m in Maintainer, on: m.user_id == ^viewer.id, as: :maintainer)
+    |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
     |> preload([repos: r], [repos: r])
   end
 
@@ -167,12 +171,12 @@ defmodule GitGud.UserQuery do
     |> preload([repos: r], [repos: r])
   end
 
-  defp join_preload(query, :repos, %User{} = viewer) do
+  defp join_preload(query, :repos, _viewer) do
     query
-    |> join(:left, [user: u], m in Maintainer, on: m.user_id == ^viewer.id, as: :maintainer)
-    |> join(:left, [user: u, maintainer: m], r in assoc(u, :repos), on: (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.repo_id == r.id, as: :repos)
+    |> join(:left, [user: u], r in assoc(u, :repos), as: :repos)
     |> preload([repos: r], [repos: r])
   end
+
 
   defp join_preload(query, {parent, _children} = preload, viewer) do
     query

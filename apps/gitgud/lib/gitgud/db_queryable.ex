@@ -6,7 +6,8 @@ defmodule GitGud.DBQueryable do
   import Ecto.Query, only: [order_by: 2, offset: 2, limit: 2]
 
   @callback query(name :: atom, args :: [term]) :: Ecto.Query.t
-  @callback alter_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
+  @callback alter_query(query :: Ecto.Query.t, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
+  @callback preload_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
 
   @doc """
   Returns a query for the given `queryable`.
@@ -27,7 +28,8 @@ defmodule GitGud.DBQueryable do
 
   defp exec_query(query, module, {sort, pagination, preloads, viewer}) do
     query
-    |> alter(module, preloads, viewer)
+    |> alter(module, viewer)
+    |> preload(module, preloads, viewer)
     |> order_by(^sort)
     |> paginate(pagination)
   end
@@ -41,8 +43,12 @@ defmodule GitGud.DBQueryable do
     |> limit(^limit)
   end
 
-  defp alter(query, module, preloads, viewer) do
-    apply(module, :alter_query, [query, preloads, viewer])
+  defp alter(query, module, viewer) do
+    apply(module, :alter_query, [query, viewer])
+  end
+
+  defp preload(query, module, preloads, viewer) do
+    apply(module, :preload_query, [query, preloads, viewer])
   end
 
   defp extract_opts(opts) do

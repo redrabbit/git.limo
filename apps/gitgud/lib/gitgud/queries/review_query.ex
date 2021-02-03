@@ -102,12 +102,15 @@ defmodule GitGud.ReviewQuery do
   end
 
   @impl true
-  def alter_query(query, [], _viewer), do: query
+  def alter_query(query, _viewer), do: query
 
-  def alter_query(query, [preload|tail], viewer) do
+  @impl true
+  def preload_query(query, [], _viewer), do: query
+
+  def preload_query(query, [preload|tail], viewer) do
     query
     |> join_preload(preload, viewer)
-    |> alter_query(tail, viewer)
+    |> preload_query(tail, viewer)
   end
 
   #
