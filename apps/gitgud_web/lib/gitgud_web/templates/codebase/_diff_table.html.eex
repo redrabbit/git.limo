@@ -1,5 +1,5 @@
 <%= with highlight_lang <- highlight_language_from_path(@delta.new_file.path) do %>
-  <table class="blob-table diff-table" data-blob-oid="<%= oid_fmt(@delta.new_file.oid) %>" data-lang="<%= highlight_lang %>">
+  <table class="blob-table commit-table" data-blob-oid="<%= oid_fmt(@delta.new_file.oid) %>" data-lang="<%= highlight_lang %>">
     <tbody>
       <%= for {hunk, hunk_index} <- Enum.with_index(@delta.hunks) do %>
         <tr class="hunk">
@@ -29,21 +29,6 @@
               <div class="code-inner"><%= line.content %></div>
             </td>
           </tr>
-          <%= if review = line[:review] do %>
-            <%= react_component("commit-line-review", [review_id: to_relay_id(review)], [tag: :tr, id: "review", class: "inline-comments"]) do %>
-              <td colspan="4">
-                <div class="timeline">
-                  <div class="timeline-item">
-                    <div class="timeline-content">
-                      <div class="comment-placeholder">
-                        <span class="loading-ellipsis">Loading comments</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </td>
-            <% end %>
-          <% end %>
         <% end %>
       <% end %>
     </tbody>

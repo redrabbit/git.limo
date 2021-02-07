@@ -1,4 +1,4 @@
-<%= react_component("issue", [issue_id: to_relay_id(@issue)], []) do %>
+<%= react_component("issue", [id: to_relay_id(@issue)], []) do %>
   <div class="columns">
     <div class="column is-12">
       <div class="field is-grouped">

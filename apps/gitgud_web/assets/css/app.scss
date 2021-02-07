@@ -613,7 +613,7 @@ table {
   }
 }
 
-.diff-stats {
+.commit-stats {
   p {
     .is-family-monospace {
       font-size: .9em;
@@ -912,7 +912,7 @@ table.issues-table {
   }
 }
 
-table.diff-table {
+table.commit-table {
   margin-top: 0;
 
   tbody {
@@ -1004,6 +1004,6 @@ table.diff-table {
   }
 }
 
-table.diff-stats-table {
+table.commit-stats-table {
   margin-top: -1.5rem;
 }

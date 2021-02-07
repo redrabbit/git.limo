@@ -72,11 +72,13 @@ class Issue extends React.Component {
   componentWillUnmount() {
     clearInterval(this.interval)
     this.subscriptions.forEach(subscription => subscription.dispose())
-    this.channel.leave()
+    if(this.channel) {
+      this.channel.leave()
+    }
   }
 
   fetchIssue() {
-    const {issueId} = this.props
+    const {id} = this.props
     const query = graphql`
       query IssueQuery($id: ID!) {
         node(id: $id) {
@@ -164,7 +166,7 @@ class Issue extends React.Component {
       }
     `
     const variables = {
-      id: issueId
+      id: id
     }
 
     fetchQuery(environment, query, variables)
@@ -195,14 +197,14 @@ class Issue extends React.Component {
   }
 
   subscribePresence() {
-    this.channel = socket.channel(`issue:${this.props.issueId}`)
+    this.channel = socket.channel(`issue:${this.props.id}`)
     this.presence = new Presence(this.channel)
     this.presence.onSync(() => this.setState({presences: this.presence.list()}))
     return this.channel.join()
   }
 
   subscribeEvents() {
-    const {issueId} = this.props
+    const {id} = this.props
     const subscription = graphql`
       subscription IssueEventSubscription($id: ID!) {
         issueEvent(id: $id) {
@@ -249,7 +251,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: issueId
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -288,7 +290,7 @@ class Issue extends React.Component {
   }
 
   subscribeCommentCreate() {
-    const {issueId} = this.props
+    const {id} = this.props
     const subscription = graphql`
       subscription IssueCommentCreateSubscription($id: ID!) {
         issueCommentCreate(id: $id) {
@@ -308,7 +310,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: issueId
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -320,7 +322,7 @@ class Issue extends React.Component {
   }
 
   subscribeCommentUpdate() {
-    const {issueId} = this.props
+    const {id} = this.props
     const subscription = graphql`
       subscription IssueCommentUpdateSubscription($id: ID!) {
         issueCommentUpdate(id: $id) {
@@ -332,7 +334,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: issueId
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -344,7 +346,7 @@ class Issue extends React.Component {
   }
 
   subscribeCommentDelete() {
-    const {issueId} = this.props
+    const {id} = this.props
     const subscription = graphql`
       subscription IssueCommentDeleteSubscription($id: ID!) {
         issueCommentDelete(id: $id) {
@@ -354,7 +356,7 @@ class Issue extends React.Component {
     `
 
     const variables = {
-      id: issueId
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -538,11 +540,11 @@ class Issue extends React.Component {
   }
 
   handleTitleFormSubmit(event) {
-    const {issueId} = this.props
+    const {id} = this.props
     const title = event.target.title.value
     if(title != "") {
       const variables = {
-        id: issueId,
+        id: id,
         title: title
       }
 
@@ -566,9 +568,9 @@ class Issue extends React.Component {
 
   handleFormSubmit(body) {
     if(body != "") {
-      const {issueId} = this.props
+      const {id} = this.props
       const variables = {
-        id: issueId,
+        id: id,
         body: body
       }
 
@@ -600,9 +602,9 @@ class Issue extends React.Component {
   }
 
   handleLabelsSelection(push, pull) {
-    const {issueId} = this.props
+    const {id} = this.props
     const variables = {
-      id: issueId,
+      id: id,
       push: push,
       pull: pull
     }
@@ -626,9 +628,9 @@ class Issue extends React.Component {
   }
 
   handleClose() {
-    const {issueId} = this.props
+    const {id} = this.props
     const variables = {
-      id: issueId
+      id: id
     }
 
     const mutation = graphql`
@@ -649,9 +651,9 @@ class Issue extends React.Component {
   }
 
   handleReopen() {
-    const {issueId} = this.props
+    const {id} = this.props
     const variables = {
-      id: issueId
+      id: id
     }
 
     const mutation = graphql`

@@ -15,7 +15,7 @@ export default() => {
       line.innerHTML = result.value
     }
     let state
-    if(table.classList.contains("diff-table")) {
+    if(table.classList.contains("commit-table")) {
       let row = table.querySelector("tr.hunk")
       while(row) {
         row = row.nextElementSibling

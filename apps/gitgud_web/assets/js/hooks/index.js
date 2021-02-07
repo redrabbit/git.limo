@@ -9,7 +9,7 @@ import issueLabelSelect from "./issue-label-select"
 import issueLabelTable from "./issue-label-table"
 import blobForm from "./blob-form"
 import blobTable from "./blob-table"
-import diffTable from "./diff-table"
+import commitTable from "./commit-table"
 import treeTable from "./tree-table"
 
 export default [
@@ -24,6 +24,6 @@ export default [
     issueLabelTable,
     blobForm,
     blobTable,
-    diffTable,
+    commitTable,
     treeTable
 ]

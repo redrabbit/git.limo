@@ -176,6 +176,13 @@ defmodule GitGud.GraphQL.Resolvers do
   def search_result_type(%Repo{} = _result, _info), do: :repo
 
   @doc """
+  Returns the search result type.
+  """
+  @spec comment_thread_type(Issue.t|CommitLineReview.t, Absinthe.Resolution.t) :: atom
+  def comment_thread_type(%Issue{} = _result, _info), do: :issue
+  def comment_thread_type(%CommitLineReview{} = _result, _info), do: :commit_line_review
+
+  @doc """
   Resolves a repository object by name for a given `user`.
   """
   @spec user_repo(User.t, %{name: binary}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
@@ -424,6 +431,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the repository for a given `commit_line_review`.
+  """
+  @spec commit_line_review_repo(CommitLineReview.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
+  def commit_line_review_repo(commit_line_review, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, RepoQuery.by_id(commit_line_review.repo_id, viewer: ctx[:current_user])}
+  end
+
+  @doc """
   Resolves comments for a commit line review.
   """
   @spec commit_line_review_comments(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
@@ -648,6 +663,14 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Resolves the thread for a given `comment`.
+  """
+  @spec comment_thread(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
+  def comment_thread(%Comment{} = comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
+    {:ok, CommentQuery.thread(comment, viewer: ctx[:current_user])}
+  end
+
+  @doc """
   Resolves the repository for a given `comment`.
   """
   @spec comment_repo(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
@@ -797,9 +820,10 @@ defmodule GitGud.GraphQL.Resolvers do
       old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: user)
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body, with_review: true) do
         {:ok, line_review, comment} ->
-          unless old_line_review,
-            do: publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
-          publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: "#{repo.id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}")
+          unless old_line_review do
+            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
+          end
+          publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: line_review.id)
           {:ok, comment}
         {:error, reason} ->
           {:error, reason}
@@ -869,19 +893,19 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
+  Returns the subscription topic for commit line review comment events.
+  """
+  @spec commit_line_review_topic(map, map) :: {:ok, keyword} | {:error, term}
+  def commit_line_review_topic(%{id: id}, _info) do
+    {:ok, topic: Schema.from_relay_id(id)}
+  end
+
+  @doc """
   Returns the subscription topic for commit line review create event.
   """
   @spec commit_line_review_created(map, map) :: {:ok, keyword} | {:error, term}
   def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
     {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
-  end
-
-  @doc """
-  Returns the subscription topic for commit line review comment events.
-  """
-  @spec commit_line_review_comment_topic(map, map) :: {:ok, keyword} | {:error, term}
-  def commit_line_review_comment_topic(%{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, _info) do
-    {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
   end
 
   @doc """
@@ -976,7 +1000,7 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   defp comment_subscription(%Issue{id: id}, action), do: {String.to_atom("issue_comment_#{action}"), id}
-  defp comment_subscription(%CommitLineReview{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), "#{repo_id}:#{oid_fmt(commit_oid)}:#{oid_fmt(blob_oid)}:#{hunk}:#{line}"}
+  defp comment_subscription(%CommitLineReview{id: id}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), id}
 
   defp comment_subscriptions(thread, action), do: [{String.to_atom("comment_#{action}"), comment_subscription_topic(thread)}, comment_subscription(thread, action)]
 

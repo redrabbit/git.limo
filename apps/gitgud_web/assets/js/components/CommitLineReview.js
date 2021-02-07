@@ -15,7 +15,7 @@ import CommentForm from "./CommentForm"
 class CommitLineReview extends React.Component {
   constructor(props) {
     super(props)
-    this.fetchReview = this.fetchReview.bind(this)
+    this.fetchLineReview = this.fetchLineReview.bind(this)
     this.subscriptions = []
     this.channel = null
     this.presence = null
@@ -35,82 +35,118 @@ class CommitLineReview extends React.Component {
     this.handleCommentDelete = this.handleCommentDelete.bind(this)
     this.destroyComponent = this.destroyComponent.bind(this)
     this.state = {
-      folded: !!props.reviewId,
-      repoId: this.props.repoId,
-      commitOid: this.props.commitOid,
-      blobOid: this.props.blobOid,
-      hunk: Number(this.props.hunk),
-      line: Number(this.props.line),
-      comments: [],
+      folded: !!props.id,
+      comments: this.props.comments || [],
       presences: []
     }
   }
 
   componentDidMount() {
-    this.fetchReview()
+    this.fetchLineReview()
   }
 
   componentWillUnmount() {
     this.subscriptions.forEach(subscription => subscription.dispose())
-    this.channel.leave()
+    if(this.channel) {
+      this.channel.leave()
+    }
   }
 
-  fetchReview() {
-    const {reviewId} = this.props
-    if(reviewId) {
-      const query = graphql`
-        query CommitLineReviewQuery($id: ID!) {
-          node(id: $id) {
-            ... on CommitLineReview {
-              repo {
-                id
-              }
-              commitOid
-              blobOid
-              hunk
-              line
-              comments(first: 50) {
-                edges {
-                  node {
-                    id
-                    author {
-                      login
-                      avatarUrl
-                      url
+  fetchLineReview() {
+    const {id} = this.props
+    if(id) {
+      if(this.state.comments.length == 0) {
+        const query = graphql`
+          query CommitLineReviewQuery($id: ID!) {
+            node(id: $id) {
+              ... on CommitLineReview {
+                comments(first: 50) {
+                  edges {
+                    node {
+                      id
+                      author {
+                        login
+                        avatarUrl
+                        url
+                      }
+                      editable
+                      deletable
+                      body
+                      bodyHtml
+                      insertedAt
                     }
-                    editable
-                    deletable
-                    body
-                    bodyHtml
-                    insertedAt
+                  }
+                }
+              }
+            }
+          }
+        `
+        const variables = {
+          id: id
+        }
+
+        fetchQuery(environment, query, variables)
+          .then(response => {
+            this.setState({
+              comments: response.node.comments.edges.map(edge => edge.node)
+            })
+            this.subscribePresence(id)
+            this.subscribeComments(id)
+          })
+      } else {
+        this.subscribePresence(id)
+        this.subscribeComments(id)
+      }
+    }
+  }
+
+  static fetchLineReviews(repoId, commitOid) {
+    const query = graphql`
+      query CommitLineReviewCommitLineReviewsQuery($repoId: ID!, $commitOid: GitObjectID!) {
+        node(id: $repoId) {
+          ... on Repo {
+            object(oid: $commitOid) {
+              ... on GitCommit {
+                lineReviews(first: 100) {
+                  edges {
+                    node {
+                      id
+                      blobOid
+                      hunk
+                      line
+                      comments(first: 50) {
+                        edges {
+                          node {
+                            id
+                            author {
+                              login
+                              avatarUrl
+                              url
+                            }
+                            editable
+                            deletable
+                            body
+                            bodyHtml
+                            insertedAt
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
             }
           }
         }
-      `
-      const variables = {
-        id: reviewId
       }
+    `
 
-      fetchQuery(environment, query, variables)
-        .then(response => {
-          this.setState({
-          repoId: response.node.repo.id,
-          commitOid: response.node.commitOid,
-          blobOid: response.node.blobOid,
-          hunk: response.node.hunk,
-          line: response.node.line,
-          comments: response.node.comments.edges.map(edge => edge.node)
-          })
-          this.subscribePresence()
-          this.subscribeComments()
-        })
-    } else {
-      this.subscribePresence()
-      this.subscribeComments()
+    const variables = {
+      repoId: repoId,
+      commitOid: commitOid,
     }
+
+    return fetchQuery(environment, query, variables)
   }
 
   static subscribeNewLineReviews(repoId, commitOid, config) {
@@ -121,6 +157,23 @@ class CommitLineReview extends React.Component {
           blobOid
           hunk
           line
+          comments(first: 50) {
+            edges {
+              node {
+                id
+                author {
+                  login
+                  avatarUrl
+                  url
+                }
+                editable
+                deletable
+                body
+                bodyHtml
+                insertedAt
+              }
+            }
+          }
         }
       }
     `
@@ -133,29 +186,23 @@ class CommitLineReview extends React.Component {
     return requestSubscription(environment, {...config, ...{subscription, variables}})
   }
 
-  subscribePresence() {
-    this.channel = socket.channel(`commit_line_review:${this.state.repoId}:${this.state.commitOid}:${this.state.blobOid}:${this.state.hunk}:${this.state.line}`)
+  subscribePresence(id) {
+    this.channel = socket.channel(`commit_line_review:${id}`)
     this.presence = new Presence(this.channel)
     this.presence.onSync(() => this.setState({presences: this.presence.list()}))
     return this.channel.join()
   }
 
-  subscribeComments() {
-    this.subscriptions.push(this.subscribeCommentCreate())
-    this.subscriptions.push(this.subscribeCommentUpdate())
-    this.subscriptions.push(this.subscribeCommentDelete())
+  subscribeComments(id) {
+    this.subscriptions.push(this.subscribeCommentCreate(id))
+    this.subscriptions.push(this.subscribeCommentUpdate(id))
+    this.subscriptions.push(this.subscribeCommentDelete(id))
   }
 
-  subscribeCommentCreate() {
+  subscribeCommentCreate(id) {
     const subscription = graphql`
-      subscription CommitLineReviewCommentCreateSubscription(
-        $repoId: ID!,
-        $commitOid: GitObjectID!,
-        $blobOid: GitObjectID!,
-        $hunk: Int!,
-        $line: Int!
-      ) {
-        commitLineReviewCommentCreate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+      subscription CommitLineReviewCommentCreateSubscription($id: ID!) {
+        commitLineReviewCommentCreate(id: $id) {
           id
           author {
             login
@@ -172,11 +219,7 @@ class CommitLineReview extends React.Component {
     `
 
     const variables = {
-      repoId: this.state.repoId,
-      commitOid: this.state.commitOid,
-      blobOid: this.state.blobOid,
-      hunk: this.state.hunk,
-      line: this.state.line
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -187,17 +230,10 @@ class CommitLineReview extends React.Component {
     })
   }
 
-  subscribeCommentUpdate() {
-    const {comment} = this.props
+  subscribeCommentUpdate(id) {
     const subscription = graphql`
-      subscription CommitLineReviewCommentUpdateSubscription(
-        $repoId: ID!,
-        $commitOid: GitObjectID!,
-        $blobOid: GitObjectID!,
-        $hunk: Int!,
-        $line: Int!
-      ) {
-        commitLineReviewCommentUpdate(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+      subscription CommitLineReviewCommentUpdateSubscription($id: ID!) {
+        commitLineReviewCommentUpdate(id: $id) {
           id
           body
           bodyHtml
@@ -206,11 +242,7 @@ class CommitLineReview extends React.Component {
     `
 
     const variables = {
-      repoId: this.state.repoId,
-      commitOid: this.state.commitOid,
-      blobOid: this.state.blobOid,
-      hunk: this.state.hunk,
-      line: this.state.line
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -221,28 +253,17 @@ class CommitLineReview extends React.Component {
     })
   }
 
-  subscribeCommentDelete() {
-    const {comment} = this.props
+  subscribeCommentDelete(id) {
     const subscription = graphql`
-      subscription CommitLineReviewCommentDeleteSubscription(
-        $repoId: ID!,
-        $commitOid: GitObjectID!,
-        $blobOid: GitObjectID!,
-        $hunk: Int!,
-        $line: Int!
-      ) {
-        commitLineReviewCommentDelete(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line) {
+      subscription CommitLineReviewCommentDeleteSubscription($id: ID!) {
+        commitLineReviewCommentDelete(id: $id) {
           id
         }
       }
     `
 
     const variables = {
-      repoId: this.state.repoId,
-      commitOid: this.state.commitOid,
-      blobOid: this.state.blobOid,
-      hunk: this.state.hunk,
-      line: this.state.line
+      id: id
     }
 
     return requestSubscription(environment, {
@@ -275,7 +296,7 @@ class CommitLineReview extends React.Component {
     return this.state.comments.map((comment, index) =>
       <div key={index} className="timeline-item">
         <div className="timeline-content">
-          <Comment repoId={this.state.repoId} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
+          <Comment repoId={this.props.repoId} comment={comment} onUpdate={this.handleCommentUpdate} onDelete={this.handleCommentDelete} />
         </div>
       </div>
     )
@@ -317,17 +338,17 @@ class CommitLineReview extends React.Component {
         </div>
       )
     } else {
-      return <CommentForm repoId={this.state.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onCancel={this.handleFormCancel} />
+      return <CommentForm repoId={this.props.repoId} onSubmit={this.handleFormSubmit} onTyping={this.handleFormTyping} onCancel={this.handleFormCancel} />
     }
   }
 
   handleFormSubmit(body) {
     const variables = {
-      repoId: this.state.repoId,
-      commitOid: this.state.commitOid,
-      blobOid: this.state.blobOid,
-      hunk: this.state.hunk,
-      line: this.state.line,
+      repoId: this.props.repoId,
+      commitOid: this.props.commitOid,
+      blobOid: this.props.blobOid,
+      hunk: this.props.hunk,
+      line: this.props.line,
       body: body
     }
 
@@ -335,6 +356,11 @@ class CommitLineReview extends React.Component {
       mutation CommitLineReviewCreateCommentMutation($repoId: ID!, $commitOid: GitObjectID!, $blobOid: GitObjectID!, $hunk: Int!, $line: Int!, $body: String!) {
         createCommitLineReviewComment(repoId: $repoId, commitOid: $commitOid, blobOid: $blobOid, hunk: $hunk, line: $line, body: $body) {
           id
+          thread {
+            ... on CommitLineReview {
+              id
+            }
+          }
           author {
             login
             avatarUrl
@@ -375,7 +401,14 @@ class CommitLineReview extends React.Component {
   }
 
   handleCommentCreate(comment) {
-    this.setState(state => ({comments: state.comments.find(({id}) => id == comment.id) ? state.comments : [...state.comments, comment]}))
+    const {id} = this.props
+    if(!id) {
+      this.subscribeComments(comment.thread.id)
+      this.subscribePresence(comment.thread.id)
+    }
+    this.setState(state => ({
+      comments: state.comments.find(({id}) => id == comment.id) ? state.comments : [...state.comments, comment]
+    }))
   }
 
   handleCommentUpdate(comment) {

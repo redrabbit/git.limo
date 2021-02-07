@@ -49,7 +49,7 @@
   </div>
 </div>
 
-<div id="diff-stats" class="columns diff-stats" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
+<div id="commit-stats" class="columns commit-stats" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
   <div class="column is-three-quarters">
     <p class="button is-white">
       <span>Showing <strong class="has-text-dark is-family-monospace"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success is-family-monospace"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger is-family-monospace"><%= @diff_stats.deletions %> deletions</strong>.</span>
@@ -66,7 +66,7 @@
   </div>
 </div>
 
-<table class="table diff-stats-table is-fullwidth">
+<table class="table commit-stats-table is-fullwidth">
   <tbody>
     <%= for delta <- @diff_deltas do %>
       <tr>
@@ -79,7 +79,7 @@
   </tbody>
 </table>
 
-<%= for delta <- diff_deltas_with_reviews(@repo, @diff_deltas, @reviews) do %>
+<%= for delta <- @diff_deltas do %>
   <div class="columns">
     <div class="column is-full">
       <div id="diff-<%= oid_fmt(delta.new_file.oid) %>" class="card diff">

@@ -81,6 +81,13 @@ defmodule GitGud.GraphQL.Types do
     resolve_type &Resolvers.search_result_type/2
   end
 
+  union :comment_thread do
+    types [:issue, :commit_line_review]
+
+    resolve_type &Resolvers.comment_thread_type/2
+  end
+
+
   @desc """
   A user is an individual's account that owns repositories and can make new content.
   """
@@ -431,7 +438,7 @@ defmodule GitGud.GraphQL.Types do
     end
 
     @desc "The repository this review belongs to."
-    field :repo, non_null(:repo)
+    field :repo, non_null(:repo), resolve: &Resolvers.commit_line_review_repo/3
   end
 
   @desc "Represents a Git annotated tag."
@@ -549,6 +556,9 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "Returns `true` if the current viewer can delete the comment; otherwise, returns `false`."
     field :deletable, non_null(:boolean), resolve: &Resolvers.comment_deletable/3
+
+    @desc "The thread this comment belongs to."
+    field :thread, non_null(:comment_thread), resolve: &Resolvers.comment_thread/3
 
     @desc "The repository this comment belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.comment_repo/3

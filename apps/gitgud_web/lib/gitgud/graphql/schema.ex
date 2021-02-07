@@ -216,32 +216,20 @@ defmodule GitGud.GraphQL.Schema do
 
     @desc "Subscribe to new line commit review comments."
     field :commit_line_review_comment_create, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
-      arg :hunk, non_null(:integer), description: "The delta hunk index."
-      arg :line, non_null(:integer), description: "The delta line index."
-      config &Resolvers.commit_line_review_comment_topic/2
+      arg :id, non_null(:id), description: "The comment line review ID."
+      config &Resolvers.commit_line_review_topic/2
     end
 
     @desc "Subscribe to commit line review comment updates."
     field :commit_line_review_comment_update, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
-      arg :hunk, non_null(:integer), description: "The delta hunk index."
-      arg :line, non_null(:integer), description: "The delta line index."
-      config &Resolvers.commit_line_review_comment_topic/2
+      arg :id, non_null(:id), description: "The comment line review ID."
+      config &Resolvers.commit_line_review_topic/2
     end
 
     @desc "Subscribe to commit line review comment deletes."
     field :commit_line_review_comment_delete, :comment do
-      arg :repo_id, non_null(:id), description: "The repository."
-      arg :commit_oid, non_null(:git_oid), description: "The Git commit OID."
-      arg :blob_oid, non_null(:git_oid), description: "The Git blob OID."
-      arg :hunk, non_null(:integer), description: "The delta hunk index."
-      arg :line, non_null(:integer), description: "The delta line index."
-      config &Resolvers.commit_line_review_comment_topic/2
+      arg :id, non_null(:id), description: "The comment line review ID."
+      config &Resolvers.commit_line_review_topic/2
     end
 
     @desc "Subscribe to comment updates."

@@ -356,8 +356,7 @@ defmodule GitGud.Web.CodebaseController do
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info),
           diff_stats: diff_stats,
-          diff_deltas: diff_deltas,
-          reviews: ReviewQuery.commit_line_reviews(repo, commit)
+          diff_deltas: diff_deltas
         )
       end
     end || {:error, :not_found}
