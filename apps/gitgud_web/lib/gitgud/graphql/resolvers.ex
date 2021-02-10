@@ -141,7 +141,8 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the public email for a given `user`.
   """
-  @spec user_public_email(User.t, %{}, Absinthe.Resolution.t) :: {:ok, GitReference.t} | {:error, term}
+  @spec user_public_email(User.t, %{}, Absinthe.Resolution.t) :: {:ok, binary} | {:error, term}
+  def user_public_email(%User{public_email: %Email{} = email} = _user, %{} = _args, _info), do: {:ok, email.address}
   def user_public_email(%User{public_email_id: email_id} = _user, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     unless is_nil(email_id),
       do: batch({__MODULE__, :batch_emails_by_ids, ctx[:current_user]}, email_id, fn emails -> {:ok, emails[email_id].address} end),
@@ -345,7 +346,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the commit history starting from the given Git `revision` object.
   """
   @spec git_history(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_history(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
+  def git_history(args, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
     case GitAgent.history(ctx.repo_agent, revision) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -359,7 +360,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the parents for a given Git `commit` object.
   """
   @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_commit_parents(args,  %Absinthe.Resolution{context: ctx, source: commit} = _info) do
+  def git_commit_parents(args, %Absinthe.Resolution{source: commit, context: ctx} = _info) do
     case GitAgent.commit_parents(ctx.repo_agent, commit) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -434,8 +435,9 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the repository for a given `commit_line_review`.
   """
   @spec commit_line_review_repo(CommitLineReview.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
-  def commit_line_review_repo(commit_line_review, _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, RepoQuery.by_id(commit_line_review.repo_id, viewer: ctx[:current_user])}
+  def commit_line_review_repo(%CommitLineReview{repo: %Repo{} = repo} = _commit_line_review, _args, _info), do: {:ok, repo}
+  def commit_line_review_repo(%CommitLineReview{repo_id: repo_id} = _commit_line_review, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
   end
 
   @doc """
@@ -495,7 +497,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the tree entries for a given Git `tree` object.
   """
   @spec git_tree_entries(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entries(args, %Absinthe.Resolution{context: ctx, source: tree} = _info) do
+  def git_tree_entries(args, %Absinthe.Resolution{source: tree, context: ctx} = _info) do
     case GitAgent.tree_entries(ctx.repo_agent, tree) do
       {:ok, stream} ->
         {slice, offset, opts} = slice_stream(stream, args)
@@ -509,7 +511,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the tree entries and their associated commit for a given pathspec.
   """
   @spec git_tree_entry_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entry_with_last_commit(%{path: path}, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
+  def git_tree_entry_with_last_commit(%{path: path}, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
     case GitAgent.tree_entry_by_path(ctx.repo_agent, revision, path, with_commit: true) do
       {:ok, {tree_entry, commit}} ->
         {:ok, %{tree_entry: tree_entry, commit: commit}}
@@ -522,7 +524,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the tree entries and their associated commit for a given pathspec.
   """
   @spec git_tree_entries_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entries_with_last_commit(args, %Absinthe.Resolution{context: ctx, source: revision} = _info) do
+  def git_tree_entries_with_last_commit(args, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
     path = args[:path]
     path = if path == "" || is_nil(path), do: :root, else: path
     case GitAgent.tree_entries_by_path(ctx.repo_agent, revision, path, with_commit: true) do
@@ -554,6 +556,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the author for a given `comment`.
   """
   @spec issue_author(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def issue_author(%Issue{author: %User{} = author} = _issue, _args, _info), do: {:ok, author}
   def issue_author(%Issue{author_id: user_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
@@ -634,14 +637,16 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the repository for a given `issue`.
   """
   @spec issue_repo(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
-  def issue_repo(issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, RepoQuery.by_id(issue.repo_id, viewer: ctx[:current_user])}
+  def issue_repo(%Issue{repo: %Repo{} = repo} = _issue, _args, _info), do: {:ok, repo}
+  def issue_repo(%Issue{repo_id: repo_id} = _issue, _args, %Absinthe.Resolution{context: ctx} = _info) do
+    batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
   end
 
   @doc """
   Resolves the author for a given `comment`.
   """
   @spec comment_author(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def comment_author(%Comment{author: %User{} = author} = _comment, _args, _info), do: {:ok, author}
   def comment_author(%Comment{author_id: user_id} = _comment, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
@@ -674,6 +679,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the repository for a given `comment`.
   """
   @spec comment_repo(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, Repo.t} | {:error, term}
+  def comment_repo(%Comment{repo: %Repo{} = repo} = _comment, %{} = _args, _info), do: {:ok, repo}
   def comment_repo(%Comment{repo_id: repo_id} = _comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_repos_by_ids, ctx[:current_user]}, repo_id, fn repos -> {:ok, repos[repo_id]} end)
   end
@@ -700,6 +706,7 @@ defmodule GitGud.GraphQL.Resolvers do
   Resolves the author for a given comment `revision`.
   """
   @spec comment_revision_author(CommentRevision.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t} | {:error, term}
+  def comment_revision_author(%CommentRevision{author: %User{} = author} = _revision, _args, _info), do: {:ok, author}
   def comment_revision_author(%CommentRevision{author_id: user_id} = _revision, _args, %Absinthe.Resolution{context: ctx} = _info) do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
