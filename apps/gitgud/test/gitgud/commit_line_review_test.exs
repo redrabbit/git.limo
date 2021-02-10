@@ -16,10 +16,10 @@ defmodule GitGud.CommitLineReviewTest do
     blob_oid = "4e55d5b11d5e24bf91babf58914159881c227233"
     hunk = 1
     line = 1
-    assert {:ok, comment} = CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, "This is a new commit line review.")
+    assert {:ok, comment, review} = CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, "This is a new commit line review.", with_review: true)
     assert comment.body == "This is a new commit line review."
     assert comment.thread_table == "commit_line_reviews_comments"
-    assert review = CommentQuery.thread(comment)
+    assert review.id == CommentQuery.thread(comment).id
     assert review.commit_oid == commit_oid
     assert review.blob_oid == blob_oid
     assert review.hunk == hunk
@@ -31,9 +31,12 @@ defmodule GitGud.CommitLineReviewTest do
     blob_oid = "4e55d5b11d5e24bf91babf58914159881c227233"
     hunk = 1
     line = 2
-    assert {:ok, comment1} = CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, "This is the first comment.")
-    assert {:ok, comment2} = CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, "This is the second comment.")
-    assert CommentQuery.thread(comment1) == CommentQuery.thread(comment2)
+    assert {:ok, comment1, review1} = CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, "This is the first comment.", with_review: true)
+    assert {:ok, comment2, review2} = CommitLineReview.add_comment(review1, user, "This is the second comment.", with_review: true)
+    assert comment2.body == "This is the second comment."
+    assert comment2.thread_table == "commit_line_reviews_comments"
+    assert review1 == review2
+    assert CommentQuery.thread(comment2) == CommentQuery.thread(comment1)
   end
 
   #

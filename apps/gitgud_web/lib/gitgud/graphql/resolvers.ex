@@ -819,7 +819,7 @@ defmodule GitGud.GraphQL.Resolvers do
       repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: user)
       old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: user)
       case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body, with_review: true) do
-        {:ok, line_review, comment} ->
+        {:ok, comment, line_review} ->
           unless old_line_review do
             publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
           end
