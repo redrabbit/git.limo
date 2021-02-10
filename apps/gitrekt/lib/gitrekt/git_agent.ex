@@ -39,11 +39,11 @@ defmodule GitRekt.GitAgent do
 
   This look very similar to the original example altought the API is slightly different.
 
-  You might have noticed that the first argument of each Git function is an agent. In our example the agent
-  is a PID referencing a dedicated process started with `start_link/1`.
+  You might have noticed that the first argument of each Git function is `agent`. In our example the agent is
+  a PID referencing a dedicated process started with `start_link/1`.
 
-  Note that in the above example, replacing `start_link/1` with `GitRekt.Git.repository_open/1` would return
-  the exact same output. This works because the given `t:agent/0` can either be a PID or a `t:GitRekt.Git.repo/0`.
+  Note that replacing `start_link/1` with `GitRekt.Git.repository_open/1` would print the exact same output.
+  This works because `t:agent/0` can be either a process id (PID) or a `t:GitRekt.Git.repo/0`.
 
   ## Cache
 
@@ -110,7 +110,7 @@ defmodule GitRekt.GitAgent do
   ```
 
   Transactions provide a simple entry point for implementing more complex commands. The function is
-  executed by the agent in a single pass; avoiding the costs of making six consecutive `GenServer.call/3`.
+  executed by the agent in a single request; avoiding the costs of making six consecutive `GenServer.call/3`.
 
   You can also use transactions to cache the result of a serie of commands. Let's wrap our previous example
   in a function and give the transaction an unique identifier.
@@ -140,17 +140,7 @@ defmodule GitRekt.GitAgent do
   We can observe that the first call executes the different commands one by one and cache the result while
   the second one fetches the result directly from the cache without having to actually run the transaction.
 
-  Note that `transaction/3` can be called recursively and still benefit from caching:
-
-  ```
-  def commit_list_info(agent, commit, limit \\ 5) do
-    # identifier: {:commit_info, oid, limit}
-    GitAgent.transaction(agent, {:commit_list_info, commit.oid, limit} fn agent ->
-      {:ok, history} = GitAgent.history(agent, commit)
-      {:ok, Enum.map(Enum.take(limit), &commit_info(agent, &1))}
-    end)
-  end
-  ```
+  Note that `transaction/3` can be called recursively and still benefit from caching.
   """
   use GenServer
 
@@ -178,9 +168,11 @@ defmodule GitRekt.GitAgent do
 
   @default_config %{
       stream_chunk_size: 1_000,
-      timeout: 60_000,
+      timeout: 5_000,
       idle_timeout: :infinity
   }
+
+  @exec_opts [:timeout]
 
   @doc """
   Starts a Git agent linked to the current process for the repository at the given `path`.
@@ -197,48 +189,50 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
   """
-  @spec empty?(agent) :: {:ok, boolean} | {:error, term}
-  def empty?(agent), do: exec(agent, :empty?)
+  @spec empty?(agent, keyword) :: {:ok, boolean} | {:error, term}
+  def empty?(agent, opts \\ []), do: exec(agent, :empty?, opts)
+
 
   @doc """
   Returns the ODB.
   """
-  @spec odb(agent) :: {:ok, GitOdb.t}
-  def odb(agent), do: exec(agent, :odb)
+  @spec odb(agent, keyword) :: {:ok, GitOdb.t}
+  def odb(agent, opts \\ []), do: exec(agent, :odb, opts)
 
   @doc """
   Return the raw data of the `odb` object with the given `oid`.
   """
-  @spec odb_read(agent, GitOdb.t, Git.oid) :: {:ok, {Git.obj_type, binary}} | {:error, term}
-  def odb_read(agent, odb, oid), do: exec(agent, {:odb_read, odb, oid})
+  @spec odb_read(agent, GitOdb.t, Git.oid, keyword) :: {:ok, {Git.obj_type, binary}} | {:error, term}
+  def odb_read(agent, odb, oid, opts \\ []), do: exec(agent, {:odb_read, odb, oid}, opts)
 
   @doc """
   Writes the given `data` into the `odb`.
   """
-  @spec odb_write(agent, GitOdb.t, binary, atom) :: {:ok, Git.oid} | {:error, term}
-  def odb_write(agent, odb, data, type), do: exec(agent, {:odb_write, odb, data, type})
+  @spec odb_write(agent, GitOdb.t, binary, atom, keyword) :: {:ok, Git.oid} | {:error, term}
+  def odb_write(agent, odb, data, type, opts \\ []), do: exec(agent, {:odb_write, odb, data, type}, opts)
 
   @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewise returns `false`.
   """
-  @spec odb_object_exists?(agent, GitOdb.t, Git.oid) :: {:ok, boolean} | {:error, term}
-  def odb_object_exists?(agent, odb, oid), do: exec(agent, {:odb_object_exists?, odb, oid})
+  @spec odb_object_exists?(agent, GitOdb.t, Git.oid, keyword) :: {:ok, boolean} | {:error, term}
+  def odb_object_exists?(agent, odb, oid, opts \\ []), do: exec(agent, {:odb_object_exists?, odb, oid}, opts)
 
   @doc """
   Returns the Git reference for `HEAD`.
   """
-  @spec head(agent) :: {:ok, GitRef.t} | {:error, term}
-  def head(agent), do: exec(agent, :head)
+  @spec head(agent, keyword) :: {:ok, GitRef.t} | {:error, term}
+  def head(agent, opts \\ []), do: exec(agent, :head, opts)
 
   @doc """
   Returns all Git branches.
   """
   @spec branches(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def branches(agent, opts \\ [])do
+    {exec_opts, opts} = exec_opts(opts)
     {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:references, "refs/heads/*", opts}),
-    else: exec(agent, {:references_with_commit, "refs/heads/*", opts})
+      do: exec(agent, {:references, "refs/heads/*", opts}, exec_opts),
+    else: exec(agent, {:references_with_commit, "refs/heads/*", opts}, exec_opts)
   end
 
   @doc """
@@ -246,10 +240,10 @@ defmodule GitRekt.GitAgent do
   """
   @spec branch(agent, binary, keyword) :: {:ok, GitRef.t | {GitRef.t, GitCommit.t}} | {:error, term}
   def branch(agent, name, opts \\ []) do
-    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:reference, "refs/heads/" <> name, :undefined}),
-    else: exec(agent, {:reference_with_commit, "refs/heads/" <> name})
+      do: exec(agent, {:reference, "refs/heads/" <> name, :undefined}, opts),
+    else: exec(agent, {:reference_with_commit, "refs/heads/" <> name}, opts)
   end
 
   @doc """
@@ -257,10 +251,11 @@ defmodule GitRekt.GitAgent do
   """
   @spec tags(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
   def tags(agent, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
     {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)}),
-    else: exec(agent, {:references_with_commit, "refs/tags/*", Keyword.put(opts, :target, :tag)})
+      do: exec(agent, {:references, "refs/tags/*", Keyword.put(opts, :target, :tag)}, exec_opts),
+    else: exec(agent, {:references_with_commit, "refs/tags/*", Keyword.put(opts, :target, :tag)}, exec_opts)
   end
 
   @doc """
@@ -268,33 +263,35 @@ defmodule GitRekt.GitAgent do
   """
   @spec tag(agent, binary, keyword) :: {:ok, GitRef.t | GitTag.t | {GitRef.t | GitTag.t, GitCommit.t}} | {:error, term}
   def tag(agent, name, opts \\ []) do
-    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:reference, "refs/tags/" <> name, :tag}),
-    else: exec(agent, {:reference_with_commit, "refs/tags/" <> name, :tag})
+      do: exec(agent, {:reference, "refs/tags/" <> name, :tag}, opts),
+    else: exec(agent, {:reference_with_commit, "refs/tags/" <> name, :tag}, opts)
   end
 
   @doc """
   Returns the Git tag author of the given `tag`.
   """
-  @spec tag_author(agent, GitTag.t) :: {:ok, map} | {:error, term}
-  def tag_author(agent, tag), do: exec(agent, {:author, tag})
+  @spec tag_author(agent, GitTag.t, keyword) :: {:ok, map} | {:error, term}
+  def tag_author(agent, tag, opts \\ []), do: exec(agent, {:author, tag}, opts)
 
   @doc """
   Returns the Git tag message of the given `tag`.
   """
-  @spec tag_message(agent, GitTag.t) :: {:ok, binary} | {:error, term}
-  def tag_message(agent, tag), do: exec(agent, {:message, tag})
+  @spec tag_message(agent, GitTag.t, keyword) :: {:ok, binary} | {:error, term}
+  def tag_message(agent, tag, opts \\ []), do: exec(agent, {:message, tag}, opts)
 
   @doc """
   Returns all Git references matching the given `glob`.
   """
-  @spec references(agent, binary | :undefined, keyword) :: {:ok, Enumerable.t} | {:error, term}
-  def references(agent, glob \\ :undefined, opts \\ []) do
+  @spec references(agent, keyword) :: {:ok, Enumerable.t} | {:error, term}
+  def references(agent, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
+    {glob, opts} = Keyword.pop(opts, :glob, :undefined)
     {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:references, glob, opts}),
-    else: exec(agent, {:references_with_commit, glob, opts})
+      do: exec(agent, {:references, glob, opts}, exec_opts),
+    else: exec(agent, {:references_with_commit, glob, opts}, exec_opts)
   end
 
   @doc """
@@ -302,237 +299,262 @@ defmodule GitRekt.GitAgent do
   """
   @spec reference(agent, binary, keyword) :: {:ok, GitRef.t | {GitRef.t, GitCommit.t}} | {:error, term}
   def reference(agent, name, opts \\ []) do
-    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:reference, name, :undefined}),
-    else: exec(agent, {:reference_with_commit, name, :undefined})
+      do: exec(agent, {:reference, name, :undefined}, opts),
+    else: exec(agent, {:reference_with_commit, name, :undefined}, opts)
   end
 
   @doc """
   Creates a reference with the given `name` and `target`.
   """
-  @spec reference_create(agent, binary, atom, Git.oid | binary, boolean) :: :ok | {:error, term}
-  def reference_create(agent, name, type, target, force \\ false), do: exec(agent, {:reference_create, name, type, target, force})
+  @spec reference_create(agent, binary, atom, Git.oid | binary, keyword) :: :ok | {:error, term}
+  def reference_create(agent, name, type, target, opts \\ []) do
+    {force, opts} = Keyword.pop(opts, :force, false)
+    exec(agent, {:reference_create, name, type, target, force}, opts)
+  end
 
   @doc """
   Deletes a reference with the given `name`.
   """
-  @spec reference_delete(agent, binary) :: :ok | {:error, term}
-  def reference_delete(agent, name), do: exec(agent, {:reference_delete, name})
+  @spec reference_delete(agent, binary, keyword) :: :ok | {:error, term}
+  def reference_delete(agent, name, opts \\ []), do: exec(agent, {:reference_delete, name}, opts)
 
   @doc """
   Returns the number of unique commits between two commit objects.
   """
-  @spec graph_ahead_behind(agent, Git.oid, Git.oid) :: {:ok, {non_neg_integer, non_neg_integer}} | {:error, term}
-  def graph_ahead_behind(agent, local, upstream), do: exec(agent, {:graph_ahead_behind, local, upstream})
+  @spec graph_ahead_behind(agent, Git.oid, Git.oid, keyword) :: {:ok, {non_neg_integer, non_neg_integer}} | {:error, term}
+  def graph_ahead_behind(agent, local, upstream, opts \\ []), do: exec(agent, {:graph_ahead_behind, local, upstream}, opts)
 
   @doc """
   Returns the Git object with the given `oid`.
   """
-  @spec object(agent, Git.oid) :: {:ok, git_object} | {:error, term}
-  def object(agent, oid), do: exec(agent, {:object, oid})
+  @spec object(agent, Git.oid, keyword) :: {:ok, git_object} | {:error, term}
+  def object(agent, oid, opts \\ []), do: exec(agent, {:object, oid}, opts)
 
   @doc """
   Returns the Git object matching the given `spec`.
   """
-  @spec revision(agent, binary) :: {:ok, {GitRef.t | GitTag.t, GitCommit.t | nil}} | {:error, term}
-  def revision(agent, spec), do: exec(agent, {:revision, spec})
+  @spec revision(agent, binary, keyword) :: {:ok, {GitRef.t | GitTag.t, GitCommit.t | nil}} | {:error, term}
+  def revision(agent, spec, opts \\ []), do: exec(agent, {:revision, spec}, opts)
 
   @doc """
   Returns the parent of the given `commit`.
   """
-  @spec commit_parents(agent, GitCommit.t) :: {:ok, Enumerable.t} | {:error, term}
-  def commit_parents(agent, commit), do: exec(agent, {:commit_parents, commit})
+  @spec commit_parents(agent, GitCommit.t, keyword) :: {:ok, Enumerable.t} | {:error, term}
+  def commit_parents(agent, commit, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
+    exec(agent, {:commit_parents, commit, opts}, exec_opts)
+  end
 
   @doc """
   Returns the author of the given `commit`.
   """
-  @spec commit_author(agent, GitCommit.t) :: {:ok, map} | {:error, term}
-  def commit_author(agent, commit), do: exec(agent, {:author, commit})
+  @spec commit_author(agent, GitCommit.t, keyword) :: {:ok, map} | {:error, term}
+  def commit_author(agent, commit, opts \\ []), do: exec(agent, {:author, commit}, opts)
 
   @doc """
   Returns the committer of the given `commit`.
   """
-  @spec commit_committer(agent, GitCommit.t) :: {:ok, map} | {:error, term}
-  def commit_committer(agent, commit), do: exec(agent, {:committer, commit})
+  @spec commit_committer(agent, GitCommit.t, keyword) :: {:ok, map} | {:error, term}
+  def commit_committer(agent, commit, opts \\ []), do: exec(agent, {:committer, commit}, opts)
 
   @doc """
   Returns the message of the given `commit`.
   """
-  @spec commit_message(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
-  def commit_message(agent, commit), do: exec(agent, {:message, commit})
+  @spec commit_message(agent, GitCommit.t, keyword) :: {:ok, binary} | {:error, term}
+  def commit_message(agent, commit, opts \\ []), do: exec(agent, {:message, commit}, opts)
 
   @doc """
   Returns the timestamp of the given `commit`.
   """
-  @spec commit_timestamp(agent, GitCommit.t) :: {:ok, DateTime.t} | {:error, term}
-  def commit_timestamp(agent, commit), do: exec(agent, {:commit_timestamp, commit})
+  @spec commit_timestamp(agent, GitCommit.t, keyword) :: {:ok, DateTime.t} | {:error, term}
+  def commit_timestamp(agent, commit, opts \\ []), do: exec(agent, {:commit_timestamp, commit}, opts)
 
   @doc """
   Returns the GPG signature of the given `commit`.
   """
-  @spec commit_gpg_signature(agent, GitCommit.t) :: {:ok, binary} | {:error, term}
-  def commit_gpg_signature(agent, commit), do: exec(agent, {:commit_gpg_signature, commit})
+  @spec commit_gpg_signature(agent, GitCommit.t, keyword) :: {:ok, binary} | {:error, term}
+  def commit_gpg_signature(agent, commit, opts \\ []), do: exec(agent, {:commit_gpg_signature, commit}, opts)
 
   @doc """
   Creates a commit with the given `tree_oid` and `parents_oid`.
   """
-  @spec commit_create(agent, binary, map, map, binary, Git.oid, [Git.oid]) :: {:ok, Git.oid} | {:error, term}
-  def commit_create(agent, update_ref \\ :undefined, author, committer, message, tree_oid, parents_oids), do: exec(agent, {:commit_create, update_ref, author, committer, message, tree_oid, parents_oids})
+  @spec commit_create(agent, map, map, binary, Git.oid, [Git.oid], keyword) :: {:ok, Git.oid} | {:error, term}
+  def commit_create(agent, author, committer, message, tree_oid, parents_oids, opts \\ []) do
+    {update_ref, opts} = Keyword.pop(opts, :update_ref, :undefined)
+    exec(agent, {:commit_create, update_ref, author, committer, message, tree_oid, parents_oids}, opts)
+  end
 
   @doc """
   Returns the content of the given `blob`.
   """
-  @spec blob_content(agent, GitBlob.t) :: {:ok, binary} | {:error, term}
-  def blob_content(agent, blob), do: exec(agent, {:blob_content, blob})
+  @spec blob_content(agent, GitBlob.t, keyword) :: {:ok, binary} | {:error, term}
+  def blob_content(agent, blob, opts \\ []), do: exec(agent, {:blob_content, blob}, opts)
 
   @doc """
   Returns the size in byte of the given `blob`.
   """
-  @spec blob_size(agent, GitBlob.t) :: {:ok, non_neg_integer} | {:error, term}
-  def blob_size(agent, blob), do: exec(agent, {:blob_size, blob})
+  @spec blob_size(agent, GitBlob.t, keyword) :: {:ok, non_neg_integer} | {:error, term}
+  def blob_size(agent, blob, opts \\ []), do: exec(agent, {:blob_size, blob}, opts)
 
   @doc """
   Returns the Git tree of the given `revision`.
   """
-  @spec tree(agent, git_revision) :: {:ok, GitTree.t} | {:error, term}
-  def tree(agent, revision), do: exec(agent, {:tree, revision})
-
-  @doc """
-  Returns the Git tree entries of the given `tree`.
-  """
-  @spec tree_entries(agent, GitTree.t) :: {:ok, Enumerable.t} | {:error, term}
-  def tree_entries(agent, tree), do: exec(agent, {:tree_entries, tree})
+  @spec tree(agent, git_revision, keyword) :: {:ok, GitTree.t} | {:error, term}
+  def tree(agent, revision, opts \\ []), do: exec(agent, {:tree, revision}, opts)
 
   @doc """
   Returns the Git tree entry for the given `revision` and `oid`.
   """
-  @spec tree_entry_by_id(agent, git_revision | GitTree.t, Git.oid) :: {:ok, GitTreeEntry.t} | {:error, term}
-  def tree_entry_by_id(agent, revision, oid), do: exec(agent, {:tree_entry, revision, {:oid, oid}})
+  @spec tree_entry_by_id(agent, git_revision | GitTree.t, Git.oid, keyword) :: {:ok, GitTreeEntry.t} | {:error, term}
+  def tree_entry_by_id(agent, revision, oid, opts \\ []), do: exec(agent, {:tree_entry, revision, {:oid, oid}}, opts)
 
   @doc """
   Returns the Git tree entry for the given `revision` and `path`.
   """
   @spec tree_entry_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}} | {:error, term}
   def tree_entry_by_path(agent, revision, path, opts \\ []) do
-    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
     unless include_commit?,
-      do: exec(agent, {:tree_entry, revision, {:path, path}}),
-    else: exec(agent, {:tree_entry_with_commit, revision, {:path, path}})
-  end
-
-  @doc """
-  Returns the Git tree entries for the given `revision` and `path`.
-  """
-  @spec tree_entries_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, [GitTreeEntry.t | {GitTreeEntry.t, GitCommit.t}]} | {:error, term}
-  def tree_entries_by_path(agent, revision, path \\ :root, opts \\ []) do
-    {include_commit?, _opts} = Keyword.pop(opts, :with_commit)
-    unless include_commit?,
-      do: exec(agent, {:tree_entries, revision, path}),
-    else: exec(agent, {:tree_entries_with_commit, revision, path})
+      do: exec(agent, {:tree_entry, revision, {:path, path}}, opts),
+    else: exec(agent, {:tree_entry_with_commit, revision, {:path, path}}, opts)
   end
 
   @doc """
   Returns the Git tree target of the given `tree_entry`.
   """
-  @spec tree_entry_target(agent, GitTreeEntry.t) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
-  def tree_entry_target(agent, tree_entry), do: exec(agent, {:tree_entry_target, tree_entry})
+  @spec tree_entry_target(agent, GitTreeEntry.t, keyword) :: {:ok, GitBlob.t | GitTree.t} | {:error, term}
+  def tree_entry_target(agent, tree_entry, opts \\ []), do: exec(agent, {:tree_entry_target, tree_entry}, opts)
+
+  @doc """
+  Returns the Git tree entries of the given `tree`.
+  """
+  @spec tree_entries(agent, GitTree.t, keyword) :: {:ok, Enumerable.t} | {:error, term}
+  def tree_entries(agent, tree, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
+    exec(agent, {:tree_entries, tree, opts}, exec_opts)
+  end
+
+  @doc """
+  Returns the Git tree entries for the given `revision` and `path`.
+  """
+  @spec tree_entries_by_path(agent, git_revision | GitTree.t, Path.t, keyword) :: {:ok, Enumerable.t} | {:error, term}
+  def tree_entries_by_path(agent, revision, path \\ :root, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
+    {include_commit?, opts} = Keyword.pop(opts, :with_commit)
+    unless include_commit?,
+      do: exec(agent, {:tree_entries, revision, path, opts}, exec_opts),
+    else: exec(agent, {:tree_entries_with_commit, revision, path, opts}, exec_opts)
+  end
 
   @doc """
   Returns the Git index of the repository.
   """
-  @spec index(agent) :: {:ok, GitIndex.t} | {:error, term}
-  def index(agent), do: exec(agent, :index)
+  @spec index(agent, keyword) :: {:ok, GitIndex.t} | {:error, term}
+  def index(agent, opts \\ []), do: exec(agent, :index, opts)
 
   @doc """
   Adds `index_entry` to the gieven `index`.
   """
-  @spec index_add(agent, GitIndex.t, GitIndexEntry.t) :: :ok | {:error, term}
-  def index_add(agent, index, index_entry), do: exec(agent, {:index_add, index, index_entry})
+  @spec index_add(agent, GitIndex.t, GitIndexEntry.t, keyword) :: :ok | {:error, term}
+  def index_add(agent, index, index_entry, opts \\ []), do: exec(agent, {:index_add, index, index_entry}, opts)
 
   @doc """
   Adds an index entry to the given `index`.
   """
   @spec index_add(agent, GitIndex.t, Git.oid, Path.t, non_neg_integer, pos_integer, keyword) :: :ok | {:error, term}
-  def index_add(agent, index, oid, path, file_size, mode, opts \\ []), do: exec(agent, {:index_add, index, oid, path, file_size, mode, opts})
+  def index_add(agent, index, oid, path, file_size, mode, opts \\ []), do: exec(agent, {:index_add, index, oid, path, file_size, mode, opts}, opts)
 
   @doc """
   Removes an index entry from the given `index`.
   """
-  @spec index_remove(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
-  def index_remove(agent, index, path), do: exec(agent, {:index_remove, index, path})
+  @spec index_remove(agent, GitIndex.t, Path.t, keyword) :: :ok | {:error, term}
+  def index_remove(agent, index, path, opts \\ []), do: exec(agent, {:index_remove, index, path}, opts)
 
   @doc """
   Remove all entries from the given `index` under a given directory `path`.
   """
-  @spec index_remove_dir(agent, GitIndex.t, Path.t) :: :ok | {:error, term}
-  def index_remove_dir(agent, index, path), do: exec(agent, {:index_remove_dir, index, path})
+  @spec index_remove_dir(agent, GitIndex.t, Path.t, keyword) :: :ok | {:error, term}
+  def index_remove_dir(agent, index, path, opts \\ []), do: exec(agent, {:index_remove_dir, index, path}, opts)
 
   @doc """
   Reads the given `tree` into the given `index`.
   """
-  @spec index_read_tree(agent, GitIndex.t, GitTree.t) :: :ok | {:error, term}
-  def index_read_tree(agent, index, tree), do: exec(agent, {:index_read_tree, index, tree})
+  @spec index_read_tree(agent, GitIndex.t, GitTree.t, keyword) :: :ok | {:error, term}
+  def index_read_tree(agent, index, tree, opts \\ []), do: exec(agent, {:index_read_tree, index, tree}, opts)
 
   @doc """
   Writes the given `index` as a tree.
   """
-  @spec index_write_tree(agent, GitIndex.t) :: {:ok, Git.oid} | {:error, term}
-  def index_write_tree(agent, index), do: exec(agent, {:index_write_tree, index})
+  @spec index_write_tree(agent, GitIndex.t, keyword) :: {:ok, Git.oid} | {:error, term}
+  def index_write_tree(agent, index, opts \\ []), do: exec(agent, {:index_write_tree, index}, opts)
 
   @doc """
   Returns the Git diff of `obj1` and `obj2`.
   """
   @spec diff(agent, GitTree.t | git_revision, GitTree.t | git_revision, keyword) :: {:ok, GitDiff.t} | {:error, term}
-  def diff(agent, obj1, obj2, opts \\ []), do: exec(agent, {:diff, obj1, obj2, opts})
+  def diff(agent, obj1, obj2, opts \\ []), do: exec(agent, {:diff, obj1, obj2, opts}, opts)
 
   @doc """
   Returns the deltas of the given `diff`.
   """
-  @spec diff_deltas(agent, GitDiff.t) :: {:ok, map} | {:error, term}
-  def diff_deltas(agent, diff), do: exec(agent, {:diff_deltas, diff})
+  @spec diff_deltas(agent, GitDiff.t, keyword) :: {:ok, map} | {:error, term}
+  def diff_deltas(agent, diff, opts \\ []), do: exec(agent, {:diff_deltas, diff}, opts)
 
   @doc """
   Returns a binary formated representation of the given `diff`.
   """
-  @spec diff_format(agent, GitDiff.t, Git.diff_format) :: {:ok, binary} | {:error, term}
-  def diff_format(agent, diff, format \\ :patch), do: exec(agent, {:diff_format, diff, format})
+  @spec diff_format(agent, GitDiff.t, keyword) :: {:ok, binary} | {:error, term}
+  def diff_format(agent, diff, opts \\ []) do
+    {format, opts} = Keyword.pop(opts, :patch)
+    exec(agent, {:diff_format, diff, format}, opts)
+  end
 
   @doc """
   Returns the stats of the given `diff`.
   """
-  @spec diff_stats(agent, GitDiff.t) :: {:ok, map} | {:error, term}
-  def diff_stats(agent, diff), do: exec(agent, {:diff_stats, diff})
+  @spec diff_stats(agent, GitDiff.t, keyword) :: {:ok, map} | {:error, term}
+  def diff_stats(agent, diff, opts \\ []), do: exec(agent, {:diff_stats, diff}, opts)
 
   @doc """
   Returns the Git commit history of the given `revision`.
   """
   @spec history(agent, git_revision, keyword) :: {:ok, Enumerable.t} | {:error, term}
-  def history(agent, revision, opts \\ []), do: exec(agent, {:history, revision, opts})
+  def history(agent, revision, opts \\ []) do
+    {exec_opts, opts} = exec_opts(opts)
+    exec(agent, {:history, revision, opts}, exec_opts)
+  end
 
   @doc """
   Returns the number of commit ancestors for the given `revision`.
   """
-  @spec history_count(agent, git_revision) :: {:ok, non_neg_integer} | {:error, term}
-  def history_count(agent, revision), do: exec(agent, {:history_count, revision})
+  @spec history_count(agent, git_revision, keyword) :: {:ok, non_neg_integer} | {:error, term}
+  def history_count(agent, revision, opts \\ []), do: exec(agent, {:history_count, revision}, opts)
 
   @doc """
   Peels the given `obj` until a Git object of the specified type is met.
   """
-  @spec peel(agent, GitRef.t | git_object, Git.obj_type | :undefined) :: {:ok, git_object} | {:error, term}
-  def peel(agent, obj, target \\ :undefined), do: exec(agent, {:peel, obj, target})
+  @spec peel(agent, GitRef.t | git_object, keyword) :: {:ok, git_object} | {:error, term}
+  def peel(agent, obj, opts \\ []) do
+    {target, opts} = Keyword.pop(opts, :target, :undefined)
+    exec(agent, {:peel, obj, target}, opts)
+  end
 
   @doc """
   Returns a Git PACK representation of the given `oids`.
   """
-  @spec pack_create(agent, [Git.oid]) :: {:ok, binary} | {:error, term}
-  def pack_create(agent, oids), do: exec(agent, {:pack, oids})
+  @spec pack_create(agent, [Git.oid], keyword) :: {:ok, binary} | {:error, term}
+  def pack_create(agent, oids, opts \\ []), do: exec(agent, {:pack, oids}, opts)
 
   @doc """
   Executes the given `cb` inside a transaction.
   """
-  @spec transaction(agent, term, (Git.repo -> {:ok, term} | {:error, term})) :: {:ok, term} | {:error, term}
-  def transaction(agent, name \\ nil, cb), do: exec(agent, {:transaction, name, cb})
+  @spec transaction(agent, term, (Git.repo -> {:ok, term} | {:error, term}), keyword) :: {:ok, term} | {:error, term}
+  def transaction(agent, name \\ nil, cb, opts \\ []) do
+
+    exec(agent, {:transaction, name, cb}, opts)
+  end
 
   #
   # Callbacks
@@ -580,6 +602,21 @@ defmodule GitRekt.GitAgent do
     {:reply, call_stream(handle, {:history, obj, opts}, chunk_size), state, config.idle_timeout}
   end
 
+  def handle_call({:tree_entries, tree, opts}, _from, {handle, config} = state) do
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
+    {:reply, call_stream(handle, {:tree_entries, tree, opts}, chunk_size), state, config.idle_timeout}
+  end
+
+  def handle_call({:tree_entries, tree, path, opts}, _from, {handle, config} = state) do
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
+    {:reply, call_stream(handle, {:tree_entries, tree, path, opts}, chunk_size), state, config.idle_timeout}
+  end
+
+  def handle_call({:commit_parents, commit, opts}, _from, {handle, config} = state) do
+    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
+    {:reply, call_stream(handle, {:commit_parents, commit, opts}, chunk_size), state, config.idle_timeout}
+  end
+
   def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config} = state) do
     chunk_stream = struct(stream, enum: Enum.take(stream.enum, chunk_size))
     slice_stream = struct(stream, enum: Enum.drop(stream.enum, chunk_size))
@@ -610,9 +647,11 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op) when is_pid(agent), do: GenServer.call(agent, op, @default_config.timeout)
-  defp exec(agent, op) when is_reference(agent), do: call(agent, op)
-  defp exec({agent, cache}, op) when is_reference(agent), do: call_cache(agent, op, cache)
+  defp exec(agent, op, opts) when is_pid(agent), do: GenServer.call(agent, op, Keyword.get(opts, :timeout, @default_config.timeout))
+  defp exec(agent, op, _opts) when is_reference(agent), do: call(agent, op)
+  defp exec({agent, cache}, op, _opts) when is_reference(agent), do: call_cache(agent, op, cache)
+
+  defp exec_opts(opts), do: Enum.split_with(opts, fn {k, _v} -> k in @exec_opts end)
 
   defp call(handle, :empty?) do
     {:ok, Git.repository_empty?(handle)}
@@ -741,19 +780,19 @@ defmodule GitRekt.GitAgent do
       {:ok, {tree_entry, commit}}
   end
 
-  defp call(handle, {:tree_entries, tree}), do: fetch_tree_entries(tree, handle)
-  defp call(handle, {:tree_entries, rev, :root}), do: fetch_tree_entries(rev, handle)
-  defp call(handle, {:tree_entries, rev, path}), do: fetch_tree_entries(rev, path, handle)
-  defp call(handle, {:tree_entries_with_commit, rev, :root}) do
+  defp call(handle, {:tree_entries, tree, _opts}), do: fetch_tree_entries(tree, handle)
+  defp call(handle, {:tree_entries, rev, :root, _opts}), do: fetch_tree_entries(rev, handle)
+  defp call(handle, {:tree_entries, rev, path, _opts}), do: fetch_tree_entries(rev, path, handle)
+  defp call(handle, {:tree_entries_with_commit, rev, :root, _opts}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, handle),
+         {:ok, commits} <- walk_history(rev, handle),
          {:ok, _root_commit, tree_entries_with_commit} <- zip_tree_entries_commits(tree_entries, commits, "", handle), do:
       {:ok, tree_entries_with_commit}
   end
 
-  defp call(handle, {:tree_entries_with_commit, rev, path}) do
+  defp call(handle, {:tree_entries_with_commit, rev, path, _opts}) do
     with {:ok, tree_entries} <- fetch_tree_entries(rev, path, handle),
-         {:ok, commits} <- fetch_tree_entries_commits(rev, path, handle),
+         {:ok, commits} <- walk_history(rev, handle, pathspec: path),
          {:ok, root_tree_entry} <- fetch_tree_entry(rev, {:path, path}, handle),
          {:ok, root_commit, tree_entries_with_commit} <- zip_tree_entries_commits(tree_entries, commits, path, handle), do:
       {:ok, [{root_tree_entry, root_commit}|tree_entries_with_commit]}
@@ -831,7 +870,7 @@ defmodule GitRekt.GitAgent do
   defp call(_handle, {:author, obj}), do: fetch_author(obj)
   defp call(_handle, {:committer, obj}), do: fetch_committer(obj)
   defp call(_handle, {:message, obj}), do: fetch_message(obj)
-  defp call(_handle, {:commit_parents, %GitCommit{__ref__: commit}}) do
+  defp call(_handle, {:commit_parents, %GitCommit{__ref__: commit}, _opts}) do
     case Git.commit_parents(commit) do
       {:ok, stream} ->
         {:ok, Stream.map(stream, &resolve_commit_parent/1)}
@@ -1123,9 +1162,6 @@ defmodule GitRekt.GitAgent do
         {:error, reason}
     end
   end
-
-  defp fetch_tree_entries_commits(rev, handle), do: walk_history(rev, handle)
-  defp fetch_tree_entries_commits(rev, path, handle), do: walk_history(rev, handle, pathspec: path)
 
   defp fetch_diff(%GitTree{__ref__: tree1}, %GitTree{__ref__: tree2}, handle, opts) do
     case Git.diff_tree(handle, tree1, tree2, opts) do

@@ -37,7 +37,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, false} <- GitAgent.empty?(agent),
            {:ok, head} <- GitAgent.head(agent),
-           {:ok, commit} <- GitAgent.peel(agent, head, :commit),
+           {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
            {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, commit),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
@@ -125,7 +125,7 @@ defmodule GitGud.Web.CodebaseController do
       if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-             {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+             {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
              {:ok, tree} <- GitAgent.tree(agent, commit) do
           breadcrumb = %{action: :tree, cwd?: true, tree?: true}
           changeset = blob_commit_changeset(%{}, commit_params)
@@ -152,7 +152,7 @@ defmodule GitGud.Web.CodebaseController do
                       :ok <- GitAgent.index_add(agent, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
                      {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
-                     {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                     {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
                       :ok <- RepoStorage.push_meta(repo, user, agent, [{:update, old_ref.oid, commit.oid, commit_update_ref}], [{commit_oid, commit}]) do
                   conn
@@ -212,7 +212,7 @@ defmodule GitGud.Web.CodebaseController do
       if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-             {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+             {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
              {:ok, tree} <- GitAgent.tree(agent, commit),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
              {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
@@ -234,7 +234,7 @@ defmodule GitGud.Web.CodebaseController do
                       :ok <- GitAgent.index_add(agent, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
                      {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
-                     {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                     {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
                      {:ok, commit} <- GitAgent.object(agent, commit_oid),
                       :ok <- RepoStorage.push_meta(repo, user, agent, [{:update, old_ref.oid, commit.oid, commit_update_ref}], [{commit_oid, commit}]) do
                   conn
@@ -299,7 +299,7 @@ defmodule GitGud.Web.CodebaseController do
       if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-             {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+             {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
              {:ok, tree} <- GitAgent.tree(agent, commit),
              {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)) do
           breadcrumb = %{action: :tree, cwd?: true, tree?: false}
@@ -315,7 +315,7 @@ defmodule GitGud.Web.CodebaseController do
                   :ok <- GitAgent.index_remove(agent, index, Path.join(blob_path)),
                  {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
                  {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
-                 {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid]),
+                 {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
                  {:ok, commit} <- GitAgent.object(agent, commit_oid),
                   :ok <- RepoStorage.push_meta(repo, user, agent, [{:update, old_ref.oid, commit_oid, commit_update_ref}], [{commit_oid, commit}]) do
               conn
@@ -370,7 +370,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :stats) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
            {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, object),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
@@ -394,7 +394,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
            {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(agent, tree_entry),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
@@ -425,7 +425,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, :commit),
+           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
            {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
            {:ok, blob_content} <- GitAgent.blob_content(agent, blob),
@@ -687,7 +687,7 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp resolve_revision_author(agent, %GitRef{} = rev, {:ok, acc}) do
-    with {:ok, commit} <- GitAgent.peel(agent, rev, :commit),
+    with {:ok, commit} <- GitAgent.peel(agent, rev, target: :commit),
          {:ok, author} <- GitAgent.commit_author(agent, commit) do
       {:cont, {:ok, [{rev, author, author.timestamp}|acc]}}
     else

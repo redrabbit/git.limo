@@ -306,7 +306,7 @@ defmodule GitGud.GraphQL.Resolvers do
   def repo_revision(%Repo{} = _repo, %{spec: spec} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     case GitAgent.revision(ctx.repo_agent, spec) do
      {:ok, {object, _reference}} ->
-       GitAgent.peel(ctx.repo_agent, object, :commit)
+       GitAgent.peel(ctx.repo_agent, object, target: :commit)
      {:error, reason} ->
        {:error, reason}
     end

@@ -618,7 +618,7 @@ defmodule GitRekt.Git do
   @doc """
   Returns parent commits of the given `commit`.
   """
-  @spec commit_parents(commit) :: {:ok, [{oid, commit}]} | {:error, term}
+  @spec commit_parents(commit) :: {:ok, Enumerable.t} | {:error, term}
   def commit_parents(commit) do
     case commit_parent_count(commit) do
       {:ok, count} ->

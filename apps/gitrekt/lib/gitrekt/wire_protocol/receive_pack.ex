@@ -58,16 +58,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   def apply_cmds(%__MODULE__{agent: agent, cmds: cmds} = _receive_pack) do
     Enum.each(cmds, fn
       {:create, new_oid, name} ->
-        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, false)
+        :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
       {:update, _old_oid, new_oid, name} ->
-        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, true)
+        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, force: true)
       {:delete, _old_oid, name} ->
         :ok = GitAgent.reference_delete(agent, name)
     end)
 
     case GitAgent.empty?(agent) do
       {:ok, true} ->
-        GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", true)
+        GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", force: true)
       {:ok, false} ->
         :ok
       {:error, reason} ->

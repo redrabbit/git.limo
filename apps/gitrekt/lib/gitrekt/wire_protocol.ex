@@ -103,7 +103,7 @@ defmodule GitRekt.WireProtocol do
   """
   @spec reference_discovery(GitAgent.agent, binary) :: iolist
   def reference_discovery(agent, service) do
-    {:ok, refs} = GitAgent.references(agent, :undefined, target: :commit)
+    {:ok, refs} = GitAgent.references(agent, target: :commit)
     [reference_head(agent)|Enum.to_list(refs)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
