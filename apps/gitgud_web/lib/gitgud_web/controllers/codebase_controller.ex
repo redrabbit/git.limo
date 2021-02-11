@@ -352,7 +352,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
         render(conn, "commit.html",
           repo: repo,
-          comment_count: ReviewQuery.count_comments(repo, commit),
+          comment_count: ReviewQuery.count_comments_by_blob(repo, commit),
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info),
           diff_stats: diff_stats,

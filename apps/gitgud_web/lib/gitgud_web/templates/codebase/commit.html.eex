@@ -50,19 +50,10 @@
 </div>
 
 <div id="commit-stats" class="columns commit-stats" data-repo-id=<%= to_relay_id(@repo) %> data-commit-oid="<%= oid_fmt(@commit.oid) %>">
-  <div class="column is-three-quarters">
+  <div class="column is-full">
     <p class="button is-white">
       <span>Showing <strong class="has-text-dark is-family-monospace"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success is-family-monospace"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger is-family-monospace"><%= @diff_stats.deletions %> deletions</strong>.</span>
     </p>
-
-  </div>
-  <div class="column is-one-quarter has-text-right">
-    <%= if @comment_count > 0 do %>
-      <a href="#review" class="button is-small is-white">
-        <span class="icon"><i class="fa fa-comment-alt"></i></span>
-        <span><%= @comment_count %></span>
-      </a>
-    <% end %>
   </div>
 </div>
 
@@ -70,10 +61,21 @@
   <tbody>
     <%= for delta <- @diff_deltas do %>
       <tr>
-        <td>
-
-          <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
-        </td>
+        <%= if diff_comment_count = @comment_count[delta.new_file.oid] do %>
+          <td>
+            <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
+          </td>
+          <td class="has-text-right">
+            <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>" class="button is-small is-white">
+              <span class="icon"><i class="fa fa-comment-alt"></i></span>
+              <span><%= diff_comment_count %></span>
+            </a>
+          </td>
+        <% else %>
+          <td colspan="2">
+            <a href="#diff-<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
+          </td>
+        <% end %>
       </tr>
     <% end %>
   </tbody>

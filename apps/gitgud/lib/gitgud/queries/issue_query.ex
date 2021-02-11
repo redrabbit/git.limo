@@ -86,6 +86,9 @@ defmodule GitGud.IssueQuery do
     DB.one(query(:count_repo_issues_query, [repo_id, status, labels]))
   end
 
+  @doc """
+  Returns the number of issues grouped by status for the given `repo`.
+  """
   @spec count_repo_issues_by_status(Repo.t | pos_integer, keyword) :: %{atom => non_neg_integer}
   def count_repo_issues_by_status(repo, opts \\ [])
   def count_repo_issues_by_status(%Repo{id: repo_id}, opts), do: count_repo_issues_by_status(repo_id, opts)

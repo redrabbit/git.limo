@@ -55,16 +55,28 @@ defmodule GitGud.ReviewQuery do
   def count_comments(repo_id, commits) when is_list(commits) do
     cond do
       Enum.all?(commits, &is_struct(&1, GitCommit)) ->
-        DB.all(DBQueryable.query({__MODULE__, :count_commit_line_review_comments_query}, [repo_id, Enum.map(commits, &(&1.oid))]))
+        DB.all(query(:count_commit_line_review_comments_query, [repo_id, Enum.map(commits, &(&1.oid))]))
       Enum.all?(commits, &is_binary/1) ->
-        DB.all(DBQueryable.query({__MODULE__, :count_commit_line_review_comments_query}, [repo_id, commits]))
+        DB.all(query(:count_commit_line_review_comments_query, [repo_id, commits]))
     end
   end
 
   def count_comments(%Repo{id: repo_id} = _repo, commit_oid), do: count_comments(repo_id, commit_oid)
   def count_comments(repo_id, %GitCommit{oid: commit_oid}), do: count_comments(repo_id, commit_oid)
   def count_comments(repo_id, commit_oid) do
-    DB.one(DBQueryable.query({__MODULE__, :count_commit_line_review_comments_query}, [repo_id, commit_oid]))
+    DB.one(query(:count_commit_line_review_comments_query, [repo_id, commit_oid]))
+  end
+
+  @doc """
+  Returns the number of of comments grouped by blob oid for the given `repo` and `commit`.
+  """
+  @spec count_comments_by_blob(Repo.t | pos_integer, GitCommit.t | Git.oid) :: %{binary => pos_integer}
+  def count_comments_by_blob(%Repo{id: repo_id} = _repo, commit_oid), do: count_comments_by_blob(repo_id, commit_oid)
+  def count_comments_by_blob(repo_id, %GitCommit{oid: commit_oid}), do: count_comments_by_blob(repo_id, commit_oid)
+  def count_comments_by_blob(repo_id, commit_oid) do
+    query(:count_commit_line_review_comments_by_blob_query, [repo_id, commit_oid])
+    |> DB.all()
+    |> Map.new()
   end
 
   #
@@ -94,6 +106,10 @@ defmodule GitGud.ReviewQuery do
 
   def query(:count_commit_line_review_comments_query, [repo_id, commit_oid]) when is_integer(repo_id) do
     from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: count(c.id)
+  end
+
+  def query(:count_commit_line_review_comments_by_blob_query, [repo_id, commit_oid]) when is_integer(repo_id) do
+    from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), group_by: r.blob_oid, select: {r.blob_oid, count(c.id)}
   end
 
   def query(:comments_query, [%{id: review_id, __struct__: struct} = _review]), do: query(:comments_query, [{struct, review_id}])
