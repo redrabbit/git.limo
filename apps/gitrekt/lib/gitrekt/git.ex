@@ -38,6 +38,41 @@ defmodule GitRekt.Git do
   functionalities. There are other related functions such as `revparse_single/2` and `revparse_ext/2` which
   provide support for parsing [revspecs](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection).
 
+  ## Walk commit history
+
+  In order to walk the commit ancestry chain, we have a few functions at our disposal: `revwalk_new/1`,
+  `revwalk_push/2`, `revwalk_next/1`, `revwalk_reset/1`, etc.
+
+  ```
+  # create revision walk iterator
+  {:ok, revwalk} = Git.revwalk_new(repo)
+
+  # set root commit for traversal
+   :ok = Git.revwalk_push(walk, commit_oid)
+
+  # create (lazy) stream of ancestors from iterator
+  {:ok, stream} = Git.revwalk_stream(walk)
+
+  for ancestor_oid <- stream do
+    # fetch commit object
+    {:ok, :commit, commit} = Git.object_lookup(ancestor_oid)
+
+    # fetch commit message
+    {:ok, message} = Git.commit_message(commit)
+
+    IO.puts "#{Git.oid_fmt_short(ancestor_oid)} - #{message}"
+  end
+  ```
+
+  In this example `revwalk_new/1` returns a `t:revwalk/0`, a mutable *C-like* iteratable object. This means
+  that `revwalk_push/2` mutates the *revwalk* object instead of returning a new object.
+
+  The `revwalk_stream/1` function converts the *revwalk* iterator to a `t:Enumerable.t/0` we can then use to walk
+  the commit ancestry chain.
+
+  When iterating through a commit's history, `revwalk_sorting/2` and `revwalk_simplify_first_parent/1` provide
+  conveniences for sorting and filtering while `revwalk_push/3` can be used to hide specific commits.
+
   ## Retrieve blobs & trees
 
   In order to access the actual files and directories of a repository, we have to retrieve the Git blob and tree
@@ -123,41 +158,6 @@ defmodule GitRekt.Git do
 
   IO.puts patch
   ```
-
-  ## Walk commit history
-
-  In order to walk the commit ancestry chain, we have a few functions at our disposal: `revwalk_new/1`,
-  `revwalk_push/2`, `revwalk_next/1`, `revwalk_reset/1`, etc.
-
-  ```
-  # create revision walk iterator
-  {:ok, revwalk} = Git.revwalk_new(repo)
-
-  # set root commit for traversal
-   :ok = Git.revwalk_push(walk, commit_oid)
-
-  # create (lazy) stream of ancestors from iterator
-  {:ok, stream} = Git.revwalk_stream(walk)
-
-  for ancestor_oid <- stream do
-    # fetch commit object
-    {:ok, :commit, commit} = Git.object_lookup(ancestor_oid)
-
-    # fetch commit message
-    {:ok, message} = Git.commit_message(commit)
-
-    IO.puts "#{Git.oid_fmt_short(ancestor_oid)} - #{message}"
-  end
-  ```
-
-  In this example `revwalk_new/1` returns a `t:revwalk/0`, a mutable *C-like* iteratable object. This means
-  that `revwalk_push/2` mutates the *revwalk* object instead of returning a new object.
-
-  The `revwalk_stream/1` function converts the *revwalk* iterator to a `t:Enumerable.t/0` we can then use to walk
-  the commit ancestry chain.
-
-  When iterating through a commit's history, `revwalk_sorting/2` and `revwalk_simplify_first_parent/1` provide
-  conveniences for sorting and filtering while `revwalk_push/3` can be used to hide specific commits.
 
   ## Commit changes
 

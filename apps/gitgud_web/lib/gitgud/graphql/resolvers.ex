@@ -357,20 +357,6 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   @doc """
-  Resolves the parents for a given Git `commit` object.
-  """
-  @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_commit_parents(args, %Absinthe.Resolution{source: commit, context: ctx} = _info) do
-    case GitAgent.commit_parents(ctx.repo_agent, commit) do
-      {:ok, stream} ->
-        {slice, offset, opts} = slice_stream(stream, args)
-        Connection.from_slice(slice, offset, opts)
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
   Resolves the author for a given Git `commit` object.
   """
   @spec git_commit_author(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, User.t | map} | {:error, term}
@@ -410,6 +396,20 @@ defmodule GitGud.GraphQL.Resolvers do
   @spec git_commit_timestamp(GitCommit.t, %{}, Absinthe.Resolution.t) :: {:ok, DateTime.t} | {:error, term}
   def git_commit_timestamp(commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     GitAgent.commit_timestamp(ctx.repo_agent, commit)
+  end
+
+  @doc """
+  Resolves the parents for a given Git `commit` object.
+  """
+  @spec git_commit_parents(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_commit_parents(args, %Absinthe.Resolution{source: commit, context: ctx} = _info) do
+    case GitAgent.commit_parents(ctx.repo_agent, commit) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(slice, offset, opts)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -510,27 +510,27 @@ defmodule GitGud.GraphQL.Resolvers do
   @doc """
   Resolves the tree entries and their associated commit for a given pathspec.
   """
-  @spec git_tree_entry_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entry_with_last_commit(%{path: path}, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
-    case GitAgent.tree_entry_by_path(ctx.repo_agent, revision, path, with_commit: true) do
-      {:ok, {tree_entry, commit}} ->
-        {:ok, %{tree_entry: tree_entry, commit: commit}}
+  @spec git_tree_entries_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_tree_entries_with_last_commit(args, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
+    path = args[:path]
+    path = if path == "" || is_nil(path), do: :root, else: path
+    case GitAgent.tree_entries(ctx.repo_agent, revision, path: path, with: :commit) do
+      {:ok, stream} ->
+        {slice, offset, opts} = slice_stream(stream, args)
+        Connection.from_slice(Enum.map(slice, fn {tree_entry, commit} -> %{tree_entry: tree_entry, commit: commit} end), offset, opts)
       {:error, reason} ->
         {:error, reason}
     end
   end
 
   @doc """
-  Resolves the tree entries and their associated commit for a given pathspec.
+  Resolves the tree entry and it associated commit for a given pathspec.
   """
-  @spec git_tree_entries_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
-  def git_tree_entries_with_last_commit(args, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
-    path = args[:path]
-    path = if path == "" || is_nil(path), do: :root, else: path
-    case GitAgent.tree_entries_by_path(ctx.repo_agent, revision, path, with_commit: true) do
-      {:ok, stream} ->
-        {slice, offset, opts} = slice_stream(stream, args)
-        Connection.from_slice(Enum.map(slice, fn {tree_entry, commit} -> %{tree_entry: tree_entry, commit: commit} end), offset, opts)
+  @spec git_tree_entry_with_last_commit(map, Absinthe.Resolution.t) :: {:ok, Connection.t} | {:error, term}
+  def git_tree_entry_with_last_commit(%{path: path}, %Absinthe.Resolution{source: revision, context: ctx} = _info) do
+    case GitAgent.tree_entry_by_path(ctx.repo_agent, revision, path, with: :commit) do
+      {:ok, {tree_entry, commit}} ->
+        {:ok, %{tree_entry: tree_entry, commit: commit}}
       {:error, reason} ->
         {:error, reason}
     end
@@ -541,7 +541,7 @@ defmodule GitGud.GraphQL.Resolvers do
   """
   @spec git_tree_entry_target(Repo.t, %{}, Absinthe.Resolution.t) :: {:ok, GitTree.t | GitBlob.t} | {:error, term}
   def git_tree_entry_target(tree_entry, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    GitAgent.tree_entry_target(ctx.repo_agent, tree_entry)
+    GitAgent.peel(ctx.repo_agent, tree_entry)
   end
 
   @doc """

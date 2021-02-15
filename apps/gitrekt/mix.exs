@@ -28,6 +28,7 @@ defmodule GitRekt.Mixfile do
   defp deps do
     [
       {:elixir_make, "~> 0.6"},
+      {:stream_split, "~> 0.1"},
       {:telemetry, "~> 0.4"}
     ]
   end

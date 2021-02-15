@@ -38,7 +38,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, false} <- GitAgent.empty?(agent),
            {:ok, head} <- GitAgent.head(agent),
            {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
-           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
+           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, commit),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
         tree_entries = Enum.to_list(tree_entries)
@@ -181,7 +181,7 @@ defmodule GitGud.Web.CodebaseController do
         with {:ok, agent} <- GitAgent.unwrap(repo),
              {:ok, {object, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
-             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
+             {:ok, %GitBlob{} = blob} <- GitAgent.peel(agent, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
           render(conn, "edit.html",
             breadcrumb: %{action: :tree, cwd?: false, tree?: true},
@@ -215,7 +215,7 @@ defmodule GitGud.Web.CodebaseController do
              {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
              {:ok, tree} <- GitAgent.tree(agent, commit),
              {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
-             {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
+             {:ok, %GitBlob{} = blob} <- GitAgent.peel(agent, tree_entry),
              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
           breadcrumb = %{action: :tree, cwd?: false, tree?: true}
           changeset = blob_commit_changeset(%{name: tree_entry.name, content: blob_content}, commit_params)
@@ -346,7 +346,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, commit} <- GitAgent.object(agent, oid_parse(oid)),
-           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
+           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
            {:ok, diff} <- GitAgent.diff(agent, hd(commit_info.parents), commit), # TODO
            {:ok, diff_stats} <- GitAgent.diff_stats(agent, diff),
            {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
@@ -371,7 +371,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, commit_info} <- GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)),
+           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
            {:ok, tree} <- GitAgent.tree(agent, object),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
         tree_entries = Enum.to_list(tree_entries)
@@ -396,7 +396,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
-           {:ok, %GitTree{} = tree} <- GitAgent.tree_entry_target(agent, tree_entry),
+           {:ok, %GitTree{} = tree} <- GitAgent.peel(agent, tree_entry),
            {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
         tree_entries = Enum.to_list(tree_entries)
         render(conn, "tree.html",
@@ -427,7 +427,7 @@ defmodule GitGud.Web.CodebaseController do
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
            {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
-           {:ok, %GitBlob{} = blob} <- GitAgent.tree_entry_target(agent, tree_entry),
+           {:ok, %GitBlob{} = blob} <- GitAgent.peel(agent, tree_entry),
            {:ok, blob_content} <- GitAgent.blob_content(agent, blob),
            {:ok, blob_size} <- GitAgent.blob_size(agent, blob) do
         render(conn, "blob.html",
@@ -581,13 +581,13 @@ defmodule GitGud.Web.CodebaseController do
   defp blob_changeset_content(changeset), do: Ecto.Changeset.fetch_field!(changeset, :content)
 
   defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README.md" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+    {:ok, blob} = GitAgent.peel(agent, tree_entry)
     {:ok, blob_content} = GitAgent.blob_content(agent, blob)
     {GitGud.Web.Markdown.markdown_safe(blob_content), name}
   end
 
   defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+    {:ok, blob} = GitAgent.peel(agent, tree_entry)
     {:ok, blob_content} = GitAgent.blob_content(agent, blob)
     {blob_content, name}
   end
@@ -643,7 +643,7 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp resolve_commit_info(agent, commit, {:ok, acc}) do
-    case GitAgent.transaction(agent, {:commit_info, commit.oid}, &resolve_commit_info(&1, commit)) do
+    case GitAgent.transaction(agent, &resolve_commit_info(&1, commit)) do
          {:ok, commit_info} ->
             {:cont, {:ok, [{commit, commit_info}|acc]}}
         {:error, reason} ->

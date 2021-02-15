@@ -63,7 +63,7 @@ defmodule GitGud.SmartHTTPBackendTest do
       assert {:ok, "Initial commit\n"} = GitAgent.commit_message(agent, commit)
       assert {:ok, tree} = GitAgent.tree(agent, commit)
       assert {:ok, tree_entry} = GitAgent.tree_entry_by_path(agent, tree, "README.md")
-      assert {:ok, blob} = GitAgent.tree_entry_target(agent, tree_entry)
+      assert {:ok, blob} = GitAgent.peel(agent, tree_entry)
       assert {:ok, ^readme_content} = GitAgent.blob_content(agent, blob)
     end
 
