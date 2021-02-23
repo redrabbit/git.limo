@@ -13,7 +13,7 @@ class TreeTable {
           ... on Repo {
             object(oid: $commitOid) {
               ... on GitCommit {
-                treeEntriesWithLastCommit(first: 50, path: $treePath) {
+                treeEntriesWithLastCommit(first: 100, path: $treePath) {
                   edges {
                     node {
                       treeEntry {

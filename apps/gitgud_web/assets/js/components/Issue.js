@@ -101,7 +101,7 @@ class Issue extends React.Component {
             }
             insertedAt
             permissions
-            comments(first: 50) {
+            comments(first: 100) {
               edges {
                 node {
                   id

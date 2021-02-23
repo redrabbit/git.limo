@@ -60,7 +60,7 @@ class CommitLineReview extends React.Component {
           query CommitLineReviewQuery($id: ID!) {
             node(id: $id) {
               ... on CommitLineReview {
-                comments(first: 50) {
+                comments(first: 100) {
                   edges {
                     node {
                       id
@@ -114,7 +114,7 @@ class CommitLineReview extends React.Component {
                       blobOid
                       hunk
                       line
-                      comments(first: 50) {
+                      comments(first: 100) {
                         edges {
                           node {
                             id
@@ -157,7 +157,7 @@ class CommitLineReview extends React.Component {
           blobOid
           hunk
           line
-          comments(first: 50) {
+          comments(first: 100) {
             edges {
               node {
                 id
