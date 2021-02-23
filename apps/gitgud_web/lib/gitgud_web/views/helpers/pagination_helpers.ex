@@ -138,6 +138,8 @@ defmodule GitGud.Web.PaginationHelpers do
 
   defp query_encode(conn, val), do: query_encode(conn, "p", val)
   defp query_encode(conn, key, nil), do: "?" <> URI.encode_query(Map.delete(conn.query_params, key))
+  defp query_encode(conn, "before", val), do: "?" <> URI.encode_query(Map.delete(Map.put(conn.query_params, "before", val), "after"))
+  defp query_encode(conn, "after", val), do: "?" <> URI.encode_query(Map.delete(Map.put(conn.query_params, "after", val), "before"))
   defp query_encode(conn, key, val), do: "?" <> URI.encode_query(Map.put(conn.query_params, key, val))
 
   defp page_params(conn) do
