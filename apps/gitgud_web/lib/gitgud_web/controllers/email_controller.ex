@@ -34,7 +34,7 @@ defmodule GitGud.Web.EmailController do
     case Email.create(Map.put(email_params, "user_id", user.id)) do
       {:ok, email} ->
         email = struct(email, user: user)
-        GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
+        GitGud.Mailer.deliver_later!(GitGud.Mailer.verification_email(email))
         conn
         |> put_flash(:info, "Email '#{email.address}' added.")
         |> redirect(to: Routes.email_path(conn, :index))
@@ -95,7 +95,7 @@ defmodule GitGud.Web.EmailController do
     email_id = String.to_integer(email_params["id"])
     if email = Enum.find(user.emails, &(&1.id == email_id)) do
       email = struct(email, user: user)
-      GitGud.Mailer.deliver_later(GitGud.Mailer.verification_email(email))
+      GitGud.Mailer.deliver_later!(GitGud.Mailer.verification_email(email))
       conn
       |> put_flash(:info, "A verification email has been sent to '#{email.address}'.")
       |> redirect(to: Routes.email_path(conn, :index))
