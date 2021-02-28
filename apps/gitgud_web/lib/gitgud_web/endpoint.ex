@@ -6,7 +6,15 @@ defmodule GitGud.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :gitgud_web
   use Absinthe.Phoenix.Endpoint
 
+  @session_opts [
+    store: :cookie,
+    key: "_gitgud_web_key",
+    signing_salt: "zMguVWdH"
+  ]
+
   socket "/socket", GitGud.Web.UserSocket, websocket: true
+
+  socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_opts]]
 
   plug Plug.Static,
     at: "/", from: :gitgud_web, gzip: false,
@@ -28,11 +36,7 @@ defmodule GitGud.Web.Endpoint do
 
   plug Plug.MethodOverride
   plug Plug.Head
-
-  plug Plug.Session,
-    store: :cookie,
-    key: "_gitgud_web_key",
-    signing_salt: "zMguVWdH"
+  plug Plug.Session, @session_opts
 
   plug GitGud.Web.Router
 

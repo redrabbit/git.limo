@@ -17,6 +17,8 @@ defmodule GitGud.Web do
 
       import Plug.Conn
 
+      import Phoenix.LiveView.Controller
+
       import GitGud.GraphQL.Schema, only: [from_relay_id: 1, to_relay_id: 1, to_relay_id: 2]
 
       import GitGud.Web.AuthenticationPlug, only: [
@@ -41,33 +43,30 @@ defmodule GitGud.Web do
   def view(opts) do
     quote do
       use Phoenix.View, unquote(Keyword.merge(opts, root: "lib/gitgud_web/templates", namespace: GitGud.Web))
-      use Phoenix.HTML
-
-      use GitGud.Web.FormHelpers
-
-      alias GitGud.Web.Router.Helpers, as: Routes
 
       import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
 
-      import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
+      unquote(view_helpers())
 
-      import GitGud.Web.AuthenticationPlug, only: [
-        authenticated?: 1,
-        authentication_token: 1,
-        authorized?: 3,
-        current_user: 1,
-        ensure_authenticated: 2,
-        verified?: 1
-      ]
-
-      import GitGud.Web.DateTimeFormatter
-      import GitGud.Web.ErrorHelpers
-      import GitGud.Web.Gettext
-      import GitGud.Web.Gravatar
-      import GitGud.Web.Markdown
       import GitGud.Web.NavigationHelpers
       import GitGud.Web.PaginationHelpers
-      import GitGud.Web.ReactComponents
+    end
+  end
+
+  @doc false
+  def live_view(opts) do
+    quote do
+      use Phoenix.LiveView, unquote(opts)
+
+      unquote(view_helpers())
+    end
+  end
+
+  def live_component(_opts) do
+    quote do
+      use Phoenix.LiveComponent
+
+      unquote(view_helpers())
     end
   end
 
@@ -79,6 +78,8 @@ defmodule GitGud.Web do
       import Plug.Conn
 
       import Phoenix.Controller
+
+      import Phoenix.LiveView.Router
 
       import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2]
     end
@@ -103,5 +104,41 @@ defmodule GitGud.Web do
 
   defmacro __using__({which, opts}) when is_atom(which) and is_list(opts) do
     apply(__MODULE__, which, [opts])
+  end
+
+  #
+  # Helpers
+  #
+
+  defp view_helpers do
+    quote do
+      use Phoenix.HTML
+
+      use GitGud.Web.FormHelpers
+
+      alias GitGud.Web.Router.Helpers, as: Routes
+
+      import Phoenix.View
+
+      import Phoenix.LiveView.Helpers
+
+      import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
+
+      import GitGud.Web.AuthenticationPlug, only: [
+        authenticated?: 1,
+        authentication_token: 1,
+        authorized?: 3,
+        current_user: 1,
+        ensure_authenticated: 2,
+        verified?: 1
+      ]
+
+      import GitGud.Web.DateTimeFormatter
+      import GitGud.Web.ErrorHelpers
+      import GitGud.Web.Gettext
+      import GitGud.Web.Gravatar
+      import GitGud.Web.Markdown
+      import GitGud.Web.ReactComponents
+    end
   end
 end

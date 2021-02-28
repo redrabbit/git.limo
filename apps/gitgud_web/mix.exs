@@ -49,6 +49,7 @@ defmodule GitGud.Web.Mixfile do
       {:phoenix_ecto, "~> 4.2"},
       {:phoenix_html, "~> 2.14"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
+      {:phoenix_live_view, "~> 0.15"},
       {:phoenix_pubsub, "~> 2.0"},
       {:plug, "~> 1.11"},
       {:plug_cowboy, "~> 2.4"},

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <%= if verified?(@conn) do %>
+      <%= tag :meta, name: "token", content: authentication_token(@conn) %>
+    <% end %>
+    <%= csrf_meta_tag() %>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title><%= title(@conn) %></title>
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+    <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </head>
+
+  <body>
+    <%= @inner_content %>
+  </body>
+</html>

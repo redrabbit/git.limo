@@ -2,8 +2,8 @@
   <div class="container">
 
     <div class="navbar-brand">
-      <a class="navbar-item" href="<%= Routes.landing_page_path(@conn, :index) %>">
-        <img src="<%= Routes.static_path(@conn, "/images/logo.svg") %>" alt="" width="48" height="48" />
+      <a class="navbar-item" href="<%= Routes.landing_page_path(@socket, :index) %>">
+        <img src="<%= Routes.static_path(@socket, "/images/logo.svg") %>" alt="" width="48" height="48" />
       </a>
     </div>
 
@@ -15,22 +15,22 @@
       </div>
 
       <div class="navbar-end">
-        <%= if authenticated?(@conn) do %>
+        <%= if authenticated?(@socket) do %>
           <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">
               <%= gravatar(@current_user, id: "viewer-avatar", size: 28) %>
               <span id="viewer-login"><%= @current_user.login %></span>
             </a>
             <div class="navbar-dropdown is-right">
-              <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
-              <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>
+              <a class="navbar-item" href="<%= Routes.user_path(@socket, :show, @current_user) %>">Profile</a>
+              <a class="navbar-item" href="<%= Routes.user_path(@socket, :edit_profile) %>">Settings</a>
               <hr class="navbar-divider">
-              <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
+              <a class="navbar-item" href="<%= Routes.session_path(@socket, :delete) %>">Logout</a>
             </div>
           </div>
         <% else %>
-          <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
-          <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
+          <a class="navbar-item" href="<%= Routes.user_path(@socket, :new) %>">Register</a>
+          <a class="navbar-item" href="<%= Routes.session_path(@socket, :new, session_params(@socket)) %>">Login</a>
         <% end %>
       </div>
     </div>
@@ -39,7 +39,7 @@
 
 
 <main class="container">
-  <%= if info = get_flash(@conn, :info) do %>
+  <%= if info = live_flash(@flash, :info) do %>
     <article class="message is-primary is-small is-fixed">
       <div class="message-header">
         <p>Info</p>
@@ -48,7 +48,7 @@
       <div class="message-body"><%= info %></div>
     </article>
   <% end %>
-  <%= if error = get_flash(@conn, :error) do %>
+  <%= if error = live_flash(@flash, :error) do %>
     <article class="message is-danger is-small is-fixed">
       <div class="message-header">
         <p>Error</p>
@@ -58,5 +58,5 @@
     </article>
   <% end %>
 
-  <%= render_inner_layout(@conn, assigns) %>
+  <%= render_inner_layout(@socket, assigns) %>
 </main>
