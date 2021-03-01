@@ -8,20 +8,24 @@ export default () => {
                               : breadcrumb.offsetLeft + breadcrumb.offsetWidth - level.offsetWidth
     while(truncate > 1) {
       const items = breadcrumb.querySelectorAll("ul li")
-      const item = items[fromIndex]
-      if(!ellipsis) {
-        const oldWidth = item.offsetWidth
-        ellipsis = item.querySelector("a")
-        ellipsis.dataset.tooltip = ellipsis.text
-        ellipsis.innerHTML = "&hellip;"
-        ellipsis.classList.add("tooltip")
-        truncate -= oldWidth - item.offsetWidth
-        fromIndex += 1
+      if(items.length > 2) {
+        const item = items[fromIndex]
+        if(!ellipsis) {
+          const oldWidth = item.offsetWidth
+          ellipsis = item.querySelector("a")
+          ellipsis.dataset.tooltip = ellipsis.text
+          ellipsis.innerHTML = "&hellip;"
+          ellipsis.classList.add("tooltip")
+          truncate -= oldWidth - item.offsetWidth
+          fromIndex += 1
+        } else {
+          ellipsis.href = item.querySelector("a").href
+          ellipsis.dataset.tooltip = `${ellipsis.dataset.tooltip}/${item.querySelector("a").text}`
+          truncate -= item.offsetWidth
+          item.parentNode.removeChild(item)
+        }
       } else {
-        ellipsis.href = item.querySelector("a").href
-        ellipsis.dataset.tooltip = `${ellipsis.dataset.tooltip}/${item.querySelector("a").text}`
-        truncate -= item.offsetWidth
-        item.parentNode.removeChild(item)
+        break
       }
     }
   })
