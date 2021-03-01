@@ -1,0 +1,34 @@
+<div class="dropdown<%= if @search != "", do: " is-active" %>">
+  <div class="dropdown-trigger">
+    <div class="control has-icons-left">
+      <input type="text" class="input" placeholder="Search ..." phx-keyup="search">
+      <span class="icon is-small is-left"><i class="fa fa-search"></i></span>
+    </div>
+  </div>
+  <%= if @search != "" do %>
+    <div class="dropdown-menu">
+      <div class="dropdown-content">
+      <%= unless Enum.empty?(@search_results) do %>
+        <%= for search_result <- @search_results do %>
+          <%= case search_result do %>
+            <% %User{} = user -> %>
+              <a href="<%= Routes.user_path(@socket, :show, user) %>" class="dropdown-item">
+                <span class="tag user"><%= user %></span>
+              </a>
+            <% %Repo{} = repo -> %>
+              <a href="<%= Routes.codebase_path(@socket, :show, repo.owner, repo) %>" class="dropdown-item">
+                <div class="tags has-addons">
+                  <span class="tag user"><%= repo.owner %></span>
+                  <span class="tag is-link"><%= repo.name %></span>
+                </div>
+              </a>
+          <% end %>
+        <% end %>
+        </div>
+      <% else %>
+        <div class="dropdown-item">Nothing to see here.</div>
+      <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

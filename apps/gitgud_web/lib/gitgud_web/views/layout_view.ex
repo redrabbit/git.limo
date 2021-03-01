@@ -22,16 +22,9 @@ defmodule GitGud.Web.LayoutView do
     end
   end
 
-  @spec global_search_input() :: binary
-  def global_search_input() do
-    react_component("global-search-input", [], [class: "search"], do: [
-      content_tag(:div, [class: "control has-icons-left"], do: [
-        tag(:input, class: "input", type: "text", placeholder: "Search ...", readonly: true),
-        content_tag(:span, [class: "icon is-small is-left"], do: [
-         content_tag(:i, "", class: "fa fa-search")
-        ])
-      ])
-    ])
+  @spec global_search(Plug.Conn.t) :: binary
+  def global_search(conn) do
+    live_render(conn, GitGud.Web.GlobalSearchLive, container: {:div, class: "search"})
   end
 
   @spec title(Plug.Conn.t, binary) :: binary

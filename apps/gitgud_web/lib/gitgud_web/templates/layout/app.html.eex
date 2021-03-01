@@ -9,9 +9,7 @@
 
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item">
-          <%= global_search_input() %>
-        </div>
+        <div class="navbar-item"><%= global_search(@conn) %></div>
       </div>
 
       <div class="navbar-end">
