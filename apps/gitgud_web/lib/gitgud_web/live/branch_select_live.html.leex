@@ -1,0 +1,37 @@
+<div class="dropdown is-right<%= if @active, do: " is-active" %>">
+  <div class="dropdown-trigger">
+    <p class="button" aria-haspopup="true" aria-controls="dropdown-menu" phx-click="toggle_dropdown">
+      <span><%= String.capitalize(to_string(revision_type(@revision))) %>: <span class="has-text-weight-semibold"><%= revision_name(@revision) %></span></span>
+      <span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
+    </p>
+  </div>
+  <%= if @active do %>
+    <div class="dropdown-menu">
+      <nav class="panel">
+        <div class="panel-heading">
+          <p class="control has-icons-left">
+          <input class="input is-small" type="text" placeholder="Filter ..." phx-keyup="filter" />
+          <span class="icon is-small is-left">
+              <i class="fa fa-filter" aria-hidden="true"></i>
+          </span>
+          </p>
+        </div>
+        <p class="panel-tabs">
+          <a class="<%= if @tab == :branch, do: "is-active" %>" phx-click="switch_tab" phx-value-tab="branch">Branches</a>
+          <a class="<%= if @tab == :tag, do: "is-active" %>" phx-click="switch_tab" phx-value-tab="tag">Tags</a>
+        </p>
+        <%= for ref <- Enum.filter(@refs[@tab], &String.contains?(&1.name, @filter)) do %>
+          <a class="panel-block<%= if ref.oid == @revision.oid, do: " is-active" %>" href="<%= Routes.codebase_path(@socket, @action, @repo.owner, @repo, ref, @tree_path) %>"><%= ref.name %></a>
+        <% end %>
+        <div class="panel-block">
+            <%= case @tab do %>
+            <% :branch -> %>
+                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">all branches</a>
+            <% :tag -> %>
+                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">all tags</a>
+            <% end %>
+        </div>
+      </nav>
+    </div>
+  <% end %>
+</div>

@@ -21,22 +21,16 @@ defmodule GitGud.Web.CodebaseView do
 
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
-    %{repo: repo, revision: revision} = Map.take(conn.assigns, [:repo, :revision])
-    revision_oid = revision_oid(revision)
-    revision_name = revision_name(revision)
-    revision_type = revision_type(revision)
-    revision_action = revision_action(conn)
-    react_component("branch-select", [repo_id: to_relay_id(repo), oid: revision_oid, name: revision_name, type: revision_type, action: revision_action], [class: "branch-select"], do: [
-      content_tag(:p, [class: "button"], do: [
-        content_tag(:span, [], do: [
-          "#{String.capitalize(to_string(revision_type))}: ",
-          content_tag(:span, revision_name, class: "has-text-weight-semibold")
-        ]),
-        content_tag(:span, [class: "icon is-small"], do: [
-          content_tag(:i, "", class: "fas fa-angle-down")
-        ])
-      ])
-    ])
+    %{repo: repo, tree_path: tree_path} = conn.assigns
+    live_render(conn, GitGud.Web.BranchSelectLive,
+      container: {:div, class: "branch-select"},
+      session: %{
+        "repo_id" => repo.id,
+        "rev_spec" => revision_spec(conn),
+        "action" => revision_action(conn),
+        "tree_path" => tree_path
+      }
+    )
   end
 
   @spec chunk_commits_by_timestamp([{GitCommit.t, map, non_neg_integer}]) :: [{Date, [{GitCommit.t, map, non_neg_integer}]}]
@@ -80,30 +74,43 @@ defmodule GitGud.Web.CodebaseView do
     end)
   end
 
-  @spec revision_oid(GitAgent.git_revision) :: binary
-  def revision_oid(%{oid: oid} = _object), do: oid_fmt(oid)
+  @spec revision_oid(Plug.Conn.t | GitAgent.git_revision) :: binary
+  def revision_oid(%Plug.Conn{} = conn), do: revision_oid(conn.assigns.revision)
+  def revision_oid(%{oid: oid} = _rev), do: oid_fmt(oid)
 
-  @spec revision_name(GitAgent.git_revision) :: binary
-  def revision_name(%GitCommit{oid: oid} = _object), do: oid_fmt_short(oid)
-  def revision_name(%GitRef{name: name} = _object), do: name
-  def revision_name(%GitTag{name: name} = _object), do: name
+  @spec revision_name(Plug.Conn.t | GitAgent.git_revision) :: binary
+  def revision_name(%Plug.Conn{} = conn), do: revision_name(conn.assigns.revision)
+  def revision_name(%GitCommit{oid: oid} = _rev), do: oid_fmt_short(oid)
+  def revision_name(%GitRef{name: name} = _rev), do: name
+  def revision_name(%GitTag{name: name} = _rev), do: name
 
-  @spec revision_type(GitAgent.git_revision) :: atom
-  def revision_type(%GitCommit{} = _object), do: :commit
-  def revision_type(%GitTag{} = _object), do: :tag
-  def revision_type(%GitRef{type: type} = _object), do: type
+  @spec revision_type(Plug.Conn.t | GitAgent.git_revision) :: atom
+  def revision_type(%Plug.Conn{} = conn), do: revision_type(conn.assigns.revision)
+  def revision_type(%GitCommit{} = _rev), do: :commit
+  def revision_type(%GitTag{} = _rev), do: :tag
+  def revision_type(%GitRef{type: type} = _rev), do: type
 
-  @spec revision_action(Plug.Conn.t) :: binary
-  def revision_action(conn), do: conn.assigns.breadcrumb.action
+  @spec revision_spec(Plug.Conn.t | GitAgent.git_revision) :: binary
+  def revision_spec(%Plug.Conn{} = conn), do: revision_spec(conn.assigns.revision)
+  def revision_spec(%GitCommit{oid: oid} = _rev), do: "commit:" <> oid_fmt(oid)
+  def revision_spec(%GitTag{name: name} = _rev), do: "tag:" <> name
+  def revision_spec(%GitRef{name: name, type: type} = _rev), do: "#{type}:#{name}"
 
-  @spec revision_editable?(Plug.Conn.t) :: boolean
-  def revision_editable?(conn) do
-    case revision_type(conn.assigns.revision) do
-      :commit -> false
+  @spec revision_editable?(Plug.Conn.t | GitAgent.git_revision) :: boolean
+  def revision_editable?(%Plug.Conn{} = conn), do: revision_editable?(conn.assigns.revision)
+  def revision_editable?(rev) do
+    case revision_type(rev) do
       :branch -> true
       :tag -> false
+      :commit -> false
     end
   end
+
+  @spec revision_action(Plug.Conn.t | atom) :: atom
+  def revision_action(%Plug.Conn{} = conn), do: revision_action(action_name(conn))
+  def revision_action(action) when action in [:show, :new, :create], do: :tree
+  def revision_action(action) when action in [:edit, :update, :confirm_delete, :delete], do: :blob
+  def revision_action(action), do: action
 
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do
