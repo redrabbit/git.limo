@@ -11,8 +11,10 @@ defmodule GitGud.Web.Gravatar do
   Renders a Gravatar widget for the given `email`.
   """
   @spec gravatar(User.t, keyword) :: binary
+  def gravatar(user, opts \\ [])
   def gravatar(%User{avatar_url: nil}, _opts), do: []
   def gravatar(%User{avatar_url: url}, opts) do
+    opts = Keyword.put_new(opts, :size, 28)
     {url_opts, opts} = Keyword.split(opts, [:size])
     {size, url_opts} = Keyword.get_and_update(url_opts, :size, &{&1, &1*2})
     url = URI.parse(url)
