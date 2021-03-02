@@ -69,7 +69,7 @@
     <%= label f, :user_login, "Add maintainer", class: "label" %>
     <div class="field is-grouped">
       <div class="control is-expanded">
-        <%= user_input f, :user_login, reject: @repo.maintainers, class: "user-input" %>
+        <%= live_render(@conn, GitGud.Web.MaintainerSearchLive, container: {:div, class: "user-input"}, session: %{"repo_id" => @repo.id}) %>
       </div>
       <div class="control">
         <button type="submit" class="button is-success">Add</button>
