@@ -10,7 +10,6 @@ import issueLabelTable from "./issue-label-table"
 import blobForm from "./blob-form"
 import blobTable from "./blob-table"
 import commitTable from "./commit-table"
-import treeTable from "./tree-table"
 
 export default [
     flash,
@@ -25,5 +24,4 @@ export default [
     blobForm,
     blobTable,
     commitTable,
-    treeTable
 ]
