@@ -19,7 +19,7 @@
   </div>
 </nav>
 
-<%= render "_tree_table.html", assigns %>
+<%= live_render(@conn, GitGud.Web.TreeTableLive, session: %{"repo_id" => @repo.id, "revision" => @conn.params["revision"], "tree_path" => @tree_path}) %>
 
 <%= with {readme, filename} <- @tree_readme do %>
 <div class="card">

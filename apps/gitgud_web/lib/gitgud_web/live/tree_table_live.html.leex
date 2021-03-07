@@ -1,0 +1,64 @@
+<table class="table tree-table is-hoverable is-fullwidth">
+  <thead>
+    <tr>
+      <%= if is_nil(@commit_info) do %>
+        <td colspan="3">
+          <span class="has-text-dark">
+            <span class="icon"><i class="fa fa-spin fa-spinner-third"></i></span>
+            <span class="loading-ellipsis">Loading commit</span>
+          </span>
+        </td>
+      <% else %>
+        <td colspan="2">
+          <%= with %{author: _author, committer: committer} <- Map.take(@commit_info, [:author, :committer]) do %>
+            <%= if Map.has_key?(committer, :id) do %>
+              <a href="<%= Routes.user_path(@socket, :show, committer) %>" class="tag is-white user"><%= committer %></a>
+            <% else %>
+              <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
+            <% end %>
+            <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, @commit) %>" class="has-text-dark"><%= GitGud.Web.CodebaseView.commit_message_title(@commit_info.message) %></a>
+          <% end %>
+        </td>
+        <td class="has-text-right"><%= datetime_format(@commit_info.timestamp, "{relative}") %></td>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <%= for tree_entry <- @tree_entries do %>
+      <tr>
+        <%= case tree_entry do %>
+          <% {tree_entry, commit_info} -> %>
+            <td>
+              <a href="<%= Routes.codebase_path(@socket, tree_entry.type, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
+                <%= case tree_entry.type do %>
+                  <% :tree -> %>
+                      <span class="icon"><i class="fa fa-folder"></i></span>
+                  <% :blob -> %>
+                      <span class="icon"><i class="fa fa-file"></i></span>
+                <% end %>
+                <span><%= tree_entry.name %></span>
+              </a>
+            </td>
+            <td>
+              <a class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
+            </td>
+            <td class="has-text-right has-text-dark">
+              <%= datetime_format(commit_info.timestamp, "{relative}") %>
+            </td>
+          <% tree_entry -> %>
+            <td colspan="3">
+              <a href="<%= Routes.codebase_path(@socket, tree_entry.type, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
+                <%= case tree_entry.type do %>
+                    <% :tree -> %>
+                        <span class="icon"><i class="fa fa-folder"></i></span>
+                    <% :blob -> %>
+                        <span class="icon"><i class="fa fa-file"></i></span>
+                <% end %>
+                <span><%= tree_entry.name %></span>
+              </a>
+            </td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
