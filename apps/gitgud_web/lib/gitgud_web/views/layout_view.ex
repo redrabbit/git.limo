@@ -22,17 +22,15 @@ defmodule GitGud.Web.LayoutView do
     end
   end
 
-  @spec global_search(Plug.Conn.t) :: binary
-  def global_search(conn) do
-    live_render(conn, GitGud.Web.GlobalSearchLive, container: {:div, class: "search"})
-  end
-
   @spec title(Plug.Conn.t, binary) :: binary
   def title(conn, default \\ "") do
+    module = if Map.has_key?(conn.assigns, :live_module), do: conn.assigns.live_module, else: view_module(conn)
+    action = if Map.has_key?(conn.assigns, :live_action), do: conn.assigns.live_action, else: action_name(conn)
     try do
-      apply(view_module(conn), :title, [action_name(conn), conn.assigns])
+      apply(module, :title, [action, conn.assigns])
     rescue
-      _error -> default
+      _ ->
+        default
     end
   end
 end

@@ -31,23 +31,23 @@
       <div class="column is-full">
         <div class="repo card">
           <header class="card-header">
-            <a class="card-header-title" href="<%= Routes.codebase_path @conn, :show, @user, repo %>"><%= repo.name %><%= unless repo.public do %>&nbsp;<span class="tag has-text-grey-light"><i class="fa fa-lock"></i></span><% end %></a>
+            <a class="card-header-title" href="<%= Routes.codebase_path(@conn, :show, @user, repo) %>"><%= repo.name %><%= unless repo.public do %>&nbsp;<span class="tag has-text-grey-light"><i class="fa fa-lock"></i></span><% end %></a>
             <%= if stats do %>
               <div class="card-header-icon has-text-grey">
                 <div class="buttons">
-                  <a href="<%= Routes.codebase_path @conn, :history, @user, repo %>" class="button is-small is-white">
+                  <a href="<%= Routes.codebase_path(@conn, :history, @user, repo) %>" class="button is-small is-white">
                     <span class="icon has-text-grey-dark"><i class="fa fa-history" aria-hidden="true"></i></span>
                     <span><%= datetime_format(repo.pushed_at, "{relative}") %></span>
                   </a>
-                  <a href="<%= Routes.issue_path @conn, :index, @user, repo %>" class="button is-small is-white">
+                  <a href="<%= Routes.issue_path(@conn, :index, @user, repo) %>" class="button is-small is-white">
                     <span class="icon has-text-grey-dark"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
                     <span><%= stats.issues %></span>
                   </a>
-                  <a href="<%= Routes.codebase_path @conn, :branches, @user, repo %>" class="button is-small is-white">
+                  <a href="<%= Routes.codebase_path(@conn, :branches, @user, repo) %>" class="button is-small is-white">
                     <span class="icon has-text-grey-dark"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
                     <span><%= stats.branches %></span>
                   </a>
-                  <a href="<%= Routes.codebase_path @conn, :tags, @user, repo %>" class="button is-small is-white">
+                  <a href="<%= Routes.codebase_path(@conn, :tags, @user, repo) %>" class="button is-small is-white">
                     <span class="icon has-text-grey-dark"><i class="fa fa-tags" aria-hidden="true"></i></span>
                     <span><%= stats.tags %></span>
                   </a>

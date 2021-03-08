@@ -9,8 +9,11 @@
   </div>
   <div class="level-right">
     <div class="level-item">
-      <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">
-        Browse <%= if @breadcrumb.tree? do %>files<% else %>file<% end %></a>
+      <%= if @breadcrumb.tree? do %>
+        <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button"> Browse files</a>
+      <% else %>
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button"> View file</a>
+      <% end %>
     </div>
   </div>
 </nav>

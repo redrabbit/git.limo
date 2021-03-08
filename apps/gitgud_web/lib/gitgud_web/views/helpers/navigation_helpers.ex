@@ -4,7 +4,6 @@ defmodule GitGud.Web.NavigationHelpers do
   """
 
   import Phoenix.HTML.Tag
-  import Phoenix.Controller, only: [controller_module: 1, action_name: 1]
 
   import GitGud.Web.Router, only: [__routes__: 0]
 
@@ -22,9 +21,7 @@ defmodule GitGud.Web.NavigationHelpers do
   @spec current_route?(Plug.Conn.t, atom, []) :: boolean
   def current_route?(conn, helper, action \\ [])
   def current_route?(conn, helper, []) do
-    if Map.has_key?(conn.private, :phoenix_controller),
-      do: controller_module(conn) == helper_controller(helper),
-    else: false
+    controller_module(conn) == helper_controller(helper)
   end
 
   @spec current_route?(Plug.Conn.t, atom, [only: [atom]]) :: boolean
@@ -58,10 +55,25 @@ defmodule GitGud.Web.NavigationHelpers do
   # Helpers
   #
 
-  for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.helper)) do
-    helper = String.to_atom(route.helper)
-    defp helper_controller(unquote(helper)), do: unquote(route.plug)
-    defp helper_name(unquote(route.plug)), do: unquote(helper)
+  defp controller_module(conn) do
+    conn.assigns[:live_module] || Phoenix.Controller.controller_module(conn)
+  end
+
+  defp action_name(conn) do
+    conn.assigns[:live_action] || Phoenix.Controller.action_name(conn)
+  end
+
+  for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.plug)) do
+    if route.plug == Phoenix.LiveView.Plug do
+      helper = String.to_atom(route.helper <> "_live")
+      {live_module, _opts} = route.private.phoenix_live_view
+      defp helper_controller(unquote(helper)), do: unquote(live_module)
+      defp helper_name(unquote(live_module)), do: unquote(helper)
+    else
+      helper = String.to_atom(route.helper)
+      defp helper_controller(unquote(helper)), do: unquote(route.plug)
+      defp helper_name(unquote(route.plug)), do: unquote(helper)
+    end
   end
 
   defp helper_controller(helper), do: raise ArgumentError, message: "invalid helper #{inspect helper}"

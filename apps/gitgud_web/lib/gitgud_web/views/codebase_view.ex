@@ -8,12 +8,12 @@ defmodule GitGud.Web.CodebaseView do
   alias GitGud.Issue
   alias GitGud.IssueQuery
 
-  alias Phoenix.Param
-
   alias GitRekt.{GitCommit, GitRef, GitTag}
 
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
+
+  import Phoenix.Param
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
@@ -22,7 +22,7 @@ defmodule GitGud.Web.CodebaseView do
   @spec branch_select(Plug.Conn.t) :: binary
   def branch_select(conn) do
     %{repo: repo, tree_path: tree_path} = conn.assigns
-    live_render(conn, GitGud.Web.BranchSelectLive,
+    live_render(conn, GitGud.Web.BranchSelectContainerLive,
       container: {:div, class: "branch-select"},
       session: %{
         "repo_id" => repo.id,
@@ -160,11 +160,11 @@ defmodule GitGud.Web.CodebaseView do
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner.login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner.login}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit, commit_info: commit_info}), do: "#{commit_message_title(commit_info.message)} · #{repo.owner.login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner.login}/#{repo.name} at #{Param.to_param(rev)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
-  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{Param.to_param(rev)} · #{repo.owner.login}/#{repo.name}/#{Path.join(path)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner.login}/#{repo.name} at #{to_param(rev)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{to_param(rev)} · #{repo.owner.login}/#{repo.name}/#{Path.join(path)}"
 
   #
   # Helpers

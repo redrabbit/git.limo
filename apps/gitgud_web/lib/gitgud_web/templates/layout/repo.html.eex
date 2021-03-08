@@ -20,7 +20,7 @@
   <%= with {helper, action} <- current_route(@conn) do %>
     <div class="tabs">
       <ul>
-        <%= navigation_item @conn, :codebase do %>
+        <li<%= if helper in [:codebase, :codebase_live] do %> class="is-active"<% end %>>
           <%= if assigns[:revision] do %>
             <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
               <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
@@ -32,7 +32,7 @@
               <span>Code</span>
             </a>
           <% end %>
-        <% end %>
+        </li>
         <li<%= if helper in [:issue, :issue_label] do %> class="is-active"<% end %>>
           <a href="<%= Routes.issue_path(@conn, :index, @repo.owner, @repo) %>">
             <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>

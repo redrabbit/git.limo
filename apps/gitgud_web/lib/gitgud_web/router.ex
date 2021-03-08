@@ -9,7 +9,6 @@ defmodule GitGud.Web.Router do
     plug :authenticate_session
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug :put_root_layout, {GitGud.Web.LayoutView, :root}
   end
 
   pipeline :graphql do
@@ -86,7 +85,7 @@ defmodule GitGud.Web.Router do
     get "/:user_login/repositories", RepoController, :index
 
     scope "/:user_login/:repo_name" do
-      get "/", CodebaseController, :show
+      live "/", TreeBrowserLive, :show, as: :codebase, layout: {GitGud.Web.LayoutView, "repo.html"}
 
       get "/new/:revision/*path", CodebaseController, :new
       get "/edit/:revision/*path", CodebaseController, :edit
@@ -97,7 +96,7 @@ defmodule GitGud.Web.Router do
       get "/commit/:oid", CodebaseController, :commit
       get "/history", CodebaseController, :history
       get "/history/:revision/*path", CodebaseController, :history
-      get "/tree/:revision/*path", CodebaseController, :tree
+      live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase, layout: {GitGud.Web.LayoutView, "repo.html"}
       get "/blob/:revision/*path", CodebaseController, :blob
 
       get "/issues", IssueController, :index
