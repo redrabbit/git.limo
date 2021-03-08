@@ -10,8 +10,8 @@ defmodule GitGud.Web.GlobalSearchLive do
   # Callbacks
   #
 
-  def mount(_params, %{"user_id" => user_id}, socket) do
-    socket = assign_new(socket, :current_user, fn -> UserQuery.by_id(user_id) end)
+  def mount(_params, session, socket) do
+    socket = assign_new(socket, :current_user, fn -> if user_id = session["user_id"], do: UserQuery.by_id(user_id) end)
     socket = assign(socket, search: "", search_results: [])
     {:ok, socket}
   end
