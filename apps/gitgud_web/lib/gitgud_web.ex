@@ -48,6 +48,15 @@ defmodule GitGud.Web do
 
       unquote(view_helpers())
 
+      import GitGud.Web.AuthenticationPlug, only: [
+        authenticated?: 1,
+        authentication_token: 1,
+        authorized?: 3,
+        current_user: 1,
+        ensure_authenticated: 2,
+        verified?: 1
+      ]
+
       import GitGud.Web.NavigationHelpers
       import GitGud.Web.PaginationHelpers
     end
@@ -59,6 +68,8 @@ defmodule GitGud.Web do
       use Phoenix.LiveView, unquote(opts)
 
       unquote(view_helpers())
+
+      import GitGud.Web.AuthenticationLiveHelpers
     end
   end
 
@@ -67,6 +78,8 @@ defmodule GitGud.Web do
       use Phoenix.LiveComponent
 
       unquote(view_helpers())
+
+      import GitGud.Web.AuthenticationLiveHelpers
     end
   end
 
@@ -81,7 +94,11 @@ defmodule GitGud.Web do
 
       import Phoenix.LiveView.Router
 
-      import GitGud.Web.AuthenticationPlug, only: [authenticate: 2, authenticate_bearer_token: 2, authenticate_session: 2]
+      import GitGud.Web.AuthenticationPlug, only: [
+        authenticate: 2,
+        authenticate_bearer_token: 2,
+        authenticate_session: 2
+      ]
     end
   end
 
@@ -119,19 +136,9 @@ defmodule GitGud.Web do
       alias GitGud.Web.Router.Helpers, as: Routes
 
       import Phoenix.View
-
       import Phoenix.LiveView.Helpers
 
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
-
-      import GitGud.Web.AuthenticationPlug, only: [
-        authenticated?: 1,
-        authentication_token: 1,
-        authorized?: 3,
-        current_user: 1,
-        ensure_authenticated: 2,
-        verified?: 1
-      ]
 
       import GitGud.Web.DateTimeFormatter
       import GitGud.Web.ErrorHelpers

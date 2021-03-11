@@ -11,9 +11,12 @@ defmodule GitGud.Web.GlobalSearchLive do
   #
 
   def mount(_params, session, socket) do
-    socket = assign_new(socket, :current_user, fn -> if user_id = session["user_id"], do: UserQuery.by_id(user_id) end)
-    socket = assign(socket, search: "", search_results: [])
-    {:ok, socket}
+    {
+      :ok,
+      socket
+      |> authenticate(session)
+      |> assign(search: "", search_results: [])
+    }
   end
 
   def handle_event("search", %{"key" => key, "value" => search}, socket) do

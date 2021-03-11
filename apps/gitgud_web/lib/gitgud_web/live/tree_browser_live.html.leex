@@ -57,9 +57,46 @@
     </div>
   </div>
   <div class="level-right">
-    <div class="level-item">
-      <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
-    </div>
+    <%= if Enum.empty?(@tree_path) do %>
+      <div class="level-item">
+        <div class="field clone-repo has-addons">
+          <div class="control"><button class="button http-clone-button is-active">HTTP</button></div>
+          <%= if @current_user do %>
+            <div class="control"><button class="button ssh-clone-button">SSH</button></div>
+          <% end %>
+          <div class="control http-clone">
+            <input class="input" type="text" value="<%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git" readonly />
+          </div>
+          <%= if @current_user do %>
+            <div class="control ssh-clone is-hidden">
+              <%= case Application.get_env(:gitgud, :ssh_port, 22) do %>
+                <% 22 -> %>
+                  <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+                <% ssh_port ->%>
+                  <input class="input" type="text" value="ssh://<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{ssh_port}/#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+              <% end %>
+            </div>
+          <% end %>
+          <div class="control">
+            <button class="button clipboard-button tooltip" data-tooltip="Copy to clipboard">
+              <span class="icon">
+                <i class="fa fa-clipboard"></i>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <%= if revision_editable?(@revision) && authorized?(@current_user, @repo, :push) do %>
+      <div class="level-item">
+        <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
+      </div>
+    <% end %>
+    <%= unless Enum.empty?(@tree_path) do %>
+      <div class="level-item">
+        <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
+      </div>
+    <% end %>
   </div>
 </nav>
 

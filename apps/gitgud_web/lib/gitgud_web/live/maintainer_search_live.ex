@@ -8,13 +8,18 @@ defmodule GitGud.Web.MaintainerSearchLive do
   # Callbacks
   #
 
-  def mount(_params, %{"user_id" => user_id, "repo_id" => repo_id}, socket) do
-    socket = assign_new(socket, :current_user, fn -> UserQuery.by_id(user_id) end)
-    socket = assign_new(socket, :repo, fn -> RepoQuery.by_id(repo_id, preload: :maintainers) end)
-    socket = assign(socket, selected_user: nil, search: "", search_results: [])
-    {:ok, socket}
+  @impl true
+  def mount(_params, %{"repo_id" => repo_id} = session, socket) do
+    {
+      :ok,
+      socket
+      |> authenticate(session)
+      |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id, preload: :maintainers) end)
+      |> assign(selected_user: nil, search: "", search_results: [])
+    }
   end
 
+  @impl true
   def handle_event("search", %{"key" => key, "value" => search}, socket) do
     cond do
       socket.assigns.search == "" && key == "Backspace" ->

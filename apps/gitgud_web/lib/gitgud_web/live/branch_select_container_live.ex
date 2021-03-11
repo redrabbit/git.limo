@@ -8,14 +8,15 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   import GitRekt.Git, only: [oid_parse: 1]
 
   @impl true
-  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "action" => action, "tree_path" => tree_path}, socket) do
+  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "action" => action, "tree_path" => tree_path} = session, socket) do
     {
       :ok,
       socket
-      |> assign(action: action, tree_path: tree_path)
+      |> authenticate(session)
       |> assign_repo(repo_id)
       |> assign_agent!()
       |> assign_revision!(rev_spec)
+      |> assign(action: action, tree_path: tree_path)
     }
   end
 
@@ -38,7 +39,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   #
 
   defp assign_repo(socket, repo_id) do
-    assign_new(socket, :repo, fn -> RepoQuery.by_id(repo_id) end)
+    assign_new(socket, :repo, fn -> RepoQuery.by_id(repo_id, viewer: current_user(socket)) end)
   end
 
   defp assign_agent!(socket) do

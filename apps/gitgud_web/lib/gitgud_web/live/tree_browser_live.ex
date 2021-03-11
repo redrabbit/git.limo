@@ -13,29 +13,27 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   require Logger
 
-  import Phoenix.Param
-
   import GitRekt.Git, only: [oid_fmt: 1]
 
   import GitGud.Web.CodebaseView
 
-  def title(_action, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner.login}/#{repo.name} at #{to_param(rev)}"
-  def title(_action, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner.login}/#{repo.name}"
+  defdelegate title(action, assigns), to: GitGud.Web.CodebaseView
 
   #
   # Callbacks
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, _session, socket) do
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
     {
       :ok,
       socket
-      |> assign(tree_path: params["path"] || [])
+      |> authenticate(session)
       |> assign_repo(user_login, repo_name)
       |> assign_agent!()
       |> assign_revision!(params["revision"])
       |> assign_stats!()
+      |> assign(tree_path: params["path"] || [])
     }
   end
 
@@ -60,7 +58,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   #
 
   defp assign_repo(socket, user_login, repo_name) do
-    assign(socket, :repo, RepoQuery.user_repo(user_login, repo_name, preload: :stats))
+    assign(socket, :repo, RepoQuery.user_repo(user_login, repo_name, viewer: current_user(socket), preload: :stats))
   end
 
   defp assign_agent!(socket) do
