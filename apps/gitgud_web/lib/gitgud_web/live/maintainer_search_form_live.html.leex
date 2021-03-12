@@ -1,0 +1,37 @@
+<%= f = form_for @changeset, Routes.maintainer_path(@socket, :create, @repo.owner, @repo), [as: "maintainer", phx_change: "search", phx_submit: "submit", phx_trigger_action: @trigger_submit] %>
+  <div class="field">
+    <%= label f, :user_login, "Add maintainer", class: "label" %>
+    <div class="field is-grouped">
+      <div class="control is-expanded">
+        <div class="user-input">
+          <div class="dropdown<%= if @active, do: " is-active" %>">
+            <div class="dropdown-trigger">
+              <div class="control is-expanded">
+                <%= text_input f, :user_login, class: "input" %>
+              </div>
+            </div>
+            <%= if @active do %>
+              <div class="dropdown-menu">
+                <div class="dropdown-content">
+                <%= unless Enum.empty?(@search_results) do %>
+                  <%= for user <- @search_results do %>
+                    <a class="dropdown-item" phx-click="select", phx-value-user_login="<%= user.login %>">
+                      <span class="tag user"><%= user %></span>
+                    </a>
+                  <% end %>
+                <% else %>
+                  <div class="dropdown-item">Nothing to see here.</div>
+                <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="control">
+        <%= submit("Add", class: "button is-success", disabled: !@changeset.valid?) %>
+      </div>
+    </div>
+    <%= error_tag f, :user_login %>
+  </div>
+</form>

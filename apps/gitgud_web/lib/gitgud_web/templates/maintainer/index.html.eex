@@ -64,17 +64,4 @@
   </tbody>
 </table>
 
-<%= form_for @changeset, Routes.maintainer_path(@conn, :create, @repo.owner, @repo), [as: :maintainer], fn f -> %>
-  <div class="field">
-    <%= label f, :user_login, "Add maintainer", class: "label" %>
-    <div class="field is-grouped">
-      <div class="control is-expanded">
-        <%= live_render(@conn, GitGud.Web.MaintainerSearchLive, container: {:div, class: "user-input"}, session: %{"repo_id" => @repo.id}) %>
-      </div>
-      <div class="control">
-        <button type="submit" class="button is-success">Add</button>
-      </div>
-    </div>
-    <%= error_tag f, :user_login %>
-  </div>
-<% end %>
+<%= live_render(@conn, GitGud.Web.MaintainerSearchFormLive, session: %{"repo_id" => @repo.id}) %>
