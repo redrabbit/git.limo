@@ -99,10 +99,12 @@ defmodule GitGud.Web.MaintainerController do
       if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(RepoQuery.maintainers(repo), &(&1.id == maintainer_id)) do
-          maintainer = Maintainer.delete!(maintainer)
-          conn
-          |> put_flash(:info, "Maintainer '#{maintainer.user.login}' deleted.")
-          |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
+          if maintainer.user_id != repo.owner_id do
+            maintainer = Maintainer.delete!(maintainer)
+            conn
+            |> put_flash(:info, "Maintainer '#{maintainer.user.login}' deleted.")
+            |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
+          end
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
     end || {:error, :not_found}
