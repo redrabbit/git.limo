@@ -73,15 +73,17 @@ defmodule GitGud.Web.MaintainerController do
       if authorized?(conn, repo, :admin) do
         maintainer_id = String.to_integer(maintainer_params["id"])
         if maintainer = Enum.find(RepoQuery.maintainers(repo), &(&1.id == maintainer_id)) do
-          if maintainer.permission != maintainer_params["permission"] do
-            maintainer = Maintainer.update_permission!(maintainer, maintainer_params["permission"])
-            conn
-            |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
-          else
-            conn
-            |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission already set to '#{maintainer.permission}'.")
-            |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
+          if maintainer.user_id != repo.owner_id do
+            if maintainer.permission != maintainer_params["permission"] do
+              maintainer = Maintainer.update_permission!(maintainer, maintainer_params["permission"])
+              conn
+              |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission set to '#{maintainer.permission}'.")
+              |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
+            else
+              conn
+              |> put_flash(:info, "Maintainer '#{maintainer.user.login}' permission already set to '#{maintainer.permission}'.")
+              |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
+            end
           end
         end || {:error, :bad_request}
       end || {:error, :unauthorized}
