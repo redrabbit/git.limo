@@ -8,9 +8,7 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.DB
   alias GitGud.User
   alias GitGud.UserQuery
-  alias GitGud.Repo
   alias GitGud.RepoQuery
-  alias GitGud.RepoStats
   alias GitGud.RepoStorage
   alias GitGud.ReviewQuery
   alias GitGud.GPGKey
@@ -18,49 +16,12 @@ defmodule GitGud.Web.CodebaseController do
   alias GitRekt.GitAgent
   alias GitRekt.{GitRef, GitTag, GitBlob, GitTree, GitTreeEntry}
 
-  require Logger
-
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   plug :put_layout, :repo
   plug :ensure_authenticated when action in [:new, :create, :edit, :update, :confirm_delete, :delete]
 
   action_fallback GitGud.Web.FallbackController
-
-  @doc """
-  Renders a repository codebase overview.
-  """
-  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :stats) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, false} <- GitAgent.empty?(agent),
-           {:ok, head} <- GitAgent.head(agent),
-           {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
-           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
-           {:ok, tree} <- GitAgent.tree(agent, commit),
-           {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
-        tree_entries = Enum.to_list(tree_entries)
-        render(conn, "show.html",
-          breadcrumb: %{action: :tree, cwd?: true, tree?: true},
-          repo: repo,
-          revision: head,
-          commit: commit,
-          commit_info: resolve_db_commit_info(commit_info),
-          tree_path: [],
-          tree_entries: tree_entries,
-          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1)),
-          stats: stats(repo, agent, head)
-        )
-      else
-        {:ok, true} ->
-          render(conn, "initialize.html", repo: repo)
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end || {:error, :not_found}
-  end
 
   @doc """
   Renders a blob creation form.
@@ -363,61 +324,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
-  Renders a tree for a specific revision and path.
-  """
-  @spec tree(Plug.Conn.t, map) :: Plug.Conn.t
-  def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :stats) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
-           {:ok, tree} <- GitAgent.tree(agent, object),
-           {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
-        tree_entries = Enum.to_list(tree_entries)
-        render(conn, "show.html",
-          breadcrumb: %{action: :tree, cwd?: true, tree?: true},
-          repo: repo,
-          commit: commit,
-          commit_info: resolve_db_commit_info(commit_info),
-          revision: reference || object,
-          tree_path: [],
-          tree_entries: tree_entries,
-          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1)),
-          stats: stats(repo, agent, reference || object)
-        )
-      end
-    end || {:error, :not_found}
-  end
-
-  def tree(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(tree_path)),
-           {:ok, %GitTree{} = tree} <- GitAgent.peel(agent, tree_entry),
-           {:ok, tree_entries} <- GitAgent.tree_entries(agent, tree) do
-        tree_entries = Enum.to_list(tree_entries)
-        render(conn, "tree.html",
-          breadcrumb: %{action: :tree, cwd?: true, tree?: true},
-          repo: repo,
-          revision: reference || object,
-          commit: commit,
-          tree_path: tree_path,
-          tree_entries: tree_entries,
-          tree_readme: Enum.find_value(tree_entries, &tree_readme(agent, &1))
-        )
-      else
-        {:ok, %GitBlob{}} ->
-          redirect(conn, to: Routes.codebase_path(conn, :blob, repo.owner, repo, revision, tree_path))
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Renders a blob for a specific revision and path.
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
@@ -580,20 +486,6 @@ defmodule GitGud.Web.CodebaseController do
 
   defp blob_changeset_content(changeset), do: Ecto.Changeset.fetch_field!(changeset, :content)
 
-  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README.md" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.peel(agent, tree_entry)
-    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
-    {GitGud.Web.Markdown.markdown_safe(blob_content), name}
-  end
-
-  defp tree_readme(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.peel(agent, tree_entry)
-    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
-    {blob_content, name}
-  end
-
-  defp tree_readme(_agent, %GitTreeEntry{}), do: nil
-
   defp commit_signature(user, timestamp) do
     user = DB.preload(user, :primary_email)
     %{name: user.name, email: user.primary_email.address, timestamp: timestamp}
@@ -727,41 +619,4 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
-
-  defp stats(%Repo{stats: %RepoStats{refs: stats_refs}} = repo, agent, revision) when is_map(stats_refs) do
-    rev_stats =
-      case revision do
-        %GitRef{} = ref ->
-          Map.get(stats_refs, to_string(ref), %{})
-        rev ->
-          case GitAgent.history_count(agent, rev) do
-            {:ok, commit_count} -> %{"count" => commit_count}
-            {:error, _reason} -> %{}
-          end
-      end
-    rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
-    %{
-      branches: Enum.count(Map.get(rev_groups, "heads", [])),
-      tags: Enum.count(Map.get(rev_groups, "tags", [])),
-      commits: rev_stats["count"] || 0,
-      contributors: RepoQuery.count_contributors(repo)
-    }
-  end
-
-  defp stats(%Repo{} = repo, agent, revision) do
-    Logger.warn("repository #{repo.owner.login}/#{repo.name} does not have stats")
-    with {:ok, branches} <- GitAgent.branches(agent),
-         {:ok, tags} <- GitAgent.tags(agent),
-         {:ok, commit_count} <- GitAgent.history_count(agent, revision) do
-      %{
-        branches: Enum.count(branches),
-        tags: Enum.count(tags),
-        commits: commit_count,
-        contributors: RepoQuery.count_contributors(repo)
-      }
-    else
-      {:error, _reason} ->
-        %{commits: 0, branches: 0, tags: 0, contributors: 0}
-    end
-  end
 end
