@@ -37,9 +37,9 @@ defmodule GitGud.Web.MaintainerController do
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
-        {maintainer_login, maintainer_params} = Map.pop(maintainer_params, "user_login")
+        {maintainer_login, other_params} = Map.pop(maintainer_params, "user_login")
         if user = maintainer_login && UserQuery.by_login(maintainer_login) do
-          case Maintainer.create(Map.merge(maintainer_params, %{"repo_id" => repo.id, "user_id" => user.id})) do
+          case Maintainer.create(Map.merge(other_params, %{"repo_id" => repo.id, "user_id" => user.id})) do
             {:ok, _maintainer} ->
               conn
               |> put_flash(:info, "Maintainer '#{user.login}' added.")
@@ -50,11 +50,11 @@ defmodule GitGud.Web.MaintainerController do
               conn
               |> put_flash(:error, "Something went wrong! Please check error(s) below.")
               |> put_status(:bad_request)
-              |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert})
+              |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert, params: maintainer_params})
           end
         else
-          changeset = Maintainer.changeset(%Maintainer{})
-          changeset = Ecto.Changeset.add_error(changeset, :user_login, (if maintainer_login, do: "invalid", else: "can't be blank"))
+          changeset = Maintainer.changeset(%Maintainer{}, maintainer_params)
+          changeset = Ecto.Changeset.add_error(changeset, :user_login, is_nil(maintainer_login) && "can't be blank" || "invalid")
           conn
           |> put_flash(:error, "Something went wrong! Please check error(s) below.")
           |> put_status(:bad_request)
