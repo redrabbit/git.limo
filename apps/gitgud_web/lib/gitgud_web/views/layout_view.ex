@@ -23,14 +23,18 @@ defmodule GitGud.Web.LayoutView do
   end
 
   @spec title(Plug.Conn.t, binary) :: binary
-  def title(conn, default \\ "") do
-    module = if Map.has_key?(conn.assigns, :live_module), do: conn.assigns.live_module, else: view_module(conn)
-    action = if Map.has_key?(conn.assigns, :live_action), do: conn.assigns.live_action, else: action_name(conn)
+  def title(conn, default \\ ""), do: conn.assigns[:page_title] || view_title(conn) || default
+
+  #
+  # Helpers
+  #
+
+  defp view_title(conn) do
     try do
-      apply(module, :title, [action, conn.assigns])
+      apply(view_module(conn), :title, [action_name(conn), conn.assigns])
     rescue
-      _ ->
-        default
+      _error ->
+        nil
     end
   end
 end
