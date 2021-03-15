@@ -5,6 +5,8 @@ defmodule GitGud.Web.TreeBrowserLive do
   alias GitRekt.GitRef
   alias GitRekt.GitTreeEntry
 
+  alias GitGud.DB
+
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
 
@@ -16,8 +18,6 @@ defmodule GitGud.Web.TreeBrowserLive do
   import GitRekt.Git, only: [oid_fmt: 1]
 
   import GitGud.Web.CodebaseView
-
-  defdelegate title(action, assigns), to: GitGud.Web.CodebaseView
 
   #
   # Callbacks
@@ -32,24 +32,23 @@ defmodule GitGud.Web.TreeBrowserLive do
       |> assign_repo(user_login, repo_name)
       |> assign_agent!()
       |> assign_revision!(params["revision"])
-      |> assign_stats!()
-      |> assign(tree_path: params["path"] || [])
     }
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
-    send(self(), :init_tree_commits)
     {
       :noreply,
       socket
       |> assign(tree_path: params["path"] || [])
       |> assign_tree!()
+      |> assign_stats!()
+      |> assign_page_title()
     }
   end
 
   @impl true
-  def handle_info(:init_tree_commits, socket) do
+  def handle_info(:assign_tree_commits, socket) do
     {:noreply, assign_tree_commits!(socket)}
   end
 
@@ -58,7 +57,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   #
 
   defp assign_repo(socket, user_login, repo_name) do
-    assign(socket, :repo, RepoQuery.user_repo(user_login, repo_name, viewer: current_user(socket), preload: :stats))
+    assign(socket, :repo, RepoQuery.user_repo(user_login, repo_name, viewer: current_user(socket)))
   end
 
   defp assign_agent!(socket) do
@@ -68,10 +67,6 @@ defmodule GitGud.Web.TreeBrowserLive do
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
-  end
-
-  defp assign_stats!(socket) do
-    assign(socket, :stats, resolve_stats!(socket.assigns.repo, socket.assigns.agent, socket.assigns.revision))
   end
 
   defp assign_revision!(socket, nil) do
@@ -98,12 +93,25 @@ defmodule GitGud.Web.TreeBrowserLive do
     commit_info = if Enum.empty?(socket.assigns.tree_path), do: resolve_tree_commit_info!(socket.assigns.agent, socket.assigns.commit)
     tree_entries = resolve_tree_entries!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     tree_readme = Enum.find_value(tree_entries, &resolve_tree_readme!(socket.assigns.agent, &1))
+    send(self(), :assign_tree_commits)
     assign(socket, commit_info: commit_info, tree_entries: tree_entries, tree_readme: tree_readme)
   end
 
   defp assign_tree_commits!(socket) do
     {commit_info, tree_entries} = resolve_tree!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     assign(socket, commit_info: commit_info, tree_entries: tree_entries)
+  end
+
+  defp assign_stats!(socket) when socket.assigns.stats != %{}, do: socket
+  defp assign_stats!(socket) when socket.assigns.tree_path != [], do: socket
+  defp assign_stats!(socket) do
+    repo = DB.preload(socket.assigns.repo, :stats)
+    stats = resolve_stats!(repo, socket.assigns.agent, socket.assigns.revision)
+    assign(socket, repo: repo, stats: stats)
+  end
+
+  defp assign_page_title(socket) do
+    assign(socket, :page_title, GitGud.Web.CodebaseView.title(socket.assigns[:live_action], socket.assigns))
   end
 
   defp resolve_tree_entries!(agent, commit, []) do
