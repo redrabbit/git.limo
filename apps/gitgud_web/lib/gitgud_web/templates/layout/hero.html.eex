@@ -38,7 +38,7 @@
 
       <div class="hero-body">
         <div class="container">
-          <%= render_inner_layout(@conn, assigns) %>
+          <%= @inner_content %>
         </div>
       </div>
     </main>

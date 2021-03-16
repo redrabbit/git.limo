@@ -4,12 +4,7 @@ defmodule GitGud.Web.LayoutView do
 
   @spec render_layout({atom(), binary() | atom()}, map, keyword) :: binary
   def render_layout(layout, assigns, do: content) do
-    render(layout, Map.put(assigns, :inner_layout, content))
-  end
-
-  @spec render_inner_layout(Plug.Conn.t, map) :: binary
-  def render_inner_layout(_conn, assigns) do
-    Map.get(assigns, :inner_layout, assigns.inner_content)
+    render(layout, Map.put(assigns, :inner_content, content))
   end
 
   @spec session_params(Plug.Conn.t) :: keyword

@@ -77,7 +77,7 @@
         </article>
       <% end %>
 
-      <%= render_inner_layout(@conn, assigns) %>
+      <%= @inner_content %>
     </main>
 
     <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>

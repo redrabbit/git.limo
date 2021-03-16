@@ -7,6 +7,6 @@
     </ul>
   </aside>
   <div class="column">
-    <%= render_inner_layout(@conn, assigns) %>
+    <%= @inner_content %>
   </div>
 <% end %>
