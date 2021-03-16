@@ -6,6 +6,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   alias GitRekt.GitTreeEntry
 
   alias GitGud.DB
+  alias GitGud.DBQueryable
 
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
@@ -29,7 +30,7 @@ defmodule GitGud.Web.TreeBrowserLive do
       :ok,
       socket
       |> authenticate(session)
-      |> assign_repo(user_login, repo_name)
+      |> assign_repo!(user_login, repo_name)
       |> assign_agent!()
       |> assign_revision!(params["revision"])
     }
@@ -56,8 +57,9 @@ defmodule GitGud.Web.TreeBrowserLive do
   # Helpers
   #
 
-  defp assign_repo(socket, user_login, repo_name) do
-    assign(socket, :repo, RepoQuery.user_repo(user_login, repo_name, viewer: current_user(socket)))
+  defp assign_repo!(socket, user_login, repo_name) do
+    query = DBQueryable.query({RepoQuery, :user_repo_query}, [user_login, repo_name], viewer: current_user(socket))
+    assign(socket, :repo, DB.one!(query))
   end
 
   defp assign_agent!(socket) do
