@@ -1,1 +1,3 @@
-<strong>Bad Request</strong>
+<%= render_layout "error.html", assigns do %>
+  <strong>Bad Request</strong>
+<% end %>

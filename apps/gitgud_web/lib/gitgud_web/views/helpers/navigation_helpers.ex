@@ -56,11 +56,11 @@ defmodule GitGud.Web.NavigationHelpers do
   #
 
   defp controller_module(conn) do
-    conn.assigns[:live_module] || Phoenix.Controller.controller_module(conn)
+    conn.assigns[:live_module] || conn.private[:phoenix_controller]
   end
 
   defp action_name(conn) do
-    conn.assigns[:live_action] || Phoenix.Controller.action_name(conn)
+    conn.assigns[:live_action] || conn.private[:phoenix_action]
   end
 
   for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.plug)) do

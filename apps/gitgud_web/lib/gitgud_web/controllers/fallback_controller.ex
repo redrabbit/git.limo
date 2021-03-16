@@ -6,40 +6,11 @@ defmodule GitGud.Web.FallbackController do
   """
   use GitGud.Web, :controller
 
-  require Logger
-
-  alias GitGud.Web.ErrorView
-
-  def call(conn, {:error, :bad_request}) do
+  def call(conn, {:error, error_status}) when is_atom(error_status) do
     conn
-    |> put_status(:bad_request)
-    |> put_layout(:app)
-    |> put_view(ErrorView)
-    |> render(:"400")
-  end
-
-  def call(conn, {:error, :unauthorized}) do
-    conn
-    |> put_status(:unauthorized)
-    |> put_layout(:app)
-    |> put_view(ErrorView)
-    |> render(:"401")
-  end
-
-  def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_layout(:app)
-    |> put_view(ErrorView)
-    |> render(:"404")
-  end
-
-  def call(conn, val) do
-    Logger.warn("Uncaught #{inspect val}")
-    conn
-    |> put_status(:internal_server_error)
-    |> put_layout(:app)
-    |> put_view(ErrorView)
-    |> render(:"500")
+    |> put_layout(false)
+    |> put_view(GitGud.Web.ErrorView)
+    |> put_status(error_status)
+    |> render(String.to_atom(to_string(Plug.Conn.Status.code(error_status))))
   end
 end

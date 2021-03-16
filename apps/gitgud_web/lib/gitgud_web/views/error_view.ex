@@ -5,6 +5,8 @@ defmodule GitGud.Web.ErrorView do
 
   use GitGud.Web, :view
 
+  import GitGud.Web.LayoutView, only: [render_layout: 3]
+
   @spec template_not_found(binary, map) :: iodata
   def template_not_found(_template, assigns) do
     render("500.html", assigns)

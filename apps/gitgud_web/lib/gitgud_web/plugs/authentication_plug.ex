@@ -6,14 +6,10 @@ defmodule GitGud.Web.AuthenticationPlug do
   @behaviour Plug
 
   import Plug.Conn
-  import Phoenix.Controller, only: [put_layout: 2, put_view: 2, render: 3]
-  import Absinthe.Plug, only: [put_options: 2]
 
   alias GitGud.Authorization
   alias GitGud.User
   alias GitGud.UserQuery
-
-  alias GitGud.Web.ErrorView
 
   @doc """
   `Plug` to authenticate `conn` with either authorization or session tokens.
@@ -62,11 +58,13 @@ defmodule GitGud.Web.AuthenticationPlug do
     unless authenticated?(conn) do
       conn
       |> put_status(:unauthorized)
-      |> put_layout({GitGud.Web.LayoutView, :app})
-      |> put_view(ErrorView)
-      |> render("401.html", %{})
+      |> Phoenix.Controller.put_layout(false)
+      |> Phoenix.Controller.put_view(GitGud.Web.ErrorView)
+      |> Phoenix.Controller.render(:"401")
       |> halt()
-    end || conn
+    else
+      conn
+    end
   end
 
   @doc """
@@ -127,13 +125,7 @@ defmodule GitGud.Web.AuthenticationPlug do
 
   defp authenticate_user(conn, user_id) do
     if user = UserQuery.by_id(user_id),
-      do: assign_user(conn, user),
+      do: assign(conn, :current_user, user),
     else: conn
-  end
-
-  defp assign_user(conn, user) do
-    conn
-    |> assign(:current_user, user)
-    |> put_options(context: %{current_user: user})
   end
 end

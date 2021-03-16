@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title><%= title(@conn) %></title>
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+  </head>
+
+  <body>
+    <nav class="navbar is-spaced" aria-label="dropdown navigation">
+      <div class="container">
+
+        <div class="navbar-brand">
+          <a class="navbar-item" href="<%= Routes.landing_page_path(@conn, :index) %>">
+            <img src="<%= Routes.static_path(@conn, "/images/logo.svg") %>" alt="" width="48" height="48" />
+          </a>
+        </div>
+
+        <div class="navbar-menu">
+          <div class="navbar-start">
+            <div class="navbar-item">
+              <%= live_render(@conn, GitGud.Web.GlobalSearchLive, container: {:div, class: "search"}) %>
+            </div>
+          </div>
+
+          <div class="navbar-end">
+            <%= if authenticated?(@conn) do %>
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">
+                  <%= gravatar(@current_user, id: "viewer-avatar", size: 28) %>
+                  <span id="viewer-login"><%= @current_user.login %></span>
+                </a>
+                <div class="navbar-dropdown is-right">
+                  <a class="navbar-item" href="<%= Routes.user_path(@conn, :show, @current_user) %>">Profile</a>
+                  <a class="navbar-item" href="<%= Routes.user_path(@conn, :edit_profile) %>">Settings</a>
+                  <hr class="navbar-divider">
+                  <a class="navbar-item" href="<%= Routes.session_path(@conn, :delete) %>">Logout</a>
+                </div>
+              </div>
+            <% else %>
+              <a class="navbar-item" href="<%= Routes.user_path(@conn, :new) %>">Register</a>
+              <a class="navbar-item" href="<%= Routes.session_path(@conn, :new, session_params(@conn)) %>">Login</a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+
+    <main class="container">
+      <%= @inner_content %>
+    </main>
+
+    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </body>
+</html>
