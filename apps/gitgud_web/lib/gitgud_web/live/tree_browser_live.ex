@@ -11,11 +11,6 @@ defmodule GitGud.Web.TreeBrowserLive do
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
 
-  alias GitGud.Repo
-  alias GitGud.RepoStats
-
-  require Logger
-
   import GitRekt.Git, only: [oid_fmt: 1]
 
   import GitGud.Web.CodebaseView
@@ -38,14 +33,22 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    {
-      :noreply,
-      socket
-      |> assign(tree_path: params["path"] || [])
-      |> assign_tree!()
-      |> assign_stats!()
-      |> assign_page_title()
-    }
+    revision = socket.assigns.revision_spec
+    case params["revision"] do
+      ^revision ->
+        {
+          :noreply,
+          socket
+          |> assign(tree_path: params["path"] || [])
+          |> assign_tree!()
+          |> assign_stats!()
+          |> assign_page_title()
+        }
+      nil ->
+        {:noreply, redirect(socket, to: Routes.codebase_path(socket, :show, socket.assigns.repo.owner, socket.assigns.repo))}
+      revision ->
+        {:noreply, redirect(socket, to: Routes.codebase_path(socket, :tree, socket.assigns.repo.owner, socket.assigns.repo, revision, socket.assigns.tree_path))}
+    end
   end
 
   @impl true
@@ -74,17 +77,17 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp assign_revision!(socket, nil) do
     with {:ok, head} <- GitAgent.head(socket.assigns.agent),
          {:ok, commit} <- GitAgent.peel(socket.assigns.agent, head) do
-      assign(socket, revision: head, commit: commit)
+      assign(socket, revision_spec: nil, revision: head, commit: commit)
     else
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
   end
 
-  defp assign_revision!(socket, revision) do
-    with {:ok, {obj, ref}} <- GitAgent.revision(socket.assigns.agent, revision),
+  defp assign_revision!(socket, rev_spec) do
+    with {:ok, {obj, ref}} <- GitAgent.revision(socket.assigns.agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(socket.assigns.agent, obj, target: :commit) do
-      assign(socket, revision: ref || commit, commit: commit)
+      assign(socket, revision_spec: rev_spec, revision: ref || commit, commit: commit)
     else
       {:error, reason} ->
         raise RuntimeError, message: reason
@@ -104,12 +107,15 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, commit_info: commit_info, tree_entries: tree_entries)
   end
 
-  defp assign_stats!(socket) when socket.assigns.stats != %{}, do: socket
-  defp assign_stats!(socket) when socket.assigns.tree_path != [], do: socket
+  defp assign_stats!(socket) when socket.assigns.stats or socket.assigns.tree_path != [], do: socket
+  defp assign_stats!(socket) when is_struct(socket.assigns.repo.stats, Ecto.Association.NotLoaded) do
+    socket
+    |> assign(:repo, DB.preload(socket.assigns.repo, :stats))
+    |> assign_stats!()
+  end
+
   defp assign_stats!(socket) do
-    repo = DB.preload(socket.assigns.repo, :stats)
-    stats = resolve_stats!(repo, socket.assigns.agent, socket.assigns.revision)
-    assign(socket, repo: repo, stats: stats)
+    assign(socket, :stats, resolve_stats!(socket.assigns.repo, socket.assigns.agent, socket.assigns.revision))
   end
 
   defp assign_page_title(socket) do
@@ -224,40 +230,24 @@ defmodule GitGud.Web.TreeBrowserLive do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
 
-  defp resolve_stats!(%Repo{stats: %RepoStats{refs: stats_refs}} = repo, agent, revision) when is_map(stats_refs) do
-    rev_stats =
-      case revision do
-        %GitRef{} = ref ->
-          Map.get(stats_refs, to_string(ref), %{})
-        rev ->
-          case GitAgent.history_count(agent, rev) do
-            {:ok, commit_count} ->
-              %{"count" => commit_count}
-            {:error, reason} ->
-              raise RuntimeError, message: reason
-          end
-      end
-    rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
+  defp resolve_stats!(repo, agent, revision) do
+    ref_groups = Enum.group_by(repo.stats.refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
     %{
-      branches: Enum.count(Map.get(rev_groups, "heads", [])),
-      tags: Enum.count(Map.get(rev_groups, "tags", [])),
-      commits: rev_stats["count"] || 0,
+      commits: resolve_stats_revision_history_count!(agent, revision, repo.stats.refs),
+      branches: Enum.count(Map.get(ref_groups, "heads", [])),
+      tags: Enum.count(Map.get(ref_groups, "tags", [])),
       contributors: RepoQuery.count_contributors(repo)
     }
   end
 
-  defp resolve_stats!(%Repo{} = repo, agent, revision) do
-    Logger.warn("repository #{repo.owner.login}/#{repo.name} does not have stats")
-    with {:ok, branches} <- GitAgent.branches(agent),
-         {:ok, tags} <- GitAgent.tags(agent),
-         {:ok, commit_count} <- GitAgent.history_count(agent, revision) do
-      %{
-        branches: Enum.count(branches),
-        tags: Enum.count(tags),
-        commits: commit_count,
-        contributors: RepoQuery.count_contributors(repo)
-      }
-    else
+  defp resolve_stats_revision_history_count!(_agent, %GitRef{} = revision, refs) do
+    get_in(refs, [to_string(revision), "count"]) || raise RuntimeError, message: "cannot retrieve number of ancestors for #{revision}"
+  end
+
+  defp resolve_stats_revision_history_count!(agent, revision, _refs) do
+    case GitAgent.history_count(agent, revision) do
+      {:ok, commit_count} ->
+        commit_count
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
