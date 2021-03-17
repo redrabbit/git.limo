@@ -104,7 +104,42 @@
           </p>
         </header>
         <div class="card-content">
-          <%= render("_diff_table.html", Map.put(assigns, :delta, delta)) %>
+          <%= with highlight_lang <- highlight_language_from_path(delta.new_file.path) do %>
+            <table class="blob-table commit-table" data-blob-oid="<%= oid_fmt(delta.new_file.oid) %>" data-lang="<%= highlight_lang %>">
+              <tbody>
+                <%= for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do %>
+                  <tr class="hunk">
+                    <td class="line-no" colspan="2"></td>
+                    <td class="code" colspan="2">
+                      <div class="code-inner nohighlight"><%= hunk.header %></div>
+                    </td>
+                  </tr>
+                  <%= for {line, line_index} <- Enum.with_index(hunk.lines) do %>
+                    <%= cond do %>
+                      <% line.origin == "+" -> %>
+                        <tr class="diff-addition">
+                      <% line.origin == "-" -> %>
+                        <tr class="diff-deletion">
+                      <% true -> %>
+                        <tr>
+                    <% end %>
+                      <td class="line-no"><%= if line.old_line_no != -1, do: line.old_line_no %></td>
+                      <td class="line-no"><%= if line.new_line_no != -1, do: line.new_line_no %></td>
+                      <td class="code origin">
+                        <button class="button is-link is-small" data-hunk=<%= hunk_index %> data-line=<%= line_index %>>
+                          <span class="icon"><i class="fa fa-comment-alt"></i></span>
+                        </button>
+                        <%= line.origin %>
+                      </td>
+                      <td class="code">
+                        <div class="code-inner"><%= line.content %></div>
+                      </td>
+                    </tr>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
         </div>
       </div>
     </div>

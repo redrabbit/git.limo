@@ -4,7 +4,7 @@
       <%= branch_select_live(@conn, @repo, @revision, @tree_path) %>
     </div>
     <div class="level-item">
-      <%= render "_tree_breadcrumb.html", assigns %>
+      <%= render "_breadcrumb.html", assigns %>
     </div>
   </div>
   </div>
