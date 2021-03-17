@@ -7,6 +7,7 @@ defmodule GitGud.Web.IssueLabelController do
 
   alias GitGud.Repo
   alias GitGud.RepoQuery
+  alias GitGud.IssueQuery
 
   plug :ensure_authenticated when action == :update
   plug :put_layout, :repo
@@ -19,7 +20,7 @@ defmodule GitGud.Web.IssueLabelController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: [:issue_labels]),
-     do: render(conn, "index.html", repo: repo, changeset: Repo.issue_labels_changeset(repo)),
+     do: render(conn, "index.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: Repo.issue_labels_changeset(repo)),
    else: {:error, :not_found}
   end
 
@@ -47,7 +48,7 @@ defmodule GitGud.Web.IssueLabelController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("index.html", repo: repo, changeset: %{changeset|action: :update})
+            |> render("index.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :update})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

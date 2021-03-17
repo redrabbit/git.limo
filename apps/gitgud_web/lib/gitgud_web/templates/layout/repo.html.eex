@@ -37,8 +37,9 @@
           <a href="<%= Routes.issue_path(@conn, :index, @repo.owner, @repo) %>">
             <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
             <span>Issues</span>
-            &nbsp;
-            <span id="issue-count" class="tag"><%= GitGud.Web.IssueView.count_issues(@conn, :open) %></span>
+            <%= if count = assigns[:repo_open_issue_count] do %>
+              &nbsp;<span class="tag"><%= count %></span>
+            <% end %>
           </a>
         </li>
         <li>

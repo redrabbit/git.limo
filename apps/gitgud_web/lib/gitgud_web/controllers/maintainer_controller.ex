@@ -9,6 +9,7 @@ defmodule GitGud.Web.MaintainerController do
 
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
+  alias GitGud.IssueQuery
 
   plug :ensure_authenticated
   plug :scrub_params, "maintainer" when action in [:create, :update, :delete]
@@ -25,7 +26,12 @@ defmodule GitGud.Web.MaintainerController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
         changeset = Maintainer.changeset(%Maintainer{})
-        render(conn, "index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: changeset)
+        render(conn, "index.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          maintainers: RepoQuery.maintainers(repo),
+          changeset: changeset
+        )
       end || {:error, :unauthorized}
     end  || {:error, :not_found}
   end
@@ -47,18 +53,26 @@ defmodule GitGud.Web.MaintainerController do
             {:error, changeset} ->
               {user_error, errors} = Keyword.pop(changeset.errors, :user_id)
               changeset = if user_error, do: %{changeset|errors: [{:user_login, user_error}|errors]}, else: changeset
-              conn
-              |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-              |> put_status(:bad_request)
-              |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert, params: maintainer_params})
+              conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
+              conn = put_status(conn, :bad_request)
+              render(conn, "index.html",
+                repo: repo,
+                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                maintainers: RepoQuery.maintainers(repo),
+                changeset: %{changeset|action: :insert, params: maintainer_params}
+              )
           end
         else
           changeset = Maintainer.changeset(%Maintainer{}, maintainer_params)
           changeset = Ecto.Changeset.add_error(changeset, :user_login, is_nil(maintainer_login) && "can't be blank" || "invalid")
-          conn
-          |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-          |> put_status(:bad_request)
-          |> render("index.html", repo: repo, maintainers: RepoQuery.maintainers(repo), changeset: %{changeset|action: :insert})
+          conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
+          conn = put_status(conn, :bad_request)
+          render(conn, "index.html",
+            repo: repo,
+            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            maintainers: RepoQuery.maintainers(repo),
+            changeset: %{changeset|action: :insert}
+          )
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

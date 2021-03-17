@@ -23,11 +23,11 @@ defmodule GitGud.Web.RepoController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login} = _params) do
     if user = UserQuery.by_login(user_login, preload: [:public_email, repos: :stats], viewer: current_user(conn)) do
-      stats = %{
+      batch_stats = %{
         contributors: RepoQuery.count_contributors(user.repos),
         issues: IssueQuery.count_repo_issues(user.repos, status: :open)
       }
-      render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1, stats)}))
+      render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1, batch_stats)}))
     end || {:error, :not_found}
   end
 
@@ -68,10 +68,9 @@ defmodule GitGud.Web.RepoController do
   @spec edit(Plug.Conn.t, map) :: Plug.Conn.t
   def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if authorized?(conn, repo, :admin) do
-        changeset = Repo.changeset(repo)
-        render(conn, "edit.html", repo: repo, changeset: changeset)
-      end || {:error, :unauthorized}
+      if authorized?(conn, repo, :admin),
+        do: render(conn, "edit.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: Repo.changeset(repo)),
+      else: {:error, :unauthorized}
     end || {:error, :not_found}
   end
 
@@ -92,7 +91,7 @@ defmodule GitGud.Web.RepoController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("edit.html", repo: repo, changeset: %{changeset|action: :insert})
+            |> render("edit.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

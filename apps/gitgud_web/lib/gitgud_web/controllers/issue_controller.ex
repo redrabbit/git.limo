@@ -21,10 +21,17 @@ defmodule GitGud.Web.IssueController do
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :issue_labels) do
+      repo_issue_count = IssueQuery.count_repo_issues_by_status(repo)
       query = map_search_query(conn.query_params["q"] || "")
       query_opts = Keyword.merge(Map.to_list(query), preload: [:author, :labels], order_by: [desc: :number])
       issues = IssueQuery.repo_issues_with_reply_count(repo, query_opts)
-      render(conn, "index.html", repo: repo, issues: issues, q: query, stats: IssueQuery.count_repo_issues_by_status(repo))
+      render(conn, "index.html",
+        repo: repo,
+        repo_open_issue_count: repo_issue_count[:open],
+        repo_close_issue_count: repo_issue_count[:close],
+        issues: issues,
+        q: query
+      )
     end || {:error, :not_found}
   end
 
@@ -35,7 +42,11 @@ defmodule GitGud.Web.IssueController do
   def show(conn, %{"user_login" => user_login, "repo_name" => repo_name, "number" => issue_number} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       if issue = IssueQuery.repo_issue(repo, String.to_integer(issue_number), viewer: current_user(conn), preload: [:author, :labels]) do
-        render(conn, "show.html", repo: repo, issue: issue)
+        render(conn, "show.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          issue: issue
+        )
       end
     end || {:error, :not_found}
   end
@@ -47,9 +58,13 @@ defmodule GitGud.Web.IssueController do
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
-      if verified?(user),
-        do: render(conn, "new.html", repo: repo, changeset: Issue.changeset(%Issue{comments: [%Comment{}]})),
-      else: {:error, :unauthorized}
+      if verified?(user) do
+        render(conn, "new.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          changeset: Issue.changeset(%Issue{comments: [%Comment{}]})
+        )
+      end || {:error, :unauthorized}
     end || {:error, :not_found}
   end
 
@@ -73,7 +88,7 @@ defmodule GitGud.Web.IssueController do
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
             |> put_status(:bad_request)
-            |> render("new.html", repo: repo, changeset: %{changeset|action: :insert})
+            |> render("new.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

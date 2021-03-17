@@ -2,11 +2,10 @@ defmodule GitGud.Web.IssueView do
   @moduledoc false
   use GitGud.Web, :view
 
-  alias GitGud.Repo
   alias GitGud.Issue
-  alias GitGud.IssueQuery
 
-  import Phoenix.Controller, only: [current_path: 2, view_module: 1]
+  import Phoenix.Controller, only: [current_path: 2]
+
   import Phoenix.HTML.Tag
   import Phoenix.HTML.Link
 
@@ -78,27 +77,6 @@ defmodule GitGud.Web.IssueView do
       content_tag(:span, content_tag(:i, [], class: "fa fa-check-circle"), class: "icon"),
       content_tag(:span, "Closed")
     ], class: "tag is-danger")
-  end
-
-  @spec count_issues(Plug.Conn.t | Repo.t, atom) :: non_neg_integer()
-  def count_issues(%Plug.Conn{} = conn, status) do
-    if view_module(conn) == __MODULE__ do
-      get_in(conn.assigns, [:stats, status])
-    end || count_issues(conn.assigns.repo, status)
-  end
-
-  def count_issues(%Repo{} = repo, status) do
-    if Ecto.assoc_loaded?(repo.issues),
-     do: Enum.count(filter_issues(repo.issues, status)),
-   else: IssueQuery.count_repo_issues(repo, status: status)
-  end
-
-  @spec filter_issues([Issue.t | {Issue.t, non_neg_integer()}], atom) :: [Issue.t]
-  def filter_issues(issues, status) when is_list(issues) do
-    Enum.filter(issues, fn
-      %Issue{status: issue_status} -> issue_status == to_string(status)
-      {%Issue{status: issue_status}, _count} -> issue_status == to_string(status)
-    end)
   end
 
   @spec title(atom, map) :: binary

@@ -1,14 +1,14 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= branch_select(@conn) %>
+      <%= branch_select_live(@conn, @repo, @revision, @tree_path) %>
     </div>
     <div class="level-item">
       <%= render "_tree_breadcrumb.html", assigns %>
     </div>
   </div>
   <div class="level-right">
-    <%= if revision_editable?(@revision) && authorized?(@conn, @repo, :push) do %>
+    <%= if revision_type(@revision) == :branch && authorized?(@conn, @repo, :push) do %>
       <div class="level-item">
         <div class="field has-addons">
           <div class="control">

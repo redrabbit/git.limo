@@ -87,7 +87,7 @@
         </div>
       </div>
     <% end %>
-    <%= if revision_editable?(@revision) && authorized?(@current_user, @repo, :push) do %>
+    <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
       <div class="level-item">
         <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
       </div>

@@ -32,16 +32,16 @@
               <div class="field is-grouped">
                 <div class="control">
                   <%= if :open in @q.status do %>
-                    <%= status_button(@conn, :open, class: "has-text-grey-light has-badge-rounded has-badge-success", data_badge: count_issues(@conn, :open)) %>
+                    <%= status_button(@conn, :open, class: "has-text-grey-light has-badge-rounded has-badge-success", data_badge: @repo_open_issue_count) %>
                   <% else %>
-                    <%= status_button(@conn, :open, class: "has-badge-rounded has-badge-success has-badge-outlined", icon: [class: "has-text-success"], data_badge: count_issues(@conn, :open)) %>
+                    <%= status_button(@conn, :open, class: "has-badge-rounded has-badge-success has-badge-outlined", icon: [class: "has-text-success"], data_badge: @repo_open_issue_count) %>
                   <% end %>
                 </div>
                 <div class="control">
                   <%= if :close in @q.status do %>
-                    <%= status_button(@conn, :close, class: "has-text-grey-light has-badge-rounded has-badge-danger", data_badge: count_issues(@conn, :close)) %>
+                    <%= status_button(@conn, :close, class: "has-text-grey-light has-badge-rounded has-badge-danger", data_badge: @repo_close_issue_count) %>
                   <% else %>
-                    <%= status_button(@conn, :close, class: "has-badge-rounded has-badge-danger has-badge-outlined", icon: [class: "has-text-danger"], data_badge: count_issues(@conn, :close)) %>
+                    <%= status_button(@conn, :close, class: "has-badge-rounded has-badge-danger has-badge-outlined", icon: [class: "has-text-danger"], data_badge: @repo_close_issue_count) %>
                   <% end %>
                 </div>
               </div>

@@ -19,15 +19,14 @@ defmodule GitGud.Web.CodebaseView do
 
   @external_resource highlight_languages = Path.join(:code.priv_dir(:gitgud_web), "highlight-languages.txt")
 
-  @spec branch_select(Plug.Conn.t) :: binary
-  def branch_select(conn) do
-    %{repo: repo, tree_path: tree_path} = conn.assigns
+  @spec branch_select_live(Plug.Conn.t, Repo.t, GitAgent.git_revision, Path.t) :: binary
+  def branch_select_live(conn, repo, revision, tree_path) do
     live_render(conn, GitGud.Web.BranchSelectContainerLive,
       container: {:div, class: "branch-select"},
       session: %{
         "repo_id" => repo.id,
-        "rev_spec" => revision_spec(conn),
-        "action" => revision_action(conn),
+        "rev_spec" => revision_spec(revision),
+        "action" => revision_action(action_name(conn)),
         "tree_path" => tree_path
       }
     )
@@ -62,55 +61,20 @@ defmodule GitGud.Web.CodebaseView do
     else: {replace_issue_references(List.first(parts), repo, issues), nil}
   end
 
-  @spec diff_deltas_with_reviews(Repo.t, [map], [CommitLineReview.t]) :: [map] | nil
-  def diff_deltas_with_reviews(_repo, deltas, line_reviews) do
-    Enum.map(deltas, fn delta ->
-      reviews = Enum.filter(line_reviews, &(&1.blob_oid in [delta.old_file.oid, delta.new_file.oid]))
-      Enum.reduce(reviews, delta, fn review, delta ->
-        update_in(delta.hunks, fn hunks ->
-          List.update_at(hunks, review.hunk, &attach_review_to_delta_line(&1, review.line, review))
-        end)
-      end)
-    end)
-  end
-
-  @spec revision_oid(Plug.Conn.t | GitAgent.git_revision) :: binary
-  def revision_oid(%Plug.Conn{} = conn), do: revision_oid(conn.assigns.revision)
-  def revision_oid(%{oid: oid} = _rev), do: oid_fmt(oid)
-
-  @spec revision_name(Plug.Conn.t | GitAgent.git_revision) :: binary
-  def revision_name(%Plug.Conn{} = conn), do: revision_name(conn.assigns.revision)
-  def revision_name(%GitCommit{oid: oid} = _rev), do: oid_fmt_short(oid)
+  @spec revision_name(GitAgent.git_revision) :: binary
   def revision_name(%GitRef{name: name} = _rev), do: name
   def revision_name(%GitTag{name: name} = _rev), do: name
+  def revision_name(%GitCommit{oid: oid} = _rev), do: oid_fmt_short(oid)
 
-  @spec revision_type(Plug.Conn.t | GitAgent.git_revision) :: atom
-  def revision_type(%Plug.Conn{} = conn), do: revision_type(conn.assigns.revision)
-  def revision_type(%GitCommit{} = _rev), do: :commit
-  def revision_type(%GitTag{} = _rev), do: :tag
+  @spec revision_type(GitAgent.git_revision) :: atom
   def revision_type(%GitRef{type: type} = _rev), do: type
+  def revision_type(%GitTag{} = _rev), do: :tag
+  def revision_type(%GitCommit{} = _rev), do: :commit
 
-  @spec revision_spec(Plug.Conn.t | GitAgent.git_revision) :: binary
-  def revision_spec(%Plug.Conn{} = conn), do: revision_spec(conn.assigns.revision)
-  def revision_spec(%GitCommit{oid: oid} = _rev), do: "commit:" <> oid_fmt(oid)
-  def revision_spec(%GitTag{name: name} = _rev), do: "tag:" <> name
+  @spec revision_spec(GitAgent.git_revision) :: binary
   def revision_spec(%GitRef{name: name, type: type} = _rev), do: "#{type}:#{name}"
-
-  @spec revision_editable?(Plug.Conn.t | GitAgent.git_revision) :: boolean
-  def revision_editable?(%Plug.Conn{} = conn), do: revision_editable?(conn.assigns.revision)
-  def revision_editable?(rev) do
-    case revision_type(rev) do
-      :branch -> true
-      :tag -> false
-      :commit -> false
-    end
-  end
-
-  @spec revision_action(Plug.Conn.t | atom) :: atom
-  def revision_action(%Plug.Conn{} = conn), do: revision_action(action_name(conn))
-  def revision_action(action) when action in [:show, :new, :create], do: :tree
-  def revision_action(action) when action in [:edit, :update, :confirm_delete, :delete], do: :blob
-  def revision_action(action), do: action
+  def revision_spec(%GitTag{name: name} = _rev), do: "tag:" <> name
+  def revision_spec(%GitCommit{oid: oid} = _rev), do: "commit:" <> oid_fmt(oid)
 
   @spec highlight_language_from_path(binary) :: binary
   def highlight_language_from_path(path) do
@@ -170,9 +134,9 @@ defmodule GitGud.Web.CodebaseView do
   # Helpers
   #
 
-  defp attach_review_to_delta_line(hunk, line, review) do
-    update_in(hunk.lines, fn lines -> List.update_at(lines, line, &Map.put(&1, :review, review)) end)
-  end
+  defp revision_action(action) when action in [:show, :new, :create], do: :tree
+  defp revision_action(action) when action in [:edit, :update, :confirm_delete, :delete], do: :blob
+  defp revision_action(action), do: action
 
   defp find_commit_timestamp({timestamp, _}, timestamp), do: true
   defp find_commit_timestamp({_, _}, _), do: false
@@ -185,13 +149,6 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   defp highlight_language(_extension), do: "plaintext"
-
-  defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
-  defp lines_assemble([word|rest], max, line_length, line, acc) do
-    if line_length + 1 + String.length(word) > max,
-      do: lines_assemble(rest, max, String.length(word), word, [line|acc]),
-    else: lines_assemble(rest, max, line_length + 1 + String.length(word), line <> " " <> word, acc)
-  end
 
   defp wrap_message(content, repo, issues, :pre) do
     content = String.trim(content)
@@ -233,4 +190,12 @@ defmodule GitGud.Web.CodebaseView do
       Enum.intersperse(lines_assemble(rest, max_line_length, String.length(word), word, []), tag(:br))
     end
   end
+
+  defp lines_assemble([], _, _, line, acc), do: Enum.reverse([line|acc])
+  defp lines_assemble([word|rest], max, line_length, line, acc) do
+    if line_length + 1 + String.length(word) > max,
+      do: lines_assemble(rest, max, String.length(word), word, [line|acc]),
+    else: lines_assemble(rest, max, line_length + 1 + String.length(word), line <> " " <> word, acc)
+  end
+
 end
