@@ -8,7 +8,6 @@ import reactComponents from "./react-components"
 import issueLabelSelect from "./issue-label-select"
 import issueLabelTable from "./issue-label-table"
 import blobForm from "./blob-form"
-import blobTable from "./blob-table"
 import commitTable from "./commit-table"
 
 export default [
@@ -22,6 +21,5 @@ export default [
     issueLabelSelect,
     issueLabelTable,
     blobForm,
-    blobTable,
     commitTable,
 ]
