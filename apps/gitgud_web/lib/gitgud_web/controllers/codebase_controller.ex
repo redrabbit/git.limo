@@ -501,7 +501,7 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, head} <- GitAgent.head(agent),
-           {:ok, commit} <- GitAgent.peel(agent, head, :commit),
+           {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
            {:ok, history} <- GitAgent.history(agent, head) do
         page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
         case resolve_commits_infos(agent, page.slice) do
