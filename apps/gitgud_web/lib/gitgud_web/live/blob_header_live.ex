@@ -11,21 +11,31 @@ defmodule GitGud.Web.BlobHeaderLive do
 
   @impl true
   def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "tree_path" => tree_path} = session, socket) do
-    send(self(), :assign_tree_entry_commit)
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign_repo(repo_id)
-      |> assign_agent!()
-      |> assign_revision!(rev_spec)
-      |> assign(tree_path: tree_path, commit_info: nil)
-    }
+    if connected?(socket) do
+      {
+        :ok,
+        socket
+        |> authenticate(session)
+        |> assign_repo(repo_id)
+        |> assign_agent!()
+        |> assign_revision!(rev_spec)
+        |> assign(tree_path: tree_path, blob_commit_info: nil)
+        |> assign_blob_commit_async()
+      }
+    else
+      {
+        :ok,
+        socket
+        |> authenticate(session)
+        |> assign_repo(repo_id)
+        |> assign(tree_path: tree_path, blob_commit_info: nil)
+      }
+    end
   end
 
   @impl true
-  def handle_info(:assign_tree_entry_commit, socket) do
-    {:noreply, assign_tree_entry_commit!(socket)}
+  def handle_info(:assign_blob_commit, socket) do
+    {:noreply, assign_blob_commit!(socket)}
   end
 
   #
@@ -49,8 +59,13 @@ defmodule GitGud.Web.BlobHeaderLive do
     assign_new(socket, :revision, fn -> resolve_revision!(socket.assigns.agent, rev_spec) end)
   end
 
-  defp assign_tree_entry_commit!(socket) do
-    assign(socket, :commit_info, resolve_tree_entry_commit!(socket.assigns.agent, socket.assigns.revision, socket.assigns.tree_path))
+  defp assign_blob_commit!(socket) do
+    assign(socket, :blob_commit_info, resolve_blob_commit!(socket.assigns.agent, socket.assigns.revision, socket.assigns.tree_path))
+  end
+
+  defp assign_blob_commit_async(socket) when not socket.connected?, do: socket
+  defp assign_blob_commit_async(socket) when socket.connected? do
+    send(self(), :assign_blob_commit) && socket
   end
 
   defp resolve_revision!(agent, "branch:" <> branch_name) do
@@ -80,17 +95,17 @@ defmodule GitGud.Web.BlobHeaderLive do
     end
   end
 
-  defp resolve_tree_entry_commit!(agent, revision, tree_path) do
+  defp resolve_blob_commit!(agent, revision, tree_path) do
     case GitAgent.tree_entry_by_path(agent, revision, Path.join(tree_path), with: :commit) do
       {:ok, {_tree_entries, commit}} ->
-        resolve_tree_entry_commit_info!(agent, commit)
+        resolve_blob_commit_info!(agent, commit)
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
   end
 
-  defp resolve_tree_entry_commit_info!(agent, commit) do
-    case GitAgent.transaction(agent, &resolve_tree_entry_commit_info(&1, commit)) do
+  defp resolve_blob_commit_info!(agent, commit) do
+    case GitAgent.transaction(agent, &resolve_blob_commit_info(&1, commit)) do
       {:ok, commit_info} ->
         commit_info
       {:error, reason} ->
@@ -98,7 +113,7 @@ defmodule GitGud.Web.BlobHeaderLive do
     end
   end
 
-  defp resolve_tree_entry_commit_info(agent, commit) do
+  defp resolve_blob_commit_info(agent, commit) do
     with {:ok, message} <- GitAgent.commit_message(agent, commit),
          {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
          {:ok, author} <- GitAgent.commit_author(agent, commit),

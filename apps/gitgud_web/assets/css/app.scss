@@ -404,7 +404,7 @@ textarea.textarea {
   padding-right: 0.6em;
 }
 
-.user.tag {
+.tag.user {
   padding-left: 0;
   vertical-align: middle;
   color: $black;
@@ -459,6 +459,11 @@ textarea.textarea {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
+}
+
+.tag.placeholder {
+  width: 100%;
+  min-width: 120px;
 }
 
 .branch-select {
@@ -732,22 +737,41 @@ table.commits-table {
 }
 
 table.tree-table {
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
+
   thead {
+    box-shadow: none;
     td {
-      padding: 0 0.75rem;
-      line-height: 47px;
+      height: 48px;
+      vertical-align: middle;
       border-width: 0 0 1px;
       background-color: $light;
+
+      &:first-child {
+        border-top-left-radius: 0.25rem;
+      }
+
       &:last-child {
-        white-space: nowrap;
+        border-top-right-radius: 0.25rem;
+      }
+
+      .tag.placeholder {
+        vertical-align: middle;
       }
     }
   }
 
   tbody {
     tr {
-      td:first-child, td:last-child {
-        white-space: nowrap;
+      td {
+        &:first-child, &:last-child {
+          white-space: nowrap;
+        }
+
+        .tag.placeholder {
+          display: flex;
+        }
       }
     }
   }

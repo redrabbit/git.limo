@@ -1,18 +1,23 @@
 <div class="card-header-title">
-  <%= if @commit_info do %>
-    <%= with %{author: _author, committer: committer} <- Map.take(@commit_info, [:author, :committer]) do %>
+  <%= if @blob_commit_info do %>
+    <%= with %{author: _author, committer: committer} <- Map.take(@blob_commit_info, [:author, :committer]) do %>
       <%= if Map.has_key?(committer, :id) do %>
         <a href="<%= Routes.user_path(@socket, :show, committer) %>" class="tag is-white user"><%= committer %></a>
       <% else %>
         <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
       <% end %>
       &nbsp;
-      <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@commit_info.message) %></a>
+      <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@blob_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@blob_commit_info.message) %></a>
     <% end %>
   <% else %>
-    <span class="has-text-dark">
-      <span class="icon is-small"><i class="fa fa-spin fa-spinner-third"></i></span>
-      <span class="loading-ellipsis">Loading commit</span>
-    </span>
+    <span class="tag placeholder is-white"></span>
+  <% end %>
+</div>
+
+<div class="card-header-icon has-text-right has-text-dark">
+  <%= if @blob_commit_info do %>
+    <%= datetime_format(@blob_commit_info.timestamp, "{relative}") %>
+  <% else %>
+    <span class="tag placeholder is-white"></span>
   <% end %>
 </div>

@@ -34,22 +34,15 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    revision = socket.assigns.revision_spec
-    case params["revision"] do
-      ^revision ->
-        {
-          :noreply,
-          socket
-          |> assign(tree_path: params["path"] || [])
-          |> assign_tree!()
-          |> assign_stats!()
-          |> assign_page_title()
-        }
-      nil ->
-        {:noreply, redirect(socket, to: Routes.codebase_path(socket, :show, socket.assigns.repo.owner, socket.assigns.repo))}
-      revision ->
-        {:noreply, redirect(socket, to: Routes.codebase_path(socket, :tree, socket.assigns.repo.owner, socket.assigns.repo, revision, socket.assigns.tree_path))}
-    end
+    {
+      :noreply,
+      socket
+      |> assign(tree_path: params["path"] || [])
+      |> assign_tree!()
+      |> assign_tree_commits_async()
+      |> assign_stats!()
+      |> assign_page_title()
+    }
   end
 
   @impl true
@@ -101,16 +94,20 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp assign_tree!(socket) do
-    commit_info = if Enum.empty?(socket.assigns.tree_path), do: resolve_tree_commit_info!(socket.assigns.agent, socket.assigns.commit)
+    tree_commit_info = if Enum.empty?(socket.assigns.tree_path), do: resolve_tree_commit_info!(socket.assigns.agent, socket.assigns.commit)
     tree_entries = resolve_tree_entries!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     tree_readme = Enum.find_value(tree_entries, &resolve_tree_readme!(socket.assigns.agent, &1))
-    send(self(), :assign_tree_commits)
-    assign(socket, commit_info: commit_info, tree_entries: tree_entries, tree_readme: tree_readme)
+    assign(socket, tree_commit_info: tree_commit_info, tree_entries: Enum.map(tree_entries, &{&1, nil}), tree_readme: tree_readme)
+  end
+
+  defp assign_tree_commits_async(socket) when not socket.connected?, do: socket
+  defp assign_tree_commits_async(socket) do
+    send(self(), :assign_tree_commits) && socket
   end
 
   defp assign_tree_commits!(socket) do
-    {commit_info, tree_entries} = resolve_tree!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
-    assign(socket, commit_info: commit_info, tree_entries: tree_entries)
+    {tree_commit_info, tree_entries} = resolve_tree!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
+    assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
   end
 
   defp assign_stats!(socket) when socket.assigns.stats or socket.assigns.tree_path != [], do: socket
@@ -131,7 +128,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_tree_entries!(agent, commit, []) do
     case GitAgent.tree_entries(agent, commit) do
       {:ok, tree_entries} ->
-        Enum.sort_by(tree_entries, fn tree_entry -> tree_entry.name end)
+        Enum.sort_by(tree_entries, &(&1.name))
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
@@ -140,7 +137,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_tree_entries!(agent, commit, tree_path) do
     case GitAgent.tree_entries(agent, commit, path: Path.join(tree_path)) do
       {:ok, tree_entries} ->
-        Enum.sort_by(tree_entries, fn tree_entry -> tree_entry.name end)
+        Enum.sort_by(tree_entries, &(&1.name))
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
