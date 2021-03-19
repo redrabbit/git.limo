@@ -10,9 +10,9 @@
   <div class="level-right">
     <div class="level-item">
       <%= if @breadcrumb.tree? do %>
-        <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button"> Browse files</a>
+        <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Browse tree</a>
       <% else %>
-        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button"> View file</a>
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">View blob</a>
       <% end %>
     </div>
   </div>
@@ -44,9 +44,15 @@
               <div class="column has-text-right">
                 <p class="buttons is-pulled-right">
                   <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, commit) %>" class="button is-small is-link is-inverted has-text-weight-bold"><%= commit %></a>
-                  <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, @tree_path) %>" class="button is-small is-link is-inverted">
-                    <span class="icon"><i class="fa fa-code"></i></span>
-                  </a>
+                  <%= if @breadcrumb.tree? do %>
+                    <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, commit, @tree_path) %>" class="button is-small is-link is-inverted">
+                      <span class="icon"><i class="fa fa-code"></i></span>
+                    </a>
+                  <% else %>
+                    <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo, commit, @tree_path) %>" class="button is-small is-link is-inverted">
+                      <span class="icon"><i class="fa fa-code"></i></span>
+                    </a>
+                  <% end %>
                 </p>
               </div>
             </div>
