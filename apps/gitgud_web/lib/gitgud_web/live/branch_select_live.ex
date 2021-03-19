@@ -31,11 +31,27 @@ defmodule GitGud.Web.BranchSelectLive do
   end
 
   @impl true
+  def handle_event("toggle_dropdown", _value, socket) when not is_map_key(socket.assigns, :refs) do
+    {
+      :noreply,
+      socket
+      |> assign(:active, true)
+      |> assign_refs!()
+      |> assign_tab()
+    }
+  end
+
+  def handle_event("toggle_dropdown", _value, socket) when socket.assigns.active do
+    {
+      :noreply,
+      socket
+      |> assign(active: false, filter: "")
+      |> assign_tab()
+    }
+  end
+
   def handle_event("toggle_dropdown", _value, socket) do
-    socket = assign(socket, active: !socket.assigns.active)
-    unless Map.has_key?(socket.assigns, :refs),
-      do: {:noreply, assign_refs!(socket)},
-    else: {:noreply, socket}
+    {:noreply, assign(socket, :active, true)}
   end
 
   def handle_event("filter", %{"value" => filter}, socket) do
@@ -58,7 +74,12 @@ defmodule GitGud.Web.BranchSelectLive do
   end
 
   defp assign_tab(socket) do
-    assign(socket, :tab, resolve_tab(socket.assigns.revision))
+    case revision_type(socket.assigns.revision) do
+      :commit ->
+        assign(socket, :tab, resolve_tab(Enum.find(socket.assigns[:refs] || [], socket.assigns.revision, &(&1.oid == socket.assigns.commit.oid))))
+      revision_type ->
+        assign(socket, :tab, revision_type)
+    end
   end
 
   defp assign_refs!(socket) do
@@ -70,13 +91,12 @@ defmodule GitGud.Web.BranchSelectLive do
   defp resolve_tab(_rev), do: :branch
 
   defp resolve_references!(agent) do
-    case GitAgent.references(agent, with: :commit) do
+    case GitAgent.references(agent, with: :commit, target: :commit) do
       {:ok, refs} ->
         refs
         |> Enum.map(&map_reference_timestamp!(agent, &1))
         |> Enum.sort_by(&elem(&1, 1), {:desc, NaiveDateTime})
         |> Enum.map(&elem(&1, 0))
-        |> Enum.group_by(&(&1.type))
       {:error, reason} ->
         raise RuntimeError, message: reason
     end

@@ -16,6 +16,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
       |> assign_repo(repo_id)
       |> assign_agent!()
       |> assign_revision!(rev_spec)
+      |> assign_commit!()
       |> assign(action: action, tree_path: tree_path)
     }
   end
@@ -28,6 +29,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
         repo: @repo,
         agent: @agent,
         revision: @revision,
+        commit: @commit,
         tree_path: @tree_path,
         action: @action
       ) %>
@@ -55,6 +57,10 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     assign_new(socket, :revision, fn -> resolve_revision!(socket.assigns.agent, rev_spec) end)
   end
 
+  defp assign_commit!(socket) do
+    assign_new(socket, :commit, fn -> resolve_commit!(socket.assigns.agent, socket.assigns.revision) end)
+  end
+
   defp resolve_revision!(agent, "branch:" <> branch_name) do
     case GitAgent.branch(agent, branch_name) do
       {:ok, tag} ->
@@ -75,6 +81,15 @@ defmodule GitGud.Web.BranchSelectContainerLive do
 
   defp resolve_revision!(agent, "commit:" <> commit_oid) do
     case GitAgent.object(agent, oid_parse(commit_oid)) do
+      {:ok, commit} ->
+        commit
+      {:error, reason} ->
+        raise RuntimeError, message: reason
+    end
+  end
+
+  defp resolve_commit!(agent, revision) do
+    case GitAgent.peel(agent, revision, target: :commit) do
       {:ok, commit} ->
         commit
       {:error, reason} ->

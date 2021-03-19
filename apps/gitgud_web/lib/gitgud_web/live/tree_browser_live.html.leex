@@ -35,7 +35,15 @@
   <div class="level-left">
     <div class="level-item">
       <div class="branch-select">
-        <%= live_component(@socket, GitGud.Web.BranchSelectLive, id: "branch_select", repo: @repo, revision: @revision, tree_path: @tree_path, agent: @agent, action: :tree) %>
+        <%= live_component(@socket, GitGud.Web.BranchSelectLive,
+          id: "branch_select",
+          repo: @repo,
+          agent: @agent,
+          revision: @revision,
+          commit: @commit,
+          tree_path: @tree_path,
+          action: :tree
+        ) %>
       </div>
     </div>
     <div class="level-item">
