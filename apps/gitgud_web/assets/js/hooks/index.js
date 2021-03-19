@@ -4,6 +4,7 @@ import cloneInput from "./clone-input"
 import datetimeTooltip from "./datetime-tooltip"
 import commitOid from "./commit-oid"
 import highlightCode from "./highlight-code"
+import liveViews from "./live-views"
 import reactComponents from "./react-components"
 import issueLabelSelect from "./issue-label-select"
 import issueLabelTable from "./issue-label-table"
@@ -17,6 +18,7 @@ export default [
     datetimeTooltip,
     commitOid,
     highlightCode,
+    liveViews,
     reactComponents,
     issueLabelSelect,
     issueLabelTable,
