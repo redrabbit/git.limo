@@ -110,7 +110,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
   end
 
-  defp assign_stats!(socket) when socket.assigns.stats or socket.assigns.tree_path != [], do: socket
+  defp assign_stats!(socket) when is_map_key(socket.assigns, :stats) or socket.assigns.tree_path != [], do: socket
   defp assign_stats!(socket) when is_struct(socket.assigns.repo.stats, Ecto.Association.NotLoaded) do
     socket
     |> assign(:repo, DB.preload(socket.assigns.repo, :stats))
