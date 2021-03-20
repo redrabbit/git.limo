@@ -1,187 +1,213 @@
-<%= if Enum.empty?(@tree_path) do %>
-  <div class="content"><%= @repo.description %></div>
+<%= if @revision do %>
+  <%= if Enum.empty?(@tree_path) do %>
+    <div class="content"><%= @repo.description %></div>
 
-  <div class="tabs is-toggle is-fullwidth">
-    <ul>
-      <li>
-        <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo, @revision, []) %>">
-          <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
-          <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></span>
-        </a>
-      </li>
-      <li>
-        <a href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">
-          <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
-          <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></span>
-        </a>
-      </li>
-      <li>
-        <a href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">
-          <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
-          <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></span>
-        </a>
-      </li>
-      <li>
-        <a>
-          <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
-          <span>Contributors&nbsp;&nbsp;<span class="tag"><%= @stats.contributors %></span></span>
-        </a>
-      </li>
-    </ul>
-  </div>
-<% end %>
-
-<nav class="level">
-  <div class="level-left">
-    <div class="level-item">
-      <div class="branch-select">
-        <%= live_component(@socket, GitGud.Web.BranchSelectLive,
-          id: "branch_select",
-          repo: @repo,
-          agent: @agent,
-          revision: @revision,
-          commit: @commit,
-          tree_path: @tree_path,
-          action: :tree
-        ) %>
-      </div>
+    <div class="tabs is-toggle is-fullwidth">
+      <ul>
+        <li>
+          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo, @revision, []) %>">
+            <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
+            <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">
+            <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
+            <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></span>
+          </a>
+        </li>
+        <li>
+          <a href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">
+            <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
+            <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></span>
+          </a>
+        </li>
+        <li>
+          <a>
+            <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
+            <span>Contributors&nbsp;&nbsp;<span class="tag"><%= @stats.contributors %></span></span>
+          </a>
+        </li>
+      </ul>
     </div>
-    <div class="level-item">
-      <nav class="breadcrumb" aria-label="breadcrumbs">
-        <ul>
-          <li>
-            <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, [])) %>
-          </li>
-          <%= unless Enum.empty?(@tree_path) do %>
-            <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
-              <li><%= live_patch(path, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, Enum.take(@tree_path, index))) %></li>
-            <% end %>
-            <li class="is-active"><a><%= List.last(@tree_path) %></a></li>
-          <% end %>
-          <li></li>
-        </ul>
-      </nav>
+  <% end %>
 
-    </div>
-  </div>
-  <div class="level-right">
-    <%= if Enum.empty?(@tree_path) do %>
+  <nav class="level">
+    <div class="level-left">
       <div class="level-item">
-        <div class="field clone-repo has-addons">
-          <div class="control"><button class="button http-clone-button is-active">HTTP</button></div>
-          <%= if @current_user do %>
-            <div class="control"><button class="button ssh-clone-button">SSH</button></div>
-          <% end %>
-          <div class="control http-clone">
-            <input class="input" type="text" value="<%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git" readonly />
-          </div>
-          <%= if @current_user do %>
-            <div class="control ssh-clone is-hidden">
-              <%= case Application.get_env(:gitgud, :ssh_port, 22) do %>
-                <% 22 -> %>
-                  <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
-                <% ssh_port ->%>
-                  <input class="input" type="text" value="ssh://<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{ssh_port}/#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
-              <% end %>
-            </div>
-          <% end %>
-          <div class="control">
-            <button class="button clipboard-button tooltip" data-tooltip="Copy to clipboard">
-              <span class="icon">
-                <i class="fa fa-clipboard"></i>
-              </span>
-            </button>
-          </div>
+        <div class="branch-select">
+          <%= live_component(@socket, GitGud.Web.BranchSelectLive,
+            id: "branch_select",
+            repo: @repo,
+            agent: @agent,
+            revision: @revision,
+            commit: @commit,
+            tree_path: @tree_path,
+            action: :tree
+          ) %>
         </div>
       </div>
-    <% end %>
-    <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
       <div class="level-item">
-        <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
-      </div>
-    <% end %>
-    <%= unless Enum.empty?(@tree_path) do %>
-      <div class="level-item">
-        <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
-      </div>
-    <% end %>
-  </div>
-</nav>
-
-<table class="table tree-table is-hoverable is-fullwidth">
-  <thead>
-    <tr>
-      <td colspan="2">
-        <%= if @tree_commit_info do %>
-          <%= with %{author: _author, committer: committer} <- Map.take(@tree_commit_info, [:author, :committer]) do %>
-            <%= if Map.has_key?(committer, :id) do %>
-              <a href="<%= Routes.user_path(@socket, :show, committer) %>" class="tag is-white user"><%= committer %></a>
-            <% else %>
-              <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
-            <% end %>
-            <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@tree_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@tree_commit_info.message) %></a>
-          <% end %>
-        <% else %>
-          <span class="tag placeholder is-white"></span>
-        <% end %>
-      </td>
-      <td class="has-text-right">
-        <%= if @tree_commit_info do %>
-          <%= datetime_format(@tree_commit_info.timestamp, "{relative}") %>
-        <% else %>
-          <span class="tag placeholder is-white"></span>
-        <% end %>
-      </td>
-    </tr>
-  </thead>
-  <tbody>
-    <%= for {tree_entry, commit_info} <- @tree_entries do %>
-      <tr>
-        <td>
-          <%= case tree_entry.type do %>
-            <% :tree -> %>
-              <%= live_patch(to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name])) do %>
-                <span class="icon"><i class="fa fa-folder"></i></span>
-                <span><%= tree_entry.name %></span>
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+          <ul>
+            <li>
+              <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, [])) %>
+            </li>
+            <%= unless Enum.empty?(@tree_path) do %>
+              <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
+                <li><%= live_patch(path, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, Enum.take(@tree_path, index))) %></li>
               <% end %>
-            <% :blob -> %>
-              <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
-                <span class="icon"><i class="fa fa-file"></i></span>
-                <span><%= tree_entry.name %></span>
-              </a>
+              <li class="is-active"><a><%= List.last(@tree_path) %></a></li>
+            <% end %>
+            <li></li>
+          </ul>
+        </nav>
+
+      </div>
+    </div>
+    <div class="level-right">
+      <%= if Enum.empty?(@tree_path) do %>
+        <div class="level-item">
+          <div class="field clone-repo has-addons">
+            <div class="control"><button class="button http-clone-button is-active">HTTP</button></div>
+            <%= if @current_user do %>
+              <div class="control"><button class="button ssh-clone-button">SSH</button></div>
+            <% end %>
+            <div class="control http-clone">
+              <input class="input" type="text" value="<%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git" readonly />
+            </div>
+            <%= if @current_user do %>
+              <div class="control ssh-clone is-hidden">
+                <%= case Application.get_env(:gitgud, :ssh_port, 22) do %>
+                  <% 22 -> %>
+                    <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+                  <% ssh_port ->%>
+                    <input class="input" type="text" value="ssh://<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{ssh_port}/#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+                <% end %>
+              </div>
+            <% end %>
+            <div class="control">
+              <button class="button clipboard-button tooltip" data-tooltip="Copy to clipboard">
+                <span class="icon">
+                  <i class="fa fa-clipboard"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
+        <div class="level-item">
+          <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
+        </div>
+      <% end %>
+      <%= unless Enum.empty?(@tree_path) do %>
+        <div class="level-item">
+          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
+        </div>
+      <% end %>
+    </div>
+  </nav>
+
+  <table class="table tree-table is-hoverable is-fullwidth">
+    <thead>
+      <tr>
+        <td colspan="2">
+          <%= if @tree_commit_info do %>
+            <%= with %{author: _author, committer: committer} <- Map.take(@tree_commit_info, [:author, :committer]) do %>
+              <%= if Map.has_key?(committer, :id) do %>
+                <a href="<%= Routes.user_path(@socket, :show, committer) %>" class="tag is-white user"><%= committer %></a>
+              <% else %>
+                <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
+              <% end %>
+              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@tree_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@tree_commit_info.message) %></a>
+            <% end %>
+          <% else %>
+            <span class="tag placeholder is-white"></span>
           <% end %>
         </td>
-        <td class="is-fullwidth">
-          <%= if commit_info do %>
-            <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
+        <td class="has-text-right">
+          <%= if @tree_commit_info do %>
+            <%= datetime_format(@tree_commit_info.timestamp, "{relative}") %>
           <% else %>
-            <span class="tag placeholder"></span>
-          <% end %>
-        </td>
-        <td class="has-text-right has-text-dark">
-          <%= if commit_info do %>
-            <%= datetime_format(commit_info.timestamp, "{relative}") %>
-          <% else %>
-            <span class="tag placeholder"></span>
+            <span class="tag placeholder is-white"></span>
           <% end %>
         </td>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <%= for {tree_entry, commit_info} <- @tree_entries do %>
+        <tr>
+          <td>
+            <%= case tree_entry.type do %>
+              <% :tree -> %>
+                <%= live_patch(to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name])) do %>
+                  <span class="icon"><i class="fa fa-folder"></i></span>
+                  <span><%= tree_entry.name %></span>
+                <% end %>
+              <% :blob -> %>
+                <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
+                  <span class="icon"><i class="fa fa-file"></i></span>
+                  <span><%= tree_entry.name %></span>
+                </a>
+            <% end %>
+          </td>
+          <td class="is-fullwidth">
+            <%= if commit_info do %>
+              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
+            <% else %>
+              <span class="tag placeholder"></span>
+            <% end %>
+          </td>
+          <td class="has-text-right has-text-dark">
+            <%= if commit_info do %>
+              <%= datetime_format(commit_info.timestamp, "{relative}") %>
+            <% else %>
+              <span class="tag placeholder"></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 
-<%= with {readme, filename} <- @tree_readme do %>
-  <div class="card">
-    <header class="card-header">
-      <div class="card-header-title"><%= filename %></div>
-        <p class="card-header-icon buttons">
-          <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [filename]) %>" class="button is-small is-link is-inverted">
-            <span class="icon"><i class="fa fa-code"></i></span>
-          </a>
-        </p>
-    </header>
-    <div class="card-content">
-      <div class="content"><%= readme %></div>
+  <%= with {readme, filename} <- @tree_readme do %>
+    <div class="card">
+      <header class="card-header">
+        <div class="card-header-title"><%= filename %></div>
+          <p class="card-header-icon buttons">
+            <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [filename]) %>" class="button is-small is-link is-inverted">
+              <span class="icon"><i class="fa fa-code"></i></span>
+            </a>
+          </p>
+      </header>
+      <div class="card-content">
+        <div class="content"><%= readme %></div>
+      </div>
     </div>
+  <% end %>
+<% else %>
+  <div class="content">
+    <p><%= @repo.description %></p>
+  </div>
+
+  <h1 class="title">Quick setup</h1>
+
+  <div class="content">
+    <p>create a new repository on the command line</p>
+    <pre>
+    echo "# foobar" >> README.md
+    git init
+    git add README.md
+    git commit -m "first commit"
+    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git
+    git push -u origin master
+    </pre>
+
+    <p>or push an existing repository from the command line</p>
+    <pre>
+    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git
+    git push -u origin master
+    </pre>
   </div>
 <% end %>

@@ -37,7 +37,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     {
       :noreply,
       socket
-      |> assign(tree_path: params["path"] || [])
+      |> assign(tree_path: params["path"] || [], stats: %{})
       |> assign_tree!()
       |> assign_tree_commits_async()
       |> assign_stats!()
@@ -74,10 +74,14 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp assign_revision!(socket, nil) do
-    with {:ok, head} <- GitAgent.head(socket.assigns.agent),
+
+    with {:ok, false} <- GitAgent.empty?(socket.assigns.agent),
+         {:ok, head} <- GitAgent.head(socket.assigns.agent),
          {:ok, commit} <- GitAgent.peel(socket.assigns.agent, head) do
       assign(socket, revision_spec: nil, revision: head, commit: commit)
     else
+      {:ok, true} ->
+        assign(socket, revision_spec: nil, revision: nil, commit: nil)
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
@@ -93,6 +97,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
+  defp assign_tree!(socket) when is_nil(socket.assigns.revision), do: socket
   defp assign_tree!(socket) do
     tree_commit_info = if Enum.empty?(socket.assigns.tree_path), do: resolve_tree_commit_info!(socket.assigns.agent, socket.assigns.commit)
     tree_entries = resolve_tree_entries!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
@@ -105,12 +110,13 @@ defmodule GitGud.Web.TreeBrowserLive do
     send(self(), :assign_tree_commits) && socket
   end
 
+  defp assign_tree_commits!(socket) when is_nil(socket.assigns.revision), do: socket
   defp assign_tree_commits!(socket) do
     {tree_commit_info, tree_entries} = resolve_tree!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
   end
 
-  defp assign_stats!(socket) when is_map_key(socket.assigns, :stats) or socket.assigns.tree_path != [], do: socket
+  defp assign_stats!(socket) when is_nil(socket.assigns.revision) or map_size(socket.assigns.stats) > 0 or socket.assigns.tree_path != [], do: socket
   defp assign_stats!(socket) when is_struct(socket.assigns.repo.stats, Ecto.Association.NotLoaded) do
     socket
     |> assign(:repo, DB.preload(socket.assigns.repo, :stats))
