@@ -1,0 +1,29 @@
+<%= unless @changeset do %>
+  <div class="comment" id="comment-<%= @comment.id %>">
+    <header class="comment-header">
+      <%= if verified?(@current_user) && @current_user.id == @comment.author.id do %>
+        <div class="buttons is-pulled-right">
+          <a class="button is-small" phx-click="toggle_edit" phx-target="<%= @myself %>">
+            <span class="icon"><i class="fa fa-pen"></i></span>
+          </a>
+          <a class="button is-small" phx-click="delete" phx-target="<%= @myself %>">
+            <span class="icon"><i class="fa fa-trash"></i></span>
+          </a>
+        </div>
+      <% end %>
+      <a href="<%= Routes.user_path(@socket, :show, @comment.author) %>" class="tag user"><%= @comment.author %></a> commented <%= datetime_format(@comment.inserted_at, "{relative}") %>
+    </header>
+    <div class="content"><%= markdown_safe(@comment.body, repo: @repo) %></div>
+  </div>
+<% else %>
+  <div class="comment-form" id="comment-<%= @comment.id %>">
+    <%= live_component(@socket, GitGud.Web.CommentFormLive, id: "comment-#{@comment.id}-form", current_user: @current_user, repo: @repo, changeset: @changeset, phx_change: "validate", phx_submit: "update", phx_target: @myself) do %>
+      <div class="control">
+        <button class="button" type="reset" phx-click="toggle_edit" phx-target="<%= @myself %>">Cancel</button>
+      </div>
+      <div class="control">
+        <%= submit "Update comment", class: "button is-link", disabled: @changeset.changes == %{} %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

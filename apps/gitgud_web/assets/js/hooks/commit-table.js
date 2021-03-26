@@ -6,6 +6,7 @@ import {currentUser} from "../auth"
 import {CommitLineReview} from "../components"
 
 export default () => {
+  /*
   const commitStats = document.getElementById("commit-stats")
   if(commitStats) {
     const {repoId, commitOid} = commitStats.dataset
@@ -97,5 +98,5 @@ export default () => {
       })
     })
   }
-
+  */
 }

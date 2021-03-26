@@ -3,6 +3,9 @@ defmodule GitGud.Web.BranchSelectContainerLive do
 
   alias GitRekt.GitAgent
 
+  alias GitGud.DB
+  alias GitGud.DBQueryable
+
   alias GitGud.RepoQuery
 
   import GitRekt.Git, only: [oid_parse: 1]
@@ -13,7 +16,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
       :ok,
       socket
       |> authenticate(session)
-      |> assign_repo(repo_id)
+      |> assign_repo!(repo_id)
       |> assign_agent!()
       |> assign_revision!(rev_spec)
       |> assign_commit!()
@@ -40,8 +43,10 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   # Helpers
   #
 
-  defp assign_repo(socket, repo_id) do
-    assign_new(socket, :repo, fn -> RepoQuery.by_id(repo_id, viewer: current_user(socket)) end)
+  defp assign_repo!(socket, repo_id) do
+    assign_new(socket, :repo, fn ->
+      DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id], viewer: current_user(socket)))
+    end)
   end
 
   defp assign_agent!(socket) do

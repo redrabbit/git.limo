@@ -862,6 +862,7 @@ table.blob-table {
   }
 
   .comment-preview {
+    min-height: 128px;
     border-bottom: 1px solid $grey-lighter;
     margin-left: -1.25rem;
     margin-right: -1.25rem;

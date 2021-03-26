@@ -20,7 +20,7 @@
   <%= with {helper, action} <- current_route(@conn) do %>
     <div class="tabs">
       <ul>
-        <li<%= if helper in [:codebase, :codebase_live] do %> class="is-active"<% end %>>
+        <li<%= if helper in [:codebase, :tree_browser_live, :commit_diff_live] do %> class="is-active"<% end %>>
           <%= if assigns[:revision] do %>
             <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
               <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>

@@ -34,8 +34,8 @@ defmodule GitGud.Web.MaintainerSearchFormLive do
     end
   end
 
-  def handle_event("submit", %{"maintainer" => maintainer_params}, socket), do: submit_form(socket, maintainer_params)
-  def handle_event("select", maintainer_params, socket), do: submit_form(socket, maintainer_params)
+  def handle_event("submit", %{"maintainer" => maintainer_params}, socket), do: trigger_submit_form(socket, maintainer_params)
+  def handle_event("select", maintainer_params, socket), do: trigger_submit_form(socket, maintainer_params)
 
   #
   # Helpers
@@ -63,7 +63,7 @@ defmodule GitGud.Web.MaintainerSearchFormLive do
     end
   end
 
-  defp submit_form(socket, maintainer_params) do
+  defp trigger_submit_form(socket, maintainer_params) do
     changeset = changeset(maintainer_params, socket.assigns.search_results, socket.assigns.repo.maintainers)
     case apply_action(changeset, :insert) do
       {:ok, _maintainer} ->

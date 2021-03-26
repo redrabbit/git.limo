@@ -26,7 +26,7 @@ defmodule GitGud.Web.TreeBrowserLive do
       socket
       |> authenticate(session)
       |> assign_repo!(user_login, repo_name)
-      |> assign_repo_open_issue_count!()
+      |> assign_repo_open_issue_count()
       |> assign_agent!()
       |> assign_revision!(params["revision"])
     }
@@ -68,8 +68,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
-  defp assign_repo_open_issue_count!(socket) when socket.connected?, do: socket
-  defp assign_repo_open_issue_count!(socket) do
+  defp assign_repo_open_issue_count(socket) when socket.connected?, do: socket
+  defp assign_repo_open_issue_count(socket) do
     assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
   end
 

@@ -344,18 +344,12 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, commit} <- GitAgent.object(agent, oid_parse(oid)),
-           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)),
-           {:ok, diff} <- GitAgent.diff(agent, hd(commit_info.parents), commit), # TODO
-           {:ok, diff_stats} <- GitAgent.diff_stats(agent, diff),
-           {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
+           {:ok, commit_info} <- GitAgent.transaction(agent, &resolve_commit_info(&1, commit)) do
         render(conn, "commit.html",
           repo: repo,
           repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
           commit: commit,
-          commit_info: resolve_db_commit_info(commit_info),
-          diff_stats: diff_stats,
-          diff_deltas: diff_deltas,
-          comment_count: ReviewQuery.count_comments_by_blob(repo, commit)
+          commit_info: resolve_db_commit_info(commit_info)
         )
       end
     end || {:error, :not_found}
