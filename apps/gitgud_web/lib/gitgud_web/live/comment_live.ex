@@ -3,6 +3,9 @@ defmodule GitGud.Web.CommentLive do
 
   alias GitGud.Comment
 
+  alias GitGud.UserQuery
+  alias GitGud.IssueQuery
+
   @impl true
   def update(assigns, socket) do
     {
@@ -11,6 +14,20 @@ defmodule GitGud.Web.CommentLive do
       |> assign(assigns)
       |> assign_changeset()
     }
+  end
+
+  @impl true
+  def preload(list_of_assigns) do
+    matches = parse_comments(list_of_assigns)
+    repo = hd(list_of_assigns)[:repo]
+    agent = hd(list_of_assigns)[:agent] || unwrap_agent!(repo)
+    users = UserQuery.by_login(matches[:user_mentions] || [])
+    issues = repo && IssueQuery.repo_issues(repo, numbers: matches[:issue_references] || []) || []
+    Enum.map(list_of_assigns, fn assigns ->
+      assigns
+      |> Map.put_new(:agent, agent)
+      |> Map.put(:comment_body_html, markdown_safe(assigns.comment.body, %{repo: repo, agent: agent, users: users, issues: issues}))
+    end)
   end
 
   @impl true
@@ -52,4 +69,25 @@ defmodule GitGud.Web.CommentLive do
 
   defp assign_changeset(socket) when is_map_key(socket.assigns, :changeset), do: socket
   defp assign_changeset(socket), do: assign(socket, :changeset, nil)
+
+  defp parse_comments(list_of_assigns) do
+    Enum.map(
+      Enum.reduce(list_of_assigns, %{}, fn assigns, acc ->
+        Enum.reduce(GitGud.Web.Markdown.parse(assigns.comment.body), acc, fn {key, values}, acc ->
+          Map.update(acc, key, [], &(&1 ++ values))
+        end)
+      end),
+      fn {key, values} -> {key, Enum.uniq(values)} end
+    )
+  end
+
+  defp unwrap_agent!(nil), do: nil
+  defp unwrap_agent!(repo) do
+    case GitRekt.GitAgent.unwrap(repo) do
+      {:ok, agent} ->
+        agent
+      {:error, reason} ->
+        raise reason
+    end
+  end
 end

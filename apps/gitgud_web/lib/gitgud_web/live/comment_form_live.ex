@@ -24,7 +24,7 @@ defmodule GitGud.Web.CommentFormLive do
       :editor ->
         {:noreply, assign(socket, tab: tab)}
       :preview ->
-        {:noreply, assign(socket, tab: tab, markdown_preview: markdown_changeset(socket.assigns.changeset, Map.take(socket.assigns, [:repo])))}
+        {:noreply, assign(socket, tab: tab, markdown_preview: markdown_changeset(socket.assigns.changeset, Map.take(socket.assigns, [:repo, :agent])))}
     end
   end
 

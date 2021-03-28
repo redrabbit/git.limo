@@ -13,11 +13,19 @@
       <% end %>
       <a href="<%= Routes.user_path(@socket, :show, @comment.author) %>" class="tag user"><%= @comment.author %></a> commented <%= datetime_format(@comment.inserted_at, "{relative}") %>
     </header>
-    <div class="content"><%= markdown_safe(@comment.body, repo: @repo) %></div>
+    <div class="content"><%= @comment_body_html %></div>
   </div>
 <% else %>
   <div class="comment-form" id="comment-<%= @comment.id %>">
-    <%= live_component(@socket, GitGud.Web.CommentFormLive, id: "comment-#{@comment.id}-form", current_user: @current_user, repo: @repo, changeset: @changeset, phx_change: "validate", phx_submit: "update", phx_target: @myself) do %>
+    <%= live_component(@socket, GitGud.Web.CommentFormLive,
+      id: "comment-#{@comment.id}-form",
+      current_user: @current_user,
+      repo: @repo,
+      agent: @agent,
+      changeset: @changeset,
+      phx_change: "validate",
+      phx_submit: "update",
+      phx_target: @myself) do %>
       <div class="control">
         <button class="button" type="reset" phx-click="toggle_edit" phx-target="<%= @myself %>">Cancel</button>
       </div>
