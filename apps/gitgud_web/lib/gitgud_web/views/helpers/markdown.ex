@@ -44,6 +44,16 @@ defmodule GitGud.Web.Markdown do
   def markdown_safe(nil, _opts), do: nil
   def markdown_safe(content, opts), do: raw(markdown(content, opts))
 
+  @doc """
+  Returns a map of potential matches for the given `content`.
+  """
+  @spec parse(binary | nil) :: map
+  def parse(content) do
+    if content,
+      do: %{user_mentions: user_mentions(content), issue_references: issue_references(content)},
+    else: %{}
+  end
+
   #
   # Helpers
   #
@@ -116,28 +126,34 @@ defmodule GitGud.Web.Markdown do
     end
   end
 
+  defp find_user_mentions(content) do
+    logins = user_mentions(content)
+    unless Enum.empty?(logins),
+      do: UserQuery.by_login(logins),
+    else: []
+  end
+
+  defp user_mentions(content) do
+    ~r/\B@([a-zA-Z0-9_-]+)\b/
+    |> Regex.scan(content, capture: :all_but_first)
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
   defp find_issue_references(_content, nil), do: []
   defp find_issue_references(content, repo) do
-    numbers =
-      ~r/\B#([0-9]+)\b/
-      |> Regex.scan(content, capture: :all_but_first)
-      |> List.flatten()
-      |> Enum.map(&String.to_integer/1)
-      |> Enum.uniq()
+    numbers = issue_references(content)
     unless Enum.empty?(numbers),
       do: IssueQuery.repo_issues(repo, numbers: numbers),
     else: []
   end
 
-  defp find_user_mentions(content) do
-    logins =
-      ~r/\B@([a-zA-Z0-9_-]+)\b/
-      |> Regex.scan(content, capture: :all_but_first)
-      |> List.flatten()
-      |> Enum.uniq()
-    unless Enum.empty?(logins),
-      do: UserQuery.by_login(logins),
-    else: []
+  defp issue_references(content) do
+    ~r/\B#([0-9]+)\b/
+    |> Regex.scan(content, capture: :all_but_first)
+    |> List.flatten()
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.uniq()
   end
 
   defp hexadecimal_str?(str), do: Enum.all?(String.to_charlist(str), &hexadecimal_char?/1)
