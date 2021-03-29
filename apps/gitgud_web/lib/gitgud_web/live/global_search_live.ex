@@ -1,4 +1,8 @@
 defmodule GitGud.Web.GlobalSearchLive do
+  @moduledoc """
+  Live view responsible for rendering the global search in the top-level navigation bar.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitGud.User
@@ -10,6 +14,7 @@ defmodule GitGud.Web.GlobalSearchLive do
   # Callbacks
   #
 
+  @impl true
   def mount(_params, session, socket) do
     {
       :ok,
@@ -19,6 +24,7 @@ defmodule GitGud.Web.GlobalSearchLive do
     }
   end
 
+  @impl true
   def handle_event("search", %{"key" => key, "value" => search}, socket) do
     cond do
       key == "Enter" ->

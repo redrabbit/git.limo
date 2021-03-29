@@ -1,4 +1,8 @@
 defmodule GitGud.Web.MaintainerSearchFormLive do
+  @moduledoc """
+  Live view responsible for rendering forms to add repository maintainers.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitGud.UserQuery

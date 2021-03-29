@@ -1,4 +1,8 @@
 defmodule GitGud.Web.CommitDiffLive do
+  @moduledoc """
+  Live view responsible for rendering diffs between Git commits and their ancestors.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitRekt.GitAgent

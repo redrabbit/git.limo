@@ -1,4 +1,8 @@
 defmodule GitGud.Web.TreeBrowserLive do
+  @moduledoc """
+  Live view responsible for rendering Git tree objects.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitRekt.GitAgent

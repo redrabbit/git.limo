@@ -1,4 +1,8 @@
 defmodule GitGud.Web.CommentLive do
+  @moduledoc """
+  Live component responsible for rendering comments.
+  """
+
   use GitGud.Web, :live_component
 
   alias GitGud.Comment

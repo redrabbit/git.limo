@@ -1,4 +1,8 @@
 defmodule GitGud.Web.BlobHeaderLive do
+  @moduledoc """
+  Live view responsible for rendering the latest Git commit of Git blob objects.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitRekt.GitAgent

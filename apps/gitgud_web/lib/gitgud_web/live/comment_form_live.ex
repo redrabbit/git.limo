@@ -1,4 +1,8 @@
 defmodule GitGud.Web.CommentFormLive do
+  @moduledoc """
+  Live component responsible for rendering comment forms.
+  """
+
   use GitGud.Web, :live_component
 
   alias GitGud.Comment

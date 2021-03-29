@@ -1,4 +1,8 @@
 defmodule GitGud.Web.BranchSelectContainerLive do
+  @moduledoc """
+  Live view container for `GitGud.Web.BranchSelectLive`.
+  """
+
   use GitGud.Web, :live_view
 
   alias GitRekt.GitAgent

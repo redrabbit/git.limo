@@ -1,4 +1,8 @@
 defmodule GitGud.Web.AuthenticationLiveHelpers do
+  @moduledoc """
+  Conveniences for authentication related tasks in live views.
+  """
+
   alias GitGud.Authorization
 
   alias GitGud.User
