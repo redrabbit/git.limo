@@ -14,6 +14,8 @@ defmodule GitGud.Web.CommitDiffLive do
 
   import GitRekt.Git, only: [oid_fmt: 1]
 
+  import GitGud.Web.Endpoint, only: [broadcast_from: 4, subscribe: 1]
+
   import GitGud.Web.CodebaseView
 
   #
@@ -22,6 +24,7 @@ defmodule GitGud.Web.CommitDiffLive do
 
   @impl true
   def mount(_params, %{"repo_id" => repo_id, "commit_oid" => oid} = session, socket) do
+    subscribe("commit:#{oid_fmt(oid)}")
     {
       :ok,
       socket
@@ -39,10 +42,10 @@ defmodule GitGud.Web.CommitDiffLive do
   def handle_event("add_comment", %{"review_id" => review_id, "comment" => comment_params}, socket) do
     review_id = String.to_integer(review_id)
     review_index = Enum.find_index(socket.assigns.reviews, &(&1.id == review_id))
-    review = Enum.at(socket.assigns.reviews, review_index)
-    case CommitLineReview.add_comment(review, current_user(socket), comment_params["body"]) do
+    case CommitLineReview.add_comment(Enum.at(socket.assigns.reviews, review_index), current_user(socket), comment_params["body"]) do
       {:ok, comment} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
+        broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment: comment})
         {
           :noreply,
           socket
@@ -67,16 +70,53 @@ defmodule GitGud.Web.CommitDiffLive do
 
   @impl true
   def handle_info({:update_comment, comment}, socket) do
+    broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "update_comment", %{comment: comment})
     {:noreply, assign(socket, :reviews, update_review_comment(socket.assigns.reviews, comment))}
   end
 
   def handle_info({:delete_comment, comment}, socket) do
+    broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "delete_comment", %{comment: comment})
     {
       :noreply,
       socket
       |> assign(:reviews, delete_review_comment(socket.assigns.reviews, comment))
       |> assign_comment_count()
     }
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "add_comment", payload: %{review_id: review_id, comment: comment}}, socket) do
+    if topic == "commit:" <> oid_fmt(socket.assigns.commit.oid) do
+      review_index = Enum.find_index(socket.assigns.reviews, &(&1.id == review_id))
+      {
+        :noreply,
+        socket
+        |> assign(:reviews, List.update_at(socket.assigns.reviews, review_index, &struct(&1, comments: &1.comments ++ [comment])))
+        |> assign_comment_count()
+      }
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "update_comment", payload: %{comment: comment}}, socket) do
+    if topic == "commit:" <> oid_fmt(socket.assigns.commit.oid) do
+      {:noreply, assign(socket, :reviews, update_review_comment(socket.assigns.reviews, comment))}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "delete_comment", payload: %{comment: comment}}, socket) do
+    if topic == "commit:" <> oid_fmt(socket.assigns.commit.oid) do
+      {
+        :noreply,
+        socket
+        |> assign(:reviews, delete_review_comment(socket.assigns.reviews, comment))
+        |> assign_comment_count()
+      }
+    else
+      {:noreply, socket}
+    end
   end
 
   #
