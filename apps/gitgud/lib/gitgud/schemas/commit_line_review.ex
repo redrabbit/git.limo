@@ -82,10 +82,10 @@ defmodule GitGud.CommitLineReview do
   @spec add_comment(Repo.t, Git.oid, Git.oid, non_neg_integer, non_neg_integer, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
   def add_comment(%Repo{id: repo_id} = repo, commit_oid, blob_oid, hunk, line, %User{id: author_id} = author, body, opts \\ []) do
     case DB.transaction(insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author_id, body)) do
-      {:ok, %{review: review, comment: comment}} ->
+      {:ok, %{review: commit_line_review, comment: comment}} ->
         if Keyword.get(opts, :with_review, false),
-          do: {:ok, struct(comment, repo: repo, author: author), struct(review, repo: repo)},
-        else: {:ok, struct(comment, repo: repo, author: author)}
+          do: {:ok, struct(comment, author: author), commit_line_review},
+        else: {:ok, struct(comment, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end

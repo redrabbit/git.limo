@@ -16,7 +16,7 @@ defmodule GitGud.Web.CommitDiffLive do
   alias GitGud.RepoQuery
   alias GitGud.ReviewQuery
 
-  import GitRekt.Git, only: [oid_fmt: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   import GitGud.Web.Endpoint, only: [broadcast_from: 4, subscribe: 1]
 
@@ -39,6 +39,7 @@ defmodule GitGud.Web.CommitDiffLive do
       |> assign_diff!()
       |> assign_reviews()
       |> assign_comment_count()
+      |> assign(:dynamic_forms, [])
     }
   end
 
@@ -62,14 +63,44 @@ defmodule GitGud.Web.CommitDiffLive do
     end
   end
 
+  def handle_event("add_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params}, socket) do
+    case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
+      {:ok, comment, review} ->
+        {
+          :noreply,
+          socket
+          |> assign(:reviews, List.insert_at(socket.assigns.reviews, -1, struct(review, comments: [comment])))
+        # |> assign_reviews()
+          |> assign(:dynamic_forms, List.delete(socket.assigns.dynamic_forms, {oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}))
+        }
+      {:error, changeset} ->
+        send_update(GitGud.Web.CommentFormLive, id: "review-#{oid}-#{hunk}-#{line}-comment-form", changeset: changeset)
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("validate_comment", %{"review_id" => review_id, "comment" => comment_params}, socket) do
     send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: Comment.changeset(%Comment{}, comment_params))
     {:noreply, socket}
   end
 
-  def handle_event("reset_comment", %{"review_id" => review_id}, socket) do
+  def handle_event("validate_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params}, socket) do
+    send_update(GitGud.Web.CommentFormLive, id: "review-#{oid}-#{hunk}-#{line}-comment-form", changeset: Comment.changeset(%Comment{}, comment_params))
+    {:noreply, socket}
+  end
+
+  def handle_event("add_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
+    {:noreply, assign(socket, :dynamic_forms, [{oid_parse(oid), hunk, line}|socket.assigns.dynamic_forms])}
+  end
+
+  def handle_event("reset_review_form", %{"review_id" => review_id}, socket) do
+    review_id = String.to_integer(review_id)
     send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
     {:noreply, socket}
+  end
+
+  def handle_event("reset_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
+    {:noreply, assign(socket, :dynamic_forms, List.delete(socket.assigns.dynamic_forms, {oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}))}
   end
 
   @impl true
@@ -184,7 +215,7 @@ defmodule GitGud.Web.CommitDiffLive do
   defp find_review_comment_index(reviews, comment_id) do
     Enum.find_value(Enum.with_index(reviews), fn {review, review_index} ->
       if comment_index = Enum.find_index(review.comments, &(&1.id == comment_id)) do
-        {review_index, length(review.comments) > 1 && comment_index}
+        {review_index, length(review.comments) > 1 && comment_index || nil}
       end
     end)
   end
