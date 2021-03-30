@@ -9,7 +9,6 @@ import reactComponents from "./react-components"
 import issueLabelSelect from "./issue-label-select"
 import issueLabelTable from "./issue-label-table"
 import blobForm from "./blob-form"
-import commitTable from "./commit-table"
 
 export default [
     flash,
@@ -23,5 +22,4 @@ export default [
     issueLabelSelect,
     issueLabelTable,
     blobForm,
-    commitTable,
 ]
