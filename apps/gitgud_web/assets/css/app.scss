@@ -990,6 +990,14 @@ table.commit-table {
         }
       }
 
+      &:hover {
+        td.code.origin button {
+          opacity: 1;
+          display: block;
+        }
+
+      }
+
       td {
         &.code {
           &.origin {
@@ -1007,19 +1015,12 @@ table.commit-table {
               transition: transform .1s ease-in-out;
               z-index: 5;
 
+              &:hover {
+                transform: scale(1);
+              }
+
               .icon i {
                 margin-top: 2px;
-              }
-            }
-
-            &.is-active {
-              button {
-                opacity: 1;
-                display: block;
-
-                &:hover {
-                  transform: scale(1);
-                }
               }
             }
           }

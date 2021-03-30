@@ -90,7 +90,7 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   def handle_event("add_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
-    {:noreply, assign(socket, :dynamic_forms, [{oid_parse(oid), hunk, line}|socket.assigns.dynamic_forms])}
+    {:noreply, assign(socket, :dynamic_forms, [{oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}|socket.assigns.dynamic_forms])}
   end
 
   def handle_event("reset_review_form", %{"review_id" => review_id}, socket) do
