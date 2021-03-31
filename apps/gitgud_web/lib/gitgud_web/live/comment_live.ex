@@ -22,15 +22,22 @@ defmodule GitGud.Web.CommentLive do
 
   @impl true
   def preload(list_of_assigns) do
+    markdown_opts = []
     matches = parse_comments(list_of_assigns)
-    repo = hd(list_of_assigns)[:repo]
-    agent = hd(list_of_assigns)[:agent] || unwrap_agent!(repo)
-    users = UserQuery.by_login(matches[:user_mentions] || [])
-    issues = repo && IssueQuery.repo_issues(repo, numbers: matches[:issue_references] || []) || []
+    repo = Enum.reduce_while(list_of_assigns, nil, &find_equal_assign(&1, &2, :repo))
+    markdown_opts = repo && Keyword.put(markdown_opts, :repo, repo) || markdown_opts
+    agent =  Enum.reduce_while(list_of_assigns, nil, &find_equal_assign(&1, &2, :agent))|| unwrap_agent!(repo)
+    markdown_opts = agent && Keyword.put(markdown_opts, :agent, agent) || markdown_opts
+    user_mentions = Keyword.get(matches, :user_mentions, [])
+    users = length(user_mentions) > 0 && UserQuery.by_login(user_mentions) || []
+    markdown_opts = Keyword.put(markdown_opts, :users, users)
+    issue_references = Keyword.get(matches, :issue_references, [])
+    issues = repo && length(issue_references) > 0 && IssueQuery.repo_issues(repo, numbers: issue_references) || []
+    markdown_opts = Keyword.put(markdown_opts, :issues, issues)
     Enum.map(list_of_assigns, fn assigns ->
       assigns
       |> Map.put_new(:agent, agent)
-      |> Map.put(:comment_body_html, markdown_safe(assigns.comment.body, %{repo: repo, agent: agent, users: users, issues: issues}))
+      |> Map.put(:comment_body_html, markdown_safe(assigns.comment.body, markdown_opts))
     end)
   end
 
@@ -74,11 +81,24 @@ defmodule GitGud.Web.CommentLive do
   defp assign_changeset(socket) when is_map_key(socket.assigns, :changeset), do: socket
   defp assign_changeset(socket), do: assign(socket, :changeset, nil)
 
+  defp find_equal_assign(assigns, acc, key) do
+    case Map.fetch(assigns, key) do
+      {:ok, ^acc} ->
+        {:cont, acc}
+      {:ok, val} when is_nil(acc) ->
+        {:cont, val}
+      {:ok, _val} ->
+        {:halt, nil}
+      :error ->
+        {:halt, nil}
+    end
+  end
+
   defp parse_comments(list_of_assigns) do
     Enum.map(
       Enum.reduce(list_of_assigns, %{}, fn assigns, acc ->
         Enum.reduce(GitGud.Web.Markdown.parse(assigns.comment.body), acc, fn {key, values}, acc ->
-          Map.update(acc, key, [], &(&1 ++ values))
+          Map.update(acc, key, values, &(&1 ++ values))
         end)
       end),
       fn {key, values} -> {key, Enum.uniq(values)} end
