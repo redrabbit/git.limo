@@ -50,13 +50,13 @@ defmodule GitGud.CommitLineReview do
 
   This function validates the given parameters using `changeset/2` and `GitGud.Comment.changeset/2`.
   """
-  @spec add_comment(t, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
-  def add_comment(%__MODULE__{id: review_id, repo_id: repo_id} = commit_line_review, %User{id: author_id} = author, body, opts \\ []) do
+  @spec add_comment(t | {pos_integer, pos_integer}, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
+  def add_comment(commit_line_review, author, body, opts \\ [])
+  def add_comment(%__MODULE__{id: review_id, repo_id: repo_id}, author, body, opts), do: add_comment({repo_id, review_id}, author, body, opts)
+  def add_comment({repo_id, review_id}, %User{id: author_id} = author, body, _opts) do
     case DB.transaction(insert_review_comment(repo_id, review_id, author_id, body)) do
       {:ok, %{comment: comment}} ->
-        if Keyword.get(opts, :with_review, false),
-          do: {:ok, struct(comment, author: author), commit_line_review},
-        else: {:ok, struct(comment, author: author)}
+        {:ok, struct(comment, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end

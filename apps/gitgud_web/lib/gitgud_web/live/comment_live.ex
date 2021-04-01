@@ -57,8 +57,13 @@ defmodule GitGud.Web.CommentLive do
   def handle_event("update", %{"comment" => comment_params}, socket) do
     case Comment.update(socket.assigns.comment, current_user(socket), comment_params) do
       {:ok, comment} ->
-        send(self(), {:update_comment, comment})
-        {:noreply, assign(socket, comment: comment, changeset: nil)}
+        send(self(), {:update_comment, comment.id})
+        {
+          :noreply,
+          socket
+          |> assign(:comment, comment)
+          |> assign(:comment_body_html, markdown_safe(comment.body, Map.take(socket.assigns, [:repo, :agent])))
+          |> assign(changeset: nil)}
       {:error, changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
     end
@@ -67,7 +72,7 @@ defmodule GitGud.Web.CommentLive do
   def handle_event("delete", _params, socket) do
     case Comment.delete(socket.assigns.comment) do
       {:ok, comment} ->
-        send(self(), {:delete_comment, comment})
+        send(self(), {:delete_comment, comment.id})
         {:noreply, assign(socket, :comment, comment)}
       {:error, changeset} ->
       {:noreply, assign(socket, :changeset, changeset)}
