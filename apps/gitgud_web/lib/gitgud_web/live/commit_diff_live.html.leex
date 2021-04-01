@@ -54,7 +54,7 @@
         </header>
         <div class="card-content">
           <%= with highlight_lang <- highlight_language_from_path(delta.new_file.path) do %>
-            <table id="commit-diff-<%= oid_fmt(delta.new_file.oid) %>" class="blob-table commit-table" data-lang="<%= highlight_lang %>" phx-hook="CommitDiffTable">
+            <table id="commit-diff-<%= oid_fmt(delta.new_file.oid) %>-table" class="blob-table commit-table" data-lang="<%= highlight_lang %>" phx-hook="CommitDiffTable">
               <tbody>
                 <%= for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do %>
                   <tr class="hunk">
