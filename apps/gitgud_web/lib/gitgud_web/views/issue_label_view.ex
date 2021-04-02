@@ -15,17 +15,17 @@ defmodule GitGud.Web.IssueLabelView do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
     {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
-    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} tooltip " <> attr_class, style: "background-color: ##{label.color}"])
+    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} " <> attr_class, style: "background-color: ##{label.color}"])
   end
 
   def label_button(tag, %IssueLabel{} = label, attrs) when is_atom(tag) do
     threshold = 130
     label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
     {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
-    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} tooltip " <> attr_class, style: "background-color: ##{label.color}", data: [tooltip: label.description]])
+    content_tag(tag, label.name, attrs ++ [class: "button issue-label #{label_text_class} " <> attr_class, style: "background-color: ##{label.color}"])
   end
 
-  def label_button(conn, label, attrs) do
+  def label_button(%Plug.Conn{} = conn, label, attrs) do
     case conn.assigns do
       %{repo: repo, q: q} ->
         query = GitGud.Web.IssueView.encode_search_query(q, labels: [label.name])
@@ -36,6 +36,25 @@ defmodule GitGud.Web.IssueLabelView do
         {href, attrs} = Keyword.pop(attrs, :href, Routes.issue_path(conn, :index, repo.owner, repo, q: query))
         label_button(:a, label, attrs ++ [href: href])
     end
+  end
+
+  def label_button(tag, %IssueLabel{color: nil} = _label, attrs, do: block) when is_atom(tag) do
+    {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
+    content_tag(tag, block, attrs ++ [class: "button issue-label has-text-dark " <> attr_class, style: "background-color: #dddddd"])
+  end
+
+  def label_button(tag, %IssueLabel{} = label, attrs, do: block) when is_atom(tag) do
+    threshold = 130
+    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
+    {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
+    content_tag(tag, block, attrs ++ [class: "button issue-label #{label_text_class} " <> attr_class, style: "background-color: ##{label.color}"])
+  end
+
+  def label_button(tag, %IssueLabel{description: nil} = label, attrs, do: block) when is_atom(tag) do
+    threshold = 130
+    label_text_class = if color_brighness(label.color) > threshold, do: "has-text-dark", else: "has-text-light"
+    {attr_class, attrs} = Keyword.pop(attrs, :class, "is-active")
+    content_tag(tag, block, attrs ++ [class: "button issue-label #{label_text_class} " <> attr_class, style: "background-color: ##{label.color}"])
   end
 
   @spec color_picker(IssueLabel.t) :: iodata

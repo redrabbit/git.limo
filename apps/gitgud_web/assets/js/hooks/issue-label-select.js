@@ -1,6 +1,7 @@
 import {IssueLabel} from "../components"
 
 export default () => {
+  /*
   document.querySelectorAll(".issue-label-select").forEach(container => {
     let select = container.querySelector("select")
     select.parentNode.style.display = "none"
@@ -37,4 +38,5 @@ export default () => {
       control.appendChild(button)
     })
   })
+  */
 }

@@ -104,7 +104,7 @@ defmodule GitGud.Web.Router do
       post "/issues", IssueController, :create
       get "/issues/labels", IssueLabelController, :index
       put "/issues/labels", IssueLabelController, :update
-      get "/issues/:number", IssueController, :show
+      live "/issues/:number", IssueLive, :show, as: :issue, layout: {GitGud.Web.LayoutView, "repo.html"}
 
       get "/settings", RepoController, :edit
       put "/settings", RepoController, :update

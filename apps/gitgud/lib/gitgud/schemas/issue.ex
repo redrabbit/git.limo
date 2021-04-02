@@ -89,7 +89,7 @@ defmodule GitGud.Issue do
   def add_comment(%__MODULE__{} = issue, author, body) do
     case DB.transaction(insert_issue_comment(issue.repo_id, issue.id, author.id, body)) do
       {:ok, %{comment: comment}} ->
-        {:ok, struct(comment, issue: issue, author: author)}
+        {:ok, struct(comment, author: author)}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end
@@ -216,8 +216,10 @@ defmodule GitGud.Issue do
     event = Map.merge(Map.new(Keyword.merge([push: labels_push, pull: labels_pull], opts)), %{type: "labels_update", timestamp: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)})
     multi = Multi.update_all(multi, :issue, query, set: [updated_at: event.timestamp], push: [events: event])
     case DB.transaction(multi) do
-      {:ok, %{issue: {1, [issue]}}} ->
-        {:ok, DB.preload(issue, :labels)}
+      {:ok, %{issue: {1, [new_issue]}}} ->
+        new_issue = struct(new_issue, Map.take(issue, __schema__(:associations)))
+        new_issue = DB.preload(new_issue, :labels, force: true)
+        {:ok, new_issue}
       {:error, _operation, reason, _changes} ->
         {:error, reason}
     end

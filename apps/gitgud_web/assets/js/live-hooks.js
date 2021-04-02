@@ -116,4 +116,13 @@ Hooks.CommitDiffDynamicReviews = {
   }
 }
 
+Hooks.IssueFeed = {
+  mounted() {
+    this.handleEvent("delete_comment", ({comment_id}) => {
+      const comment = this.el.querySelector(`#issue-comment-${comment_id}`)
+      comment.parentElement.removeChild(comment)
+    })
+  }
+}
+
 export default Hooks

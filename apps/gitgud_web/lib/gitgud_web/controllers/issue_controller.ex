@@ -36,22 +36,6 @@ defmodule GitGud.Web.IssueController do
   end
 
   @doc """
-  Renders an issue with comments.
-  """
-  @spec show(Plug.Conn.t, map) :: Plug.Conn.t
-  def show(conn, %{"user_login" => user_login, "repo_name" => repo_name, "number" => issue_number} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      if issue = IssueQuery.repo_issue(repo, String.to_integer(issue_number), viewer: current_user(conn), preload: [:author, :labels]) do
-        render(conn, "show.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          issue: issue
-        )
-      end
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Renders an issue creation form.
   """
   @spec new(Plug.Conn.t, map) :: Plug.Conn.t

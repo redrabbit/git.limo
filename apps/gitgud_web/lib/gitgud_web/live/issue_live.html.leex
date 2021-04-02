@@ -1,0 +1,113 @@
+<div class="columns">
+  <div class="column is-12">
+    <%= if @title_edit do %>
+      <%= f = form_for(@title_changeset, "#", as: :issue, class: "mb-3", phx_change: "validate_title", phx_submit: "update_title") %>
+        <div class="field is-grouped">
+          <p class="control is-expanded">
+            <%= text_input f, :title, class: "input" %>
+          </p>
+          <%= if @title_changeset.changes != %{} do %>
+            <p class="control">
+              <%= submit "Save", class: "button is-link" %>
+            </p>
+          <% end %>
+          <p class="control">
+            <button type="reset" class="button" phx-click="cancel_title_edit">Cancel</button>
+          </p>
+        </div>
+      </form>
+    <% else %>
+      <div class="field is-grouped">
+        <div class="control is-expanded">
+          <h1 class="title">
+            <%= @issue.title %>
+            <span class="has-text-grey-light">#<%= @issue.number %></span>
+          </h1>
+        </div>
+        <%= if @current_user && @current_user.id == @issue.author_id do %>
+          <div class="control">
+            <button class="button" phx-click="edit_title">Edit</button>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <%= case @issue.status do %>
+      <% "open" -> %>
+        <p class="tag is-success">
+          <span class="icon"><i class="fa fa-exclamation-circle"></i></span>
+          <span>Open</span>
+        </p>
+      <% "close" -> %>
+        <p class="tag is-danger">
+          <span class="icon"><i class="fa fa-check-circle"></i></span>
+          <span>Closed</span>
+        </p>
+    <% end %>
+    <a href="<%= Routes.user_path(@socket, :show, @issue.author) %>" class="tag user"><%= @issue.author %></a>
+    opened this issue <%= datetime_format(@issue.inserted_at, "{relative}") %>
+  </div>
+</div>
+
+<hr />
+
+<div id="feed" class="columns" phx-hook="IssueFeed">
+  <div class="column is-three-quarters">
+    <div class="thread">
+      <div id="issue-timeline" class="timeline" phx-update="append">
+        <%= for feed_item <- @issue_feed do %>
+          <%= case feed_item do %>
+            <% %Comment{} = comment -> %>
+              <div id="issue-comment-<%= comment.id %>" class="timeline-item">
+                <div class="timeline-content">
+                  <%= live_component(@socket, GitGud.Web.CommentLive, id: "comment-#{comment.id}", current_user: @current_user, repo: @repo, comment: comment) %>
+                </div>
+              </div>
+            <% {event, index} -> %>
+              <div id="issue-event-<%= index %>" class="timeline-item">
+                <%= live_component(@socket, GitGud.Web.IssueEventLive, id: "event-#{index}", current_user: @current_user, repo: @repo, event: event) %>
+              </div>
+          <% end %>
+        <% end %>
+      </div>
+      <div class="comment-form">
+        <%= live_component(@socket, GitGud.Web.CommentFormLive,
+          id: "issue-comment-form",
+          current_user: @current_user,
+          repo: @repo,
+          minimized: false,
+          phx_change: "validate_comment",
+          phx_submit: "add_comment") do %>
+          <div class="control">
+            <%= case @issue.status do %>
+              <% "open" -> %>
+                <%= if @changeset.changes == %{} do %>
+                  <a class="button" phx-click="close">Close issue</a>
+                <% else %>
+                  <%= submit "Close and comment", class: "button", phx_click: "close" %>
+                <% end %>
+              <% "close" -> %>
+                <%= if @changeset.changes == %{} do %>
+                  <a class="button" phx-click="reopen">Reopen issue</a>
+                <% else %>
+                  <%= submit "Reopen and comment", class: "button", phx_click: "reopen" %>
+                <% end %>
+            <% end %>
+          </div>
+          <div class="control">
+            <%= submit "Add comment", class: "button is-success", disabled: @changeset.changes == %{} %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="column is-one-quarter">
+    <aside class="menu is-sticky">
+      <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
+        id: "issue-label-select",
+        current_user: @current_user,
+        repo: @repo,
+        issue: @issue
+      ) %>
+    </aside>
+  </div>
+</div>
