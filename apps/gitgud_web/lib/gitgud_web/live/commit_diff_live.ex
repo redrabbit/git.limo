@@ -1,6 +1,6 @@
 defmodule GitGud.Web.CommitDiffLive do
   @moduledoc """
-  Live view responsible for rendering diffs between Git commits and their ancestors.
+  Live view responsible for rendering diffs between Git commits.
   """
 
   use GitGud.Web, :live_view
@@ -40,8 +40,7 @@ defmodule GitGud.Web.CommitDiffLive do
       |> assign_commit!(oid)
       |> assign_diff!()
       |> assign_reviews()
-      |> assign_comment_count()
-      |> assign(:dynamic_forms, []),
+      |> assign_comment_count(),
       temporary_assigns: [reviews: []]
     }
   end
@@ -50,12 +49,13 @@ defmodule GitGud.Web.CommitDiffLive do
   def handle_event("add_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params}, socket) do
     case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
       {:ok, comment, review} ->
+        send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [struct(review, comments: [comment])])
         broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_review", %{review_id: review.id})
         {
           :noreply,
           socket
-          |> assign(:reviews, [struct(review, comments: [comment])])
-          |> assign(:dynamic_forms, List.delete(socket.assigns.dynamic_forms, {oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}))
+          |> push_event("add_comment", %{comment_id: comment.id})
+          |> push_event("delete_review_form", %{oid: oid, hunk: hunk, line: line})
         }
       {:error, changeset} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{oid}-#{hunk}-#{line}-comment-form", changeset: changeset)
@@ -67,9 +67,10 @@ defmodule GitGud.Web.CommitDiffLive do
     review_id = String.to_integer(review_id)
     case CommitLineReview.add_comment({socket.assigns.repo.id, review_id}, current_user(socket), comment_params["body"]) do
       {:ok, comment} ->
-        broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment_id: comment.id})
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
-        {:noreply, assign(socket, :reviews, [ReviewQuery.commit_line_review(review_id, preload: {:comments, :author})])}
+        send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
+        broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment_id: comment.id})
+        {:noreply, push_event(socket, "add_comment", %{comment_id: comment.id})}
       {:error, changeset} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: changeset)
         {:noreply, socket}
@@ -87,11 +88,12 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   def handle_event("add_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
-    {:noreply, assign(socket, :dynamic_forms, [{oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}|socket.assigns.dynamic_forms])}
+    send_update(GitGud.Web.CommitDiffDynamicFormsLive, id: "dynamic-forms", forms: [{oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}])
+    {:noreply, socket}
   end
 
   def handle_event("reset_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
-    {:noreply, assign(socket, :dynamic_forms, List.delete(socket.assigns.dynamic_forms, {oid_parse(oid), String.to_integer(hunk), String.to_integer(line)}))}
+    {:noreply, push_event(socket, "delete_review_form", %{oid: oid, hunk: hunk, line: line})}
   end
 
   def handle_event("reset_review_form", %{"review_id" => review_id}, socket) do
@@ -102,7 +104,7 @@ defmodule GitGud.Web.CommitDiffLive do
   @impl true
   def handle_info({:update_comment, comment_id}, socket) do
     broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "update_comment", %{comment_id: comment_id})
-    {:noreply, socket}
+    {:noreply, push_event(socket, "update_comment", %{comment_id: comment_id})}
   end
 
   def handle_info({:delete_comment, comment_id}, socket) do
@@ -111,16 +113,21 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "add_review", payload: %{review_id: review_id}}, socket) do
-    {:noreply, assign(socket, :reviews, [ReviewQuery.commit_line_review(review_id, preload: {:comments, :author})])}
+    review = ReviewQuery.commit_line_review(review_id, preload: {:comments, :author})
+    send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [review])
+    {:noreply, push_event(socket, "add_comment", %{comment_id: hd(review.comments).id})}
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{event: "add_comment", payload: %{review_id: review_id, comment_id: _comment_id}}, socket) do
-    {:noreply, assign(socket, :reviews, [ReviewQuery.commit_line_review(review_id, preload: {:comments, :author})])}
+  def handle_info(%Phoenix.Socket.Broadcast{event: "add_comment", payload: %{review_id: review_id, comment_id: comment_id}}, socket) do
+    comment = CommentQuery.by_id(comment_id, preload: :author)
+    send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
+    {:noreply, push_event(socket, "add_comment", %{comment_id: comment_id})}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "update_comment", payload: %{comment_id: comment_id}}, socket) do
-    send_update(GitGud.Web.CommentLive, id: "comment-#{comment_id}", comment: CommentQuery.by_id(comment_id, preload: :author))
-    {:noreply, socket}
+    comment = CommentQuery.by_id(comment_id, preload: :author)
+    send_update(GitGud.Web.CommentLive, id: "comment-#{comment_id}", comment: comment)
+    {:noreply, push_event(socket, "update_comment", %{comment_id: comment_id})}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "delete_comment", payload: %{comment_id: comment_id}}, socket) do

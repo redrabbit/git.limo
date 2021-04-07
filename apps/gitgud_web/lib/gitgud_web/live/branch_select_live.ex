@@ -1,4 +1,8 @@
 defmodule GitGud.Web.BranchSelectLive do
+  @moduledoc """
+  Live component responsible for rendering Git revisions drop-down lists.
+  """
+
   use GitGud.Web, :live_component
 
   alias GitRekt.GitAgent

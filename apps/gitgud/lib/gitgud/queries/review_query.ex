@@ -37,13 +37,30 @@ defmodule GitGud.ReviewQuery do
   end
 
   @doc """
-  Returns all commit line reviews for the given `repo` and `commit`.
+  Returns commit line reviews for the given `repo` and `commit`.
   """
   @spec commit_line_reviews(Repo.t | pos_integer, GitCommit.t | Git.oid, keyword) :: [CommitLineReview.t]
   def commit_line_reviews(repo, commit, opts \\ [])
   def commit_line_reviews(%Repo{id: repo_id} = _repo, commit_oid, opts), do: commit_line_reviews(repo_id, commit_oid, opts)
   def commit_line_reviews(repo_id, %GitCommit{oid: commit_oid} = _commit, opts), do: commit_line_reviews(repo_id, commit_oid, opts)
   def commit_line_reviews(repo_id, commit_oid, opts), do: DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_query}, [repo_id, commit_oid], opts))
+
+  @doc """
+  Returns comments for the given `repo` and `commit`.
+  """
+  @spec commit_line_reviews_comments(Repo.t | pos_integer, GitCommit.t | Git.oid, keyword) :: [CommitLineReview.t]
+  def commit_line_reviews_comments(repo, commit, opts \\ [])
+  def commit_line_reviews_comments(%Repo{id: repo_id} = _repo, commit_oid, opts), do: commit_line_reviews_comments(repo_id, commit_oid, opts)
+  def commit_line_reviews_comments(repo_id, %GitCommit{oid: commit_oid} = _commit, opts), do: commit_line_reviews_comments(repo_id, commit_oid, opts)
+  def commit_line_reviews_comments(repo_id, commit_oid, opts) do
+    {preloads, opts} = Keyword.pop(opts, :preload, [])
+    reviews_comments = DB.all(DBQueryable.query({__MODULE__, :commit_line_reviews_comments_query}, [repo_id, commit_oid], opts))
+    {review_ids, comments} = Enum.unzip(reviews_comments)
+    reviews_comments = Enum.zip(review_ids, DB.preload(comments, preloads))
+    Enum.reduce(reviews_comments, %{}, fn {review_id, comment}, acc ->
+      Map.update(acc, review_id, [comment], &[comment|&1])
+    end)
+  end
 
   @doc """
   Returns the number of comments for the given `repo` and `commit`.
@@ -100,6 +117,10 @@ defmodule GitGud.ReviewQuery do
     from(r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid)
   end
 
+  def query(:commit_line_reviews_comments_query, [repo_id, commit_oid]) when is_integer(repo_id) do
+    from r in CommitLineReview, as: :review, where: r.repo_id == ^repo_id and r.commit_oid == ^commit_oid, join: c in assoc(r, :comments), select: {r.id, c}
+  end
+
   def query(:count_commit_line_review_comments_query, [repo_id, commit_oids]) when is_integer(repo_id) and is_list(commit_oids) do
     from r in CommitLineReview, where: r.repo_id == ^repo_id and r.commit_oid in ^commit_oids, join: c in assoc(r, :comments), group_by: r.commit_oid, select: {r.commit_oid, count(c.id)}
   end
@@ -115,6 +136,10 @@ defmodule GitGud.ReviewQuery do
   def query(:comments_query, [%{id: review_id, __struct__: struct} = _review]), do: query(:comments_query, [{struct, review_id}])
   def query(:comments_query, [{CommitLineReview, review_id}]) when is_integer(review_id) do
     from c in Comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id == ^review_id
+  end
+
+  def query(:comments_query, [{CommitLineReview, review_ids}]) when is_list(review_ids) do
+    from c in Comment, as: :comment, join: t in "commit_line_reviews_comments", on: t.comment_id == c.id, where: t.thread_id in ^review_ids
   end
 
   @impl true

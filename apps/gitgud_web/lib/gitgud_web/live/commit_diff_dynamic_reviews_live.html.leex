@@ -1,0 +1,17 @@
+<tbody id="dynamic-reviews" phx-update="append" phx-hook="CommitDiffDynamicReviews">
+  <%= for review <- @reviews do %>
+    <tr id="review-<%= oid_fmt(review.blob_oid) %>-<%= review.hunk %>-<%= review.line %>" class="inline-comments">
+      <td colspan="4">
+        <%= live_component(@socket, GitGud.Web.CommitLineReviewLive,
+          id: "review-#{review.id}",
+          current_user: @current_user,
+          repo: @repo,
+          agent: @agent,
+          commit: @commit,
+          review_id: review.id,
+          comments: review.comments
+        ) %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>

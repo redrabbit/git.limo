@@ -21,25 +21,98 @@ function highlightTable(table) {
   }
 }
 
+function moveToTable(review, table, oid, hunk, line) {
+    const button = table.querySelector(`button[phx-value-oid="${oid}"][phx-value-hunk="${hunk}"][phx-value-line="${line}"]`)
+    const tableRow = table.insertRow(button.parentNode.parentNode.rowIndex + 1 )
+    tableRow.parentElement.replaceChild(review, tableRow)
+}
+
+function updateCounter(oid, callback) {
+  const tableRow = document.getElementById(`blob-${oid}`)
+  if(tableRow.cells.length > 1) {
+    const span = tableRow.cells[1].querySelector("a span:last-child")
+    const count = callback(parseInt(span.textContent))
+    if(count > 0) {
+      span.textContent = count
+    } else {
+      tableRow.cells[0].colSpan = 2
+      tableRow.deleteCell(1)
+    }
+  } else {
+    const count = callback(0)
+    if(count > 0) {
+      tableRow.cells[0].removeAttribute("colspan")
+      const td = tableRow.insertCell(1)
+      td.classList.add("has-text-right")
+      const link = document.createElement("a")
+      link.href = `#${oid}`
+      link.classList.add("button", "is-small", "is-white")
+      const icon = document.createElement("span")
+      icon.classList.add("icon")
+      const i = document.createElement("i")
+      i.classList.add("fa", "fa-comment-alt")
+      const span = document.createElement("span")
+      span.textContent = count
+      icon.appendChild(i)
+      link.appendChild(icon)
+      link.appendChild(span)
+      td.appendChild(link)
+    }
+  }
+}
+
 let Hooks = {}
 
-Hooks.CommitDiffTable = {
+Hooks.CommitDiff = {
   mounted() {
-    highlightTable(this.el)
-    this.handleEvent("delete_comment", ({comment_id}) => {
-      const commentContainerElement = this.el.querySelector(`#comment-${comment_id}-container`)
-      if(commentContainerElement) {
-        const timelineContainerElement = commentContainerElement.parentElement
-        if(timelineContainerElement.childElementCount > 2) {
-          timelineContainerElement.removeChild(commentContainerElement)
-        } else {
-          this.el.deleteRow(timelineContainerElement.closest("tr.inline-comments").rowIndex)
-        }
-      }
+    this.handleEvent("add_comment", ({comment_id}) => {
+      setTimeout(() => {
+        const comment = this.el.querySelector(`#review-comment-${comment_id}`)
+        const table = comment.closest("table")
+        updateCounter(table.id, c => c + 1)
+      }, 300)
     })
-  },
+
+    this.handleEvent("delete_comment", ({comment_id}) => {
+      const comment = this.el.querySelector(`#review-comment-${comment_id}`)
+      const table = comment.closest("table")
+      const review = comment.parentElement
+      if(review.childElementCount > 1) {
+        review.removeChild(comment)
+      } else {
+        table.deleteRow(review.closest("tr.inline-comments").rowIndex)
+      }
+      updateCounter(table.id, c => c - 1)
+    })
+
+    this.handleEvent("delete_review_form", ({oid, hunk, line}) => {
+      const table = document.getElementById(oid)
+      const form = this.el.querySelector(`#review-${oid}-${hunk}-${line}-form`)
+      table.deleteRow(form.rowIndex)
+    })
+  }
+}
+
+Hooks.CommitDiffTable = {
+  mounted() { highlightTable(this.el) },
+  updated() { highlightTable(this.el) }
+}
+
+Hooks.CommitDiffDynamicForms = {
   updated() {
-    highlightTable(this.el)
+    this.el.childNodes.forEach(form => {
+      const [oid, hunk, line] = form.id.split("-").slice(1, 4)
+      moveToTable(form, document.getElementById(oid), oid, hunk, line)
+    })
+  }
+}
+
+Hooks.CommitDiffDynamicReviews = {
+  updated() {
+    this.el.childNodes.forEach(review => {
+      const [oid, hunk, line] = review.id.split("-").slice(1)
+      moveToTable(review, document.getElementById(oid), oid, hunk, line)
+    })
   }
 }
 
