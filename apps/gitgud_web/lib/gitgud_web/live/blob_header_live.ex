@@ -10,6 +10,7 @@ defmodule GitGud.Web.BlobHeaderLive do
   alias GitGud.DB
   alias GitGud.DBQueryable
 
+  alias GitGud.UserQuery
   alias GitGud.RepoQuery
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
@@ -116,7 +117,7 @@ defmodule GitGud.Web.BlobHeaderLive do
   defp resolve_blob_commit_info!(agent, commit) do
     case GitAgent.transaction(agent, &resolve_blob_commit_info(&1, commit)) do
       {:ok, commit_info} ->
-        commit_info
+        resolve_commit_info_db(commit_info)
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
@@ -128,5 +129,20 @@ defmodule GitGud.Web.BlobHeaderLive do
          {:ok, author} <- GitAgent.commit_author(agent, commit),
          {:ok, committer} <- GitAgent.commit_committer(agent, commit), do:
       {:ok, %{oid: commit.oid, message: message, timestamp: timestamp, author: author, committer: committer}}
+  end
+
+  defp resolve_commit_info_db(%{author: %{email: email}, committer: %{email: email}} = commit_info) do
+      if user = UserQuery.by_email(email),
+        do: %{commit_info|author: user, committer: user},
+      else: commit_info
+  end
+
+  defp resolve_commit_info_db(%{author: author, committer: committer} = commit_info) do
+    users = UserQuery.by_email([author.email, committer.email])
+    %{commit_info|author: resolve_user(author, users), committer: resolve_user(committer, users)}
+  end
+
+  defp resolve_user(%{email: email} = map, users) do
+    Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
 end
