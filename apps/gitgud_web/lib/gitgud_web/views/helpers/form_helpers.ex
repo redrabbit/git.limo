@@ -6,27 +6,13 @@ defmodule GitGud.Web.FormHelpers do
   `input_validations/2` to the HTML input target attributes.
   """
 
-  import Phoenix.HTML.Form, only: [input_id: 2, input_name: 2]
-
-  import GitGud.GraphQL.Schema, only: [to_relay_id: 1]
-  import GitGud.Web.ReactComponents, only: [react_component: 4]
-
   @basic_inputs_with_arity Enum.filter(Phoenix.HTML.Form.__info__(:functions), fn
     {:color_input, _arity} -> false
     {name, _arity} -> String.ends_with?(to_string(name), "_input")
   end)
+
   @extra_inputs_with_arity Enum.flat_map([:checkbox, :date_select, :datetime_select, :textarea, :time_select], &[{&1, 2}, {&1, 3}])
   @multi_inputs_with_arity Enum.flat_map([:radio_button, :select, :multiple_select], &[{&1, 3}, {&1, 4}])
-
-  @doc """
-  Generates an user input.
-  """
-  def user_input(form, field, opts \\ []) do
-    {reject, opts} = Keyword.pop(opts, :reject, [])
-    react_component("user-input", [id: input_id(form, field), name: input_name(form, field), reject: Enum.map(reject, &to_relay_id/1)], opts, do: [
-      text_input(form, field, class: "input")
-    ])
-  end
 
   @doc """
   See `Phoenix.HTML.Form.input_validations/2` for more details.

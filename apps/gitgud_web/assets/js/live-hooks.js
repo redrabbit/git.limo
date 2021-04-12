@@ -1,5 +1,8 @@
 import hljs from "highlight.js"
 
+import cloneRepo from "./hooks/clone-repo"
+import treeBreadcrumb from "./hooks/tree-breadcrumb"
+
 function highlightTable(table) {
   const lang = table.dataset.lang
   const langDetect = hljs.getLanguage(lang)
@@ -62,6 +65,15 @@ function updateCounter(oid, callback) {
 }
 
 let Hooks = {}
+
+Hooks.TreeBreadcrumb = {
+  mounted() { treeBreadcrumb() },
+  updated() { treeBreadcrumb() }
+}
+
+Hooks.CloneRepo = {
+  mounted() { cloneRepo() }
+}
 
 Hooks.CommitDiff = {
   mounted() {

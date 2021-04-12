@@ -1,5 +1,6 @@
 export default () => {
-  document.querySelectorAll("nav.level .breadcrumb").forEach(breadcrumb => {
+  const breadcrumb = document.getElementById("tree-breadcrumb")
+  if(breadcrumb) {
     const level = breadcrumb.closest(".level")
     const levelRight = level.querySelector(".level-right")
     let fromIndex = 2
@@ -28,5 +29,5 @@ export default () => {
         break
       }
     }
-  })
+  }
 }

@@ -1,5 +1,6 @@
 export default () => {
-  document.querySelectorAll(".clone-repo").forEach(field => {
+  const field = document.getElementById("clone-repo")
+  if(field) {
     let httpCloneButton = field.querySelector(".http-clone-button")
     let httpCloneInput = field.querySelector(".http-clone input")
     let sshCloneButton = field.querySelector(".ssh-clone-button")
@@ -48,5 +49,5 @@ export default () => {
       clipboardButton.classList.remove("is-outlined")
       clipboardButton.dataset.tooltip = "Copy to clipboard"
     })
-  })
+  }
 }

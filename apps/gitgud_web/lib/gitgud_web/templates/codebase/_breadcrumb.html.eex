@@ -1,4 +1,4 @@
-<nav class="breadcrumb" aria-label="breadcrumbs">
+<nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs">
   <ul>
     <li>
       <a href="<%= Routes.codebase_path(@conn, @breadcrumb.action, @repo.owner, @repo, @revision, []) %>"><%= @repo.name %></a>

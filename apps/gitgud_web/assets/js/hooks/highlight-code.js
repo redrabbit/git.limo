@@ -15,19 +15,6 @@ export default() => {
       line.innerHTML = result.value
     }
     let state
-    if(table.classList.contains("commit-table")) {
-      let row = table.querySelector("tr.hunk")
-      while(row) {
-        row = row.nextElementSibling
-        if(!row || row.classList.contains("hunk")) {
-          state = undefined
-          continue
-        }
-        const line = row.querySelector("td.code .code-inner:not(.highlight)")
-        if(line) highlight(line)
-      }
-    } else {
-      table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(highlight)
-    }
+    table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(highlight)
   })
 }

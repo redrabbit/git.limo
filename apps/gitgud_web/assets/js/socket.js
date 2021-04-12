@@ -1,7 +1,6 @@
 import {Socket} from "phoenix"
 
-import {token} from "./auth"
-
-let socket = new Socket("/socket", {params: (() => token ? {token: token} : {})()})
+const token = document.querySelector("meta[name='token']")
+let socket = new Socket("/socket", {params: token ? {token} : {}})
 
 export default socket

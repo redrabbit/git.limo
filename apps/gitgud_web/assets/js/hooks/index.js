@@ -1,25 +1,21 @@
+import blobForm from "./blob-form"
+import cloneRepo from "./clone-repo"
+import commitOidToClipboard from "./commit-oid-to-clipboard"
 import flash from "./flash"
-import breadcrumb from "./breadcrumb"
-import cloneInput from "./clone-input"
-import datetimeTooltip from "./datetime-tooltip"
-import commitOid from "./commit-oid"
 import highlightCode from "./highlight-code"
+import issueLabelConfigurator from "./issue-label-configurator"
 import liveViews from "./live-views"
 import reactComponents from "./react-components"
-import issueLabelSelect from "./issue-label-select"
-import issueLabelTable from "./issue-label-table"
-import blobForm from "./blob-form"
+import treeBreadcrumb from "./tree-breadcrumb"
 
 export default [
+    blobForm,
+    cloneRepo,
+    commitOidToClipboard,
     flash,
-    cloneInput,
-    breadcrumb,
-    datetimeTooltip,
-    commitOid,
     highlightCode,
+    issueLabelConfigurator,
     liveViews,
     reactComponents,
-    issueLabelSelect,
-    issueLabelTable,
-    blobForm,
+    treeBreadcrumb,
 ]

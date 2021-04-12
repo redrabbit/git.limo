@@ -93,6 +93,10 @@ table.table {
   tr td.is-vcentered {
     vertical-align: middle;
   }
+
+  td.is-fullwidth {
+    width: 100%;
+  }
 }
 
 .commit-oid::before {
@@ -499,21 +503,6 @@ textarea.textarea {
   }
 }
 
-.issue-label-table {
-  tbody tr td {
-    vertical-align: middle;
-    .color-picker {
-      .pickr {
-        width: 70px;
-        height: 2.5rem;
-        font-size: .8em;
-        font-weight: 500;
-        border-width: 0;
-      }
-    }
-  }
-}
-
 .issue-label-select, .issue-label-dropdown {
   .menu-label button {
     margin-top: -4px;
@@ -554,9 +543,27 @@ textarea.textarea {
 }
 
 
-table {
-  td.is-fullwidth {
-    width: 100%;
+.clone-repo {
+  .http-clone, .ssh-clone {
+    width: 20em;
+    input {
+      font-size: 0.875em;
+      height: 2.5rem;
+    }
+  }
+  .button.http-clone-button, .button.ssh-clone-button {
+    @extend .is-light;
+    border-color: $grey-lighter;
+    &:hover {
+      border-color: $grey-lighter;
+      &.is-active {
+        border-color: $link;
+      }
+    }
+    &.is-active {
+      @extend .is-link;
+      border-color: $link;
+    }
   }
 }
 
@@ -590,30 +597,6 @@ table {
     }
     .dropdown-menu {
       width: 100%;
-    }
-  }
-}
-
-.clone-repo {
-  .http-clone, .ssh-clone {
-    width: 20em;
-    input {
-      font-size: 0.875em;
-      height: 2.5rem;
-    }
-  }
-  .button.http-clone-button, .button.ssh-clone-button {
-    @extend .is-light;
-    border-color: $grey-lighter;
-    &:hover {
-      border-color: $grey-lighter;
-      &.is-active {
-        border-color: $link;
-      }
-    }
-    &.is-active {
-      @extend .is-link;
-      border-color: $link;
     }
   }
 }
@@ -714,131 +697,6 @@ table {
   }
 }
 
-table.branches-table, table.tags-table {
-  tr td {
-    width: 100%;
-
-    &:first-child {
-      width: auto;
-    }
-  }
-}
-
-table.commits-table {
-  width: 100%;
-  table-layout: fixed;
-  tbody {
-    tr {
-      td + td {
-        width: 10rem;
-      }
-    }
-  }
-}
-
-table.tree-table {
-  border-radius: 0.25rem;
-  box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
-
-  thead {
-    box-shadow: none;
-    td {
-      height: 48px;
-      vertical-align: middle;
-      border-width: 0 0 1px;
-      background-color: $light;
-
-      &:first-child {
-        border-top-left-radius: 0.25rem;
-      }
-
-      &:last-child {
-        border-top-right-radius: 0.25rem;
-      }
-
-      .tag.placeholder {
-        vertical-align: middle;
-      }
-    }
-  }
-
-  tbody {
-    tr {
-      td {
-        &:first-child, &:last-child {
-          white-space: nowrap;
-        }
-
-        .tag.placeholder {
-          display: flex;
-        }
-      }
-    }
-  }
-}
-
-table.blob-table {
-  border-collapse: separate;
-  width: 100%;
-
-  tbody {
-    tr {
-      &:first-child {
-        td {
-          padding-top: .35rem;
-        }
-      }
-
-      &:last-child {
-        td {
-          padding-bottom: .35rem;
-        }
-      }
-
-      td {
-        border: none;
-        padding: 0;
-
-        &.line-no {
-          font-size: 0.875em;
-          font-family: $family-monospace;
-          -moz-osx-font-smoothing: auto;
-          -webkit-font-smoothing: auto;
-          width: 1%;
-          min-width: 50px;
-          padding-left: 10px;
-          padding-right: 10px;
-          text-align: right;
-          vertical-align: top;
-          white-space: nowrap;
-          color: rgba(27,31,35,.3);
-        }
-
-        &.code {
-          font-size: 0.875em;
-          font-family: $family-monospace;
-          -moz-osx-font-smoothing: auto;
-          -webkit-font-smoothing: auto;
-          padding-left: 10px;
-          padding-right: 10px;
-          vertical-align: top;
-
-          .code-inner {
-            overflow: visible;
-            white-space: pre;
-            word-wrap: normal;
-
-            &.hljs {
-              padding: 0;
-              background-color: transparent;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 .comment-form {
   margin-bottom: 1.25rem;
   header {
@@ -921,18 +779,115 @@ table.blob-table {
   padding: 0 1rem 1rem;
 }
 
-table.issues-table {
-  thead tr td.selection {
-    line-height: 2.5;
-  }
-  tr {
-    td.selection {
-      width: 0.75rem;
-      text-align: center;
+table.branches-table, table.tags-table {
+  tr td {
+    width: 100%;
+
+    &:first-child {
+      width: auto;
     }
-    td.status {
-      width: 0.75rem;
-      text-align: center;
+  }
+}
+
+table.tree-table {
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
+
+  thead {
+    box-shadow: none;
+    td {
+      height: 48px;
+      vertical-align: middle;
+      border-width: 0 0 1px;
+      background-color: $light;
+
+      &:first-child {
+        border-top-left-radius: 0.25rem;
+      }
+
+      &:last-child {
+        border-top-right-radius: 0.25rem;
+      }
+
+      .tag.placeholder {
+        vertical-align: middle;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      td {
+        &:first-child, &:last-child {
+          white-space: nowrap;
+        }
+
+        .tag.placeholder {
+          display: flex;
+        }
+      }
+    }
+  }
+}
+
+table.blob-table, table.commit-table {
+  border-collapse: separate;
+  width: 100%;
+
+  tbody {
+    tr {
+      &:first-child {
+        td {
+          padding-top: .35rem;
+        }
+      }
+
+      &:last-child {
+        td {
+          padding-bottom: .35rem;
+        }
+      }
+
+      td {
+        border: none;
+        padding: 0;
+
+        &.line-no {
+          font-size: 0.875em;
+          font-family: $family-monospace;
+          -moz-osx-font-smoothing: auto;
+          -webkit-font-smoothing: auto;
+          width: 1%;
+          min-width: 50px;
+          padding-left: 10px;
+          padding-right: 10px;
+          text-align: right;
+          vertical-align: top;
+          white-space: nowrap;
+          color: rgba(27,31,35,.3);
+        }
+
+        &.code {
+          font-size: 0.875em;
+          font-family: $family-monospace;
+          -moz-osx-font-smoothing: auto;
+          -webkit-font-smoothing: auto;
+          padding-left: 10px;
+          padding-right: 10px;
+          vertical-align: top;
+
+          .code-inner {
+            overflow: visible;
+            white-space: pre;
+            word-wrap: normal;
+
+            &.hljs {
+              padding: 0;
+              background-color: transparent;
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -1032,4 +987,47 @@ table.commit-table {
 
 table.commit-stats-table {
   margin-top: -1.5rem;
+}
+
+table.commits-table {
+  width: 100%;
+  table-layout: fixed;
+  tbody {
+    tr {
+      td + td {
+        width: 10rem;
+      }
+    }
+  }
+}
+
+table.issues-table {
+  thead tr td.selection {
+    line-height: 2.5;
+  }
+  tr {
+    td.selection {
+      width: 0.75rem;
+      text-align: center;
+    }
+    td.status {
+      width: 0.75rem;
+      text-align: center;
+    }
+  }
+}
+
+table.issue-label-table {
+  tbody tr td {
+    vertical-align: middle;
+    .color-picker {
+      .pickr {
+        width: 70px;
+        height: 2.5rem;
+        font-size: .8em;
+        font-weight: 500;
+        border-width: 0;
+      }
+    }
+  }
 }

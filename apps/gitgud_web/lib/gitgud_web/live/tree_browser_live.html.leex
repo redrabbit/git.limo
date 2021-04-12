@@ -48,7 +48,7 @@
         </div>
       </div>
       <div class="level-item">
-        <nav class="breadcrumb" aria-label="breadcrumbs">
+        <nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs" phx-hook="TreeBreadcrumb">
           <ul>
             <li>
               <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, [])) %>
@@ -67,8 +67,8 @@
     </div>
     <div class="level-right">
       <%= if Enum.empty?(@tree_path) do %>
-        <div class="level-item">
-          <div class="field clone-repo has-addons">
+        <div id="clone-repo" class="level-item clone-repo" phx-hook="CloneRepo">
+          <div class="field has-addons">
             <div class="control"><button class="button http-clone-button is-active">HTTP</button></div>
             <%= if @current_user do %>
               <div class="control"><button class="button ssh-clone-button">SSH</button></div>

@@ -3,7 +3,8 @@ import Pickr from "@simonwep/pickr"
 import "@simonwep/pickr/dist/themes/nano.min.css"
 
 export default () => {
-  document.querySelectorAll("table.issue-label-table").forEach(table => {
+  const table = document.getElementById("issue-label-configurator")
+  if(table) {
     let changeSet = new Set([])
     let newLabels = []
     let pickrList = []
@@ -266,5 +267,5 @@ export default () => {
       submitButton.disabled = true
       resetButton.disabled = true
     })
-  })
+  }
 }
