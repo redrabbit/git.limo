@@ -50,6 +50,7 @@ defmodule GitGud.Web.IssueLive do
       |> assign(:issue, issue)
       |> assign(:issue_feed, [{List.last(issue.events), length(issue.events)}])
       |> assign(:title_edit, false)
+      |> assign(:title_changeset, title_changeset(issue))
     }
   end
 
