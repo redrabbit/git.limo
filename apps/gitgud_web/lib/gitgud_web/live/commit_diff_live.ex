@@ -30,7 +30,6 @@ defmodule GitGud.Web.CommitDiffLive do
 
   @impl true
   def mount(_params, %{"repo_id" => repo_id, "commit_oid" => oid} = session, socket) do
-    subscribe("commit:#{oid_fmt(oid)}")
     {
       :ok,
       socket
@@ -40,7 +39,8 @@ defmodule GitGud.Web.CommitDiffLive do
       |> assign_commit!(oid)
       |> assign_diff!()
       |> assign_reviews()
-      |> assign_comment_count(),
+      |> assign_comment_count()
+      |> subscribe_topic(),
       temporary_assigns: [reviews: []]
     }
   end
@@ -50,7 +50,7 @@ defmodule GitGud.Web.CommitDiffLive do
     case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
       {:ok, comment, review} ->
         send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [struct(review, comments: [comment])])
-        broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_review", %{review_id: review.id})
+        broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "add_review", %{review_id: review.id})
         {
           :noreply,
           socket
@@ -69,7 +69,7 @@ defmodule GitGud.Web.CommitDiffLive do
       {:ok, comment} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
         send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
-        broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment_id: comment.id})
+        broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment_id: comment.id})
         {:noreply, push_event(socket, "add_comment", %{comment_id: comment.id})}
       {:error, changeset} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: changeset)
@@ -103,12 +103,12 @@ defmodule GitGud.Web.CommitDiffLive do
 
   @impl true
   def handle_info({:update_comment, comment_id}, socket) do
-    broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "update_comment", %{comment_id: comment_id})
+    broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "update_comment", %{comment_id: comment_id})
     {:noreply, push_event(socket, "update_comment", %{comment_id: comment_id})}
   end
 
   def handle_info({:delete_comment, comment_id}, socket) do
-    broadcast_from(self(), "commit:#{oid_fmt(socket.assigns.commit.oid)}", "delete_comment", %{comment_id: comment_id})
+    broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "delete_comment", %{comment_id: comment_id})
     {:noreply, push_event(socket, "delete_comment", %{comment_id: comment_id})}
   end
 
@@ -137,6 +137,11 @@ defmodule GitGud.Web.CommitDiffLive do
   #
   # Helpers
   #
+
+  defp subscribe_topic(socket) do
+    subscribe("commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}")
+    socket
+  end
 
   defp assign_repo!(socket, repo_id) do
     assign_new(socket, :repo, fn ->
