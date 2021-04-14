@@ -53,7 +53,14 @@
 <div id="feed" class="columns" phx-hook="IssueFeed">
   <div class="column is-three-quarters">
     <div class="thread">
+      <%= live_component(@socket, GitGud.Web.CommentLive, id: "comment-#{@issue_comment.id}", current_user: @current_user, repo: @repo, comment: @issue_comment) %>
       <div id="issue-timeline" class="timeline" phx-update="append">
+        <div id="issue-timeline-header" class="timeline-header">
+          <%= case @issue_comment_count do %>
+            <% 1 -> %> 1 comment
+            <% n -> %> <%= n %> comments
+          <% end %>
+        </div>
         <%= for feed_item <- @issue_feed do %>
           <%= case feed_item do %>
             <% %Comment{} = comment -> %>

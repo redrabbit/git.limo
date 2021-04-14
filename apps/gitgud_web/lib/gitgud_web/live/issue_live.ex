@@ -81,6 +81,7 @@ defmodule GitGud.Web.IssueLive do
         {
           :noreply,
           socket
+          |> assign(:issue_comment_count, socket.assigns.issue_comment_count + 1)
           |> assign(:issue_feed, [comment])
           |> push_event("add_comment", %{comment_id: comment.id})
         }
@@ -137,7 +138,12 @@ defmodule GitGud.Web.IssueLive do
 
   def handle_info({:delete_comment, comment_id}, socket) do
     broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "delete_comment", %{comment_id: comment_id})
-    {:noreply, push_event(socket, "delete_comment", %{comment_id: comment_id})}
+    {
+      :noreply,
+      socket
+      |> assign(:issue_comment_count, socket.assigns.issue_comment_count - 1)
+      |> push_event("delete_comment", %{comment_id: comment_id})
+    }
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "update_title", payload: %{title: title, event: event}}, socket) do
@@ -193,6 +199,7 @@ defmodule GitGud.Web.IssueLive do
     {
       :noreply,
       socket
+      |> assign(:issue_comment_count, socket.assigns.issue_comment_count + 1)
       |> assign(:issue_feed, [comment])
       |> push_event("add_comment", %{comment_id: comment.id})
     }
@@ -205,7 +212,12 @@ defmodule GitGud.Web.IssueLive do
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "delete_comment", payload: %{comment_id: comment_id}}, socket) do
-    {:noreply, push_event(socket, "delete_comment", %{comment_id: comment_id})}
+    {
+      :noreply,
+      socket
+      |> assign(:issue_comment_count, socket.assigns.issue_comment_count - 1)
+      |> push_event("delete_comment", %{comment_id: comment_id})
+    }
   end
 
   #
@@ -228,9 +240,12 @@ defmodule GitGud.Web.IssueLive do
   end
 
   defp assign_issue(socket, %Issue{} = issue) do
+    [comment|feed] = resolve_feed(issue)
     socket
     |> assign(:issue, issue)
-    |> assign(:issue_feed, resolve_feed(issue))
+    |> assign(:issue_comment, comment)
+    |> assign(:issue_comment_count, Enum.count(Enum.filter(feed, &is_struct(&1, Comment))))
+    |> assign(:issue_feed, feed)
   end
 
   defp assign_issue(socket, issue_number) do
