@@ -1,0 +1,51 @@
+<h2 class="subtitle">Create a new issue</h2>
+
+<%= f = form_for @changeset, Routes.issue_path(@socket, :create, @repo.owner, @repo),
+  as: :issue,
+  phx_change: "validate",
+  phx_submit: "submit",
+  phx_trigger_action: @trigger_submit
+%>
+  <div class="columns">
+    <div class="column is-three-quarters">
+      <div class="box">
+        <div class="field">
+          <div class="control">
+            <%= text_input f, :title, class: "input", placeholder: "Title" %>
+          </div>
+          <%= error_tag f, :title %>
+        </div>
+
+        <div class="field comment-form">
+          <%= with [fc] <- inputs_for(f, :comments) do %>
+            <%= live_component(@socket, GitGud.Web.CommentFormLive,
+              id: "comment-form",
+              current_user: @current_user,
+              repo: @repo,
+              form: fc
+            ) %>
+          <% end %>
+        </div>
+
+        <div class="field is-grouped is-grouped-right">
+          <%= submit "Create issue", class: "button is-success", disabled: !@changeset.valid? %>
+        </div>
+      </div>
+
+  </div>
+  <div class="column is-one-quarter">
+    <%= if authorized?(@current_user, @repo, :admin) do %>
+      <aside class="menu is-sticky">
+        <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
+          id: "label-select",
+          repo: @repo,
+          labels: Enum.filter(@repo.issue_labels, &(&1.id in @labels))
+        ) %>
+
+        <div class="select is-multiple is-hidden">
+          <%= multiple_select(f, :labels, Enum.map(@repo.issue_labels, &[key: &1.name, value: &1.id]), selected: @labels) %>
+        </div>
+      </aside>
+    <% end %>
+  </div>
+</div>

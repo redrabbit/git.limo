@@ -100,7 +100,7 @@ defmodule GitGud.Web.Router do
       get "/blob/:revision/*path", CodebaseController, :blob
 
       get "/issues", IssueController, :index
-      get "/issues/new", IssueController, :new
+      live "/issues/new", IssueFormLive, :new, as: :issue, layout: {GitGud.Web.LayoutView, "repo.html"}
       post "/issues", IssueController, :create
       get "/issues/labels", IssueLabelController, :index
       put "/issues/labels", IssueLabelController, :update

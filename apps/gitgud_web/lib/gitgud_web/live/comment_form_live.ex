@@ -42,12 +42,14 @@ defmodule GitGud.Web.CommentFormLive do
 
   defp assign_tab(socket), do: assign(socket, :tab, :editor)
 
+  defp assign_changeset(socket) when is_map_key(socket.assigns, :form), do: assign(socket, :changeset, socket.assigns.form.source)
   defp assign_changeset(socket) when is_map_key(socket.assigns, :changeset), do: socket
   defp assign_changeset(socket), do: assign(socket, :changeset, Comment.changeset(socket.assigns[:comment] || %Comment{}))
 
   defp assign_form_opts(socket, _form_opts) when is_map_key(socket.assigns, :form_opts), do: socket
   defp assign_form_opts(socket, form_opts), do: assign(socket, :form_opts, Keyword.new(form_opts))
 
+  defp assign_minimized(socket) when is_map_key(socket.assigns, :form), do: assign(socket, :minimized, false)
   defp assign_minimized(socket) when is_map_key(socket.assigns, :minimized), do: socket
   defp assign_minimized(socket), do: assign(socket, :minimized, socket.assigns.changeset.data.__meta__.state == :built)
 

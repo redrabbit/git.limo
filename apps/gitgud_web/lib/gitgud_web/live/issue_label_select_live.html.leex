@@ -1,6 +1,6 @@
 <div class="issue-label-select">
   <%= cond do %>
-    <% @edit -> %>
+    <% Map.has_key?(assigns, :issue) && @edit -> %>
       <div class="menu-label">
         Labels
         <div class="buttons is-pulled-right">
@@ -18,7 +18,7 @@
           </button>
         </div>
       </div>
-     <% @current_user && @current_user.id == @issue.author_id -> %>
+     <% Map.has_key?(assigns, :issue) && @current_user && @current_user.id == @issue.author_id -> %>
        <div class="menu-label">
          Labels
          <button class="button is-white is-small is-pulled-right has-text-grey-light" phx-click="toggle_edit" phx-target="<%= @myself %>">
@@ -31,49 +31,49 @@
        <p class="menu-label">Labels</p>
   <% end %>
   <div class="field">
-    <div class="control is-expanded">
-    <%= if @edit do %>
-      <%= for label <- @repo.issue_labels do %>
-        <%= cond do %>
-          <% label.id in @push_ids -> %>
-            <%= GitGud.Web.IssueLabelView.label_button(:button, label, class: "is-active", phx_click: "delete_label", phx_value_id: label.id, phx_target: @myself) do %>
-              <%= label.name %>
-              <span class="icon is-small is-pulled-right">
-                <i class="fa fa-minus"></i>
-              </span>
-            <% end %>
-          <% label.id in @pull_ids -> %>
-            <button class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>" phx-target="<%= @myself %>">
+    <div class="control">
+      <%= if @edit || is_nil(assigns[:issue]) do %>
+        <%= for label <- @repo.issue_labels do %>
+          <%= cond do %>
+            <% label.id in @push_ids -> %>
+              <%= GitGud.Web.IssueLabelView.label_button(:p, label, class: "is-active", phx_click: "delete_label", phx_value_id: label.id, phx_target: @myself) do %>
+                <%= label.name %>
+                <span class="icon is-small is-pulled-right">
+                  <i class="fa fa-minus"></i>
+                </span>
+              <% end %>
+            <% label.id in @pull_ids -> %>
+              <p class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>" phx-target="<%= @myself %>">
                 <%= label.name %>
                 <span class="icon is-small is-pulled-right has-text-grey-light">
-                <i class="fa fa-plus"></i>
+                  <i class="fa fa-plus"></i>
                 </span>
-            </button>
-          <% Enum.find(@issue.labels, &(&1.id == label.id)) -> %>
-            <%= GitGud.Web.IssueLabelView.label_button(:button, label, class: "is-active", phx_click: "delete_label", phx_value_id: label.id, phx_target: @myself) do %>
-              <%= label.name %>
-              <span class="icon is-small is-pulled-right">
-              <i class="fa fa-minus"></i>
-              </span>
-            <% end %>
-          <% true -> %>
-            <button class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>" phx-target="<%= @myself %>">
+              </p>
+            <% Enum.find(@labels, &(&1.id == label.id)) -> %>
+              <%= GitGud.Web.IssueLabelView.label_button(:p, label, [class: "is-active", phx_click: "delete_label", phx_value_id: label.id] ++ (Map.has_key?(assigns, :issue) && [phx_target: @myself] || [])) do %>
+                <%= label.name %>
+                <span class="icon is-small is-pulled-right">
+                  <i class="fa fa-minus"></i>
+                </span>
+              <% end %>
+            <% true -> %>
+              <p class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>"<%= if Map.has_key?(assigns, :issue) do %> phx-target="<%= @myself %>"<% end %>>
                 <%= label.name %>
                 <span class="icon is-small is-pulled-right has-text-grey-light">
-                <i class="fa fa-plus"></i>
+                  <i class="fa fa-plus"></i>
                 </span>
-            </button>
-        <% end %>
-      <% end %>
-    <% else %>
-      <%= unless Enum.empty?(@issue.labels) do %>
-        <%= for label <- @issue.labels do %>
-          <%= GitGud.Web.IssueLabelView.label_button(label) %>
+              </p>
+          <% end %>
         <% end %>
       <% else %>
-        <p class="is-size-7">None yet</p>
+        <%= unless Enum.empty?(@labels) do %>
+          <%= for label <- @labels do %>
+            <%= GitGud.Web.IssueLabelView.label_button(label) %>
+          <% end %>
+        <% else %>
+          <p class="is-size-7">None yet</p>
+        <% end %>
       <% end %>
-    <% end %>
     </div>
   </div>
 </div>

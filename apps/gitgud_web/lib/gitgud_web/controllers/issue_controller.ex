@@ -36,23 +36,6 @@ defmodule GitGud.Web.IssueController do
   end
 
   @doc """
-  Renders an issue creation form.
-  """
-  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
-  def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
-      if verified?(user) do
-        render(conn, "new.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          changeset: Issue.changeset(%Issue{comments: [%Comment{}]})
-        )
-      end || {:error, :unauthorized}
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Creates a new issue.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
@@ -61,18 +44,17 @@ defmodule GitGud.Web.IssueController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
       if verified?(user) do
         issue_params = Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})
-        issue_params = Map.put_new(issue_params, "comments", [%{}])
+        issue_params = Map.put_new(issue_params, "comments", [%Comment{}])
         issue_params = Map.update(issue_params, "labels", [], &map_labels(repo.issue_labels, &1))
         case Issue.create(issue_params) do
           {:ok, issue} ->
             conn
             |> put_flash(:info, "Issue ##{issue.number} created.")
             |> redirect(to: Routes.issue_path(conn, :show, user_login, repo_name, issue.number))
-          {:error, changeset} ->
+          {:error, _changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-            |> put_status(:bad_request)
-            |> render("new.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
+            |> redirect(to: Routes.issue_path(conn, :new, user_login, repo_name))
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}

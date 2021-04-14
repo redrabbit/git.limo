@@ -16,7 +16,7 @@
       </li>
     </ul>
   </header>
-  <%= f = form_for(@changeset, "#", @form_opts) %>
+  <%= if f = assigns[:form] do %>
     <div class="field">
       <%= case @tab do %>
         <% :editor -> %>
@@ -27,8 +27,21 @@
           <div class="comment-preview"><div class="content"><%= @markdown_preview %></div></div>
       <% end %>
     </div>
-    <div class="field is-grouped is-grouped-right">
-      <%= render_block(@inner_block, minimized: false, tab: @tab, changeset: @changeset) %>
-    </div>
-  </form>
+  <% else %>
+    <%= f = form_for(@changeset, "#", @form_opts) %>
+      <div class="field">
+        <%= case @tab do %>
+          <% :editor -> %>
+            <div class="control"><%= textarea f, :body, class: "textarea", autofocus: true %></div>
+            <%= error_tag f, :body %>
+          <% :preview -> %>
+            <%= hidden_input f, :body %>
+            <div class="comment-preview"><div class="content"><%= @markdown_preview %></div></div>
+        <% end %>
+      </div>
+      <div class="field is-grouped is-grouped-right">
+        <%= render_block(@inner_block, minimized: false, tab: @tab, changeset: @changeset) %>
+      </div>
+    </form>
+  <% end %>
 <% end %>
