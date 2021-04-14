@@ -65,7 +65,9 @@ defmodule GitGud.Issue do
   """
   @spec create(map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
   def create(params) do
-    DB.insert(changeset(%__MODULE__{}, map_issue_params(params)))
+    changeset = changeset(%__MODULE__{}, map_issue_params(params))
+    changeset = put_assoc(changeset, :labels, changeset.params["labels"] || [])
+    DB.insert(changeset)
   end
 
   @doc """
@@ -73,7 +75,10 @@ defmodule GitGud.Issue do
   """
   @spec create!(map | keyword) :: t
   def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, map_issue_params(params)))
+    case create(params) do
+      {:ok, issue} -> issue
+      {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
+    end
   end
 
   @doc """
@@ -245,7 +250,6 @@ defmodule GitGud.Issue do
     |> cast(params, [:repo_id, :author_id, :title])
     |> cast_assoc(:comments, with: &Comment.changeset/2, required: true)
     |> validate_required([:repo_id, :author_id, :title])
-    |> put_labels()
     |> assoc_constraint(:repo)
     |> assoc_constraint(:author)
   end
@@ -261,12 +265,6 @@ defmodule GitGud.Issue do
   #
   # Helpers
   #
-
-  defp put_labels(changeset) do
-    if labels = changeset.params["labels"],
-      do: put_assoc(changeset, :labels, labels),
-    else: changeset
-  end
 
   defp map_issue_params(issue_params) do
     issue_params =
