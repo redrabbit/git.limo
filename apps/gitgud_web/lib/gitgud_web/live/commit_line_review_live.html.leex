@@ -14,7 +14,7 @@
     </div>
   <% end %>
 </div>
-<%= if verified?(@current_user) do %>
+<%= if connected?(@socket) && verified?(@current_user) do %>
   <div class="timeline">
     <div class="timeline-item">
       <div class="timeline-content">

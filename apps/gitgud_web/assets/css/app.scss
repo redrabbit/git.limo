@@ -567,6 +567,12 @@ textarea.textarea {
   }
 }
 
+.issue {
+  .issue-title {
+    @extend .title;
+    height: 40px;
+  }
+}
 .issues-table {
   .issue-title {
     display: inline-flex;

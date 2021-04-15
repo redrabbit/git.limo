@@ -221,6 +221,7 @@ defmodule GitGud.Web.IssueLive do
   # Helpers
   #
 
+  defp subscribe_topic(socket) when not socket.connected?, do: socket
   defp subscribe_topic(socket) do
     subscribe("issue:#{socket.assigns.issue.id}")
     socket
@@ -231,6 +232,7 @@ defmodule GitGud.Web.IssueLive do
     assign(socket, :repo, DB.one!(query))
   end
 
+  defp assign_repo_permissions(socket) when not socket.connected?, do: assign(socket, :repo_permissions, [])
   defp assign_repo_permissions(socket) do
     assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket)))
   end
@@ -244,7 +246,7 @@ defmodule GitGud.Web.IssueLive do
     [comment|feed] = resolve_feed(issue)
     socket
     |> assign(:issue, issue)
-    |> assign(:issue_permissions, IssueQuery.permissions(issue, current_user(socket), socket.assigns.repo_permissions))
+    |> assign_issue_permissions()
     |> assign(:issue_comment, comment)
     |> assign(:issue_comment_count, Enum.count(Enum.filter(feed, &is_struct(&1, Comment))))
     |> assign(:issue_feed, feed)
@@ -255,10 +257,16 @@ defmodule GitGud.Web.IssueLive do
     assign_issue(socket, DB.one!(query))
   end
 
+  defp assign_issue_permissions(socket) when not socket.connected?, do: assign(socket, :issue_permissions, [])
+  defp assign_issue_permissions(socket) do
+    assign(socket, :issue_permissions, IssueQuery.permissions(socket.assigns.issue, current_user(socket), socket.assigns.repo_permissions))
+  end
+
   defp assign_page_title(socket) do
     assign(socket, :page_title, "#{socket.assigns.issue.title} ##{socket.assigns.issue.number} · #{socket.assigns.repo.owner.login}/#{socket.assigns.repo.name}")
   end
 
+  defp assign_title_changeset(socket) when not socket.connected?, do: socket
   defp assign_title_changeset(socket) do
     assign(socket, :title_changeset, title_changeset(socket.assigns.issue))
   end

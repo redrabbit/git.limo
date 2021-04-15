@@ -19,13 +19,14 @@ defmodule GitGud.Web.GlobalSearchLive do
     {
       :ok,
       socket
-      |> authenticate(session)
+      |> authenticate_later(session)
       |> assign(search: "", search_results: [])
     }
   end
 
   @impl true
   def handle_event("search", %{"key" => key, "value" => search}, socket) do
+    socket = authenticate(socket)
     cond do
       key == "Enter" ->
         case List.first(socket.assigns.search_results) do

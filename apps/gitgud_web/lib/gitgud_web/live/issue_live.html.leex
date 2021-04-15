@@ -1,4 +1,4 @@
-<div class="columns">
+<div class="columns issue">
   <div class="column is-12">
     <%= if @title_edit do %>
       <%= f = form_for(@title_changeset, "#", as: :issue, class: "mb-3", phx_change: "validate_title", phx_submit: "update_title") %>
@@ -19,7 +19,7 @@
     <% else %>
       <div class="field is-grouped">
         <div class="control is-expanded">
-          <h1 class="title">
+          <h1 class="issue-title">
             <%= @issue.title %>
             <span class="has-text-grey-light">#<%= @issue.number %></span>
           </h1>

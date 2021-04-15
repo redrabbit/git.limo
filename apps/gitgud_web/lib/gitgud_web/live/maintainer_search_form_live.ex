@@ -19,7 +19,7 @@ defmodule GitGud.Web.MaintainerSearchFormLive do
     {
       :ok,
       socket
-      |> authenticate(session)
+      |> authenticate_later(session)
       |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id, preload: :maintainers) end)
       |> assign_new(:changeset, &changeset/0)
       |> assign(active: false, search_results: [], trigger_submit: false)
@@ -28,9 +28,10 @@ defmodule GitGud.Web.MaintainerSearchFormLive do
 
   @impl true
   def handle_event("search", %{"maintainer" => maintainer_params}, socket) do
+    socket = authenticate(socket)
     changeset = changeset(maintainer_params, socket.assigns.search_results, socket.assigns.repo.maintainers)
     if search = get_change(changeset, :user_login) do
-      search_results = UserQuery.search(search, viewer: socket.assigns.current_user)
+      search_results = UserQuery.search(search, viewer: current_user(socket))
       search_results = Enum.reject(search_results, &(&1 in socket.assigns.repo.maintainers))
       {:noreply, assign(socket, active: search != "", changeset: changeset, search_results: search_results)}
     else

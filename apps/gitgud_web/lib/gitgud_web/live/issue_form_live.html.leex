@@ -28,7 +28,7 @@
         </div>
 
         <div class="field is-grouped is-grouped-right">
-          <%= submit "Create issue", class: "button is-success", disabled: !@changeset.valid? %>
+          <%= submit "Create issue", class: "button is-success", disabled: connected?(@socket) && !@changeset.valid? %>
         </div>
       </div>
 

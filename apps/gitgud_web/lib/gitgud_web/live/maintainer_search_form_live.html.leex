@@ -29,7 +29,7 @@
         </div>
       </div>
       <div class="control">
-        <%= submit("Add", class: "button is-success", disabled: !@changeset.valid?) %>
+        <%= submit("Add", class: "button is-success", disabled: connected?(@socket) && !@changeset.valid?) %>
       </div>
     </div>
     <%= error_tag f, :user_login %>

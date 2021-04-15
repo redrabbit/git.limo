@@ -114,22 +114,24 @@
     </div>
   <% end %>
 
-  <table class="table is-hidden">
-    <%= live_component(@socket, GitGud.Web.CommitDiffDynamicReviewsLive,
-      id: "dynamic-reviews",
-      current_user: @current_user,
-      repo: @repo,
-      repo_permissions: @repo_permissions,
-      agent: @agent,
-      commit: @commit
-    ) %>
-    <%= live_component(@socket, GitGud.Web.CommitDiffDynamicFormsLive,
-      id: "dynamic-forms",
-      current_user: @current_user,
-      repo: @repo,
-      repo_permissions: @repo_permissions,
-      agent: @agent,
-      commit: @commit
-    ) %>
-  </table>
+  <%= if connected?(@socket) do %>
+    <table class="table is-hidden">
+      <%= live_component(@socket, GitGud.Web.CommitDiffDynamicReviewsLive,
+        id: "dynamic-reviews",
+        current_user: @current_user,
+        repo: @repo,
+        repo_permissions: @repo_permissions,
+        agent: @agent,
+        commit: @commit
+      ) %>
+      <%= live_component(@socket, GitGud.Web.CommitDiffDynamicFormsLive,
+        id: "dynamic-forms",
+        current_user: @current_user,
+        repo: @repo,
+        repo_permissions: @repo_permissions,
+        agent: @agent,
+        commit: @commit
+      ) %>
+    </table>
+  <% end %>
 </div>

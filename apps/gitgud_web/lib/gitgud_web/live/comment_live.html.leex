@@ -4,7 +4,7 @@
   <% is_nil(@changeset) -> %>
     <div id="<%= @id %>" class="comment">
       <header class="comment-header">
-        <%= if @permissions != [] do %>
+        <%= if connected?(@socket) && @permissions != [] do %>
           <div class="buttons is-pulled-right">
             <%= if :edit in @permissions do %>
               <a class="button is-small" phx-click="toggle_edit" phx-target="<%= @myself %>">

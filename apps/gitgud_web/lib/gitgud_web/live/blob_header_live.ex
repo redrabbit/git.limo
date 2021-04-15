@@ -18,12 +18,11 @@ defmodule GitGud.Web.BlobHeaderLive do
   import GitGud.Web.CodebaseView
 
   @impl true
-  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "tree_path" => tree_path} = session, socket) do
+  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "tree_path" => tree_path}, socket) do
     if connected?(socket) do
       {
         :ok,
         socket
-        |> authenticate(session)
         |> assign_repo!(repo_id)
         |> assign_agent!()
         |> assign_revision!(rev_spec)
@@ -34,7 +33,6 @@ defmodule GitGud.Web.BlobHeaderLive do
       {
         :ok,
         socket
-        |> authenticate(session)
         |> assign_repo!(repo_id)
         |> assign(tree_path: tree_path, blob_commit_info: nil)
       }
@@ -52,7 +50,7 @@ defmodule GitGud.Web.BlobHeaderLive do
 
   defp assign_repo!(socket, repo_id) do
     assign_new(socket, :repo, fn ->
-      DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id], viewer: current_user(socket)))
+      DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id]))
     end)
   end
 
