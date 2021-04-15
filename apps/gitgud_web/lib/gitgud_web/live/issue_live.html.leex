@@ -24,7 +24,7 @@
             <span class="has-text-grey-light">#<%= @issue.number %></span>
           </h1>
         </div>
-        <%= if @current_user && @current_user.id == @issue.author_id do %>
+        <%= if :edit_title in @issue_permissions do %>
           <div class="control">
             <button class="button" phx-click="edit_title">Edit</button>
           </div>
@@ -53,7 +53,14 @@
 <div id="feed" class="columns" phx-hook="IssueFeed">
   <div class="column is-three-quarters">
     <div class="thread">
-      <%= live_component(@socket, GitGud.Web.CommentLive, id: "comment-#{@issue_comment.id}", current_user: @current_user, repo: @repo, comment: @issue_comment) %>
+      <%= live_component(@socket, GitGud.Web.CommentLive,
+        id: "comment-#{@issue_comment.id}",
+        current_user: @current_user,
+        repo: @repo,
+        repo_permissions: @repo_permissions,
+        comment: @issue_comment,
+        permissions: List.delete(CommentQuery.permissions(@issue_comment, @current_user, @repo_permissions), :delete)
+      ) %>
       <div id="issue-timeline" class="timeline" phx-update="append">
         <div id="issue-timeline-header" class="timeline-header">
           <%= case @issue_comment_count do %>
@@ -66,54 +73,70 @@
             <% %Comment{} = comment -> %>
               <div id="issue-comment-<%= comment.id %>" class="timeline-item">
                 <div class="timeline-content">
-                  <%= live_component(@socket, GitGud.Web.CommentLive, id: "comment-#{comment.id}", current_user: @current_user, repo: @repo, comment: comment) %>
+                  <%= live_component(@socket, GitGud.Web.CommentLive,
+                    id: "comment-#{comment.id}",
+                    current_user: @current_user,
+                    repo: @repo,
+                    repo_permissions: @repo_permissions,
+                    comment: comment
+                  ) %>
                 </div>
               </div>
             <% {event, index} -> %>
               <div id="issue-event-<%= index %>" class="timeline-item">
-                <%= live_component(@socket, GitGud.Web.IssueEventLive, id: "event-#{index}", current_user: @current_user, repo: @repo, event: event) %>
+                <%= live_component(@socket, GitGud.Web.IssueEventLive,
+                  id: "event-#{index}",
+                  repo: @repo,
+                  event: event
+                ) %>
               </div>
           <% end %>
         <% end %>
       </div>
-      <div class="comment-form">
-        <%= live_component(@socket, GitGud.Web.CommentFormLive,
-          id: "issue-comment-form",
-          current_user: @current_user,
-          repo: @repo,
-          minimized: false,
-          phx_change: "validate_comment",
-          phx_submit: "add_comment") do %>
-          <div class="control">
-            <%= case @issue.status do %>
-              <% "open" -> %>
-                <%= if @changeset.changes == %{} do %>
-                  <a class="button" phx-click="close">Close issue</a>
-                <% else %>
-                  <%= submit "Close and comment", class: "button", phx_click: "close" %>
-                <% end %>
-              <% "close" -> %>
-                <%= if @changeset.changes == %{} do %>
-                  <a class="button" phx-click="reopen">Reopen issue</a>
-                <% else %>
-                  <%= submit "Reopen and comment", class: "button", phx_click: "reopen" %>
-                <% end %>
-            <% end %>
-          </div>
-          <div class="control">
-            <%= submit "Add comment", class: "button is-success", disabled: @changeset.changes == %{} %>
-          </div>
-        <% end %>
-      </div>
+      <%= if :comment in @issue_permissions do %>
+        <div class="comment-form">
+          <%= live_component(@socket, GitGud.Web.CommentFormLive,
+            id: "issue-comment-form",
+            current_user: @current_user,
+            repo: @repo,
+            minimized: false,
+            phx_change: "validate_comment",
+            phx_submit: "add_comment") do %>
+            <div class="control">
+              <%= case @issue.status do %>
+                <% "open" -> %>
+                  <%= if :close in @issue_permissions do %>
+                    <%= if @changeset.changes == %{} do %>
+                      <a class="button" phx-click="close">Close issue</a>
+                    <% else %>
+                      <%= submit "Close and comment", class: "button", phx_click: "close" %>
+                    <% end %>
+                  <% end %>
+                <% "close" -> %>
+                  <%= if :reopen in @issue_permissions do %>
+                    <%= if @changeset.changes == %{} do %>
+                      <a class="button" phx-click="reopen">Reopen issue</a>
+                    <% else %>
+                      <%= submit "Reopen and comment", class: "button", phx_click: "reopen" %>
+                    <% end %>
+                  <% end %>
+              <% end %>
+            </div>
+            <div class="control">
+              <%= submit "Add comment", class: "button is-success", disabled: @changeset.changes == %{} %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   </div>
   <div class="column is-one-quarter">
     <aside class="menu is-sticky">
       <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
         id: "issue-label-select",
-        current_user: @current_user,
         repo: @repo,
-        issue: @issue
+        issue: @issue,
+        editable: :edit_labels in @issue_permissions
       ) %>
     </aside>
   </div>

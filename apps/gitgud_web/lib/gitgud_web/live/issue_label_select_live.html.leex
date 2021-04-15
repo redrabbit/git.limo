@@ -18,7 +18,7 @@
           </button>
         </div>
       </div>
-     <% Map.has_key?(assigns, :issue) && @current_user && @current_user.id == @issue.author_id -> %>
+     <% Map.has_key?(assigns, :issue) && @editable -> %>
        <div class="menu-label">
          Labels
          <button class="button is-white is-small is-pulled-right has-text-grey-light" phx-click="toggle_edit" phx-target="<%= @myself %>">

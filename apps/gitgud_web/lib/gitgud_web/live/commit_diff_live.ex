@@ -35,6 +35,7 @@ defmodule GitGud.Web.CommitDiffLive do
       socket
       |> authenticate(session)
       |> assign_repo!(repo_id)
+      |> assign_repo_permissions()
       |> assign_agent!()
       |> assign_commit!(oid)
       |> assign_diff!()
@@ -147,6 +148,10 @@ defmodule GitGud.Web.CommitDiffLive do
     assign_new(socket, :repo, fn ->
       DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id], viewer: current_user(socket)))
     end)
+  end
+
+  defp assign_repo_permissions(socket) do
+    assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket)))
   end
 
   defp assign_agent!(socket) do

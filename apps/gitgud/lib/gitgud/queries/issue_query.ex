@@ -110,10 +110,12 @@ defmodule GitGud.IssueQuery do
     cond do
       :admin in repo_perms ->
         [:comment, :close, :reopen, :edit_title, :edit_labels]
-      is_struct(user, User) && issue.author_id == user.id ->
+      User.verified?(user) && issue.author_id == user.id ->
         [:comment, :close, :reopen]
-      true ->
+      User.verified?(user) ->
         [:comment]
+      true ->
+        []
     end
   end
 

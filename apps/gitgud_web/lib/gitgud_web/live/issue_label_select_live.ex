@@ -11,7 +11,7 @@ defmodule GitGud.Web.IssueLabelSelectLive do
 
   @impl true
   def mount(socket) do
-    {:ok, assign(socket, edit: false, push_ids: [], pull_ids: [])}
+    {:ok, assign(socket, editable: false, edit: false, push_ids: [], pull_ids: [])}
   end
 
   @impl true

@@ -1,7 +1,11 @@
 <div class="columns commit-stats">
   <div class="column is-full">
     <p class="button is-white">
-      <span>Showing <strong class="has-text-dark is-family-monospace"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong> with <strong class="has-text-success is-family-monospace"><%= @diff_stats.insertions %> additions</strong> and <strong class="has-text-danger is-family-monospace"><%= @diff_stats.deletions %> deletions</strong>.</span>
+      <span>
+        Showing <strong class="has-text-dark is-family-monospace"><%= @diff_stats.files_changed %> file<%= if @diff_stats.files_changed > 1 do %>s<% end %></strong>
+        with <strong class="has-text-success is-family-monospace"><%= @diff_stats.insertions %> additions</strong>
+        and <strong class="has-text-danger is-family-monospace"><%= @diff_stats.deletions %> deletions</strong>.
+      </span>
     </p>
   </div>
 </div>
@@ -91,6 +95,7 @@
                             id: "review-#{review.id}",
                             current_user: @current_user,
                             repo: @repo,
+                            repo_permissions: @repo_permissions,
                             agent: @agent,
                             commit: @commit,
                             review_id: review.id,
@@ -114,6 +119,7 @@
       id: "dynamic-reviews",
       current_user: @current_user,
       repo: @repo,
+      repo_permissions: @repo_permissions,
       agent: @agent,
       commit: @commit
     ) %>
@@ -121,6 +127,7 @@
       id: "dynamic-forms",
       current_user: @current_user,
       repo: @repo,
+      repo_permissions: @repo_permissions,
       agent: @agent,
       commit: @commit
     ) %>

@@ -10,6 +10,7 @@
                   id: "review-#{oid_fmt(oid)}-#{hunk_index}-#{line_index}-comment-form",
                   current_user: @current_user,
                   repo: @repo,
+                  repo_permissions: @repo_permissions,
                   agent: @agent,
                   minimized: false,
                   phx_change: "validate_comment",

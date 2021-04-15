@@ -17,14 +17,6 @@ defmodule GitGud.Web.IssueLive do
 
   import GitGud.Web.Endpoint, only: [broadcast_from: 4, subscribe: 1]
 
-  def title_changeset(issue, params \\ %{}) do
-    types = %{title: :string}
-    data = %{title: issue.title}
-    {data, types}
-    |> Ecto.Changeset.cast(params, Map.keys(types))
-    |> Ecto.Changeset.validate_required([:title])
-  end
-
   #
   # Callbacks
   #
@@ -36,6 +28,7 @@ defmodule GitGud.Web.IssueLive do
       socket
       |> authenticate(session)
       |> assign_repo!(user_login, repo_name)
+      |> assign_repo_permissions()
       |> assign_repo_open_issue_count()
       |> assign_issue(String.to_integer(number))
       |> assign_page_title()
@@ -234,15 +227,20 @@ defmodule GitGud.Web.IssueLive do
     assign(socket, :repo, DB.one!(query))
   end
 
+  defp assign_repo_permissions(socket) do
+    assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket)))
+  end
+
   defp assign_repo_open_issue_count(socket) when socket.connected?, do: socket
   defp assign_repo_open_issue_count(socket) do
-    assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
+    assign(socket, :repo_open_issue_count, IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
   end
 
   defp assign_issue(socket, %Issue{} = issue) do
     [comment|feed] = resolve_feed(issue)
     socket
     |> assign(:issue, issue)
+    |> assign(:issue_permissions, IssueQuery.permissions(issue, current_user(socket), socket.assigns.repo_permissions))
     |> assign(:issue_comment, comment)
     |> assign(:issue_comment_count, Enum.count(Enum.filter(feed, &is_struct(&1, Comment))))
     |> assign(:issue_feed, feed)
@@ -272,4 +270,12 @@ defmodule GitGud.Web.IssueLive do
 
   defp feed_sort_field(%Comment{} = comment), do: comment.inserted_at
   defp feed_sort_field({event, _index}), do: NaiveDateTime.from_iso8601!(event["timestamp"])
+
+  def title_changeset(issue, params \\ %{}) do
+    types = %{title: :string}
+    data = %{title: issue.title}
+    {data, types}
+    |> Ecto.Changeset.cast(params, Map.keys(types))
+    |> Ecto.Changeset.validate_required([:title])
+  end
 end

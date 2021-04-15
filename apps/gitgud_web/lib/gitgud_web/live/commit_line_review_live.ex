@@ -12,11 +12,6 @@ defmodule GitGud.Web.CommitLineReviewLive do
   #
 
   @impl true
-  def mount(socket) do
-    {:ok, socket, temporary_assigns: [comments: []]}
-  end
-
-  @impl true
   def preload(list_of_assigns) do
     cond do
       Enum.all?(list_of_assigns, &Map.has_key?(&1, :comments)) ->
@@ -24,7 +19,12 @@ defmodule GitGud.Web.CommitLineReviewLive do
       true ->
         %{repo: repo, commit: commit} = hd(list_of_assigns)
         comments = ReviewQuery.commit_line_reviews_comments(repo, commit, preload: :author)
-        Enum.map(list_of_assigns, &Map.put(&1, :comments, comments[&1.review_id]))
+        Enum.map(list_of_assigns, &Map.put_new(&1, :comments, comments[&1.review_id]))
     end
+  end
+
+  @impl true
+  def mount(socket) do
+    {:ok, socket, temporary_assigns: [comments: []]}
   end
 end

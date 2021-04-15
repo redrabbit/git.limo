@@ -4,14 +4,18 @@
   <% is_nil(@changeset) -> %>
     <div id="<%= @id %>" class="comment">
       <header class="comment-header">
-        <%= if verified?(@current_user) && @current_user.id == @comment.author.id do %>
+        <%= if @permissions != [] do %>
           <div class="buttons is-pulled-right">
-            <a class="button is-small" phx-click="toggle_edit" phx-target="<%= @myself %>">
-              <span class="icon"><i class="fa fa-pen"></i></span>
-            </a>
-            <a class="button is-small" phx-click="delete" phx-target="<%= @myself %>">
-              <span class="icon"><i class="fa fa-trash"></i></span>
-            </a>
+            <%= if :edit in @permissions do %>
+              <a class="button is-small" phx-click="toggle_edit" phx-target="<%= @myself %>">
+                <span class="icon"><i class="fa fa-pen"></i></span>
+              </a>
+            <% end %>
+            <%= if :delete in @permissions do %>
+              <a class="button is-small" phx-click="delete" phx-target="<%= @myself %>">
+                <span class="icon"><i class="fa fa-trash"></i></span>
+              </a>
+            <% end %>
           </div>
         <% end %>
         <a href="<%= Routes.user_path(@socket, :show, @comment.author) %>" class="tag user"><%= @comment.author %></a> commented <%= datetime_format(@comment.inserted_at, "{relative}") %>
