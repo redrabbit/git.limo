@@ -1,35 +1,55 @@
 <%= case @event do %>
-  <% %{"type" => "title_update", "new_title" => new_title, "old_title" => old_title, "timestamp" => timestamp} -> %>
+  <% %{
+    "type" => "title_update",
+    "new_title" => new_title,
+    "old_title" => old_title,
+    "timestamp" => timestamp,
+    "user" => user
+   } -> %>
     <div class="timeline-marker is-icon">
       <i class="fa fa-pen"></i>
     </div>
     <div class="timeline-content">
-      <a href="<%= Routes.user_path(@socket, :show, @event_user) %>" class="has-text-black"><%= @event_user.login %></a>
+      <a href="<%= Routes.user_path(@socket, :show, user) %>" class="has-text-black"><%= user.login %></a>
       changed the title <em class="has-text-black"><s><%= old_title %></s></em> to <em class="has-text-black"><%= new_title %></em>
       <%= datetime_format(NaiveDateTime.from_iso8601!(timestamp), "{relative}") %>
     </div>
-  <% %{"type" => "close", "timestamp" => timestamp} -> %>
+  <% %{
+    "type" => "close",
+    "timestamp" => timestamp,
+    "user" => user
+  } -> %>
     <div class="timeline-marker is-icon is-danger">
       <i class="fa fa-check"></i>
     </div>
     <div class="timeline-content">
-      <a href="<%= Routes.user_path(@socket, :show, @event_user) %>" class="has-text-black"><%= @event_user.login %></a>
+      <a href="<%= Routes.user_path(@socket, :show, user) %>" class="has-text-black"><%= user.login %></a>
       closed this issue <%= datetime_format(NaiveDateTime.from_iso8601!(timestamp), "{relative}") %>
     </div>
-  <% %{"type" => "reopen", "timestamp" => timestamp} -> %>
+  <% %{
+    "type" => "reopen",
+    "timestamp" => timestamp,
+    "user" => user
+  } -> %>
     <div class="timeline-marker is-icon is-success">
       <i class="fa fa-redo"></i>
     </div>
     <div class="timeline-content">
-      <a href="<%= Routes.user_path(@socket, :show, @event_user) %>" class="has-text-black"><%= @event_user.login %></a>
+      <a href="<%= Routes.user_path(@socket, :show, user) %>" class="has-text-black"><%= user.login %></a>
       reopened this issue <%= datetime_format(NaiveDateTime.from_iso8601!(timestamp), "{relative}") %>
     </div>
-  <% %{"type" => "labels_update", "push" => push_ids, "pull" => pull_ids, "timestamp" => timestamp} -> %>
+  <% %{
+    "type" => "labels_update",
+    "push" => push_ids,
+    "pull" => pull_ids,
+    "timestamp" => timestamp,
+    "user" => user
+  } -> %>
     <div class="timeline-marker is-icon">
       <i class="fa fa-tag"></i>
     </div>
     <div class="timeline-content">
-      <a href="<%= Routes.user_path(@socket, :show, @event_user) %>" class="has-text-black"><%= @event_user.login %></a>
+      <a href="<%= Routes.user_path(@socket, :show, user) %>" class="has-text-black"><%= user.login %></a>
       <%= unless Enum.empty?(push_ids) do %>
         added
         <%= for label_id <- push_ids do %>

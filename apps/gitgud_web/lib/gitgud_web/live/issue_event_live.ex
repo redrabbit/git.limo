@@ -14,11 +14,11 @@ defmodule GitGud.Web.IssueEventLive do
   @impl true
   def preload(list_of_assigns) do
     cond do
-      Enum.all?(list_of_assigns, &Map.has_key?(&1, :comments)) ->
+      Enum.all?(list_of_assigns, &Map.has_key?(&1.event, "user")) ->
         list_of_assigns
       true ->
         users = batch_event_users(list_of_assigns)
-        Enum.map(list_of_assigns, &Map.put_new(&1, :event_user, Map.fetch!(users, &1.event["user_id"])))
+        Enum.map(list_of_assigns, &put_in(&1, [:event, "user"], Map.fetch!(users, &1.event["user_id"])))
     end
   end
 

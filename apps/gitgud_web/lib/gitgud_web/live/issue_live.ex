@@ -42,12 +42,13 @@ defmodule GitGud.Web.IssueLive do
   @impl true
   def handle_event("update_title", %{"issue" => issue_params}, socket) do
     issue = Issue.update_title!(socket.assigns.issue, issue_params["title"], user_id: current_user(socket).id)
-    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_title", %{title: issue.title, event: List.last(issue.events)})
+    event = List.last(issue.events)
+    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_title", %{title: issue.title, event: event})
     {
       :noreply,
       socket
       |> assign(:issue, issue)
-      |> assign(:issue_feed, [{List.last(issue.events), length(issue.events)}])
+      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
       |> assign_page_title()
       |> assign(:title_edit, false)
       |> assign(:title_changeset, title_changeset(issue))
@@ -91,23 +92,25 @@ defmodule GitGud.Web.IssueLive do
 
   def handle_event("close", _params, socket) do
     issue = Issue.close!(socket.assigns.issue, user_id: current_user(socket).id)
-    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "close", %{event: List.last(issue.events)})
+    event = List.last(issue.events)
+    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "close", %{event: event})
     {
       :noreply,
       socket
       |> assign(:issue, issue)
-      |> assign(:issue_feed, [{List.last(issue.events), length(issue.events)}])
+      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
     }
   end
 
   def handle_event("reopen", _params, socket) do
     issue = Issue.reopen!(socket.assigns.issue, user_id: current_user(socket).id)
-    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "reopen", %{event: List.last(issue.events)})
+    event = List.last(issue.events)
+    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "reopen", %{event: event})
     {
       :noreply,
       socket
       |> assign(:issue, issue)
-      |> assign(:issue_feed, [{List.last(issue.events), length(issue.events)}])
+      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
       |> push_event("add_event", %{event_id: length(issue.events)})
     }
   end
@@ -115,12 +118,13 @@ defmodule GitGud.Web.IssueLive do
   @impl true
   def handle_info({:update_labels, {push_ids, pull_ids} = changes}, socket) do
     issue = Issue.update_labels!(socket.assigns.issue, changes, user_id: current_user(socket).id)
-    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_labels", %{push_ids: push_ids, pull_ids: pull_ids, event: List.last(issue.events)})
+    event = List.last(issue.events)
+    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_labels", %{push_ids: push_ids, pull_ids: pull_ids, event: event})
     {
       :noreply,
       socket
       |> assign(:issue, issue)
-      |> assign(:issue_feed, [{List.last(issue.events), length(issue.events)}])
+      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
     }
   end
 
