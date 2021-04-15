@@ -137,4 +137,14 @@ Hooks.IssueFeed = {
   }
 }
 
+Hooks.CommentForm = {
+  mounted() {
+    const textarea = this.el.querySelector("textarea")
+    if(textarea.autofocus) {
+      const cursorPos = textarea.value.length
+      textarea.setSelectionRange(cursorPos, cursorPos)
+    }
+  }
+}
+
 export default Hooks

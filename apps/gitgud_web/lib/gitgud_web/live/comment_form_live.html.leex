@@ -20,7 +20,7 @@
     <div class="field">
       <%= case @tab do %>
         <% :editor -> %>
-          <div class="control"><%= textarea f, :body, class: "textarea", autofocus: true %></div>
+          <div class="control"><%= textarea f, :body, class: "textarea", autofocus: @autofocus %></div>
           <%= error_tag f, :body %>
         <% :preview -> %>
           <%= hidden_input f, :body %>
@@ -28,11 +28,11 @@
       <% end %>
     </div>
   <% else %>
-    <%= f = form_for(@changeset, "#", @form_opts) %>
+    <%= f = form_for(@changeset, "#", @form_opts ++ [phx_hook: "CommentForm"]) %>
       <div class="field">
         <%= case @tab do %>
           <% :editor -> %>
-            <div class="control"><%= textarea f, :body, class: "textarea", autofocus: true %></div>
+            <div class="control"><%= textarea f, :body, class: "textarea", autofocus: @autofocus %></div>
             <%= error_tag f, :body %>
           <% :preview -> %>
             <%= hidden_input f, :body %>

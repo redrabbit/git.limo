@@ -8,6 +8,11 @@ defmodule GitGud.Web.CommentFormLive do
   alias GitGud.Comment
 
   @impl true
+  def mount(socket) do
+    {:ok, assign(socket, :autofocus, false), temporary_assigns: [autofocus: false]}
+  end
+
+  @impl true
   def update(assigns, socket) do
     {form_opts, assigns} = Map.split(assigns, [:phx_change, :phx_submit, :phx_target])
     {
@@ -33,7 +38,7 @@ defmodule GitGud.Web.CommentFormLive do
   end
 
   def handle_event("expand", _params, socket) do
-    {:noreply, assign(socket, :minimized, false)}
+    {:noreply, assign(socket, minimized: false, autofocus: true)}
   end
 
   #
