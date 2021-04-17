@@ -41,18 +41,24 @@ defmodule GitGud.Web.IssueLive do
 
   @impl true
   def handle_event("update_title", %{"issue" => issue_params}, socket) do
-    issue = Issue.update_title!(socket.assigns.issue, issue_params["title"], user_id: current_user(socket).id)
-    event = List.last(issue.events)
-    broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_title", %{title: issue.title, event: event})
-    {
-      :noreply,
-      socket
-      |> assign(:issue, issue)
-      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
-      |> assign_page_title()
-      |> assign(:title_edit, false)
-      |> assign(:title_changeset, title_changeset(issue))
-    }
+    changeset = title_changeset(socket.assigns.issue, issue_params)
+    case Ecto.Changeset.apply_action(changeset, :update) do
+      {:ok, data} ->
+        issue = Issue.update_title!(socket.assigns.issue, data.title, user_id: current_user(socket).id)
+        event = List.last(issue.events)
+        broadcast_from(self(), "issue:#{socket.assigns.issue.id}", "update_title", %{title: issue.title, event: event})
+        {
+          :noreply,
+          socket
+          |> assign(:issue, issue)
+          |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
+          |> assign_page_title()
+          |> assign(:title_edit, false)
+          |> assign(:title_changeset, title_changeset(issue))
+        }
+      {:error, changeset} ->
+        {:noreply, assign(socket, :title_changeset, changeset)}
+    end
   end
 
   def handle_event("validate_title", %{"issue" => issue_params}, socket) do
@@ -64,7 +70,7 @@ defmodule GitGud.Web.IssueLive do
   end
 
   def handle_event("cancel_title_edit", _params, socket) do
-    {:noreply, assign(socket, :title_edit, false)}
+    {:noreply, assign(socket, title_edit: false, title_changeset: title_changeset(socket.assigns.issue))}
   end
 
   def handle_event("add_comment", %{"comment" => comment_params}, socket) do

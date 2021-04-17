@@ -3,18 +3,19 @@
     <%= if @title_edit do %>
       <%= f = form_for(@title_changeset, "#", as: :issue, class: "mb-3", phx_change: "validate_title", phx_submit: "update_title") %>
         <div class="field is-grouped">
-          <p class="control is-expanded">
+          <div class="control is-expanded">
             <%= text_input f, :title, class: "input" %>
-          </p>
+          </div>
           <%= if @title_changeset.changes != %{} do %>
-            <p class="control">
+            <div class="control">
               <%= submit "Save", class: "button is-link" %>
-            </p>
+            </div>
           <% end %>
-          <p class="control">
+          <div class="control">
             <button type="reset" class="button" phx-click="cancel_title_edit">Cancel</button>
-          </p>
+          </div>
         </div>
+        <%= error_tag(f, :title) %>
       </form>
     <% else %>
       <div class="field is-grouped">
@@ -43,7 +44,7 @@
           <span>Closed</span>
         </p>
     <% end %>
-    <a href="<%= Routes.user_path(@socket, :show, @issue.author) %>" class="tag user"><%= @issue.author %></a>
+    <a href="<%= Routes.user_path(@socket, :show, @issue.author) %>" class="has-text-dark"><%= @issue.author.login %></a>
     opened this issue <%= datetime_format(@issue.inserted_at, "{relative}") %>
   </div>
 </div>
