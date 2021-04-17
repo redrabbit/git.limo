@@ -99,7 +99,7 @@ defmodule GitGud.Web.CommentLive do
   # Helpers
   #
 
-  defp assign_body_html(socket) when socket.assigns.comment_body_html, do: socket
+  defp assign_body_html(socket) when not is_nil(socket.assigns.comment_body_html), do: socket
   defp assign_body_html(socket) do
     assign(socket, :comment_body_html, markdown_safe(socket.assigns.comment.body, repo: socket.assigns.repo, agent: socket.assigns.agent))
   end
