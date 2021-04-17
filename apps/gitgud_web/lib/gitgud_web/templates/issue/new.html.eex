@@ -1,0 +1,3 @@
+<h2 class="subtitle">Create a new issue</h2>
+
+<%= live_render(@conn, GitGud.Web.IssueFormLive, session: %{"repo_id" => @repo.id}) %>

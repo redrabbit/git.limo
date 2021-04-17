@@ -1,5 +1,3 @@
-<h2 class="subtitle">Create a new issue</h2>
-
 <%= f = form_for @changeset, Routes.issue_path(@socket, :create, @repo.owner, @repo),
   as: :issue,
   phx_change: "validate",

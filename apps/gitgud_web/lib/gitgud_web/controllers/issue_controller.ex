@@ -36,6 +36,23 @@ defmodule GitGud.Web.IssueController do
   end
 
   @doc """
+  Renders an issue creation form.
+  """
+  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
+  def new(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
+    user = current_user(conn)
+    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
+      if verified?(user) do
+        render(conn, "new.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          changeset: Issue.changeset(%Issue{comments: [%Comment{}]})
+        )
+      end || {:error, :unauthorized}
+    end || {:error, :not_found}
+  end
+
+  @doc """
   Creates a new issue.
   """
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
@@ -51,10 +68,11 @@ defmodule GitGud.Web.IssueController do
             conn
             |> put_flash(:info, "Issue ##{issue.number} created.")
             |> redirect(to: Routes.issue_path(conn, :show, user_login, repo_name, issue.number))
-          {:error, _changeset} ->
+          {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
-            |> redirect(to: Routes.issue_path(conn, :new, user_login, repo_name))
+            |> put_status(:bad_request)
+            |> render("new.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
         end
       end || {:error, :unauthorized}
     end || {:error, :not_found}
