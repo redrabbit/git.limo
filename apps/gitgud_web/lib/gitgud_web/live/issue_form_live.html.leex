@@ -34,7 +34,7 @@
 
   </div>
   <div class="column is-one-quarter">
-    <%= if authorized?(@current_user, @repo, :admin) do %>
+    <%= if connected?(@socket) && authorized?(@current_user, @repo, :admin) do %>
       <aside class="menu is-sticky">
         <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
           id: "label-select",
