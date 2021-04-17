@@ -12,8 +12,6 @@ defmodule GitGud.Web.Endpoint do
     signing_salt: "zMguVWdH"
   ]
 
-  socket "/socket", GitGud.Web.UserSocket, websocket: true
-
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_opts]]
 
   plug Plug.Static,
