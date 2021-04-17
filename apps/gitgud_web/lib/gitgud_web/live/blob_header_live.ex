@@ -7,9 +7,6 @@ defmodule GitGud.Web.BlobHeaderLive do
 
   alias GitRekt.GitAgent
 
-  alias GitGud.DB
-  alias GitGud.DBQueryable
-
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
 
@@ -19,24 +16,15 @@ defmodule GitGud.Web.BlobHeaderLive do
 
   @impl true
   def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "tree_path" => tree_path}, socket) do
-    if connected?(socket) do
-      {
-        :ok,
-        socket
-        |> assign_repo!(repo_id)
-        |> assign_agent!()
-        |> assign_revision!(rev_spec)
-        |> assign(tree_path: tree_path, blob_commit_info: nil)
-        |> assign_blob_commit_async()
-      }
-    else
-      {
-        :ok,
-        socket
-        |> assign_repo!(repo_id)
-        |> assign(tree_path: tree_path, blob_commit_info: nil)
-      }
-    end
+    {
+      :ok,
+      socket
+      |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
+      |> assign_agent!()
+      |> assign_revision!(rev_spec)
+      |> assign(tree_path: tree_path, blob_commit_info: nil)
+      |> assign_blob_commit_async()
+    }
   end
 
   @impl true
@@ -47,12 +35,6 @@ defmodule GitGud.Web.BlobHeaderLive do
   #
   # Helpers
   #
-
-  defp assign_repo!(socket, repo_id) do
-    assign_new(socket, :repo, fn ->
-      DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id]))
-    end)
-  end
 
   defp assign_agent!(socket) do
     case GitAgent.unwrap(socket.assigns.repo) do

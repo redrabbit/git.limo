@@ -7,12 +7,8 @@ defmodule GitGud.Web.CommitDiffLive do
 
   alias GitRekt.GitAgent
 
-  alias GitGud.DB
-  alias GitGud.DBQueryable
-
   alias GitGud.CommitLineReview
   alias GitGud.Comment
-
 
   alias GitGud.RepoQuery
   alias GitGud.ReviewQuery
@@ -34,7 +30,7 @@ defmodule GitGud.Web.CommitDiffLive do
       :ok,
       socket
       |> authenticate(session)
-      |> assign_repo!(repo_id)
+      |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
       |> assign_repo_permissions()
       |> assign_agent!()
       |> assign_commit!(oid)
@@ -143,12 +139,6 @@ defmodule GitGud.Web.CommitDiffLive do
   defp subscribe_topic(socket) do
     subscribe("commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}")
     socket
-  end
-
-  defp assign_repo!(socket, repo_id) do
-    assign_new(socket, :repo, fn ->
-      DB.one!(DBQueryable.query({RepoQuery, :repo_query}, [repo_id], viewer: current_user(socket)))
-    end)
   end
 
   defp assign_repo_permissions(socket) when not socket.connected?, do: assign(socket, :repo_permissions, [])
