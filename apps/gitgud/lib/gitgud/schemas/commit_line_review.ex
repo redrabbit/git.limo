@@ -52,7 +52,18 @@ defmodule GitGud.CommitLineReview do
   """
   @spec add_comment(t | {pos_integer, pos_integer}, User.t, binary, keyword) :: {:ok, Comment.t} | {:error, Ecto.Changeset.t}
   def add_comment(commit_line_review, author, body, opts \\ [])
-  def add_comment(%__MODULE__{id: review_id, repo_id: repo_id}, author, body, opts), do: add_comment({repo_id, review_id}, author, body, opts)
+  def add_comment(%__MODULE__{id: review_id, repo_id: repo_id} = commit_line_review, author, body, opts) do
+    {with_review, opts} = Keyword.pop(opts, :with_review, false)
+    case add_comment({repo_id, review_id}, author, body, opts) do
+      {:ok, comment} ->
+        if with_review,
+          do: {:ok, comment, commit_line_review},
+        else: {:ok, comment}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   def add_comment({repo_id, review_id}, %User{id: author_id} = author, body, _opts) do
     case DB.transaction(insert_review_comment(repo_id, review_id, author_id, body)) do
       {:ok, %{comment: comment}} ->
