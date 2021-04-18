@@ -35,8 +35,8 @@ defmodule GitGud.Mixfile do
     [
       {:absinthe, "~> 1.5", optional: true},
       {:argon2_elixir, "~> 2.4"},
-      {:ecto, "~> 3.5"},
-      {:ecto_sql, "~> 3.5"},
+      {:ecto, "~> 3.6"},
+      {:ecto_sql, "~> 3.6"},
       {:faker, "~> 0.16", only: :test},
       {:gitrekt, in_umbrella: true},
       {:jason, "~> 1.2"},
