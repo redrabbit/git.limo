@@ -1,10 +1,7 @@
 defmodule GitGud.Web.IssueFormLive do
   use GitGud.Web, :live_view
 
-  alias GitGud.User
-  alias GitGud.Repo
   alias GitGud.Issue
-  alias GitGud.Comment
 
   alias GitGud.RepoQuery
 
@@ -26,12 +23,12 @@ defmodule GitGud.Web.IssueFormLive do
 
   @impl true
   def handle_event("validate", %{"issue" => issue_params}, socket) do
-    changeset = changeset(socket.assigns.repo, current_user(socket), issue_params)
+    changeset = Issue.changeset(%Issue{}, issue_params)
     {:noreply, assign(socket, changeset: changeset)}
   end
 
   def handle_event("submit", %{"issue" => issue_params}, socket) do
-    changeset = changeset(socket.assigns.repo, current_user(socket), issue_params)
+    changeset = Issue.changeset(%Issue{}, issue_params)
     case Ecto.Changeset.apply_action(changeset, :insert) do
       {:ok, _issue} ->
         {:noreply, assign(socket, changeset: changeset, trigger_submit: true)}
@@ -54,26 +51,6 @@ defmodule GitGud.Web.IssueFormLive do
 
 
   defp assign_changeset(socket) do
-    assign_new(socket, :changeset, fn ->
-      changeset(socket.assigns.repo, current_user(socket))
-    end)
-  end
-
-  defp changeset(%Repo{id: repo_id}, %User{id: author_id}, params \\ %{}) do
-    Issue.changeset(
-      %Issue{
-        repo_id: repo_id,
-        author_id: author_id,
-        labels: [],
-        comments: [
-          %Comment{
-            repo_id: repo_id,
-            author_id: author_id,
-            thread_table: "issues_comments"
-          }
-        ]
-      },
-      params
-    )
+    assign_new(socket, :changeset, fn -> Issue.changeset(%Issue{}) end)
   end
 end

@@ -78,7 +78,7 @@ defmodule GitGud.Comment do
     if get_change(changeset, :body) do
       old_comment_body = comment.body
       multi =
-        Ecto.Multi.new
+        Ecto.Multi.new()
         |> Ecto.Multi.update(:comment, changeset)
         |> Ecto.Multi.insert(:revision, fn %{comment: comment} -> Ecto.build_assoc(comment, :revisions, author_id: author.id, body: old_comment_body) end)
       case DB.transaction(multi) do
@@ -133,10 +133,8 @@ defmodule GitGud.Comment do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = comment, params \\ %{}) do
     comment
-    |> cast(params, [:repo_id, :thread_table, :author_id, :parent_id, :body])
-    |> validate_required([:repo_id, :thread_table, :author_id, :body])
-    |> assoc_constraint(:repo)
-    |> assoc_constraint(:author)
+    |> cast(params, [:parent_id, :body])
+    |> validate_required([:body])
     |> assoc_constraint(:parent)
   end
 

@@ -36,7 +36,7 @@ defmodule GitGud.RepoPoolTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end

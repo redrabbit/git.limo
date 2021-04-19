@@ -69,7 +69,7 @@ defmodule GitGud.IssueQueryTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end
@@ -77,7 +77,7 @@ defmodule GitGud.IssueQueryTest do
   end
 
   defp create_issues(context) do
-    issues = Enum.take(Stream.repeatedly(fn -> Issue.create!(factory(:issue, [context.repo, context.user])) end), 3)
+    issues = Enum.take(Stream.repeatedly(fn -> Issue.create!(context.repo, context.user, factory(:issue)) end), 3)
     Map.put(context, :issues, issues)
   end
 end

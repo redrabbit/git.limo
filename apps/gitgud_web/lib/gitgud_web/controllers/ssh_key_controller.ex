@@ -37,7 +37,7 @@ defmodule GitGud.Web.SSHKeyController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"ssh_key" => ssh_key_params} = _params) do
     user = current_user(conn)
-    case SSHKey.create(Map.put(ssh_key_params, "user_id", user.id)) do
+    case SSHKey.create(user, ssh_key_params) do
       {:ok, ssh_key} ->
         conn
         |> put_flash(:info, "SSH key '#{ssh_key.name}' added.")

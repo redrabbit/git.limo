@@ -25,7 +25,7 @@ defmodule GitGud.Web.IssueControllerTest do
   end
 
   test "creates issue with valid params", %{conn: conn, user: user, repo: repo} do
-    issue_params = factory(:issue, [repo, user])
+    issue_params = factory(:issue)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.issue_path(conn, :create, user, repo), issue: issue_params)
     assert %{"number" => num_str} = Regex.named_captures(~r/Issue #(?<number>\d+) created./, get_flash(conn, :info))
@@ -33,7 +33,7 @@ defmodule GitGud.Web.IssueControllerTest do
   end
 
   test "fails to create issue without title", %{conn: conn, user: user, repo: repo} do
-    issue_params = factory(:issue, [repo, user])
+    issue_params = factory(:issue)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.issue_path(conn, :create, user, repo), issue: Map.delete(issue_params, :title))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
@@ -43,12 +43,12 @@ defmodule GitGud.Web.IssueControllerTest do
   describe "when issues exists" do
     setup :create_issues
 
-    test "renders issues", %{conn: conn, user: user, repo: repo} do
+    test "renders issues", %{conn: conn, user: user, repo: repo, issues: issues} do
       conn = get(conn, Routes.issue_path(conn, :index, user, repo))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Issues</h2>)
       assert {:ok, html_doc} = Floki.parse_document(html_response(conn, 200))
       html_issues = Floki.find(html_doc, "table.issues-table tr")
-      for issue <- repo.issues do
+      for issue <- issues do
         assert {issue_title, issue_info, _issue_labels} = find_html_issue(html_issues, issue)
         assert issue_title == issue.title
         assert issue_info == "##{issue.number} opened #{datetime_format_str(issue.inserted_at, "{relative}")} by #{user.login}"
@@ -69,7 +69,7 @@ defmodule GitGud.Web.IssueControllerTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     repo = DB.preload(repo, [:issue_labels])
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
@@ -78,9 +78,9 @@ defmodule GitGud.Web.IssueControllerTest do
   end
 
   defp create_issues(context) do
-    issues = Stream.repeatedly(fn -> Issue.create!(factory(:issue, [context.repo, context.user])) end)
+    issues = Stream.repeatedly(fn -> Issue.create!(context.repo, context.user, factory(:issue)) end)
     issues = Enum.take(issues, 5)
-    Map.update!(context, :repo, &%{&1|issues: issues})
+    Map.put(context, :issues, issues)
   end
 
   defp find_html_issue(html_issues, issue) do

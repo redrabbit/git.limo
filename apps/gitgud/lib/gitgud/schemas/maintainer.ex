@@ -41,28 +41,6 @@ defmodule GitGud.Maintainer do
   }
 
   @doc """
-  Creates a new maintainer with the given `params`.
-
-  ```elixir
-  {:ok, maintainer} = GitGud.Maintainer.create(user_id: user.id, repo_id: repo.id)
-  ```
-
-  This function validates the given `params` using `changeset/2`.
-  """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
-  end
-
-  @doc """
-  Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
-  """
-  @spec create!(map|keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
-  end
-
-  @doc """
   Updates the `permission` of the given `maintainer`.
 
   ```elixir
@@ -139,8 +117,8 @@ defmodule GitGud.Maintainer do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = maintainer, params \\ %{}) do
     maintainer
-    |> cast(params, [:user_id, :repo_id, :permission])
-    |> validate_required([:user_id, :repo_id])
+    |> cast(params, [:user_id, :permission])
+    |> validate_required([:user_id])
     |> unique_constraint(:user_id, name: "maintainers_user_id_repo_id_index")
     |> validate_inclusion(:permission, ["read", "write", "admin"])
   end

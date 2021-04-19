@@ -62,7 +62,7 @@ defmodule GitGud.RepoStorageTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user), init: false)
+    repo = Repo.create!(context.user, factory(:repo), init: false)
     Map.put(context, :repo, repo)
   end
 

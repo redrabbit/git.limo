@@ -10,12 +10,12 @@ defmodule GitGud.MaintainerTest do
   setup [:create_users, :create_repo]
 
   test "creates a new repository maintainer with valid params", %{users: [_user1, user2], repo: repo} do
-    assert {:ok, maintainer} = Maintainer.create(user_id: user2.id, repo_id: repo.id)
+    assert {:ok, maintainer} = Repo.add_maintainer(repo, user_id: user2.id)
     assert maintainer.permission == "read"
   end
 
   test "fails to create a new repository maintainer with invalid permission", %{users: [_user1, user2], repo: repo} do
-    assert {:error, changeset} = Maintainer.create(user_id: user2.id, repo_id: repo.id, permission: "foobar")
+    assert {:error, changeset} = Repo.add_maintainer(repo, user_id: user2.id, permission: "foobar")
     assert "is invalid" in errors_on(changeset).permission
   end
 
@@ -52,7 +52,7 @@ defmodule GitGud.MaintainerTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, hd(context.users)))
+    repo = Repo.create!(hd(context.users), factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end
@@ -60,7 +60,7 @@ defmodule GitGud.MaintainerTest do
   end
 
   defp create_maintainer(context) do
-    maintainer = Maintainer.create!(user_id: List.last(context.users).id, repo_id: context.repo.id)
+    maintainer = Repo.add_maintainer!(context.repo, user_id: List.last(context.users).id)
     context
     |> Map.put(:maintainer, maintainer)
     |> Map.update!(:repo, &DB.preload(&1, :maintainers))

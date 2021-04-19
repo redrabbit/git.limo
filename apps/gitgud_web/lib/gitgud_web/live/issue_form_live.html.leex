@@ -15,7 +15,7 @@
         </div>
 
         <div class="field comment-form">
-          <%= with [fc] <- inputs_for(f, :comments) do %>
+          <%= for fc <- inputs_for(f, :comment) do %>
             <%= live_component(@socket, GitGud.Web.CommentFormLive,
               id: "comment-form",
               current_user: @current_user,

@@ -249,17 +249,17 @@ defmodule GitGud.Web.IssueLive do
   end
 
   defp assign_issue(socket, %Issue{} = issue) do
-    [comment|feed] = resolve_feed(issue)
+    feed = resolve_feed(issue)
     socket
     |> assign(:issue, issue)
     |> assign_issue_permissions()
-    |> assign(:issue_comment, comment)
+    |> assign(:issue_comment, issue.comment)
     |> assign(:issue_comment_count, Enum.count(Enum.filter(feed, &is_struct(&1, Comment))))
     |> assign(:issue_feed, feed)
   end
 
   defp assign_issue(socket, issue_number) do
-    query = DBQueryable.query({IssueQuery, :repo_issue_query}, [socket.assigns.repo.id, issue_number], viewer: current_user(socket), preload: [:author, :labels])
+    query = DBQueryable.query({IssueQuery, :repo_issue_query}, [socket.assigns.repo.id, issue_number], viewer: current_user(socket), preload: [:author, {:comment, :author}, :labels])
     assign_issue(socket, DB.one!(query))
   end
 
@@ -279,7 +279,7 @@ defmodule GitGud.Web.IssueLive do
 
   defp resolve_feed(issue) do
     issue
-    |> Ecto.assoc(:comments)
+    |> Ecto.assoc(:replies)
     |> DB.all()
     |> DB.preload(:author)
     |> Enum.concat(Enum.with_index(issue.events, 1))

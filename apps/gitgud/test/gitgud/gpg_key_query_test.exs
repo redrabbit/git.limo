@@ -39,7 +39,7 @@ defmodule GitGud.GPGKeyQueryTest do
   end
 
   defp create_gpg_keys(context) do
-    gpg_keys = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> GPGKey.create!(factory(:gpg_key, &1)) end), 3))
+    gpg_keys = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> GPGKey.create!(&1, factory(:gpg_key, &1)) end), 3))
     Map.put(context, :gpg_keys, gpg_keys)
   end
 end

@@ -5,6 +5,7 @@ defmodule GitGud.Web.MaintainerController do
 
   use GitGud.Web, :controller
 
+  alias GitGud.Repo
   alias GitGud.Maintainer
 
   alias GitGud.UserQuery
@@ -43,9 +44,10 @@ defmodule GitGud.Web.MaintainerController do
   def create(conn, %{"user_login" => user_login, "repo_name" => repo_name, "maintainer" => maintainer_params} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn), preload: :maintainers) do
       if authorized?(conn, repo, :admin) do
-        {maintainer_login, other_params} = Map.pop(maintainer_params, "user_login")
+        {maintainer_login, maintainer_params} = Map.pop(maintainer_params, "user_login")
         if user = maintainer_login && UserQuery.by_login(maintainer_login) do
-          case Maintainer.create(Map.merge(other_params, %{"repo_id" => repo.id, "user_id" => user.id})) do
+          maintainer_params = Map.put(maintainer_params, "user_id", user.id)
+          case Repo.add_maintainer(repo, maintainer_params) do
             {:ok, _maintainer} ->
               conn
               |> put_flash(:info, "Maintainer '#{user.login}' added.")

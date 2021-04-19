@@ -8,17 +8,17 @@ defmodule GitGud.SSHKeyTest do
   setup :create_user
 
   test "creates a new ssh authentication key with valid params", %{user: user} do
-    assert {:ok, ssh_key} = SSHKey.create(factory(:ssh_key, user))
+    assert {:ok, ssh_key} = SSHKey.create(user, factory(:ssh_key))
     assert [{key, _attrs}] = :public_key.ssh_decode(ssh_key.data, :public_key)
     assert ssh_key.fingerprint == to_string(:public_key.ssh_hostkey_fingerprint(key))
     refute ssh_key.used_at
   end
 
   test "fails to create a new ssh authentication key with invalid public key", %{user: user} do
-    params = factory(:ssh_key, user)
-    assert {:error, changeset} = SSHKey.create(Map.delete(params, :data))
+    params = factory(:ssh_key)
+    assert {:error, changeset} = SSHKey.create(user, Map.delete(params, :data))
     assert "can't be blank" in errors_on(changeset).data
-    assert {:error, changeset} = SSHKey.create(Map.update!(params, :data, &binary_part(&1, 0, 12)))
+    assert {:error, changeset} = SSHKey.create(user, Map.update!(params, :data, &binary_part(&1, 0, 12)))
     assert "invalid" in errors_on(changeset).data
   end
 
@@ -45,6 +45,6 @@ defmodule GitGud.SSHKeyTest do
   end
 
   defp create_ssh_key(context) do
-    Map.put(context, :ssh_key, SSHKey.create!(factory(:ssh_key, context.user)))
+    Map.put(context, :ssh_key, SSHKey.create!(context.user, factory(:ssh_key)))
   end
 end

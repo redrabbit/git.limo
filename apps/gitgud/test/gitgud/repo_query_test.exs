@@ -4,7 +4,6 @@ defmodule GitGud.RepoQueryTest do
 
   alias GitGud.User
   alias GitGud.Repo
-  alias GitGud.Maintainer
   alias GitGud.RepoStorage
   alias GitGud.RepoQuery
 
@@ -77,7 +76,7 @@ defmodule GitGud.RepoQueryTest do
         maintainers =
           users
           |> Enum.reject(&(&1.id == user.id))
-          |> Enum.map(&Maintainer.create!(repo_id: repo.id, user_id: &1.id))
+          |> Enum.map(&Repo.add_maintainer!(repo, user_id: &1.id))
         results = RepoQuery.maintainers(repo)
         assert length(results) == length(maintainers) + 1
         for maintainer <- results do
@@ -112,7 +111,7 @@ defmodule GitGud.RepoQueryTest do
   end
 
   defp create_repos(context) do
-    repos = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, &1)) end), 3))
+    repos = Enum.flat_map(context.users, &Enum.take(Stream.repeatedly(fn -> Repo.create!(&1, factory(:repo)) end), 3))
     on_exit fn ->
       for repo <- repos do
         File.rm_rf(RepoStorage.workdir(repo))

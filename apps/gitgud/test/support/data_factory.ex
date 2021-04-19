@@ -4,7 +4,6 @@ defmodule GitGud.DataFactory do
   """
 
   alias GitGud.User
-  alias GitGud.Repo
 
   import Faker.Person, only: [name: 0]
   import Faker.Company, only: [catch_phrase: 0]
@@ -32,13 +31,8 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.Repo` changeset params.
+  Returns a map representing `GitGud.Account` changeset params.
   """
-  def repo(%User{id: user_id}), do: repo(user_id)
-  def repo(user_id) when is_integer(user_id) do
-    Map.put(repo(), :owner_id, user_id)
-  end
-
   def account do
     %{password: "qwertz"}
   end
@@ -51,27 +45,11 @@ defmodule GitGud.DataFactory do
   end
 
   @doc """
-  Returns a map representing `GitGud.Email` changeset params.
-  """
-  def email(%User{id: user_id}), do: email(user_id)
-  def email(user_id) do
-    Map.put(email(), :user_id, user_id)
-  end
-
-  @doc """
   Returns a map representing `GitGud.SSHKey` changeset params.
   """
   def ssh_key do
     {rsa_pub, rsa_priv} = make_ssh_pair(512)
     %{name: callsign(), data: rsa_pub, __priv__: rsa_priv}
-  end
-
-  @doc """
-  Returns a map representing `GitGud.SSHKey` changeset params.
-  """
-  def ssh_key(%User{id: user_id}), do: ssh_key(user_id)
-  def ssh_key(user_id) when is_integer(user_id) do
-    Map.put(ssh_key(), :user_id, user_id)
   end
 
   @doc """
@@ -93,31 +71,29 @@ defmodule GitGud.DataFactory do
   @doc """
   Returns a map representing `GitGud.GPGKey` changeset params.
   """
-  def gpg_key(%User{id: user_id, name: name, emails: emails}) do
-    gpg_key(user_id, name, Enum.map(emails, &(&1.address)))
+  def gpg_key(%User{name: name, emails: emails}) do
+    gpg_key(name, Enum.map(emails, &(&1.address)))
   end
 
   @doc """
   Returns a map representing `GitGud.GPGKey` changeset params.
   """
-  def gpg_key(user_id, name, emails) do
-    %{data: make_gpg_key(name, emails), user_id: user_id}
+  def gpg_key(name, emails) do
+    %{data: make_gpg_key(name, emails)}
   end
 
   @doc """
   Returns a map representing `GitGud.Issue` changeset params.
   """
-  def issue(%Repo{id: repo_id}, %User{id: author_id}), do: issue(repo_id, author_id)
-  def issue(repo_id, author_id) do
-    %{repo_id: repo_id, author_id: author_id, title: catch_phrase(), comments: [comment(repo_id, author_id, "issue_comments")]}
+  def issue() do
+    %{title: catch_phrase(), comment: comment()}
   end
 
   @doc """
   Returns a map representing `GitGud.Comment` changeset params.
   """
-  def comment(%Repo{id: repo_id}, %User{id: author_id}, thread_table), do: comment(repo_id, author_id, thread_table)
-  def comment(repo_id, author_id, thread_table) do
-    %{repo_id: repo_id, author_id: author_id, thread_table: thread_table, body: paragraph(2..5)}
+  def comment do
+    %{body: paragraph(2..5)}
   end
 
   @doc false

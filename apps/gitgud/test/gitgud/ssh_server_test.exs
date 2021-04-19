@@ -105,7 +105,7 @@ defmodule GitGud.SSHServerTest do
 
   defp create_ssh_key(context) do
     params = factory(:ssh_key_strong, context.user)
-    ssh_key = SSHKey.create!(params)
+    ssh_key = SSHKey.create!(context.user, params)
     ssh_key_path = Path.join(System.tmp_dir!(), "#{context.user.login}_id_rsa")
     File.write!(ssh_key_path, params.__priv__)
     File.chmod!(ssh_key_path, 0o400)
@@ -116,7 +116,7 @@ defmodule GitGud.SSHServerTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end

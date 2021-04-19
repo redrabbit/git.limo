@@ -34,8 +34,7 @@ defmodule GitGud.IssueLabel do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = label, params \\ %{}) do
     label
-    |> cast(params, [:repo_id, :name, :description, :color])
-    |> validate_required([:repo_id, :name, :color])
-    |> assoc_constraint(:repo)
+    |> cast(params, [:name, :description, :color])
+    |> validate_required([:name, :color])
   end
 end

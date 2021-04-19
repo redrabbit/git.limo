@@ -121,7 +121,7 @@ defmodule GitGud.Web.RepoControllerTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end
@@ -129,7 +129,7 @@ defmodule GitGud.Web.RepoControllerTest do
   end
 
   defp create_repos(context) do
-    repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(factory(:repo, context.user)) end), 3)
+    repos = Enum.take(Stream.repeatedly(fn -> Repo.create!(context.user, factory(:repo)) end), 3)
     on_exit fn ->
       for repo <- repos do
         File.rm_rf(RepoStorage.workdir(repo))

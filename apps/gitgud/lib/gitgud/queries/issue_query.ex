@@ -195,9 +195,9 @@ defmodule GitGud.IssueQuery do
 
   def query(:repo_issues_with_reply_count_query, args) do
     query(:repo_issues_query, args)
-    |> join(:inner, [issue: i], c in assoc(i, :comments), as: :comment)
+    |> join(:left, [issue: i], c in assoc(i, :replies), as: :replies)
     |> group_by([issue: i], i.id)
-    |> select([issue: i, comment: c], {i, count(c.id, :distinct)})
+    |> select([issue: i, replies: c], {i, count(c.id, :distinct)})
   end
 
   def query(:count_repo_issues_query, [repo_ids|_] = args) when is_list(repo_ids) do

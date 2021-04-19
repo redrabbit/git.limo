@@ -8,15 +8,15 @@ defmodule GitGud.EmailTest do
   setup :create_user
 
   test "creates a new email with valid params", %{user: user} do
-    assert {:ok, email} = Email.create(factory(:email, user))
+    assert {:ok, email} = Email.create(user, factory(:email))
     refute email.verified
   end
 
   test "fails to create a new email with invalid email address", %{user: user} do
-    params = factory(:email, user)
-    assert {:error, changeset} = Email.create(Map.delete(params, :address))
+    params = factory(:email)
+    assert {:error, changeset} = Email.create(user, Map.delete(params, :address))
     assert "can't be blank" in errors_on(changeset).address
-    assert {:error, changeset} = Email.create(Map.update!(params, :address, &(&1 <> ".0")))
+    assert {:error, changeset} = Email.create(user, Map.update!(params, :address, &(&1 <> ".0")))
     assert "has invalid format" in errors_on(changeset).address
   end
 
@@ -43,7 +43,6 @@ defmodule GitGud.EmailTest do
   end
 
   defp create_email(context) do
-    Map.put(context, :email, Email.create!(factory(:email, context.user)))
+    Map.put(context, :email, Email.create!(context.user, factory(:email)))
   end
 end
-

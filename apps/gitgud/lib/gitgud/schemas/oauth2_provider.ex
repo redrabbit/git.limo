@@ -73,9 +73,8 @@ defmodule GitGud.OAuth2.Provider do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = provider, params \\ %{}) do
     provider
-    |> cast(params, [:account_id, :provider, :provider_id, :token])
+    |> cast(params, [:provider, :provider_id, :token])
     |> validate_required([:provider, :provider_id, :token])
-    |> assoc_constraint(:account)
     |> unique_constraint(:provider_id, name: :authentication_providers_provider_provider_id_index)
   end
 end

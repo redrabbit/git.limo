@@ -138,10 +138,8 @@ defmodule GitGud.CommitLineReview do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = commit_line_review, params \\ %{}) do
     commit_line_review
-    |> cast(params, [:repo_id, :commit_oid, :blob_oid, :hunk, :line])
-    |> cast_assoc(:comments, with: &Comment.changeset/2)
-    |> validate_required([:repo_id, :commit_oid, :blob_oid, :hunk, :line])
-    |> assoc_constraint(:repo)
+    |> cast(params, [:blob_oid, :hunk, :line])
+    |> validate_required([:blob_oid, :hunk, :line])
     |> unique_constraint(:line, name: :commit_line_reviews_repo_commit_id_oid_blob_oid_hunk_line_index)
   end
 
@@ -152,13 +150,13 @@ defmodule GitGud.CommitLineReview do
   defp insert_review_comment(repo_id, commit_oid, blob_oid, hunk, line, author_id, body) do
     review_opts = [on_conflict: {:replace, [:updated_at]}, conflict_target: [:repo_id, :commit_oid, :blob_oid, :hunk, :line]]
     Multi.new()
-    |> Multi.insert(:review, changeset(%__MODULE__{}, %{repo_id: repo_id, commit_oid: commit_oid, blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
+    |> Multi.insert(:review, changeset(%__MODULE__{repo_id: repo_id, commit_oid: commit_oid}, %{blob_oid: blob_oid, hunk: hunk, line: line}), review_opts)
     |> Multi.merge(fn %{review: review} -> insert_review_comment(repo_id, review.id, author_id, body) end)
   end
 
   defp insert_review_comment(repo_id, review_id, author_id, body) do
     Multi.new()
-    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{repo_id: repo_id, thread_table: "commit_line_reviews_comments", author_id: author_id, body: body}))
+    |> Multi.insert(:comment, Comment.changeset(%Comment{repo_id: repo_id, thread_table: "commit_line_reviews_comments", author_id: author_id}, %{body: body}))
     |> Multi.run(:review_comment, fn db, %{comment: comment} -> insert_review_comment(db, review_id, comment.id) end)
   end
 

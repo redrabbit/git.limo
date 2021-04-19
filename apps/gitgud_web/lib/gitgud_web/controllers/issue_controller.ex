@@ -46,7 +46,7 @@ defmodule GitGud.Web.IssueController do
         render(conn, "new.html",
           repo: repo,
           repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          changeset: Issue.changeset(%Issue{comments: [%Comment{}]})
+          changeset: Issue.changeset(%Issue{})
         )
       end || {:error, :unauthorized}
     end || {:error, :not_found}
@@ -60,10 +60,9 @@ defmodule GitGud.Web.IssueController do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user, preload: :issue_labels) do
       if verified?(user) do
-        issue_params = Map.merge(issue_params, %{"repo_id" => repo.id, "author_id" => user.id})
         issue_params = Map.put_new(issue_params, "comments", [%Comment{}])
         issue_params = Map.update(issue_params, "labels", [], &map_labels(repo.issue_labels, &1))
-        case Issue.create(issue_params) do
+        case Issue.create(repo, user, issue_params) do
           {:ok, issue} ->
             conn
             |> put_flash(:info, "Issue ##{issue.number} created.")

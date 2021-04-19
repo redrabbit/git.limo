@@ -103,7 +103,7 @@ defmodule GitGud.Web.EmailControllerTest do
   end
 
   defp create_emails(context) do
-    emails = Stream.repeatedly(fn -> Email.create!(factory(:email, context.user)) end)
+    emails = Stream.repeatedly(fn -> Email.create!(context.user, factory(:email)) end)
     context
     |> Map.put(:emails, Enum.take(emails, 2))
     |> Map.update!(:user, &DB.preload(&1, :emails))

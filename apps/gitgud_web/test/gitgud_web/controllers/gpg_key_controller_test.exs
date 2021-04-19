@@ -72,7 +72,7 @@ defmodule GitGud.Web.GPGKeyControllerTest do
   end
 
   defp create_gpg_keys(context) do
-    gpg_keys = Stream.repeatedly(fn -> GPGKey.create!(factory(:gpg_key, context.user)) end)
+    gpg_keys = Stream.repeatedly(fn -> GPGKey.create!(context.user, factory(:gpg_key, context.user)) end)
     context
     |> Map.put(:gpg_keys, Enum.take(gpg_keys, 2))
     |> Map.update!(:user, &DB.preload(&1, :gpg_keys))

@@ -11,29 +11,29 @@ defmodule GitGud.IssueTest do
   setup :create_repo
 
   test "creates a new issue with valid params", %{user: user, repo: repo} do
-    params = factory(:issue, [repo, user])
-    assert {:ok, issue} = Issue.create(params)
+    params = factory(:issue)
+    assert {:ok, issue} = Issue.create(repo, user, params)
     assert issue.title == params.title
     assert issue.status == "open"
     assert issue.repo_id == repo.id
     assert issue.author_id == user.id
-    assert [comment] = issue.comments
-    assert comment.body == hd(params.comments).body
+    assert comment = issue.comment
+    assert comment.body == params.comment.body
     assert comment.thread_table == "issues_comments"
     assert comment.repo_id == repo.id
     assert comment.author_id == user.id
   end
 
   test "fails to create a new issue with invalid title", %{user: user, repo: repo} do
-    params = factory(:issue, [repo, user])
-    assert {:error, changeset} = Issue.create(Map.delete(params, :title))
+    params = factory(:issue)
+    assert {:error, changeset} = Issue.create(repo, user, Map.delete(params, :title))
     assert "can't be blank" in errors_on(changeset).title
   end
 
   test "fails to create a new issue without comment", %{user: user, repo: repo} do
-    params = factory(:issue, [repo, user])
-    assert {:error, changeset} = Issue.create(Map.put(params, :comments, []))
-    assert "can't be blank" in errors_on(changeset).comments
+    params = factory(:issue)
+    assert {:error, changeset} = Issue.create(repo, user, Map.put(params, :comment, %{}))
+    assert "can't be blank" in errors_on(changeset).comment.body
   end
 
   describe "when issue exists" do
@@ -41,9 +41,8 @@ defmodule GitGud.IssueTest do
 
     test "adds new comment", %{user: user, repo: repo, issue: issue1} do
       assert {:ok, comment} = Issue.add_comment(issue1, user, "Hello this is a comment.")
-      issue2 = DB.preload(issue1, :comments, force: true)
-      assert length(issue2.comments) == 2
-      assert comment.id == List.last(issue2.comments).id
+      issue2 = DB.preload(issue1, :replies)
+      assert comment.id == hd(issue2.replies).id
       assert comment.body == "Hello this is a comment."
       assert comment.repo_id == repo.id
       assert comment.author_id == user.id
@@ -133,7 +132,7 @@ defmodule GitGud.IssueTest do
   end
 
   defp create_repo(context) do
-    repo = Repo.create!(factory(:repo, context.user))
+    repo = Repo.create!(context.user, factory(:repo))
     on_exit fn ->
       File.rm_rf(RepoStorage.workdir(repo))
     end
@@ -141,6 +140,6 @@ defmodule GitGud.IssueTest do
   end
 
   defp create_issue(context) do
-    Map.put(context, :issue, Issue.create!(factory(:issue, [context.repo, context.user])))
+    Map.put(context, :issue, Issue.create!(context.repo, context.user, factory(:issue)))
   end
 end

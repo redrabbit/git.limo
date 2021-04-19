@@ -37,7 +37,7 @@ defmodule GitGud.SSHKey do
 
   ```elixir
   {:ok, ssh_key} = GitGud.SSHKey.create(
-    user_id: user.id,
+    user,
     name: "My SSH Key",
     data: "ssh-rsa AAAAB3NzaC1yc2..."
   )
@@ -45,17 +45,17 @@ defmodule GitGud.SSHKey do
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create(User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(user, params) do
+    DB.insert(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
-  Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create!(User.t, map|keyword) :: t
+  def create!(user, params) do
+    DB.insert!(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
@@ -109,12 +109,11 @@ defmodule GitGud.SSHKey do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = ssh_key, params \\ %{}) do
     ssh_key
-    |> cast(params, [:user_id, :name, :data])
-    |> validate_required([:user_id, :data])
+    |> cast(params, [:name, :data])
+    |> validate_required([:data])
     |> put_fingerprint()
     |> unique_constraint(:name, name: :ssh_keys_user_id_name_index)
     |> unique_constraint(:data, name: :ssh_keys_user_id_fingerprint_index)
-    |> assoc_constraint(:user)
   end
 
   #

@@ -63,7 +63,7 @@ defmodule GitGud.Repo do
 
   ```elixir
   {:ok, repo} = GitGud.Repo.create(
-    owner_id: user.id,
+    user,
     name: "gitgud",
     description: "GitHub clone entirely written in Elixir.",
     public: true
@@ -75,9 +75,9 @@ defmodule GitGud.Repo do
   By default a bare Git repository will be initialized (see `GitGud.RepoStorage.init/2`). If you prefer to
   create a non-bare repository, you can set the `:bare` option to `false`.
   """
-  @spec create(map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
-  def create(params, opts \\ []) do
-    changeset = changeset(%__MODULE__{}, Map.new(params))
+  @spec create(User.t, map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
+  def create(owner, params, opts \\ []) do
+    changeset = changeset(%__MODULE__{owner_id: owner.id, owner: owner}, Map.new(params))
     multi =
       if Keyword.get(opts, :init, true),
         do: create_and_init_multi(changeset, Keyword.get(opts, :bare, true)),
@@ -95,9 +95,9 @@ defmodule GitGud.Repo do
   @doc """
   Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword, keyword) :: t
-  def create!(params, opts \\ []) do
-    case create(params, opts) do
+  @spec create!(User.t, map|keyword, keyword) :: t
+  def create!(owner, params, opts \\ []) do
+    case create(owner, params, opts) do
       {:ok, repo} -> repo
       {:error, changeset} -> raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
     end
@@ -176,6 +176,28 @@ defmodule GitGud.Repo do
   def update_stats!(repo, params), do: DB.update!(stats_changeset(repo, Map.new(params)))
 
   @doc """
+  Adds a new maintainer to the given `repo`.
+
+  ```elixir
+  {:ok, maintainer} = GitGud.Repo.add_maintainer(repo, user_id: user.id, permissions: "write")
+  ```
+
+  This function validates the given `params` using `GitGud.Maintainer.changeset/2`.
+  """
+  @spec add_maintainer(t, map|keyword) :: {:ok, Maintainer.t} | {:error, Ecto.Changeset.t}
+  def add_maintainer(repo, params) do
+    DB.insert(Maintainer.changeset(%Maintainer{repo_id: repo.id}, Map.new(params)))
+  end
+
+  @doc """
+  Similar to `add_maintainer/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  """
+  @spec add_maintainer!(t, map|keyword) :: Maintainer.t
+  def add_maintainer!(repo, params) do
+    DB.insert!(Maintainer.changeset(%Maintainer{repo_id: repo.id}, Map.new(params)))
+  end
+
+  @doc """
   Deletes the given `repo`.
 
   ```elixir
@@ -213,21 +235,19 @@ defmodule GitGud.Repo do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
-    |> cast(params, [:owner_id, :name, :public, :description, :pushed_at])
-    |> validate_required([:owner_id, :name])
-    |> assoc_constraint(:owner)
+    |> cast(params, [:name, :public, :description, :pushed_at])
+    |> validate_required([:name])
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
     |> validate_exclusion(:name, ["repositories", "settings"])
-    |> put_maintainers()
     |> unique_constraint(:name, name: :repositories_owner_id_name_index)
   end
 
   @doc """
-  Returns a changeset for manipulating associated issue labels.
+  Returns a changeset for manipulating all associated issue labels at once.
   """
   @spec issue_labels_changeset(t, map) :: Ecto.Changeset.t
-  def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) do
+  def issue_labels_changeset(%__MODULE__{} = repo, params \\ %{}) when not is_struct(repo.issue_labels, Ecto.Association.NotLoaded) do
     repo
     |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
     |> cast(params, [])
@@ -238,7 +258,7 @@ defmodule GitGud.Repo do
   Returns a changeset for manipulating associated stats.
   """
   @spec stats_changeset(t, map) :: Ecto.Changeset.t
-  def stats_changeset(%__MODULE__{} = repo, params \\ %{}) do
+  def stats_changeset(%__MODULE__{} = repo, params \\ %{}) when not is_struct(repo.stats, Ecto.Association.NotLoaded) do
     repo
     |> cast(params, [])
     |> cast_assoc(:stats, with: &RepoStats.changeset/2)
@@ -272,8 +292,7 @@ defmodule GitGud.Repo do
 
   defp create_multi(changeset) do
     Multi.new()
-    |> Multi.insert(:repo_, changeset)
-    |> Multi.run(:repo, &preload_owner/2)
+    |> Multi.insert(:repo, changeset)
     |> Multi.run(:maintainer, &create_maintainer/2)
     |> Multi.run(:issue_labels, &create_issue_labels/2)
   end
@@ -284,22 +303,14 @@ defmodule GitGud.Repo do
     |> Multi.run(:init, &init(&1, &2, bare?))
   end
 
-  defp preload_owner(db, %{repo_: repo}), do: {:ok, db.preload(repo, :owner)}
-
   defp create_maintainer(db, %{repo: repo}) do
-    changeset = Maintainer.changeset(%Maintainer{}, %{repo_id: repo.id, user_id: repo.owner_id, permission: "admin"})
+    changeset = Maintainer.changeset(%Maintainer{repo_id: repo.id}, %{user_id: repo.owner_id, permission: "admin"})
     db.insert(changeset)
-  end
-
-  defp put_maintainers(changeset) do
-    if maintainers = changeset.params["maintainers"],
-      do: put_assoc(changeset, :maintainers, maintainers),
-    else: changeset
   end
 
   defp create_issue_labels(db, %{repo: repo}) do
     Enum.reduce_while(@issue_labels, {:ok, []}, fn {name, color}, {:ok, acc} ->
-      changeset = IssueLabel.changeset(%IssueLabel{}, %{repo_id: repo.id, name: name, color: color})
+      changeset = IssueLabel.changeset(%IssueLabel{repo_id: repo.id}, %{name: name, color: color})
       case db.insert(changeset) do
         {:ok, label} -> {:cont, {:ok, [label|acc]}}
         {:error, reason} -> {:halt, {:error, reason}}

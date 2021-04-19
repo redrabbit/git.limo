@@ -243,6 +243,15 @@ defmodule GitGud.Web.TreeBrowserLive do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
 
+  defp resolve_stats!(repo, _agent, _revision) when is_nil(repo.stats) or is_struct(repo.stats, Ecto.Association.NotLoaded) do
+    %{
+      commits: 0,
+      branches: 0,
+      tags: 0,
+      contributors: 0,
+    }
+  end
+
   defp resolve_stats!(repo, agent, revision) do
     ref_groups = Enum.group_by(repo.stats.refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
     %{

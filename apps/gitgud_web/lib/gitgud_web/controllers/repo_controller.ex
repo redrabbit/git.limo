@@ -48,7 +48,7 @@ defmodule GitGud.Web.RepoController do
   def create(conn, %{"repo" => repo_params} = _params) do
     user = current_user(conn)
     if verified?(user) do
-      case Repo.create(Map.put(repo_params, "owner_id", user.id)) do
+      case Repo.create(user, repo_params) do
         {:ok, repo} ->
           conn
           |> put_flash(:info, "Repository '#{repo.owner.login}/#{repo.name}' created.")

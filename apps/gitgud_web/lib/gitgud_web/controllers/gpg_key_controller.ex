@@ -39,7 +39,7 @@ defmodule GitGud.Web.GPGKeyController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"gpg_key" => gpg_key_params} = _params) do
     user = current_user(conn)
-    case GPGKey.create(Map.put(gpg_key_params, "user_id", user.id)) do
+    case GPGKey.create(user, gpg_key_params) do
       {:ok, gpg_key} ->
         conn
         |> put_flash(:info, "GPG key 0x#{format_key_id(gpg_key.key_id)} added.")

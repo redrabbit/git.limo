@@ -2,7 +2,6 @@ defmodule GitGud.Web.SSHKeyControllerTest do
   use GitGud.Web.ConnCase, async: true
   use GitGud.Web.DataFactory
 
-  alias GitGud.DB
   alias GitGud.User
   alias GitGud.SSHKey
 
@@ -66,9 +65,7 @@ defmodule GitGud.Web.SSHKeyControllerTest do
   end
 
   defp create_ssh_keys(context) do
-    ssh_keys = Stream.repeatedly(fn -> SSHKey.create!(factory(:ssh_key, context.user)) end)
-    context
-    |> Map.put(:ssh_keys, Enum.take(ssh_keys, 2))
-    |> Map.update!(:user, &DB.preload(&1, :ssh_keys))
+    ssh_keys = Stream.repeatedly(fn -> SSHKey.create!(context.user, factory(:ssh_key)) end)
+    Map.put(context, :ssh_keys, Enum.take(ssh_keys, 2))
   end
 end

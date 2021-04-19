@@ -158,22 +158,22 @@ defmodule GitGud.GPGKey do
   Creates a new SSH key with the given `params`.
 
   ```elixir
-  {:ok, gpg_key} = GitGud.GPGKey.create(user_id: user.id, data: "...")
+  {:ok, gpg_key} = GitGud.GPGKey.create(user, data: "...")
   ```
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create(User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(user, params) do
+    DB.insert(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
-  Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create!(User.t, map|keyword) :: t
+  def create!(user, params) do
+    DB.insert!(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
@@ -202,11 +202,10 @@ defmodule GitGud.GPGKey do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = gpg_key, params \\ %{}) do
     gpg_key
-    |> cast(params, [:user_id, :data])
-    |> validate_required([:user_id, :data])
+    |> cast(params, [:data])
+    |> validate_required([:data])
     |> put_data()
     |> unique_constraint(:key_id, name: :gpg_keys_user_id_key_id_index)
-    |> assoc_constraint(:user)
   end
 
   @doc """

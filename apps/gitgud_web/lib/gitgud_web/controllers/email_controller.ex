@@ -31,7 +31,7 @@ defmodule GitGud.Web.EmailController do
   @spec create(Plug.Conn.t, map) :: Plug.Conn.t
   def create(conn, %{"email" => email_params} = _params) do
     user = DB.preload(current_user(conn), :emails)
-    case Email.create(Map.put(email_params, "user_id", user.id)) do
+    case Email.create(user, email_params) do
       {:ok, email} ->
         email = struct(email, user: user)
         GitGud.Mailer.deliver_later!(GitGud.Mailer.verification_email(email))

@@ -63,7 +63,7 @@ defmodule GitGud.Account do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = account, params \\ %{}) do
     account
-    |> cast(params, [:user_id, :password])
+    |> cast(params, [:password])
     |> cast_assoc(:oauth2_providers)
     |> validate_required([:password])
     |> validate_password()
@@ -76,7 +76,7 @@ defmodule GitGud.Account do
   @spec password_changeset(t, map) :: Ecto.Changeset.t
   def password_changeset(%__MODULE__{} = account, params \\ %{}) do
     account
-    |> cast(params, [:user_id, :password])
+    |> cast(params, [:password])
     |> validate_required([:password])
     |> validate_old_password()
     |> validate_password()
@@ -89,9 +89,8 @@ defmodule GitGud.Account do
   @spec oauth2_changeset(t, map) :: Ecto.Changeset.t
   def oauth2_changeset(%__MODULE__{} = account, params \\ %{}) do
     account
-    |> cast(params, [:user_id])
+    |> cast(params, [])
     |> cast_assoc(:oauth2_providers, required: true)
-    |> assoc_constraint(:user)
   end
 
   #

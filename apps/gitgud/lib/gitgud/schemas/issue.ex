@@ -23,23 +23,26 @@ defmodule GitGud.Issue do
     field :title, :string
     field :status, :string, default: "open"
     belongs_to :author, User
+    belongs_to :comment, Comment
     many_to_many :labels, IssueLabel, join_through: "issues_labels", join_keys: [issue_id: :id, label_id: :id]
-    many_to_many :comments, Comment, join_through: "issues_comments", join_keys: [thread_id: :id, comment_id: :id]
+    many_to_many :replies, Comment, join_through: "issues_comments", join_keys: [thread_id: :id, comment_id: :id]
     field :events, {:array, :map}
     timestamps()
   end
 
   @type t :: %__MODULE__{
     id: pos_integer,
+    repo_id: pos_integer,
     repo: Repo.t,
     number: pos_integer,
     title: binary,
     status: binary,
     author_id: pos_integer,
     author: User.t,
-    repo_id: pos_integer,
+    comment_id: pos_integer,
+    comment: Comment.t,
     labels: [IssueLabel.t],
-    comments: [Comment.t],
+    replies: [Comment.t],
     events: [map],
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
@@ -63,17 +66,23 @@ defmodule GitGud.Issue do
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, map_issue_params(params)))
+  @spec create(Repo.t, User.t, map | keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(repo, author, params) do
+    %__MODULE__{repo_id: repo.id, author_id: author.id}
+    |> changeset(params)
+    |> put_labels()
+    |> DB.insert()
   end
 
   @doc """
   Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map | keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, map_issue_params(params)))
+  @spec create!(Repo.t, User.t, map | keyword) :: t
+  def create!(repo, author, params) do
+    %__MODULE__{repo_id: repo.id, author_id: author.id}
+    |> changeset(params)
+    |> put_labels()
+    |> DB.insert!()
   end
 
   @doc """
@@ -242,12 +251,9 @@ defmodule GitGud.Issue do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = issue, params \\ %{}) do
     issue
-    |> cast(params, [:repo_id, :author_id, :title])
-    |> cast_assoc(:comments, with: &Comment.changeset/2, required: true)
-    |> validate_required([:repo_id, :author_id, :title])
-    |> put_labels()
-    |> assoc_constraint(:repo)
-    |> assoc_constraint(:author)
+    |> cast(params, [:title])
+    |> cast_assoc(:comment, with: &comment_changeset(issue, &1, &2), required: true)
+    |> validate_required([:title])
   end
 
   #
@@ -262,36 +268,19 @@ defmodule GitGud.Issue do
   # Helpers
   #
 
-  defp map_issue_params(issue_params) do
-    issue_params =
-      Map.new(issue_params, fn
-        {key, val} when is_atom(key) -> {key, val}
-        {key, val} when is_binary(key) -> {String.to_atom(key), val}
-      end)
-    Map.update(issue_params, :comments, [], fn comments -> Enum.map(comments, &map_comment_params(issue_params, &1)) end)
-  end
-
-  defp map_comment_params(issue_params, {_index, comment_params}) do
-    map_comment_params(issue_params, comment_params)
-  end
-
-  defp map_comment_params(issue_params, comment_params) do
-    comment_params =
-      Map.new(comment_params, fn
-        {key, val} when is_atom(key) -> {key, val}
-        {key, val} when is_binary(key) -> {String.to_atom(key), val}
-      end)
-    Map.merge(comment_params, %{repo_id: issue_params[:repo_id], thread_table: "issues_comments", author_id: issue_params[:author_id]})
-  end
-
   defp insert_issue_comment(repo_id, issue_id, author_id, body) do
     Multi.new()
-    |> Multi.insert(:comment, Comment.changeset(%Comment{}, %{repo_id: repo_id, thread_table: "issues_comments", author_id: author_id, body: body}))
+    |> Multi.insert(:comment, Comment.changeset(%Comment{repo_id: repo_id, thread_table: "issues_comments", author_id: author_id}, %{body: body}))
     |> Multi.run(:issue_comment, fn db, %{comment: comment} ->
       case db.insert_all("issues_comments", [%{thread_id: issue_id, comment_id: comment.id}]) do
         {1, val} -> {:ok, val}
       end
     end)
+  end
+
+  defp comment_changeset(issue, comment, params) do
+    comment = struct(comment, repo_id: issue.repo_id, thread_table: "issues_comments", author_id: issue.author_id)
+    Comment.changeset(comment, params)
   end
 
   defp put_labels(changeset) do

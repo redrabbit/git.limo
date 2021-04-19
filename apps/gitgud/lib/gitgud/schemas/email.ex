@@ -38,22 +38,22 @@ defmodule GitGud.Email do
   Creates a new email with the given `params`.
 
   ```elixir
-  {:ok, email} = GitGud.Email.create(user_id: user.id, address: "m.flach@almightycouch.com")
+  {:ok, email} = GitGud.Email.create(user, address: "m.flach@almightycouch.com")
   ```
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create(User.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(user, params) do
+    DB.insert(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
   Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create!(User.t, map|keyword) :: t
+  def create!(user, params) do
+    DB.insert!(changeset(%__MODULE__{user_id: user.id}, Map.new(params)))
   end
 
   @doc """
@@ -113,10 +113,9 @@ defmodule GitGud.Email do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = email, params \\ %{}) do
     email
-    |> cast(params, [:user_id, :address])
+    |> cast(params, [:address])
     |> validate_required([:address])
     |> validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
-    |> assoc_constraint(:user)
     |> check_constraint(:address, name: :emails_address_constraint, message: "already taken")
     |> unique_constraint(:address, name: :emails_user_id_address_index)
   end
