@@ -6,7 +6,7 @@
       <%= for {branch, author, timestamp} <- @page.slice do %>
         <tr>
           <td>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary" %> has-text-weight-medium"><%= branch %></a>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary" %> has-text-weight-medium"><%= branch %></a>
           </td>
           <td>
             updated <%= datetime_format(timestamp, "{relative}") %> by

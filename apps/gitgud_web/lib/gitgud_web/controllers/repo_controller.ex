@@ -51,7 +51,7 @@ defmodule GitGud.Web.RepoController do
       case Repo.create(user, repo_params) do
         {:ok, repo} ->
           conn
-          |> put_flash(:info, "Repository '#{repo.owner.login}/#{repo.name}' created.")
+          |> put_flash(:info, "Repository '#{repo.owner_login}/#{repo.name}' created.")
           |> redirect(to: Routes.codebase_path(conn, :show, user, repo))
         {:error, changeset} ->
           conn
@@ -85,8 +85,8 @@ defmodule GitGud.Web.RepoController do
         case Repo.update(repo, repo_params) do
           {:ok, repo} ->
             conn
-            |> put_flash(:info, "Repository '#{repo.owner.login}/#{repo.name}' updated.")
-            |> redirect(to: Routes.repo_path(conn, :edit, repo.owner, repo))
+            |> put_flash(:info, "Repository '#{repo.owner_login}/#{repo.name}' updated.")
+            |> redirect(to: Routes.repo_path(conn, :edit, repo.owner_login, repo))
           {:error, changeset} ->
             conn
             |> put_flash(:error, "Something went wrong! Please check error(s) below.")
@@ -107,7 +107,7 @@ defmodule GitGud.Web.RepoController do
       if repo.owner_id == user.id do
         repo = Repo.delete!(repo)
         conn
-        |> put_flash(:info, "Repository '#{repo.owner.login}/#{repo.name}' deleted.")
+        |> put_flash(:info, "Repository '#{repo.owner_login}/#{repo.name}' deleted.")
         |> redirect(to: Routes.user_path(conn, :show, user))
       end || {:error, :unauthorized}
     end || {:error, :not_found}

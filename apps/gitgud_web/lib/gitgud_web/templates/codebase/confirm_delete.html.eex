@@ -10,12 +10,12 @@
   </div>
   <div class="level-right">
     <div class="level-item">
-      <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
+      <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
     </div>
   </div>
 </nav>
 
-<%= form_for @changeset, Routes.codebase_path(@conn, :delete, @repo.owner, @repo, @revision, @tree_path), [as: :commit, method: :delete], fn f -> %>
+<%= form_for @changeset, Routes.codebase_path(@conn, :delete, @repo.owner_login, @repo, @revision, @tree_path), [as: :commit, method: :delete], fn f -> %>
   <div class="box">
     <h2 class="subtitle">Commit changes</h2>
     <div class="field">

@@ -23,6 +23,7 @@ defmodule GitGud.Repo do
 
   schema "repositories" do
     belongs_to :owner, User
+    field :owner_login, :string
     field :name, :string
     field :public, :boolean, default: true
     field :description, :string
@@ -77,7 +78,7 @@ defmodule GitGud.Repo do
   """
   @spec create(User.t, map|keyword, keyword) :: {:ok, t} | {:error, Ecto.Changeset.t | term}
   def create(owner, params, opts \\ []) do
-    changeset = changeset(%__MODULE__{owner_id: owner.id, owner: owner}, Map.new(params))
+    changeset = changeset(%__MODULE__{owner_id: owner.id, owner_login: owner.login, owner: owner}, Map.new(params))
     multi =
       if Keyword.get(opts, :init, true),
         do: create_and_init_multi(changeset, Keyword.get(opts, :bare, true)),
@@ -135,7 +136,7 @@ defmodule GitGud.Repo do
       {:error, %Ecto.Changeset{} = changeset} ->
         raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
       {:error, reason} ->
-        raise File.Error, reason: reason, action: "rename directory", path: Path.join(repo.owner.login, repo.name)
+        raise File.Error, reason: reason, action: "rename directory", path: Path.join(repo.owner_login, repo.name)
     end
   end
 

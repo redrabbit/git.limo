@@ -117,15 +117,15 @@ defmodule GitGud.GraphQL.Resolvers do
   end
 
   def url(%Repo{} = repo, %{} = _args, _info) do
-    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :show, repo.owner, repo)}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :show, repo.owner_login, repo)}
   end
 
   def url(%GitRef{name: name} = _reference, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :tree, ctx.repo.owner, ctx.repo, name, [])}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :tree, ctx.repo.owner_login, ctx.repo, name, [])}
   end
 
   def url(%GitCommit{oid: oid} = _commit, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
-    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, ctx.repo.owner, ctx.repo, oid_fmt(oid))}
+    {:ok, Routes.codebase_url(GitGud.Web.Endpoint, :commit, ctx.repo.owner_login, ctx.repo, oid_fmt(oid))}
   end
 
   @doc """

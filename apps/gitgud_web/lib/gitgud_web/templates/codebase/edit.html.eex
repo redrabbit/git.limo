@@ -1,4 +1,4 @@
-<%= form_for @changeset, Routes.codebase_path(@conn, :update, @repo.owner, @repo, @revision, @tree_path), [id: "blob-form", as: :commit, method: :put], fn f -> %>
+<%= form_for @changeset, Routes.codebase_path(@conn, :update, @repo.owner_login, @repo, @revision, @tree_path), [id: "blob-form", as: :commit, method: :put], fn f -> %>
   <nav class="level">
     <div class="level-left">
       <div class="level-item">
@@ -18,7 +18,7 @@
     </div>
     <div class="level-right">
       <div class="level-item">
-        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
+        <a href="<%= Routes.codebase_path(@conn, :blob, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
       </div>
     </div>
   </nav>

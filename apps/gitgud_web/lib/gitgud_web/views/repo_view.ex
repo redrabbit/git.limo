@@ -12,5 +12,5 @@ defmodule GitGud.Web.RepoView do
   def title(:index, %{current_user: %User{id: user_id}, user: %User{id: user_id}}), do: "Your repositories"
   def title(:index, %{user: user}), do: "Repositories · #{user.login} (#{user.name})"
   def title(action, _assigns) when action in [:new, :create], do: "New repository"
-  def title(action, %{repo: repo}) when action in [:edit, :update], do: "Settings · #{repo.owner.login}/#{repo.name}"
+  def title(action, %{repo: repo}) when action in [:edit, :update], do: "Settings · #{repo.owner_login}/#{repo.name}"
 end

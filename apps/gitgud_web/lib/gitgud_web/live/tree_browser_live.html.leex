@@ -5,19 +5,19 @@
     <div class="tabs is-toggle is-fullwidth">
       <ul>
         <li>
-          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo, @revision, []) %>">
+          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, []) %>">
             <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
             <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></span>
           </a>
         </li>
         <li>
-          <a href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">
+          <a href="<%= Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo) %>">
             <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
             <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></span>
           </a>
         </li>
         <li>
-          <a href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">
+          <a href="<%= Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo) %>">
             <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
             <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></span>
           </a>
@@ -51,11 +51,11 @@
         <nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs" phx-hook="TreeBreadcrumb">
           <ul>
             <li>
-              <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, [])) %>
+              <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, [])) %>
             </li>
             <%= unless Enum.empty?(@tree_path) do %>
               <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
-                <li><%= live_patch(path, to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, Enum.take(@tree_path, index))) %></li>
+                <li><%= live_patch(path, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, Enum.take(@tree_path, index))) %></li>
               <% end %>
               <li class="is-active"><a><%= List.last(@tree_path) %></a></li>
             <% end %>
@@ -74,15 +74,15 @@
               <div class="control"><button class="button ssh-clone-button">SSH</button></div>
             <% end %>
             <div class="control http-clone">
-              <input class="input" type="text" value="<%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git" readonly />
+              <input class="input" type="text" value="<%= Routes.codebase_url(@socket, :show, @repo.owner_login, @repo) %>.git" readonly />
             </div>
             <%= if @current_user do %>
               <div class="control ssh-clone is-hidden">
                 <%= case Application.get_env(:gitgud, :ssh_port, 22) do %>
                   <% 22 -> %>
-                    <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+                    <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner_login}/#{@repo.name}.git" %>" readonly />
                   <% ssh_port ->%>
-                    <input class="input" type="text" value="ssh://<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{ssh_port}/#{@repo.owner.login}/#{@repo.name}.git" %>" readonly />
+                    <input class="input" type="text" value="ssh://<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{ssh_port}/#{@repo.owner_login}/#{@repo.name}.git" %>" readonly />
                 <% end %>
               </div>
             <% end %>
@@ -98,12 +98,12 @@
       <% end %>
       <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
         <div class="level-item">
-          <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">New</a>
+          <a href="<%= Routes.codebase_path(@socket, :new, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">New</a>
         </div>
       <% end %>
       <%= unless Enum.empty?(@tree_path) do %>
         <div class="level-item">
-          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">History</a>
+          <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">History</a>
         </div>
       <% end %>
     </div>
@@ -120,7 +120,7 @@
               <% else %>
                 <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
               <% end %>
-              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@tree_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@tree_commit_info.message) %></a>
+              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(@tree_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@tree_commit_info.message) %></a>
             <% end %>
           <% else %>
             <span class="tag placeholder is-white"></span>
@@ -141,12 +141,12 @@
           <td>
             <%= case tree_entry.type do %>
               <% :tree -> %>
-                <%= live_patch(to: Routes.codebase_path(@socket, :tree, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name])) do %>
+                <%= live_patch(to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name])) do %>
                   <span class="icon"><i class="fa fa-folder"></i></span>
                   <span><%= tree_entry.name %></span>
                 <% end %>
               <% :blob -> %>
-                <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
+                <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name]) %>">
                   <span class="icon"><i class="fa fa-file"></i></span>
                   <span><%= tree_entry.name %></span>
                 </a>
@@ -154,7 +154,7 @@
           </td>
           <td class="is-fullwidth">
             <%= if commit_info do %>
-              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
+              <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
             <% else %>
               <span class="tag placeholder"></span>
             <% end %>
@@ -176,7 +176,7 @@
       <header class="card-header">
         <div class="card-header-title"><%= filename %></div>
           <p class="card-header-icon buttons">
-            <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @revision, @tree_path ++ [filename]) %>" class="button is-small is-link is-inverted">
+            <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [filename]) %>" class="button is-small is-link is-inverted">
               <span class="icon"><i class="fa fa-code"></i></span>
             </a>
           </p>
@@ -200,13 +200,13 @@
     git init
     git add README.md
     git commit -m "first commit"
-    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git
+    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner_login, @repo) %>.git
     git push -u origin master
     </pre>
 
     <p>or push an existing repository from the command line</p>
     <pre>
-    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner, @repo) %>.git
+    git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner_login, @repo) %>.git
     git push -u origin master
     </pre>
   </div>

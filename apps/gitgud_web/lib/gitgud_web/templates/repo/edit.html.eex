@@ -1,6 +1,6 @@
 <h2 class="subtitle">Settings</h2>
 
-<%= form_for @changeset, Routes.repo_path(@conn, :update, @repo.owner, @repo), [as: :repo], fn f -> %>
+<%= form_for @changeset, Routes.repo_path(@conn, :update, @repo.owner_login, @repo), [as: :repo], fn f -> %>
   <div class="field">
     <%= label f, :name, class: "label" %>
     <div class="control">
@@ -38,7 +38,7 @@
     </p>
     <%= if @repo.owner_id == @current_user.id do %>
       <p class="control">
-        <%= button "Delete repository", to: Routes.repo_path(@conn, :delete, @repo.owner, @repo), method: "delete", class: "button is-danger", data: [confirm: "Once you delete a repository, there is no going back.\nPlease be certain."] %>
+        <%= button "Delete repository", to: Routes.repo_path(@conn, :delete, @repo.owner_login, @repo), method: "delete", class: "button is-danger", data: [confirm: "Once you delete a repository, there is no going back.\nPlease be certain."] %>
       </p>
     <% end %>
   </div>

@@ -2,8 +2,8 @@
 <div class="columns">
   <aside class="menu column is-one-fifth">
     <ul class="menu-list">
-      <li><%= navigation_item @conn, :repo, [only: [:edit, :update]], :a, href: Routes.repo_path(@conn, :edit, @repo.owner, @repo) do %>Settings<% end %></li>
-      <li><%= navigation_item @conn, :maintainer, [], :a, href: Routes.maintainer_path(@conn, :index, @repo.owner, @repo) do %>Maintainers<% end %></li>
+      <li><%= navigation_item @conn, :repo, [only: [:edit, :update]], :a, href: Routes.repo_path(@conn, :edit, @repo.owner_login, @repo) do %>Settings<% end %></li>
+      <li><%= navigation_item @conn, :maintainer, [], :a, href: Routes.maintainer_path(@conn, :index, @repo.owner_login, @repo) do %>Maintainers<% end %></li>
     </ul>
   </aside>
   <div class="column">

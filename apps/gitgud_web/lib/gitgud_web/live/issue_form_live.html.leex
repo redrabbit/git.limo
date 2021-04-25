@@ -1,4 +1,4 @@
-<%= f = form_for @changeset, Routes.issue_path(@socket, :create, @repo.owner, @repo),
+<%= f = form_for @changeset, Routes.issue_path(@socket, :create, @repo.owner_login, @repo),
   as: :issue,
   phx_change: "validate",
   phx_submit: "submit",

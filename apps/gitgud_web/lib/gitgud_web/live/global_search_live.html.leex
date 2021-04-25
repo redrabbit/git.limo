@@ -16,7 +16,7 @@
                 <span class="tag user"><%= user %></span>
               </a>
             <% %Repo{} = repo -> %>
-              <a href="<%= Routes.codebase_path(@socket, :show, repo.owner, repo) %>" class="dropdown-item">
+              <a href="<%= Routes.codebase_path(@socket, :show, repo.owner_login, repo) %>" class="dropdown-item">
                 <div class="tags has-addons">
                   <span class="tag user"><%= repo.owner %></span>
                   <span class="tag is-link"><%= repo.name %></span>

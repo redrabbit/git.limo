@@ -4,6 +4,7 @@ defmodule GitGud.DB.Migrations.AddRepositoriesTable do
   def change do
     create table("repositories") do
       add :owner_id, references("users", on_delete: :delete_all), null: false
+      add :owner_login, :string, null: false, size: 24
       add :name, :string, null: false, size: 80
       add :public, :boolean, null: false, default: true
       add :description, :string

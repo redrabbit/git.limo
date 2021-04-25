@@ -10,5 +10,5 @@ defmodule GitGud.Web.MaintainerView do
   end
 
   @spec title(atom, map) :: binary
-  def title(_action, %{repo: repo}), do: "Maintainers · #{repo.owner.login}/#{repo.name}"
+  def title(_action, %{repo: repo}), do: "Maintainers · #{repo.owner_login}/#{repo.name}"
 end

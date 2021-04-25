@@ -8,7 +8,7 @@
     <div class="level-right">
       <div class="level-item">
         <%= if verified?(@current_user) do %>
-          <a class="button is-success" href="<%= Routes.issue_path(@conn, :new, @repo.owner, @repo) %>">New</a>
+          <a class="button is-success" href="<%= Routes.issue_path(@conn, :new, @repo.owner_login, @repo) %>">New</a>
         <% else %>
           <p class="button tooltip is-success" data-tooltip="Verify your account" disabled>New</p>
         <% end %>
@@ -47,7 +47,7 @@
               </div>
             </div>
             <div class="column is-three-fifths">
-              <%= form_for @conn, Routes.issue_path(@conn, :index, @repo.owner, @repo), [method: "get"], fn f -> %>
+              <%= form_for @conn, Routes.issue_path(@conn, :index, @repo.owner_login, @repo), [method: "get"], fn f -> %>
                 <div class="field has-addons">
                   <div class="control is-expanded">
                     <%= text_input f, :q, class: "input", value: encode_search_query(@q), placerholder: "Search all issues" %>
@@ -87,7 +87,7 @@
                 </div>
                 <%= if authorized?(@conn, @repo, :admin) do %>
                   <div class="control">
-                    <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner, @repo) %>" class="button">
+                    <a href="<%= Routes.issue_label_path(@conn, :index, @repo.owner_login, @repo) %>" class="button">
                       <span class="icon"><i class="fa fa-cog"></i></span>
                     </a>
                   </div>
@@ -112,7 +112,7 @@
             </td>
             <td>
               <div class="issue-title has-text-weight-bold">
-                <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>"><%= issue.title %></a>
+                <a href="<%= Routes.issue_path(@conn, :show, @repo.owner_login, @repo, issue.number) %>"><%= issue.title %></a>
                 <div class="issue-labels">
                   <%= for label <- issue.labels, do: label_button(@conn, label) %>
                 </div>
@@ -123,7 +123,7 @@
             </td>
             <td class="has-text-right">
               <%= if comment_count > 0 do %>
-              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner, @repo, issue.number) %>" class="button is-small is-white">
+              <a href="<%= Routes.issue_path(@conn, :show, @repo.owner_login, @repo, issue.number) %>" class="button is-small is-white">
                 <span class="icon"><i class="fa fa-comment-alt"></i></span>
                 <span><%= comment_count - 0 %></span>
               </a>

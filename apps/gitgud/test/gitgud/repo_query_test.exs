@@ -29,8 +29,8 @@ defmodule GitGud.RepoQueryTest do
 
   test "gets single user repository", %{repos: repos} do
     for repo <- repos do
-      assert repo.id == RepoQuery.user_repo(repo.owner.id, repo.name).id
-      assert repo.id == RepoQuery.user_repo(repo.owner.login, repo.name).id
+      assert repo.id == RepoQuery.user_repo(repo.owner_id, repo.name).id
+      assert repo.id == RepoQuery.user_repo(repo.owner_login, repo.name).id
       assert repo.id == RepoQuery.user_repo(repo.owner, repo.name).id
     end
   end

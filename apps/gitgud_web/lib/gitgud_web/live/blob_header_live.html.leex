@@ -7,7 +7,7 @@
         <a href="mailto:<%= committer.email %>" class="tag tooltip is-white has-text-black" data-tooltip="<%= committer.email %>"><%= committer.name %></a>
       <% end %>
       &nbsp;
-      <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, oid_fmt(@blob_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@blob_commit_info.message) %></a>
+      <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(@blob_commit_info.oid)) %>" class="has-text-dark"><%= commit_message_title(@blob_commit_info.message) %></a>
     <% end %>
   <% else %>
     <span class="tag placeholder is-white"></span>

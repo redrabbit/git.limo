@@ -12,16 +12,16 @@
       <div class="level-item">
         <div class="field has-addons">
           <div class="control">
-            <a href="<%= Routes.codebase_path(@conn, :edit, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Edit</a>
+            <a href="<%= Routes.codebase_path(@conn, :edit, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">Edit</a>
           </div>
           <div class="control">
-            <a href="<%= Routes.codebase_path(@conn, :confirm_delete, @repo.owner, @repo.name, @revision, @tree_path) %>" class="button">Delete</a>
+            <a href="<%= Routes.codebase_path(@conn, :confirm_delete, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">Delete</a>
           </div>
         </div>
       </div>
     <% end %>
     <div class="level-item">
-      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @revision, @tree_path) %>" class="button">History</a>
+      <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner_login, @repo, @revision, @tree_path) %>" class="button">History</a>
     </div>
   </div>
 </nav>

@@ -33,7 +33,7 @@ defmodule GitGud.Web.GlobalSearchLive do
           %User{} = user ->
             {:noreply, redirect(socket, to: Routes.user_path(socket, :show, user))}
           %Repo{} = repo ->
-            {:noreply, redirect(socket, to: Routes.codebase_path(socket, :show, repo.owner, repo))}
+            {:noreply, redirect(socket, to: Routes.codebase_path(socket, :show, repo.owner_login, repo))}
           nil ->
             {:noreply, socket}
         end

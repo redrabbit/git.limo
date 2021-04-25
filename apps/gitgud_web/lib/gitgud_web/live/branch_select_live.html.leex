@@ -8,17 +8,17 @@
     <% else %>
       <%= case @label_type do %>
         <% "branch" -> %>
-          <a class="button" href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">
+          <a class="button" href="<%= Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo) %>">
             <span>Branch: <span class="has-text-weight-semibold"><%= @label_name %></span></span>
             <span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
           </a>
         <% "tag" -> %>
-          <a class="button" href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">
+          <a class="button" href="<%= Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo) %>">
             <span>Tag: <span class="has-text-weight-semibold"><%= @label_name %></span></span>
             <span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
           </a>
         <% "commit" -> %>
-          <a class="button" href="<%= Routes.codebase_path(@socket, :commit, @repo.owner, @repo, @revision) %>">
+          <a class="button" href="<%= Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, @revision) %>">
             <span>Commit: <span class="has-text-weight-semibold"><%= @label_name %></span></span>
             <span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
           </a>
@@ -41,14 +41,14 @@
           <a class="<%= if @tab == :tag, do: "is-active" %>" phx-click="switch_tab" phx-value-tab="tag" phx-target="<%= @myself %>">Tags</a>
         </p>
         <%= for ref <- Enum.filter(@refs, &(&1.type == @tab && String.contains?(&1.name, @filter))) do %>
-          <a class="panel-block<%= if ref.oid == @commit.oid, do: " is-active" %>" href="<%= Routes.codebase_path(@socket, @action, @repo.owner, @repo, ref, @tree_path) %>"><%= ref.name %></a>
+          <a class="panel-block<%= if ref.oid == @commit.oid, do: " is-active" %>" href="<%= Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, ref, @tree_path) %>"><%= ref.name %></a>
         <% end %>
         <div class="panel-block">
             <%= case @tab do %>
             <% :branch -> %>
-                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :branches, @repo.owner, @repo) %>">all branches</a>
+                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo) %>">all branches</a>
             <% :tag -> %>
-                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :tags, @repo.owner, @repo) %>">all tags</a>
+                <a class="button is-small is-light is-fullwidth" href="<%= Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo) %>">all tags</a>
             <% end %>
         </div>
       </nav>

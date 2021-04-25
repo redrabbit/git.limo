@@ -26,7 +26,7 @@ defmodule GitGud.Web.RepoControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.repo_path(conn, :create), repo: repo_params)
     repo = RepoQuery.user_repo(user, repo_params.name)
-    assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' created."
+    assert get_flash(conn, :info) == "Repository '#{repo.owner_login}/#{repo.name}' created."
     assert redirected_to(conn) == Routes.codebase_path(conn, :show, user, repo)
     File.rm_rf!(RepoStorage.workdir(repo))
   end
@@ -85,7 +85,7 @@ defmodule GitGud.Web.RepoControllerTest do
       repo = RepoQuery.by_id(repo.id)
       assert repo.name == "my-awesome-project"
       assert repo.description == "This project is really awesome!"
-      assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' updated."
+      assert get_flash(conn, :info) == "Repository '#{repo.owner_login}/#{repo.name}' updated."
       assert redirected_to(conn) == Routes.repo_path(conn, :edit, user, repo)
       File.rm_rf!(RepoStorage.workdir(repo))
     end
@@ -103,7 +103,7 @@ defmodule GitGud.Web.RepoControllerTest do
     test "deletes repository", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = delete(conn, Routes.repo_path(conn, :delete, user, repo))
-      assert get_flash(conn, :info) == "Repository '#{repo.owner.login}/#{repo.name}' deleted."
+      assert get_flash(conn, :info) == "Repository '#{repo.owner_login}/#{repo.name}' deleted."
       assert redirected_to(conn) == Routes.user_path(conn, :show, user)
     end
   end

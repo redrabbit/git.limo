@@ -269,7 +269,7 @@ defmodule GitGud.Web.IssueLive do
   end
 
   defp assign_page_title(socket) do
-    assign(socket, :page_title, "#{socket.assigns.issue.title} ##{socket.assigns.issue.number} · #{socket.assigns.repo.owner.login}/#{socket.assigns.repo.name}")
+    assign(socket, :page_title, "#{socket.assigns.issue.title} ##{socket.assigns.issue.number} · #{socket.assigns.repo.owner_login}/#{socket.assigns.repo.name}")
   end
 
   defp assign_title_changeset(socket) when not socket.connected?, do: socket

@@ -45,12 +45,12 @@
               <%= delta.new_file.path %>
             </div>
             <p class="card-header-icon buttons">
-              <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner, @repo, @commit, Path.split(delta.old_file.path)) %>" class="button is-small is-link is-inverted">
+              <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, Path.split(delta.old_file.path)) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-history"></i>
                 </span>
               </a>
-              <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-link is-inverted">
+              <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-code"></i>
                 </span>

@@ -9,12 +9,12 @@
               <button class="commit-oid button is-small is-dark is-inverted has-text-weight-bold">
                 <span class="is-family-monospace"><%= oid_fmt(@commit.oid) %></span>
               </button>
-              <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
+              <a href="<%= Routes.codebase_path(@conn, :history, @repo.owner_login, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-history"></i>
                 </span>
               </a>
-              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
+              <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, @commit, []) %>" class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-code"></i>
                 </span>
@@ -33,7 +33,7 @@
               <div class="control">
                 <div class="buttons">
                   <%= for parent <- @commit_info.parents do %>
-                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner, @repo, parent) %>" class="button is-small is-link is-inverted has-text-weight-bold"><%= parent %></a>
+                    <a href="<%= Routes.codebase_path(@conn, :commit, @repo.owner_login, @repo, parent) %>" class="button is-small is-link is-inverted has-text-weight-bold"><%= parent %></a>
                   <% end %>
                 </div>
               </div>

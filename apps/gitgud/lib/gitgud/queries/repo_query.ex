@@ -157,11 +157,11 @@ defmodule GitGud.RepoQuery do
 
   @impl true
   def query(:repo_query, [ids]) when is_list(ids) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id in ^ids, preload: [owner: u])
+    from(r in Repo, as: :repo, where: r.id in ^ids)
   end
 
   def query(:repo_query, [id]) when is_integer(id) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: r.id == ^id, preload: [owner: u])
+    from(r in Repo, as: :repo, where: r.id == ^id)
   end
 
   def query(:user_repo_query, [user, name]) do
@@ -170,27 +170,27 @@ defmodule GitGud.RepoQuery do
 
   def query(:user_repos_query, [%User{id: user_id} = _user]), do: query(:user_repos_query, [user_id])
   def query(:user_repos_query, [login]) when is_binary(login) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.login == ^login, preload: [owner: u])
+    from(r in Repo, as: :repo, where: r.owner_login == ^login)
   end
 
   def query(:user_repos_query, [user_id]) when is_integer(user_id) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id == ^user_id, preload: [owner: u])
+    from(r in Repo, as: :repo, where: r.owner_id == ^user_id)
   end
 
   def query(:user_repos_query, [users]) when is_list(users) do
     cond do
       Enum.all?(users, &is_struct(&1, User)) ->
         user_ids = Enum.map(users, &(&1.id))
-        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^user_ids, preload: [owner: u])
+        from(r in Repo, as: :repo, where: r.owner_id in ^user_ids)
       Enum.all?(users, &is_integer/1) ->
-        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.id in ^users, preload: [owner: u])
+        from(r in Repo, as: :repo, where: r.owner_id in ^users)
       Enum.all?(users, &is_binary/1) ->
-        from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: u.login in ^users, preload: [owner: u])
+        from(r in Repo, as: :repo, where: r.owner_login in ^users)
     end
   end
 
   def query(:search_query, [input, threshold]) do
-    from(r in Repo, as: :repo, join: u in assoc(r, :owner), where: fragment("similarity(?, ?) > ?", r.name, ^input, ^threshold), order_by: fragment("similarity(?, ?) DESC", r.name, ^input), preload: [owner: u])
+    from(r in Repo, as: :repo, where: fragment("similarity(?, ?) > ?", r.name, ^input, ^threshold), order_by: fragment("similarity(?, ?) DESC", r.name, ^input))
   end
 
   def query(:maintainers_query, [repo_id]) when is_integer(repo_id) do
@@ -216,8 +216,9 @@ defmodule GitGud.RepoQuery do
   @impl true
   def alter_query(query, %User{} = viewer) when query.from.as == :repo do
     query
-    |> join(:left, [repo: r], m in Maintainer, on: r.id == m.repo_id, as: :maintainer)
-    |> where([repo: r, maintainer: m], (r.public == true and not is_nil(r.pushed_at)) or r.owner_id == ^viewer.id or m.user_id == ^viewer.id)
+    |> join(:left, [repo: r], m in assoc(r, :maintainers), as: :maintainer)
+    |> where([repo: r, maintainer: m], r.owner_id == ^viewer.id or m.id == ^viewer.id or (r.public == true and not is_nil(r.pushed_at)))
+    |> preload([maintainer: m], [maintainers: m])
   end
 
   def alter_query(query, nil) when query.from.as == :repo do

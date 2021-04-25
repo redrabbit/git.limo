@@ -6,7 +6,7 @@
       <%= for {tag, author, timestamp} <- @page.slice do %>
         <tr>
           <td>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, tag, []) %>" class="button is-small has-text-weight-medium"><%= tag %></a>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, tag, []) %>" class="button is-small has-text-weight-medium"><%= tag %></a>
           </td>
           <td>
             tagged <%= datetime_format(timestamp, "{relative}") %> by

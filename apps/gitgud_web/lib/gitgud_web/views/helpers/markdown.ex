@@ -95,7 +95,7 @@ defmodule GitGud.Web.Markdown do
             "#" <> number_str ->
               number = String.to_integer(number_str)
               if issue = Enum.find(issues, &(&1.number == number)), do:
-                {"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner, repo, issue)}], ["##{number}"], %{}}
+                {"a", [{"href", Routes.issue_path(GitGud.Web.Endpoint, :show, repo.owner_login, repo, issue)}], ["##{number}"], %{}}
             match ->
               cond do
                 String.starts_with?(match, ":") && String.ends_with?(match, ":") ->
@@ -104,7 +104,7 @@ defmodule GitGud.Web.Markdown do
                   if agent do
                     case GitAgent.revision(agent, match) do
                       {:ok, {commit, _ref}} ->
-                        {"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner, repo, commit)}], [{"code", [{"class", "has-text-link"}], [match], %{}}], %{}}
+                        {"a", [{"href", Routes.codebase_path(GitGud.Web.Endpoint, :commit, repo.owner_login, repo, commit)}], [{"code", [{"class", "has-text-link"}], [match], %{}}], %{}}
                       {:error, _reason} ->
                         nil
                     end

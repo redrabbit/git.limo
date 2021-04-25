@@ -29,11 +29,11 @@ defmodule GitGud.Web.IssueLabelView do
     case conn.assigns do
       %{repo: repo, q: q} ->
         query = GitGud.Web.IssueView.encode_search_query(q, labels: [label.name])
-        {href, attrs} = Keyword.pop(attrs, :href, Routes.issue_path(conn, :index, repo.owner, repo, q: query))
+        {href, attrs} = Keyword.pop(attrs, :href, Routes.issue_path(conn, :index, repo.owner_login, repo, q: query))
         label_button(:a, label, attrs ++ [href: href])
       %{repo: repo} ->
         query = GitGud.Web.IssueView.encode_search_query(labels: [label.name])
-        {href, attrs} = Keyword.pop(attrs, :href, Routes.issue_path(conn, :index, repo.owner, repo, q: query))
+        {href, attrs} = Keyword.pop(attrs, :href, Routes.issue_path(conn, :index, repo.owner_login, repo, q: query))
         label_button(:a, label, attrs ++ [href: href])
     end
   end
@@ -69,7 +69,7 @@ defmodule GitGud.Web.IssueLabelView do
   end
 
   @spec title(atom, map) :: binary
-  def title(_action, %{repo: repo}), do: "Issues labels · #{repo.owner.login}/#{repo.name}"
+  def title(_action, %{repo: repo}), do: "Issues labels · #{repo.owner_login}/#{repo.name}"
 
   #
   # Helpers

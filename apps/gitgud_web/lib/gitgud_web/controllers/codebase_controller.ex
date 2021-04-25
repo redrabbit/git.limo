@@ -380,7 +380,7 @@ defmodule GitGud.Web.CodebaseController do
         )
       else
         {:ok, %GitTree{}} ->
-          redirect(conn, to: Routes.codebase_path(conn, :tree, repo.owner, repo, revision, blob_path))
+          redirect(conn, to: Routes.codebase_path(conn, :tree, repo.owner_login, repo, revision, blob_path))
         {:error, reason} ->
           {:error, reason}
       end

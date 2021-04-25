@@ -2,10 +2,10 @@
   <nav class="breadcrumb is-large" aria-label="breadcrumbs">
     <span class="icon is-large"><i class="fa fa-box-open"></i></span>
     <ul>
-      <li><h1 class="title"><a href="<%= Routes.user_path(@conn, :show, @repo.owner) %>"><%= @repo.owner.login %></a></h1></li>
+      <li><h1 class="title"><a href="<%= Routes.user_path(@conn, :show, @repo.owner_login) %>"><%= @repo.owner_login %></a></h1></li>
       <li>
         <h1 class="title">
-          <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
+          <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner_login, @repo) %>">
             <%= @repo.name %>
             <%= unless @repo.public do %>
               &nbsp;
@@ -22,19 +22,19 @@
       <ul>
         <li<%= if helper in [:codebase, :tree_browser_live, :commit_diff_live] do %> class="is-active"<% end %>>
           <%= if assigns[:revision] do %>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner, @repo, @revision, []) %>">
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, @revision, []) %>">
               <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
               <span>Code</span>
             </a>
           <% else %>
-            <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner, @repo) %>">
+            <a href="<%= Routes.codebase_path(@conn, :show, @repo.owner_login, @repo) %>">
               <span class="icon"><i class="fa fa-code" aria-hidden="true"></i></span>
               <span>Code</span>
             </a>
           <% end %>
         </li>
         <li<%= if helper in [:issue, :issue_live, :issue_label] do %> class="is-active"<% end %>>
-          <a href="<%= Routes.issue_path(@conn, :index, @repo.owner, @repo) %>">
+          <a href="<%= Routes.issue_path(@conn, :index, @repo.owner_login, @repo) %>">
             <span class="icon"><i class="fa fa-exclamation-circle" aria-hidden="true"></i></span>
             <span>Issues</span>
             <%= if count = assigns[:repo_open_issue_count] do %>
@@ -50,7 +50,7 @@
         </li>
         <%= if authorized?(@conn, @repo, :admin) do %>
         <li<%= if (helper == :repo && action in [:edit, :update]) || helper == :maintainer do %> class="is-active"<% end %>>
-          <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner, @repo) %>">
+          <a href="<%= Routes.repo_path(@conn, :edit, @repo.owner_login, @repo) %>">
             <span class="icon is-small"><i class="fa fa-cog" aria-hidden="true"></i></span>
             <span>Settings</span>
           </a>

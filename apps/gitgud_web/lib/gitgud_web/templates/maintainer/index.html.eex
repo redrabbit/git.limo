@@ -15,7 +15,7 @@
         </td>
         <%= if maintainer.user_id != @repo.owner_id do %>
           <td class="is-narrow">
-            <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner, @repo), [method: :put, as: :maintainer], fn f -> %>
+            <%= form_for @conn, Routes.maintainer_path(@conn, :update, @repo.owner_login, @repo), [method: :put, as: :maintainer], fn f -> %>
               <%= hidden_input(f, :id, value: maintainer.id) %>
               <div class="field">
                 <div class="field is-grouped">
@@ -33,7 +33,7 @@
             <% end %>
           </td>
           <td class="is-narrow is-vcentered">
-            <%= form_for @conn, Routes.maintainer_path(@conn, :delete, @repo.owner, @repo), [method: :delete, as: :maintainer], fn f -> %>
+            <%= form_for @conn, Routes.maintainer_path(@conn, :delete, @repo.owner_login, @repo), [method: :delete, as: :maintainer], fn f -> %>
               <div class="field">
                 <%= hidden_input(f, :id, value: maintainer.id) %>
                 <button type="submit" class="delete"></button>

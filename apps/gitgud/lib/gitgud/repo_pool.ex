@@ -23,7 +23,7 @@ defmodule GitGud.RepoPool do
   """
   @spec start_agent(Repo.t, keyword) :: {:ok, pid} | {:error, term}
   def start_agent(repo, opts \\ []) do
-    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner.login}/#{repo.name}"}}
+    via_registry = {:via, Registry, {RepoRegistry, "#{repo.owner_login}/#{repo.name}"}}
     agent_opts = Keyword.merge([name: via_registry, idle_timeout: 900_000], opts)
     DynamicSupervisor.start_child(__MODULE__, %{
       id: GitAgent,
@@ -36,7 +36,7 @@ defmodule GitGud.RepoPool do
   Retrieves an agent from the registry.
   """
   @spec lookup(Repo.t | Path.t) :: pid | nil
-  def lookup(%Repo{} = repo), do: lookup(Path.join(repo.owner.login, repo.name))
+  def lookup(%Repo{} = repo), do: lookup(Path.join(repo.owner_login, repo.name))
   def lookup(path) do
     case Registry.lookup(GitGud.RepoRegistry, path) do
       [{agent, nil}] -> agent
