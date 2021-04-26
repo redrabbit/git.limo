@@ -9,15 +9,18 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
+  alias GitRekt.GitAgent
+  alias GitRekt.WireProtocol.ReceivePack
+
   alias GitGud.DB
   alias GitGud.Issue
   alias GitGud.IssueLabel
-  alias GitGud.Maintainer
   alias GitGud.User
   alias GitGud.RepoPool
   alias GitGud.RepoQuery
-  alias GitGud.RepoStats
+  alias GitGud.Stats
   alias GitGud.RepoStorage
+  alias GitGud.Maintainer
 
   import Ecto.Changeset
 
@@ -31,7 +34,7 @@ defmodule GitGud.Repo do
     has_many :issues, Issue
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete
     many_to_many :contributors, User, join_through: "repositories_contributors", on_replace: :delete
-    has_one :stats, RepoStats, on_replace: :update
+    has_one :stats, Stats, on_replace: :update
     timestamps()
     field :pushed_at, :naive_datetime
   end
@@ -45,7 +48,7 @@ defmodule GitGud.Repo do
     description: binary,
     maintainers: [User.t],
     contributors: [User.t],
-    stats: RepoStats.t,
+    stats: Stats.t,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
@@ -159,24 +162,6 @@ defmodule GitGud.Repo do
   def update_issue_labels!(repo, params), do: DB.update!(issue_labels_changeset(repo, Map.new(params)))
 
   @doc """
-  Updates the associated stats for the given `repo` with the given `params`.
-
-  ```elixir
-  {:ok, repo} = GitGud.Repo.update_stats(repo, stats_params)
-  ```
-
-  This function validates the given `params` using `stats_changeset/2`.
-  """
-  @spec update_stats(t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def update_stats(repo, params), do: DB.update(stats_changeset(repo, Map.new(params)))
-
-  @doc """
-  Similar to `update_stats/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
-  """
-  @spec update_stats!(t, map|keyword) :: t
-  def update_stats!(repo, params), do: DB.update!(stats_changeset(repo, Map.new(params)))
-
-  @doc """
   Adds a new maintainer to the given `repo`.
 
   ```elixir
@@ -196,6 +181,32 @@ defmodule GitGud.Repo do
   @spec add_maintainer!(t, map|keyword) :: Maintainer.t
   def add_maintainer!(repo, params) do
     DB.insert!(Maintainer.changeset(%Maintainer{repo_id: repo.id}, Map.new(params)))
+  end
+
+  @doc """
+  Updates the given `repo` with the given push `cmds`.
+  """
+  @spec push(t, User.t, GitAgent.t, [ReceivePack.cmd]) :: {:ok, t} | {:error, term}
+  def push(%__MODULE__{stats: nil} = repo, user, agent, cmds) do
+    repo = struct(repo, stats: struct(Stats, refs: %{}))
+    push(repo, user, agent, cmds)
+  end
+
+  def push(%__MODULE__{stats: stats} = repo, user, agent, cmds) when is_struct(stats, Ecto.Association.NotLoaded) do
+    repo = DB.preload(repo, :stats)
+    push(repo, user, agent, cmds)
+  end
+
+  def push(%__MODULE__{stats: stats} = repo, _user, agent, cmds) do
+    case make_stats_refs(stats.refs, agent, cmds) do
+      {:ok, stats_refs} ->
+        repo
+        |> change(stats: %{refs: stats_refs}, pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
+        |> cast_assoc(:stats, with: &change(struct(&1, repo_id: repo.id), &2))
+        |> DB.update()
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -253,17 +264,6 @@ defmodule GitGud.Repo do
     |> struct(issue_labels: Enum.sort_by(repo.issue_labels, &(&1.id)))
     |> cast(params, [])
     |> cast_assoc(:issue_labels, with: &IssueLabel.changeset/2)
-  end
-
-  @doc """
-  Returns a changeset for manipulating associated stats.
-  """
-  @spec stats_changeset(t, map) :: Ecto.Changeset.t
-  def stats_changeset(%__MODULE__{} = repo, params \\ %{}) when not is_struct(repo.stats, Ecto.Association.NotLoaded) do
-    repo
-    |> cast(params, [])
-    |> cast_assoc(:stats, with: &RepoStats.changeset/2)
-    |> put_change(:pushed_at, NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
   end
 
   #
@@ -342,4 +342,37 @@ defmodule GitGud.Repo do
   end
 
   defp cleanup(_db, %{repo: repo}), do: RepoStorage.cleanup(repo)
+
+  defp make_stats_refs(nil, agent, cmds), do: make_stats_refs(%{}, agent, cmds)
+  defp make_stats_refs(refs, agent, cmds) do
+    Enum.reduce_while(cmds, {:ok, refs}, fn cmd, {:ok, refs} ->
+      case make_stats_ref(refs, agent, cmd) do
+        {:ok, stats} ->
+          {:cont, {:ok, stats}}
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp make_stats_ref(refs, agent, {:create, _oid, ref_name}) do
+    with {:ok, ref} <- GitAgent.reference(agent, ref_name),
+         {:ok, count} <- GitAgent.history_count(agent, ref) do
+      {:ok, Map.put(refs, ref_name, %{"count" => count})}
+    end
+  end
+
+  defp make_stats_ref(refs, agent, {:update, old_oid, new_oid, ref_name}) do
+    if Map.has_key?(refs, ref_name) do
+      case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
+        {:ok, {ahead, behind}} ->
+          {:ok, update_in(refs, [ref_name, "count"], &(&1 + ahead - behind))}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      make_stats_ref(refs, agent, {:create, new_oid, ref_name})
+    end
+  end
+
 end

@@ -15,7 +15,6 @@ defmodule GitGud.RepoStorage do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.Repo
-  alias GitGud.RepoStats
   alias GitGud.GPGKey
 
   alias GitGud.Issue
@@ -60,12 +59,12 @@ defmodule GitGud.RepoStorage do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` when pushing changes. It is
   responsible for writing Git objects and references to the underlying ODB.
   """
-  @spec push_pack(Repo.t, User.t, ReceivePack.t) :: :ok | {:error, term}
+  @spec push_pack(Repo.t, User.t, ReceivePack.t) :: {:ok, GitAgent.t, [ReceivePack.cmd], [any]} | {:error, term}
   def push_pack(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
     with  :ok <- check_pack(repo, user, receive_pack),
          {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
           :ok <- ReceivePack.apply_cmds(receive_pack), do:
-      push_meta(repo, user, agent, cmds, objs)
+      {:ok, agent, cmds, objs}
   end
 
   @doc """
@@ -76,10 +75,8 @@ defmodule GitGud.RepoStorage do
   """
   @spec push_meta(Repo.t, User.t, GitAgent.agent, [ReceivePack.cmd], [any]) :: :ok | {:error, term}
   def push_meta(%Repo{} = repo, %User{} = user, agent, cmds, objs) do
-    repo = DB.preload(repo, :stats)
-    with {:ok, meta} <- push_meta_objects(repo, user, agent, objs),
-         {:ok, stats} <- make_stats(repo, user, agent, cmds),
-         {:ok, repo} <- Repo.update_stats(repo, stats), do:
+    with {:ok, repo} <- Repo.push(repo, user, agent, cmds),
+         {:ok, meta} <- push_meta_objects(repo, user, agent, objs), do:
       dispatch_events(repo, cmds, meta)
   end
 
@@ -101,8 +98,8 @@ defmodule GitGud.RepoStorage do
 
   defp push_meta_objects(repo, user, agent, objs) do
     case DB.transaction(write_git_meta_objects(repo, user, agent, objs), timeout: :infinity) do
-      {:ok, multi_results} ->
-        {:ok, multi_results}
+      {:ok, meta} ->
+        {:ok, meta}
       {:error, reason} ->
         {:error, reason}
     end
@@ -181,7 +178,9 @@ defmodule GitGud.RepoStorage do
 
   defp insert_contributors_multi(multi, repo, {_user, users}, _commits) do
     contributors = Enum.map(users, fn {_email, user} -> %{repo_id: repo.id, user_id: user.id} end)
-    Multi.insert_all(multi, :contributors, "repositories_contributors", contributors, on_conflict: :nothing)
+    unless Enum.empty?(contributors),
+      do: Multi.insert_all(multi, :contributors, "repositories_contributors", contributors, on_conflict: :nothing),
+    else: multi
   end
 
   defp reference_issues_multi(multi, repo, {user, users}, commits) do
@@ -195,57 +194,20 @@ defmodule GitGud.RepoStorage do
         else: acc
       end)
 
-    query = IssueQuery.query(:repo_issues_query, [repo.id, Enum.uniq(Enum.flat_map(commits, fn {_oid, {_user, refs}} -> refs end))])
-    query = select(query, [issue: i], {i.id, i.number})
-    Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
-      case Enum.find_value(commits, fn {oid, {user, refs}} -> number in refs && {oid, user} end) do
-        {oid, user} ->
-          event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
-          Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
-        nil ->
-          multi
-      end
-    end)
-  end
-
-  defp make_stats(%Repo{id: repo_id, stats: nil} = repo, user, agent, cmds), do: make_stats(struct(repo, stats: %RepoStats{repo_id: repo_id}), user, agent, cmds)
-  defp make_stats(%Repo{id: repo_id, stats: stats}, _user, agent, cmds) do
-    with {:ok, stats_refs} <- make_stats_refs(stats.refs, agent, cmds) do
-
-      stats = %{repo_id: repo_id, refs: stats_refs}
-      {:ok, %{stats: stats}}
-    end
-  end
-
-  defp make_stats_refs(nil, agent, cmds), do: make_stats_refs(%{}, agent, cmds)
-  defp make_stats_refs(refs, agent, cmds) do
-    Enum.reduce_while(cmds, {:ok, refs}, fn cmd, {:ok, refs} ->
-      case make_stats_ref(refs, agent, cmd) do
-        {:ok, stats} ->
-          {:cont, {:ok, stats}}
-        {:error, reason} ->
-          {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp make_stats_ref(refs, agent, {:create, _oid, ref_name}) do
-    with {:ok, ref} <- GitAgent.reference(agent, ref_name),
-         {:ok, count} <- GitAgent.history_count(agent, ref) do
-      {:ok, Map.put(refs, ref_name, %{"count" => count})}
-    end
-  end
-
-  defp make_stats_ref(refs, agent, {:update, old_oid, new_oid, ref_name}) do
-    if Map.has_key?(refs, ref_name) do
-      case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
-        {:ok, {ahead, behind}} ->
-          {:ok, update_in(refs, [ref_name, "count"], &(&1 + ahead - behind))}
-        {:error, reason} ->
-          {:error, reason}
-      end
+    unless Enum.empty?(commits) do
+      query = IssueQuery.query(:repo_issues_query, [repo.id, Enum.uniq(Enum.flat_map(commits, fn {_oid, {_user, refs}} -> refs end))])
+      query = select(query, [issue: i], {i.id, i.number})
+      Enum.reduce(DB.all(query), multi, fn {id, number}, multi ->
+        case Enum.find_value(commits, fn {oid, {user, refs}} -> number in refs && {oid, user} end) do
+          {oid, user} ->
+            event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
+            Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+          nil ->
+            multi
+        end
+      end)
     else
-      {:error, "Cannot update reference #{ref_name} in stats."}
+      multi
     end
   end
 
@@ -257,7 +219,7 @@ defmodule GitGud.RepoStorage do
     meta
     |> Enum.filter(&meta_reference_issue?/1)
     |> Enum.map(fn {{:issue_reference, _issue_id}, {1, [issue]}} -> issue end)
-    |> Enum.each(&Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(&1.events), issue_event: &1.id))
+    |> Enum.each(&broadcast_issue_event/1)
   end
 
   defp extract_commit_props(data) do
@@ -306,6 +268,11 @@ defmodule GitGud.RepoStorage do
 
   defp meta_reference_issue?({{:issue_reference, _issue_id}, _val}), do: true
   defp meta_reference_issue?(_multi_result), do: false
+
+  defp broadcast_issue_event(issue) do
+    GitGud.Web.Endpoint.broadcast("issue:#{issue.id}", "reference_commit", %{event: List.last(issue.events)})
+  # Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+  end
 
   defp strip_utf8(str) do
     strip_utf8_helper(str, [])

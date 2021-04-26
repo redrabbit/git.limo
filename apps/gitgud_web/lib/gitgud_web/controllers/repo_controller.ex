@@ -7,7 +7,7 @@ defmodule GitGud.Web.RepoController do
 
   alias GitGud.UserQuery
   alias GitGud.Repo
-  alias GitGud.RepoStats
+  alias GitGud.Stats
   alias GitGud.RepoQuery
   alias GitGud.IssueQuery
 
@@ -117,7 +117,7 @@ defmodule GitGud.Web.RepoController do
   # Helpers
   #
 
-  defp stats(%Repo{id: repo_id, stats: %RepoStats{refs: stats_refs}}, batch) when is_map(stats_refs) do
+  defp stats(%Repo{id: repo_id, stats: %Stats{refs: stats_refs}}, batch) when is_map(stats_refs) do
     rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
     %{
       branches: Enum.count(Map.get(rev_groups, "heads", [])),

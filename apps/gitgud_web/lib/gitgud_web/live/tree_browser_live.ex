@@ -244,12 +244,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp resolve_stats!(repo, _agent, _revision) when is_nil(repo.stats) or is_struct(repo.stats, Ecto.Association.NotLoaded) do
-    %{
-      commits: 0,
-      branches: 0,
-      tags: 0,
-      contributors: 0,
-    }
+    raise RuntimeError, message: "cannot retrieve stats for repository #{repo.owner_login}/#{repo.name}"
   end
 
   defp resolve_stats!(repo, agent, revision) do
