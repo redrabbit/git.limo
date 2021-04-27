@@ -9,6 +9,8 @@ defmodule GitGud.Web.IssueControllerTest do
   alias GitGud.RepoStorage
   alias GitGud.Issue
 
+  alias GitGud.Web.LayoutView
+
   import GitGud.Web.DateTimeFormatter
 
   setup [:create_user, :create_repo]
@@ -16,12 +18,14 @@ defmodule GitGud.Web.IssueControllerTest do
   test "renders issue creation form if authenticated", %{conn: conn, user: user, repo: repo} do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.issue_path(conn, :new, user, repo))
-    assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Create a new issue</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "fails to render issue creation form if not authenticated", %{conn: conn, user: user, repo: repo} do
     conn = get(conn, Routes.issue_path(conn, :new, user, repo))
-    assert html_response(conn, 401) =~ "Unauthorized"
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
   end
 
   test "creates issue with valid params", %{conn: conn, user: user, repo: repo} do
@@ -37,7 +41,8 @@ defmodule GitGud.Web.IssueControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.issue_path(conn, :create, user, repo), issue: Map.delete(issue_params, :title))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Create a new issue</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   describe "when issues exists" do
@@ -46,8 +51,9 @@ defmodule GitGud.Web.IssueControllerTest do
     test "renders issues", %{conn: conn, user: user, repo: repo, issues: issues} do
       conn = get(conn, Routes.issue_path(conn, :index, user, repo))
       assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Issues</h2>)
-      assert {:ok, html_doc} = Floki.parse_document(html_response(conn, 200))
-      html_issues = Floki.find(html_doc, "table.issues-table tr")
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
+      html_issues = Floki.find(html, "table.issues-table tr")
       for issue <- issues do
         assert {issue_title, issue_info, _issue_labels} = find_html_issue(html_issues, issue)
         assert issue_title == issue.title
