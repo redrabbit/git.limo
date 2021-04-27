@@ -8,17 +8,21 @@ defmodule GitGud.Web.RepoControllerTest do
   alias GitGud.RepoQuery
   alias GitGud.Email
 
+  alias GitGud.Web.LayoutView
+
   setup :create_user
 
   test "renders repository creation form if authenticated", %{conn: conn, user: user} do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.repo_path(conn, :new))
-    assert html_response(conn, 200) =~ ~s(<h1 class="title">Create a new repository</h1>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "fails to render repository creation form if not authenticated", %{conn: conn} do
     conn = get(conn, Routes.repo_path(conn, :new))
-    assert html_response(conn, 401) =~ "Unauthorized"
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
   end
 
   test "creates repository with valid params", %{conn: conn, user: user} do
@@ -36,13 +40,16 @@ defmodule GitGud.Web.RepoControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.repo_path(conn, :create), repo: Map.delete(repo_params, :name))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h1 class="title">Create a new repository</h1>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     conn = post(conn, Routes.repo_path(conn, :create), repo: Map.update!(repo_params, :name, &(&1<>"$")))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h1 class="title">Create a new repository</h1>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     conn = post(conn, Routes.repo_path(conn, :create), repo: Map.update!(repo_params, :name, &binary_part(&1, 0, 2)))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h1 class="title">Create a new repository</h1>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   describe "when user has repositories" do
@@ -50,10 +57,11 @@ defmodule GitGud.Web.RepoControllerTest do
 
     test "renders user repositories", %{conn: conn, user: user, repos: repos} do
       conn = get(conn, Routes.repo_path(conn, :index, user))
-      assert html_response(conn, 200) =~ ~s(<h1 class="title">#{user.login}</h1>)
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">#{user.name}</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
+      html_repo = Enum.map(Floki.find(html, ".card .card-header-title"), &String.trim(Floki.text(&1)))
       for repo <- repos do
-        assert html_response(conn, 200) =~ ~s(<a class="card-header-title" href="#{Routes.codebase_path(conn, :show, user, repo)}">#{repo.name}</a>)
+        assert repo.name in html_repo
       end
     end
   end
@@ -64,19 +72,22 @@ defmodule GitGud.Web.RepoControllerTest do
     test "renders repository edit form if authenticated user is owner", %{conn: conn, user: user, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.repo_path(conn, :edit, user, repo))
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Settings</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     end
 
     test "fails to render repository edit form if not authenticated", %{conn: conn, user: user, repo: repo} do
       conn = get(conn, Routes.repo_path(conn, :edit, user, repo))
-      assert html_response(conn, 401) =~ "Unauthorized"
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+      assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
     end
 
     test "fails to render repository edit form if not authorized", %{conn: conn, user: user1, repo: repo} do
       user2 = User.create!(factory(:user))
       conn = Plug.Test.init_test_session(conn, user_id: user2.id)
       conn = get(conn, Routes.repo_path(conn, :edit, user1, repo))
-      assert html_response(conn, 401) =~ "Unauthorized"
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+      assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
     end
 
     test "updates repository with valid params", %{conn: conn, user: user, repo: repo} do
@@ -94,10 +105,12 @@ defmodule GitGud.Web.RepoControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = put(conn, Routes.repo_path(conn, :update, user, repo), repo: %{name: "my awesome project"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Settings</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
       conn = put(conn, Routes.repo_path(conn, :update, user, repo), repo: %{name: "ap"})
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Settings</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     end
 
     test "deletes repository", %{conn: conn, user: user, repo: repo} do
