@@ -5,9 +5,12 @@ defmodule GitGud.Web.SessionControllerTest do
   alias GitGud.Email
   alias GitGud.User
 
+  alias GitGud.Web.LayoutView
+
   test "renders login form", %{conn: conn} do
     conn = get(conn, Routes.session_path(conn, :new))
-    assert html_response(conn, 200) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   describe "when user exists" do
@@ -25,10 +28,12 @@ defmodule GitGud.Web.SessionControllerTest do
     test "fails to create session with invalid credentials", %{conn: conn, user: user} do
       conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: hd(user.emails).address, password: "qwerty"})
       assert get_flash(conn, :error) == "Wrong login credentials."
-      assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
       conn = post(conn, Routes.session_path(conn, :create), session: %{login_or_email: user.login, password: "qwerty"})
       assert get_flash(conn, :error) == "Wrong login credentials."
-      assert html_response(conn, 401) =~ ~s(<h1 class="title has-text-grey-lighter">Login</h1>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     end
 
     test "deletes session", %{conn: conn, user: user} do
