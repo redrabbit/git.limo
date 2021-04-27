@@ -8,17 +8,21 @@ defmodule GitGud.Web.EmailControllerTest do
   alias GitGud.Email
   alias GitGud.User
 
+  alias GitGud.Web.LayoutView
+
   setup :create_user
 
   test "renders email settings if authenticated", %{conn: conn, user: user} do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.email_path(conn, :index))
-    assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Emails</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "fails to render email settings if not authenticated", %{conn: conn} do
     conn = get(conn, Routes.email_path(conn, :index))
-    assert html_response(conn, 401) =~ "Unauthorized"
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
   end
 
   test "creates emails with valid params", %{conn: conn, user: user} do
@@ -35,7 +39,8 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.email_path(conn, :create), email: Map.update!(email_params, :address, &(&1 <> ".0")))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "verifies email with valid verification token", %{conn: conn, user: user} do
@@ -60,7 +65,8 @@ defmodule GitGud.Web.EmailControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.email_path(conn, :verify, "abcdefg"))
     assert get_flash(conn, :error) == "Invalid verification token."
-    assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   describe "when emails exist" do
@@ -69,9 +75,11 @@ defmodule GitGud.Web.EmailControllerTest do
     test "renders emails", %{conn: conn, user: user, emails: emails} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.email_path(conn, :index))
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Emails</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
+      html_emails = Enum.map(Floki.find(html, "table tr td:first-child"), &String.trim(Floki.text(&1)))
       for email <- emails do
-        assert html_response(conn, 200) =~ email.address
+        assert email.address in html_emails
       end
     end
 
@@ -80,7 +88,8 @@ defmodule GitGud.Web.EmailControllerTest do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = post(conn, Routes.email_path(conn, :create), email: Map.put(email_params, :address, hd(emails).address))
       assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-      assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Emails</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
     end
 
     test "deletes emails", %{conn: conn, user: user, emails: emails} do
