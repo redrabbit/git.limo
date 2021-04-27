@@ -5,17 +5,21 @@ defmodule GitGud.Web.SSHKeyControllerTest do
   alias GitGud.User
   alias GitGud.SSHKey
 
+  alias GitGud.Web.LayoutView
+
   setup :create_user
 
   test "renders ssh authentication key creation form if authenticated", %{conn: conn, user: user} do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = get(conn, Routes.ssh_key_path(conn, :new))
-    assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Add a new SSH key</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "fails to render ssh authentication key creation form if not authenticated", %{conn: conn} do
     conn = get(conn, Routes.ssh_key_path(conn, :new))
-    assert html_response(conn, 401) =~ "Unauthorized"
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
   end
 
   test "creates ssh authentication key with valid params", %{conn: conn, user: user} do
@@ -31,7 +35,8 @@ defmodule GitGud.Web.SSHKeyControllerTest do
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
     conn = post(conn, Routes.ssh_key_path(conn, :create), ssh_key: Map.update!(ssh_key_params, :data, &binary_part(&1, 0, 12)))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
-    assert html_response(conn, 400) =~ ~s(<h2 class="subtitle">Add a new SSH key</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   describe "when ssh authentication keys exist" do
@@ -40,9 +45,11 @@ defmodule GitGud.Web.SSHKeyControllerTest do
     test "renders user ssh authentication keys", %{conn: conn, user: user, ssh_keys: ssh_keys} do
       conn = Plug.Test.init_test_session(conn, user_id: user.id)
       conn = get(conn, Routes.ssh_key_path(conn, :index))
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">SSH keys</h2>)
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
+      html_ssh_keys = Enum.map(Floki.find(html, ".card .card-header-title"), &String.trim(Floki.text(&1)))
       for ssh_key <- ssh_keys do
-        assert html_response(conn, 200) =~ ~s(<code class=\"is-size-7\">#{ssh_key.fingerprint}</code>)
+        assert ssh_key.name in html_ssh_keys
       end
     end
 
