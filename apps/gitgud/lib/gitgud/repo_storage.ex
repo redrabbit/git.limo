@@ -270,8 +270,7 @@ defmodule GitGud.RepoStorage do
   defp meta_reference_issue?(_multi_result), do: false
 
   defp broadcast_issue_event(issue) do
-    GitGud.Web.Endpoint.broadcast("issue:#{issue.id}", "commit_reference", %{event: List.last(issue.events)})
-  # Absinthe.Subscription.publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
+    Phoenix.PubSub.broadcast(GitGud.Web.PubSub, "issue:#{issue.id}", "commit_reference", %{event: List.last(issue.events)})
   end
 
   defp strip_utf8(str) do

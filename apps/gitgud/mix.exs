@@ -41,6 +41,7 @@ defmodule GitGud.Mixfile do
       {:gitrekt, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:phoenix, "~> 1.5", optional: true},
+      {:phoenix_pubsub, "~> 2.0", optional: true},
       {:plug, "~> 1.11", optional: true},
       {:plug_cowboy, "~> 2.4", only: :test},
       {:postgrex, "~> 0.15"},
