@@ -30,7 +30,6 @@ defmodule GitGud.GraphQL.Resolvers do
 
   import Ecto.Query
 
-  import Absinthe.Subscription, only: [publish: 3]
   import Absinthe.Resolution.Helpers, only: [batch: 3]
 
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
@@ -681,13 +680,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: [:comment, :labels]) do
       if authorized?(user, issue, :comment, ctx[:repo_perms]) do
-        case Issue.add_comment(issue, user, body) do
-          {:ok, comment} ->
-            publish(GitGud.Web.Endpoint, comment, issue_comment_create: issue.id)
-            {:ok, comment}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Issue.add_comment(issue, user, body)
       end || {:error, "Unauthorized"}
     end || {:error, "this given issue id '#{id}' is not valid"}
   end
@@ -700,13 +693,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: [:comment, :labels]) do
       if authorized?(user, issue, :close, ctx[:repo_perms]) do
-        case Issue.close(issue, user_id: user.id) do
-          {:ok, issue} ->
-            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
-            {:ok, issue}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Issue.close(issue, user_id: user.id)
       end || {:error, "Unauthorized"}
     end || {:error, "this given issue id '#{id}' is not valid"}
   end
@@ -719,13 +706,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: [:comment, :labels]) do
       if authorized?(user, issue, :reopen, ctx[:repo_perms]) do
-        case Issue.reopen(issue, user_id: user.id) do
-          {:ok, issue} ->
-            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
-            {:ok, issue}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Issue.reopen(issue, user_id: user.id)
       end || {:error, "Unauthorized"}
     end || {:error, "this given issue id '#{id}' is not valid"}
   end
@@ -738,13 +719,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if issue = IssueQuery.by_id(Schema.from_relay_id(id), viewer: user, preload: [:comment, :labels]) do
       if authorized?(user, issue, :edit_title, ctx[:repo_perms]) do
-        case Issue.update_title(issue, title, user_id: user.id) do
-          {:ok, issue} ->
-            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
-            {:ok, issue}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Issue.update_title(issue, title, user_id: user.id)
       end || {:error, "Unauthorized"}
     end || {:error, "this given issue id '#{id}' is not valid"}
   end
@@ -759,13 +734,7 @@ defmodule GitGud.GraphQL.Resolvers do
       if authorized?(user, issue, :edit_labels, ctx[:repo_perms]) do
         labels_push = Map.get(args, :push, [])
         labels_pull = Map.get(args, :pull, [])
-        case Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: user.id) do
-          {:ok, issue} ->
-            publish(GitGud.Web.Endpoint, List.last(issue.events), issue_event: issue.id)
-            {:ok, issue}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Issue.update_labels(issue, {Enum.map(labels_push, &Schema.from_relay_id/1), Enum.map(labels_pull, &Schema.from_relay_id/1)}, user_id: user.id)
       end || {:error, "Unauthorized"}
     end || {:error, "this given issue id '#{id}' is not valid"}
   end
@@ -778,17 +747,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if User.verified?(user) do
       repo = RepoQuery.by_id(Schema.from_relay_id(repo_id), viewer: user)
-      old_line_review = ReviewQuery.commit_line_review(repo, commit_oid, blob_oid, hunk, line, viewer: user)
-      case CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body, with_review: true) do
-        {:ok, comment, line_review} ->
-          unless old_line_review do
-            publish(GitGud.Web.Endpoint, line_review, commit_line_review_create: "#{repo.id}:#{oid_fmt(commit_oid)}")
-          end
-          publish(GitGud.Web.Endpoint, comment, commit_line_review_comment_create: line_review.id)
-          {:ok, comment}
-        {:error, reason} ->
-          {:error, reason}
-      end
+      CommitLineReview.add_comment(repo, commit_oid, blob_oid, hunk, line, user, body)
     end || {:error, "Unauthorized"}
   end
 
@@ -800,14 +759,7 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
       if authorized?(user, comment, :edit, ctx[:repo_perms]) do
-        thread = GitGud.CommentQuery.thread(comment)
-        case Comment.update(comment, user, body: body) do
-          {:ok, comment} ->
-            publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :update))
-            {:ok, comment}
-          {:error, reason} ->
-            {:error, reason}
-        end
+        Comment.update(comment, user, body: body)
       end || {:error, "Unauthorized"}
     end || {:error, "this given comment id '#{id}' is not valid"}
   end
@@ -820,51 +772,10 @@ defmodule GitGud.GraphQL.Resolvers do
     user = ctx[:current_user]
     if comment = CommentQuery.by_id(Schema.from_relay_id(id), viewer: user) do
       if authorized?(user, comment, :delete, ctx[:repo_perms]) do
-        thread = GitGud.CommentQuery.thread(comment)
-        case Comment.delete(comment) do
-          {:ok, comment} ->
-            publish(GitGud.Web.Endpoint, comment, comment_subscriptions(thread, :delete))
-            {:ok, comment}
-        end
+        Comment.delete(comment)
       end || {:error, "Unauthorized"}
     end || {:error, "this given comment id '#{id}' is not valid"}
   end
-
-  @doc """
-  Returns the subscription topic for issue comment events.
-  """
-  @spec issue_topic(map, map) :: {:ok, keyword} | {:error, term}
-  def issue_topic(%{id: id}, _info) do
-    {:ok, topic: Schema.from_relay_id(id)}
-  end
-
-  @doc """
-  Returns the subscription topic for commit line review comment events.
-  """
-  @spec commit_line_review_topic(map, map) :: {:ok, keyword} | {:error, term}
-  def commit_line_review_topic(%{id: id}, _info) do
-    {:ok, topic: Schema.from_relay_id(id)}
-  end
-
-  @doc """
-  Returns the subscription topic for commit line review create event.
-  """
-  @spec commit_line_review_created(map, map) :: {:ok, keyword} | {:error, term}
-  def commit_line_review_created(%{repo_id: repo_id, commit_oid: commit_oid}, _info) do
-    {:ok, topic: "#{Schema.from_relay_id(repo_id)}:#{oid_fmt(commit_oid)}"}
-  end
-
-  @doc """
-  Returns the subscription topic for comment update events.
-  """
-  @spec comment_updated(map, map) :: {:ok, keyword} | {:error, term}
-  def comment_updated(%{id: id} = _args, info), do: {:ok, topic: comment_subscription_topic(id, info)}
-
-  @doc """
-  Returns the subscription topic for comment delete events.
-  """
-  @spec comment_deleted(map, map) :: {:ok, keyword} | {:error, term}
-  def comment_deleted(%{id: id} = _args, info), do: {:ok, topic: comment_subscription_topic(id, info)}
 
   @doc false
   @spec batch_users_by_ids(User.t | nil, [pos_integer]) :: map
@@ -943,14 +854,4 @@ defmodule GitGud.GraphQL.Resolvers do
         {start_offset, limit}
     end
   end
-
-  defp comment_subscription(%Issue{id: id}, action), do: {String.to_atom("issue_comment_#{action}"), id}
-  defp comment_subscription(%CommitLineReview{id: id}, action), do: {String.to_atom("commit_line_review_comment_#{action}"), id}
-
-  defp comment_subscriptions(thread, action), do: [{String.to_atom("comment_#{action}"), comment_subscription_topic(thread)}, comment_subscription(thread, action)]
-
-  defp comment_subscription_topic(%Comment{id: id}), do: id
-  defp comment_subscription_topic(%Issue{id: id}), do: "issue:#{id}"
-  defp comment_subscription_topic(%CommitLineReview{id: id}), do: "commit_line_review:#{id}"
-  defp comment_subscription_topic(node_id, info), do: comment_subscription_topic(Schema.from_relay_id(node_id, info, preload: []))
 end
