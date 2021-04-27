@@ -54,13 +54,12 @@ defmodule GitGud.Issue do
 
   ```elixir
   {:ok, issue} = GitGud.Issue.create(
-    repo_id: repo.id,
-    author_id: user.id,
+    repo,
+    author,
     title: "Help me!",
-    comments: [
-      author_id: user.id,
+    comment: %{
       body: "I really need help."
-    ]
+    }
   )
   ```
 
