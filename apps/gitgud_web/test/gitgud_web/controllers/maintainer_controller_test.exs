@@ -7,17 +7,21 @@ defmodule GitGud.Web.MaintainerControllerTest do
   alias GitGud.Repo
   alias GitGud.RepoStorage
 
+  alias GitGud.Web.LayoutView
+
   setup [:create_users, :create_repo]
 
   test "renders repo maintainer creation settings if authenticated", %{conn: conn, users: [user1, _user2], repo: repo} do
     conn = Plug.Test.init_test_session(conn, user_id: user1.id)
     conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
-    assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Maintainers</h2>)
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+    assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
   end
 
   test "fails to render repository maintainer settings if not authenticated", %{conn: conn, users: [user1, _user2], repo: repo} do
     conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
-    assert html_response(conn, 401) =~ "Unauthorized"
+    assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
   end
 
   test "creates repository maintainer with valid params", %{conn: conn, users: [user1, user2], repo: repo} do
@@ -30,11 +34,15 @@ defmodule GitGud.Web.MaintainerControllerTest do
   describe "when repository maintainer exist" do
     setup :create_maintainer
 
-    test "renders maintainers", %{conn: conn, users: [user1, user2], repo: repo} do
+    test "renders maintainers", %{conn: conn, users: [user1, _user2] = users, repo: repo} do
       conn = Plug.Test.init_test_session(conn, user_id: user1.id)
       conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
-      assert html_response(conn, 200) =~ ~s(<h2 class="subtitle">Maintainers</h2>)
-      assert html_response(conn, 200) =~ user2.login
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 200))
+      assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
+      html_maintainers = Enum.map(Floki.find(html, "table tr td:first-child"), &String.trim(Floki.text(&1)))
+      for user <- users do
+        assert user.login in html_maintainers
+      end
     end
 
     test "updates maintainer permission with valid permission", %{conn: conn, users: [user1, user2], repo: repo, maintainer: maintainer} do
