@@ -197,6 +197,17 @@ defmodule GitGud.Web.IssueLive do
     }
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{event: "commit_reference", payload: %{event: event}}, socket) do
+    issue = socket.assigns.issue
+    issue = struct(issue, events: List.insert_at(issue.events, -1, event))
+    {
+      :noreply,
+      socket
+      |> assign(:issue, issue)
+      |> assign(:issue_feed, [{event, length(issue.events)}])
+    }
+  end
+
   def handle_info(%Phoenix.Socket.Broadcast{event: "add_comment", payload: %{comment_id: comment_id}}, socket) do
     comment = CommentQuery.by_id(comment_id, preload: :author)
     {

@@ -60,22 +60,6 @@ defmodule GitGud.IssueTest do
       }
     end
 
-    test "update issue labels", %{repo: repo, issue: issue1} do
-      labels_ids = Enum.map(repo.issue_labels, &(&1.id))
-      Issue.update_labels!(issue1, {Enum.drop(labels_ids, 1), []})
-      push = Enum.take(labels_ids, 1)
-      pull = Enum.slice(labels_ids, 1..2)
-      assert {:ok, issue2} = Issue.update_labels(issue1, {push, pull})
-      assert length(issue2.labels) == length(labels_ids) - 2
-      refute Enum.find(issue2.labels, &(&1.id in pull))
-      assert List.last(issue2.events) == %{
-        "timestamp" => NaiveDateTime.to_iso8601(issue2.updated_at),
-        "push" => push,
-        "pull" => pull,
-        "type" => "labels_update"
-      }
-    end
-
     test "closes issue", %{issue: issue1} do
       assert {:ok, issue2} = Issue.close(issue1)
       assert issue2.status == "close"
@@ -103,6 +87,22 @@ defmodule GitGud.IssueTest do
         "push" => push,
         "pull" => [],
         "timestamp" => NaiveDateTime.to_iso8601(issue2.updated_at),
+        "type" => "labels_update"
+      }
+    end
+
+    test "updates issue labels", %{repo: repo, issue: issue1} do
+      labels_ids = Enum.map(repo.issue_labels, &(&1.id))
+      Issue.update_labels!(issue1, {Enum.drop(labels_ids, 1), []})
+      push = Enum.take(labels_ids, 1)
+      pull = Enum.slice(labels_ids, 1..2)
+      assert {:ok, issue2} = Issue.update_labels(issue1, {push, pull})
+      assert length(issue2.labels) == length(labels_ids) - 2
+      refute Enum.find(issue2.labels, &(&1.id in pull))
+      assert List.last(issue2.events) == %{
+        "timestamp" => NaiveDateTime.to_iso8601(issue2.updated_at),
+        "push" => push,
+        "pull" => pull,
         "type" => "labels_update"
       }
     end

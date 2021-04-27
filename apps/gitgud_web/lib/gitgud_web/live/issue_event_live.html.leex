@@ -65,4 +65,19 @@
       <% end %>
       <%= datetime_format(NaiveDateTime.from_iso8601!(timestamp), "{relative}") %>
     </div>
+  <% %{
+    "type" => "commit_reference",
+    "commit_hash" => commit_oid,
+    "timestamp" => timestamp,
+    "user" => user
+  } -> %>
+    <div class="timeline-marker is-icon">
+      <i class="fa fa-code-commit"></i>
+    </div>
+    <div class="timeline-content">
+      <a href="<%= Routes.user_path(@socket, :show, user) %>" class="has-text-black"><%= user.login %></a>
+      referenced this issue in commit
+      <a href="<%= Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, commit_oid) %>"><code class="has-text-link"><%= String.slice(commit_oid, 0, 7) %></code></a>
+      <%= datetime_format(NaiveDateTime.from_iso8601!(timestamp), "{relative}") %>
+    </div>
 <% end %>
