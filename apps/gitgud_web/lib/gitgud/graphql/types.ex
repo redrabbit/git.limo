@@ -216,10 +216,12 @@ defmodule GitGud.GraphQL.Types do
     @desc "The author of the issue."
     field :author, non_null(:user), resolve: &Resolvers.issue_author/3
 
+    field :comment, non_null(:comment)
+
     @desc "A list of comments for this issue."
-    connection field :comments, node_type: :comment do
+    connection field :replies, node_type: :comment do
       middleware GitGud.GraphQL.RepoMiddleware
-      resolve &Resolvers.issue_comments/2
+      resolve &Resolvers.issue_replies/2
     end
 
     @desc "A list of labels for this issue."
@@ -340,18 +342,6 @@ defmodule GitGud.GraphQL.Types do
     @desc "The root tree of this reference."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
 
-    @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
-      arg :path, :string, description: "The path of the tree entry."
-      resolve &Resolvers.git_tree_entry_with_last_commit/2
-    end
-
-    @desc "A list of tree entries and their last commit."
-    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
-      arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_with_last_commit/2
-    end
-
     @desc "The HTTP URL for this reference."
     field :url, non_null(:string), resolve: &Resolvers.url/3
   end
@@ -386,19 +376,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The root tree of this commit."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
-
-
-    @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
-      arg :path, non_null(:string), description: "The path of the tree entry."
-      resolve &Resolvers.git_tree_entry_with_last_commit/2
-    end
-
-    @desc "The tree entries and their last commit."
-    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
-      arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_with_last_commit/2
-    end
 
     @desc "A single commit line review."
     field :line_review, non_null(:commit_line_review) do
@@ -468,18 +445,6 @@ defmodule GitGud.GraphQL.Types do
 
     @desc "The root tree of this tag."
     field :tree, non_null(:git_tree), resolve: &Resolvers.git_tree/3
-
-    @desc "A tree entry and it's last commit."
-    field :tree_entry_with_last_commit, non_null(:git_tree_entry_with_last_commit) do
-      arg :path, :string, description: "The path of the tree entry."
-      resolve &Resolvers.git_tree_entry_with_last_commit/2
-    end
-
-    @desc "The tree entries and their last commit."
-    connection field :tree_entries_with_last_commit, node_type: :git_tree_entry_with_last_commit do
-      arg :path, :string, description: "The path of the tree."
-      resolve &Resolvers.git_tree_entries_with_last_commit/2
-    end
   end
 
   @desc "Represents a Git tree."
@@ -545,20 +510,14 @@ defmodule GitGud.GraphQL.Types do
       resolve &Resolvers.comment_revisions/2
     end
 
+    @desc "A list of permissions for this issue."
+    field :permissions, list_of(:string), resolve: &Resolvers.comment_permissions/3
+
     @desc "The creation timestamp of the comment."
     field :inserted_at, non_null(:naive_datetime)
 
     @desc "The last update timestamp of the comment."
     field :updated_at, non_null(:naive_datetime)
-
-    @desc "Returns `true` if the current viewer can edit the comment; otherwise, returns `false`."
-    field :editable, non_null(:boolean), resolve: &Resolvers.comment_editable/3
-
-    @desc "Returns `true` if the current viewer can delete the comment; otherwise, returns `false`."
-    field :deletable, non_null(:boolean), resolve: &Resolvers.comment_deletable/3
-
-    @desc "The thread this comment belongs to."
-    field :thread, non_null(:comment_thread), resolve: &Resolvers.comment_thread/3
 
     @desc "The repository this comment belongs to."
     field :repo, non_null(:repo), resolve: &Resolvers.comment_repo/3
