@@ -11,27 +11,32 @@ defmodule GitGud.Web.ReactComponents do
   Generates a `:div` containing the named React component with no props or attrs.
 
   Returns safe html: `{:safe, [60, "div", ...]}`.
+
   You can utilize this in your Phoenix views:
   ```
   <%= GitGud.Web.React.react_component("MyComponent") %>
   ```
+
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component.
   """
+  @spec react_component(binary) :: iodata
   def react_component(name), do: react_component(name, %{})
 
   @doc """
   Generates a `:div` containing the named React component with the given `props`.
 
   Returns safe html: `{:safe, [60, "div", ...]}`.
-  Props can be passed in as a Map or a List.
+
   You can utilize this in your Phoenix views:
   ```
   <%= GitGud.Web.React.react_component("MyComponent", %{language: "elixir", awesome: true}) %>
   ```
+
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component and then pass in the `props` specified.
   """
+  @spec react_component(binary, Keyword.t) :: iodata
   def react_component(name, props) when is_list(props), do: react_component(name, Map.new(props), [])
   def react_component(name, props) when is_map(props), do: react_component(name, props, [])
 
@@ -42,18 +47,34 @@ defmodule GitGud.Web.ReactComponents do
 
   You can utilize this in your Phoenix views:
   ```
-  <%= GitGud.Web.React.react_component(
-        "MyComponent",
-        %{language: "elixir", awesome: true},
-        class: "my-component"
-      ) %>
+  <%= GitGud.Web.React.react_component("MyComponent", %{language: "elixir", awesome: true}, class: "my-component") %>
   ```
+
   The resulting `<div>` tag is formatted specifically for the included javascript
   helper to then turn into your named React component and then pass in the `props` specified.
   """
+  @spec react_component(binary, Keyword.t, Keyword.t) :: iodata
   def react_component(name, props, attrs) when is_list(props), do: react_component(name, Map.new(props), attrs)
   def react_component(name, props, attrs) when is_map(props), do: react_component(name, props, attrs, do: "")
 
+  @doc """
+  Generates a `:div` containing the named React component with the given `props` and `attrs`.
+
+  Returns safe html: `{:safe, [60, "div", ...]}`.
+
+  You can utilize this in your Phoenix views:
+  ```
+  <%= GitGud.Web.React.react_component("MyComponent", %{language: "elixir", awesome: true}, class: "my-component") do %>
+    <p>
+      <em>this text is rendered until the component is initialized</em>
+    </p>
+  <% end %>
+  ```
+
+  The resulting `<div>` tag is formatted specifically for the included javascript
+  helper to then turn into your named React component and then pass in the `props` specified.
+  """
+  def react_component(name, props, attrs, inner_block)
   def react_component(name, props, attrs, do: block) when is_list(props), do: react_component(name, Map.new(props), attrs, do: block)
   def react_component(name, props, attrs, do: block) do
     {tag, attrs} = Keyword.pop(attrs, :tag, :div)
