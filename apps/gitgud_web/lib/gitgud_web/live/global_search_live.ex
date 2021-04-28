@@ -39,7 +39,7 @@ defmodule GitGud.Web.GlobalSearchLive do
         end
       search != socket.assigns.search ->
         user_results = UserQuery.search(search, viewer: socket.assigns.current_user)
-        repo_results = RepoQuery.search(search, viewer: socket.assigns.current_user)
+        repo_results = RepoQuery.search(search, viewer: socket.assigns.current_user, preload: :owner)
         {:noreply, assign(socket, search: search, search_results: user_results ++ repo_results)}
       true ->
         {:noreply, socket}
