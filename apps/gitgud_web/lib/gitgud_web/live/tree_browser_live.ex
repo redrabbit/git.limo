@@ -250,18 +250,18 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_stats!(repo, agent, revision) do
     ref_groups = Enum.group_by(repo.stats.refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
     %{
-      commits: resolve_stats_revision_history_count!(agent, revision, repo.stats.refs),
+      commits: resolve_stats_revision_ancestor_count!(agent, revision, repo.stats.refs),
       branches: Enum.count(Map.get(ref_groups, "heads", [])),
       tags: Enum.count(Map.get(ref_groups, "tags", [])),
       contributors: RepoQuery.count_contributors(repo)
     }
   end
 
-  defp resolve_stats_revision_history_count!(_agent, %GitRef{} = revision, refs) do
-    get_in(refs, [to_string(revision), "count"]) || raise RuntimeError, message: "cannot retrieve number of ancestors for #{revision}"
+  defp resolve_stats_revision_ancestor_count!(_agent, %GitRef{} = revision, refs) do
+    get_in(refs, [to_string(revision), "ancestor_count"]) || raise RuntimeError, message: "cannot retrieve number of ancestors for #{revision}"
   end
 
-  defp resolve_stats_revision_history_count!(agent, revision, _refs) do
+  defp resolve_stats_revision_ancestor_count!(agent, revision, _refs) do
     case GitAgent.history_count(agent, revision) do
       {:ok, commit_count} ->
         commit_count
