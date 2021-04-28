@@ -442,7 +442,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, history} <- GitAgent.history(agent, commit) do
+           {:ok, history} <- GitAgent.history(agent, commit, stream_chunk_size: 21) do
         page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
         case resolve_commits_infos(agent, page.slice) do
           {:ok, commits_infos} ->
@@ -468,7 +468,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path)) do
+           {:ok, history} <- GitAgent.history(agent, object, pathspec: Path.join(tree_path), stream_chunk_size: 21) do
         page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
         if tree_entry = Enum.find_value(page.slice, &commit_tree_entry(agent, &1, tree_path)) do
           case resolve_commits_infos(agent, page.slice) do
@@ -496,7 +496,7 @@ defmodule GitGud.Web.CodebaseController do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, head} <- GitAgent.head(agent),
            {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
-           {:ok, history} <- GitAgent.history(agent, head) do
+           {:ok, history} <- GitAgent.history(agent, head, stream_chunk_size: 21) do
         page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
         case resolve_commits_infos(agent, page.slice) do
           {:ok, commits_infos} ->
