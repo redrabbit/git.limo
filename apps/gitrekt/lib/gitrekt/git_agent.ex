@@ -619,10 +619,7 @@ defmodule GitRekt.GitAgent do
   end
 
   def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config} = state) do
-    {head, tail} = StreamSplit.take_and_drop(stream, chunk_size)
-    if length(head) == chunk_size,
-      do: {:reply, {head, tail}, state, config.idle_timeout},
-    else: {:reply, {head, :halt}, state, config.idle_timeout}
+    {:reply, call_stream_next(stream, chunk_size), state, config.idle_timeout}
   end
 
   def handle_call(op, _from, {handle, %{cache: cache} = config} = state) do
@@ -960,6 +957,13 @@ defmodule GitRekt.GitAgent do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def call_stream_next(stream, chunk_size) do
+    {head, tail} = StreamSplit.take_and_drop(stream, chunk_size)
+    if length(head) == chunk_size,
+      do: {head, tail},
+    else: {head, :halt}
   end
 
   defp telemetry(event_name, op, measurements, meta \\ %{})
@@ -1350,7 +1354,9 @@ defmodule GitRekt.GitAgent do
       fn :halt ->
           {:halt, agent}
          stream ->
-          telemetry(:stream, op, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end, %{chunk_size: chunk_size})
+          if agent == self(),
+            do: call_stream_next(stream, chunk_size),
+          else: telemetry(:stream, op, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end, %{chunk_size: chunk_size})
       end,
       &(&1)
     )
