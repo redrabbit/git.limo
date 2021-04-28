@@ -201,7 +201,7 @@ defmodule GitGud.RepoStorage do
         case Enum.find_value(commits, fn {oid, {user, refs}} -> number in refs && {oid, user} end) do
           {oid, user} ->
             event = %{type: "commit_reference", commit_hash: Git.oid_fmt(oid), user_id: user.id, repo_id: repo.id, timestamp: NaiveDateTime.utc_now()}
-            Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), push: [events: event])
+            Multi.update_all(multi, {:issue_reference, id}, from(i in Issue, where: i.id == ^id, select: i), set: [updated_at: event.timestamp], push: [events: event])
           nil ->
             multi
         end
