@@ -43,7 +43,7 @@ defmodule GitGud.Mixfile do
       {:phoenix, "~> 1.5", optional: true},
       {:phoenix_pubsub, "~> 2.0", optional: true},
       {:plug, "~> 1.11", optional: true},
-      {:plug_cowboy, "~> 2.4", only: :test},
+      {:plug_cowboy, "~> 2.5", only: :test},
       {:postgrex, "~> 0.15"},
       {:telemetry, "~> 0.4"},
     ]

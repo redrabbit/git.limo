@@ -52,7 +52,7 @@ defmodule GitGud.Web.Mixfile do
       {:phoenix_live_view, "~> 0.15"},
       {:phoenix_pubsub, "~> 2.0"},
       {:plug, "~> 1.11"},
-      {:plug_cowboy, "~> 2.4"},
+      {:plug_cowboy, "~> 2.5"},
       {:timex, "~> 3.6"},
     ]
   end
