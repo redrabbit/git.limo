@@ -153,14 +153,14 @@ defmodule GitGud.GraphQL.Schema do
 
     @desc "Update a comment."
     field :update_comment, type: :comment do
-      arg :id, non_null(:id), description: "The ID of the comment."
-      arg :body, non_null(:string), description: "The body of the comment."
+      arg :id, non_null(:id), description: "The comment ID."
+      arg :body, non_null(:string), description: "The new body of the comment."
       resolve &Resolvers.update_comment/2
     end
 
     @desc "Delete a comment."
     field :delete_comment, type: :comment do
-      arg :id, non_null(:id), description: "The ID of the comment."
+      arg :id, non_null(:id), description: "The comment ID."
       resolve &Resolvers.delete_comment/2
     end
   end

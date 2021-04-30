@@ -9,7 +9,21 @@ config :gitgud_web, GitGud.Web.Endpoint,
   check_origin: false,
   watchers: [
     node: [
-      "node_modules/webpack/bin/webpack.js", "--mode", "development",  "--watch", "--color",
+      "node_modules/webpack/bin/webpack.js",
+      "--mode",
+      "development",
+      "--color",
+      "--watch",
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    node: [
+      "node_modules/relay-compiler/bin/relay-compiler",
+      "--src",
+      "./js",
+      "--schema",
+      "../priv/graphql/schema.graphql",
+      "--quiet",
+      "--watch",
       cd: Path.expand("../assets", __DIR__)
     ]
   ],

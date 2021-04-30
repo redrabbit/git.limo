@@ -17,7 +17,7 @@ function highlightTable(table) {
     }
     const line = row.querySelector("td.code .code-inner:not(.highlight)")
     if(line) {
-      const result = langDetect ? hljs.highlight(lang, line.textContent, true, state) : hljs.highlightAuto(line.textContent)
+      const result = langDetect ? hljs.highlight(line.textContent, {language: lang, ignoreIllegals: true}, state) : hljs.highlightAuto(line.textContent)
       state = result.top
       line.innerHTML = result.value
     }

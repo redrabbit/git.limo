@@ -8,8 +8,8 @@ defmodule GitGud.GraphQL.SchemaGenerator do
   checksum_path = Path.join([:code.priv_dir(:gitgud_web), "graphql", "schema.md5"])
   checksum = Enum.join(Enum.map(modules, &apply(&1, :__info__, [:md5])))
   if !File.exists?(checksum_path) || File.read!(checksum_path) != checksum do
-    schema_path = Path.join([:code.priv_dir(:gitgud_web), "graphql", "schema.json"])
-    Mix.Tasks.Absinthe.Schema.Json.run([schema_path, "--json-codec", "Jason"])
+    schema_path = Path.join([:code.priv_dir(:gitgud_web), "graphql", "schema.graphql"])
+    Mix.Tasks.Absinthe.Schema.Sdl.run([schema_path])
     File.write!(checksum_path, checksum)
   end
 end

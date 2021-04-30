@@ -24,7 +24,7 @@ npm-debug.log
 /priv/static/
 
 # GraphQL schema export for Relay components.
-/priv/graphql/schema.json
+/priv/graphql/schema.graphql
 /priv/graphql/schema.md5
 
 # Files matching config/*.secret.exs pattern contain sensitive
