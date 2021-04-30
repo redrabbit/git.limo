@@ -45,6 +45,7 @@ defmodule GitGud.SSHServerTest do
   describe "when repository is empty" do
     setup [:create_ssh_key, :create_repo, :create_workdir]
 
+    @tag :skip
     test "pushes initial commit", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       readme_content = "##{repo.name}\r\n\r\n#{repo.description}"
       assert {_output, 0} = System.cmd("git", ["init"], cd: workdir)

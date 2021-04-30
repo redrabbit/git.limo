@@ -47,6 +47,7 @@ defmodule GitGud.SmartHTTPBackendTest do
   describe "when repository is empty" do
     setup [:start_http_backend, :create_workdir]
 
+    @tag :skip
     test "pushes initial commit", %{user: user, repo: repo, workdir: workdir} do
       readme_content = "##{repo.name}\r\n\r\n#{repo.description}"
       assert {_output, 0} = System.cmd("git", ["init"], cd: workdir)
