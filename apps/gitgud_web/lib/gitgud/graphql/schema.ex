@@ -56,7 +56,7 @@ defmodule GitGud.GraphQL.Schema do
   @doc """
   Evaluates a query `document`.
   """
-  @spec run(binary | Absinthe.Language.Source.t | Absinthe.Language.Document.t, Absinthe.run_opts) :: Absinthe.run_result
+  @spec run(binary | term, Absinthe.run_opts) :: Absinthe.run_result
   def run(document, opts \\ []), do: Absinthe.run(document, __MODULE__, opts)
 
   @desc """

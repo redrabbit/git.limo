@@ -1,4 +1,4 @@
-# Git Gud
+# Git.limo
 
 [![Elixir CI](https://github.com/almightycouch/gitgud/workflows/Elixir%20CI/badge.svg)](https://github.com/almightycouch/gitgud/actions?query=workflow%3A%22Elixir+CI%22)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/almightycouch/gitgud/master/LICENSE)
@@ -18,12 +18,6 @@ A Git source code management tool written in Elixir.
 * [ ] Continuous integration.
 
 See the [Getting Started](http://almightycouch.com/gitgud/docs/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud/docs).
-
----
-
-Visit **https://git.limo** for a live demo.
-
-*Monitoring and error tracking is kindly provided by [AppSignal](https://appsignal.com). 💖*
 
 ## Install dependencies
 

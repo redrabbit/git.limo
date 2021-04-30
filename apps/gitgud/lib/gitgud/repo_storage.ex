@@ -59,7 +59,7 @@ defmodule GitGud.RepoStorage do
   This function is called by `GitGud.SSHServer` and `GitGud.SmartHTTPBackend` when pushing changes. It is
   responsible for writing Git objects and references to the underlying ODB.
   """
-  @spec push_pack(Repo.t, User.t, ReceivePack.t) :: {:ok, GitAgent.t, [ReceivePack.cmd], [any]} | {:error, term}
+  @spec push_pack(Repo.t, User.t, ReceivePack.t) :: {:ok, GitAgent.agent, [ReceivePack.cmd], [any]} | {:error, term}
   def push_pack(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
     with  :ok <- check_pack(repo, user, receive_pack),
          {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),

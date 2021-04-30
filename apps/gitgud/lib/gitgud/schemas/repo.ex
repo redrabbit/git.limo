@@ -188,7 +188,7 @@ defmodule GitGud.Repo do
   @doc """
   Updates the given `repo` with the given push `cmds`.
   """
-  @spec push(t, User.t, GitAgent.t, [ReceivePack.cmd]) :: {:ok, t} | {:error, term}
+  @spec push(t, User.t, GitAgent.agent, [ReceivePack.cmd]) :: {:ok, t} | {:error, term}
   def push(%__MODULE__{stats: nil} = repo, user, agent, cmds), do: push(struct(repo, stats: struct(Stats, refs: %{})), user, agent, cmds)
   def push(%__MODULE__{stats: stats} = repo, user, agent, cmds) when is_struct(stats, Ecto.Association.NotLoaded), do: push(DB.preload(repo, :stats), user, agent, cmds)
   def push(%__MODULE__{stats: stats} = repo, _user, agent, cmds) do
@@ -206,7 +206,7 @@ defmodule GitGud.Repo do
   @doc """
   Similar to `push/4`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec push!(t, User.t, GitAgent.t, [ReceivePack.cmd]) :: t
+  @spec push!(t, User.t, GitAgent.agent, [ReceivePack.cmd]) :: t
   def push!(repo, user, agent, cmds) do
     case push(repo, user, agent, cmds) do
       {:ok, repo} ->

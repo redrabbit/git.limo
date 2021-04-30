@@ -5,6 +5,10 @@ defmodule GitGud.ReleaseTasks do
 
   @app :gitgud
 
+  @doc """
+  Runs all pending migrations.
+  """
+  @spec migrate() :: :ok
   def migrate do
     load_app()
     for repo <- repos() do
@@ -13,6 +17,10 @@ defmodule GitGud.ReleaseTasks do
     :ok
   end
 
+  @doc """
+  Reverts applied migrations down to and including version.
+  """
+  @spec rollback(module, term) :: :ok
   def rollback(repo, version) do
     load_app()
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))

@@ -1,4 +1,4 @@
-defmodule GitGud.Umbrella.Mixfile do
+defmodule GitLimo.Umbrella.Mixfile do
   use Mix.Project
 
   @version "0.3.6"
@@ -7,16 +7,18 @@ defmodule GitGud.Umbrella.Mixfile do
     [
       apps_path: "apps",
       version: @version,
-      name: "Git Gud",
+      name: "git.limo",
       start_permanent: Mix.env == :prod,
       aliases: aliases(),
       deps: deps(),
       docs: docs(),
       releases: [
-        gitgud: [
-          applications: [gitgud_web: :permanent, runtime_tools: :permanent],
+        git_limo: [
+          application: [
+            gitgud_web: :permanent,
+            runtime_tools: :permanent
+          ],
           include_executables_for: [:unix],
-          steps: [:assemble, :tar]
         ]
       ]
     ]
@@ -44,6 +46,7 @@ defmodule GitGud.Umbrella.Mixfile do
   defp docs do
     [
       main: "getting-started",
+      logo: "apps/gitgud_web/assets/static/images/logo.svg",
       source_ref: "v#{@version}",
       canonical: "https://git.limo",
       source_url: "https://github.com/almightycouch/gitgud",
@@ -53,7 +56,8 @@ defmodule GitGud.Umbrella.Mixfile do
       groups_for_modules: [
         "Database": [
           GitGud.DB,
-          GitGud.DBQueryable
+          GitGud.DBQueryable,
+          GitGud.ReleaseTasks
         ],
         "Authorization": [
           GitGud.Authorization,
@@ -80,6 +84,7 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.RepoQuery,
           GitGud.ReviewQuery,
           GitGud.SSHKey,
+          GitGud.Stats,
           GitGud.User,
           GitGud.UserQuery
         ],
@@ -151,7 +156,6 @@ defmodule GitGud.Umbrella.Mixfile do
           GitGud.Web.XForwardedForPlug
         ],
         "Git low-level APIs": [
-          GitRekt,
           GitRekt.Cache,
           GitRekt.Git,
           GitRekt.GitAgent,
