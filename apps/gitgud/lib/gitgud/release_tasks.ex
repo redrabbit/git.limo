@@ -1,5 +1,7 @@
 defmodule GitGud.ReleaseTasks do
-  @moduledoc false
+  @moduledoc """
+  Conveniences for executing DB release tasks when run in production without Mix installed.
+  """
 
   @app :gitgud
 
