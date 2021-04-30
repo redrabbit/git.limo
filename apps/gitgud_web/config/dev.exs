@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # The watchers configuration can be used to run external
 # watchers to your application.
@@ -41,9 +41,6 @@ config :gitgud_web, GitGud.Web.Endpoint,
 config :gitgud_web, GitGud.Mailer,
   adapter: Bamboo.LocalAdapter,
   open_email_in_browser_url: "http://localhost:4000/sent_emails"
-
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # Configure your database
 config :gitgud, GitGud.DB,
@@ -20,6 +20,3 @@ config :gitgud,
   ssh_port: 9899,
   ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
   git_root: Path.absname("test/data/git", Path.dirname(__DIR__))
-
-# Print only warnings and errors during test
-config :logger, level: :warn

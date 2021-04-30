@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # General application configuration
 config :gitgud_web,
@@ -16,11 +16,6 @@ config :gitgud_web, GitGud.Web.Endpoint,
 # Configure generators
 config :gitgud_web, :generators,
   context_app: :gitgud
-
-# Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
 
 # Absinthe GraphQL schema
 config :absinthe, schema: GitGud.GraphQL.Schema
