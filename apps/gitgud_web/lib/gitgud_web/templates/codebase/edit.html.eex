@@ -23,7 +23,7 @@
     </div>
   </nav>
 
-  <div class="blob-edit">
+  <div class="card blob-edit">
     <div class="tabs is-boxed">
       <ul>
         <li class="is-active">
@@ -43,7 +43,7 @@
 
     <div class="field">
       <div class="control">
-        <%= textarea f, :content, class: "textarea code", rows: 20 %>
+        <%= textarea f, :content, class: "textarea is-white code", rows: 20 %>
       </div>
       <%= error_tag f, :content %>
     </div>

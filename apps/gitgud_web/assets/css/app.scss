@@ -106,30 +106,40 @@ table.table {
 .blob-edit {
   margin-bottom: 1.5rem;
   .tabs.is-boxed {
+    overflow: inherit;
     margin-bottom: 0;
 
     ul {
-      border-color: $grey-lighter;
-      li {
-        a {
-          border-top-left-radius: 2px;
-          border-top-right-radius: 2px;
-        }
+      line-height: 31px;
+      background-color: $white-ter;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
 
-        &.is-active a {
-          background-color: $white;
-          border-color: $grey-lighter;
-          border-left-color: $grey-lighter;
+      li {
+        border-top-right-radius: 0;
+        border-top-right-radius: 0;
+        &.is-active {
+          &:first-child {
+            a {
+              border-color: $white;
+              border-top-right-radius: 0;
+              border-right-color: $grey-lighter;
+            }
+          }
+          a {
+            background-color: $white;
+
+          }
         }
       }
     }
   }
 
-  textarea {
-    border-top-width: 0;
-    border-radius: 0 0 2px 2px;
-    border-color: $grey-lighter !important;
-    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1);
+  textarea.textarea {
+    @extend .is-white;
+    box-shadow: none;
+    padding-top: 13px;
+    padding-left: 59px;
   }
 }
 

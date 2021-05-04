@@ -16,7 +16,6 @@
         </div>
       </div>
     </div>
-    </div>
     <div class="level-right">
       <div class="level-item">
         <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo.name, @revision, @tree_path) %>" class="button">Cancel</a>
@@ -24,7 +23,7 @@
     </div>
   </nav>
 
-  <div class="blob-edit">
+  <div class="card blob-edit">
     <div class="tabs is-boxed">
       <ul>
         <li class="is-active">
