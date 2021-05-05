@@ -17,9 +17,9 @@
     "highlight.js": "^10.7.2",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
-    "phoenix": "file:../../../deps/phoenix",
-    "phoenix_html": "file:../../../deps/phoenix_html",
-    "phoenix_live_view": "file:../../../deps/phoenix_live_view",
+    "phoenix": "^1.5.8",
+    "phoenix_html": "^2.14.2",
+    "phoenix_live_view": "^0.15.5",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-relay": "^11.0.2"
