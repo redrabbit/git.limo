@@ -14,7 +14,7 @@ defmodule GitLimo.Umbrella.Mixfile do
       docs: docs(),
       releases: [
         git_limo: [
-          application: [
+          applications: [
             gitgud_web: :permanent,
             runtime_tools: :permanent
           ],
