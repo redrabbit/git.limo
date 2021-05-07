@@ -33,22 +33,22 @@ defmodule GitGud.OAuth2.Provider do
   Creates a new OAuth2.0 provider with the given `params`.
 
   ```elixir
-  {:ok, provider} = GitGud.OAuth2.Provider.create(auth_id: user.account.id, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
+  {:ok, provider} = GitGud.OAuth2.Provider.create(account, provider: "github", provider_id: 12345, token: "2c0d6d13ca2e34ac557e181373f120d15c4fdd21")
   ```
 
   This function validates the given `params` using `changeset/2`.
   """
-  @spec create(map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
-  def create(params) do
-    DB.insert(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create(Account.t, map|keyword) :: {:ok, t} | {:error, Ecto.Changeset.t}
+  def create(account, params) do
+    DB.insert(changeset(%__MODULE__{account_id: account.id}, Map.new(params)))
   end
 
   @doc """
-  Similar to `create/1`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
+  Similar to `create/2`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
   """
-  @spec create!(map|keyword) :: t
-  def create!(params) do
-    DB.insert!(changeset(%__MODULE__{}, Map.new(params)))
+  @spec create!(Account.t, map|keyword) :: t
+  def create!(account, params) do
+    DB.insert!(changeset(%__MODULE__{account_id: account.id}, Map.new(params)))
   end
 
   @doc """
