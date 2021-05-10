@@ -556,7 +556,7 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
-        config = Map.put(config, :cache, init_cache(path, []))
+        config = Map.put_new_lazy(config, :cache, fn -> init_cache(path, []) end)
         {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
