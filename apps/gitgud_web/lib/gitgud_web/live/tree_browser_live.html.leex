@@ -78,7 +78,7 @@
             </div>
             <%= if @current_user do %>
               <div class="control ssh-clone is-hidden">
-                <%= case Application.get_env(:gitgud, :ssh_port, 22) do %>
+                <%= case Keyword.get(Application.get_env(:gitgud, GitGud.SSHServer), :port, 22) do %>
                   <% 22 -> %>
                     <input class="input" type="text" value="<%= "#{@current_user.login}@#{GitGud.Web.Endpoint.struct_url().host}:#{@repo.owner_login}/#{@repo.name}.git" %>" readonly />
                   <% ssh_port ->%>

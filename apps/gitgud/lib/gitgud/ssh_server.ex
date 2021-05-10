@@ -59,8 +59,9 @@ defmodule GitGud.SSHServer do
   """
   @spec child_spec([]) :: Supervisor.Spec.spec
   def child_spec([] = _args) do
-    port = Application.fetch_env!(:gitgud, :ssh_port)
-    key_path = Application.fetch_env!(:gitgud, :ssh_keys)
+    config_opts = Application.get_env(:gitgud, __MODULE__)
+    port = Keyword.fetch!(config_opts, :port)
+    key_path = Keyword.fetch!(config_opts, :host_key_dir)
     %{id: __MODULE__,
       start: {:ssh, :daemon, [port, daemon_opts(key_path)]},
       restart: :permanent,

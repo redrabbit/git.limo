@@ -87,7 +87,7 @@ defmodule GitGud.RepoStorage do
   """
   @spec workdir(Repo.t) :: Path.t
   def workdir(%Repo{} = repo) do
-    Path.join([Application.fetch_env!(:gitgud, :git_root), repo.owner_login, repo.name])
+    Path.join([Keyword.fetch!(Application.get_env(:gitgud, __MODULE__), :git_root), repo.owner_login, repo.name])
   end
 
   #

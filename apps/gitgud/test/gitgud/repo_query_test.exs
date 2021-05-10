@@ -104,7 +104,7 @@ defmodule GitGud.RepoQueryTest do
     users = Enum.take(Stream.repeatedly(fn -> User.create!(factory(:user)) end), 2)
     on_exit fn ->
       for user <- users do
-        File.rmdir(Path.join(Application.fetch_env!(:gitgud, :git_root), user.login))
+        File.rmdir(Path.join(Keyword.fetch!(Application.get_env(:gitgud, RepoStorage), :git_root), user.login))
       end
     end
     Map.put(context, :users, users)

@@ -9,7 +9,10 @@ config :gitgud, GitGud.DB,
   pool_size: 10
 
 # Configure your SSH server
-config :gitgud,
-  ssh_port: 8989,
-  ssh_keys: Path.absname("priv/ssh-keys", Path.dirname(__DIR__)),
+config :gitgud, GitGud.SSHServer,
+  port: 8989,
+  host_key_dir: Path.absname("priv/ssh-keys", Path.dirname(__DIR__))
+
+# Configure your Git storage location
+config :gitgud, GitGud.RepoStorage,
   git_root: Path.absname("priv/git-data", Path.dirname(__DIR__))

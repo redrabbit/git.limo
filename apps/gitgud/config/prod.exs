@@ -9,7 +9,10 @@ config :gitgud, GitGud.DB,
   pool_size: 10
 
 # Configure your SSH server
-config :gitgud,
-  ssh_port: 22,
-  ssh_keys: System.get_env("SSH_KEYS"),
+config :gitgud, GitGud.SSHServer,
+  port: System.get_env("SSH_PORT"),
+  host_key_dir: System.get_env("SSH_HOST_KEY_DIR")
+
+# Configure your Git storage location
+config :gitgud, GitGud.RepoStorage,
   git_root: System.get_env("GIT_ROOT")
