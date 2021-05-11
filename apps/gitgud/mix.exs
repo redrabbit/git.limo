@@ -40,6 +40,7 @@ defmodule GitGud.Mixfile do
       {:faker, "~> 0.16", only: :test},
       {:gitrekt, in_umbrella: true},
       {:jason, "~> 1.2"},
+      {:nimble_pool, "~> 0.2"},
       {:phoenix, "~> 1.5", optional: true},
       {:phoenix_pubsub, "~> 2.0", optional: true},
       {:plug, "~> 1.11", optional: true},
