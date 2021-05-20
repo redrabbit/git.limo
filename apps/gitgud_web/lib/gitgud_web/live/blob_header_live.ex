@@ -112,13 +112,13 @@ defmodule GitGud.Web.BlobHeaderLive do
   end
 
   defp resolve_commit_info_db(%{author: %{email: email}, committer: %{email: email}} = commit_info) do
-      if user = UserQuery.by_email(email),
-        do: %{commit_info|author: user, committer: user},
-      else: commit_info
+    if user = UserQuery.by_email(email),
+      do: %{commit_info|author: user, committer: user},
+    else: commit_info
   end
 
   defp resolve_commit_info_db(%{author: author, committer: committer} = commit_info) do
-    users = UserQuery.by_email([author.email, committer.email])
+    users = UserQuery.by_email([author.email, committer.email], preload: :emails)
     %{commit_info|author: resolve_user(author, users), committer: resolve_user(committer, users)}
   end
 
