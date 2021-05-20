@@ -1,39 +1,20 @@
 alias GitRekt.GitAgent
+alias GitGud.{DB, DBQueryable, CommitQuery, RepoQuery}
 
 Logger.configure level: :info
 
-repo = GitGud.RepoQuery.user_repo "redrabbit", "git-limo"
-
-#{:ok, pool} = GitGud.RepoPool.start_agent_pool(repo)
+repo = RepoQuery.user_repo "redrabbit", "git-limo"
+{:ok, head} = GitAgent.head repo
 
 Benchee.run %{
-  "unwrap" =>
+  "revwalk" =>
     fn ->
-      Task.await_many(
-        for i <- 0..10 do
-          Task.async(fn ->
-            with {:ok, agent} <- GitAgent.unwrap(repo),
-                 {:ok, {commit, _ref}} <- GitAgent.revision(agent, "HEAD~#{i}"),
-                 {:ok, count} <- GitAgent.history_count(agent, commit) do
-              {:ok, count}
-            end
-          end)
-        end
-      )
+      {:ok, hist} = GitAgent.history repo, head
+      Enum.count hist
     end,
-  "checkout" =>
+  "postgres" =>
     fn ->
-      Task.await_many(
-        for i <- 0..10 do
-          Task.async(fn ->
-            GitGud.RepoPool.checkout(repo, fn agent ->
-              with {:ok, {commit, _ref}} <- GitAgent.revision(agent, "HEAD~#{i}"),
-                  {:ok, count} <- GitAgent.history_count(agent, commit) do
-                {:ok, count}
-              end
-            end)
-          end)
-        end
-      )
-    end,
+      query = DBQueryable.query {CommitQuery, :ancestors_count_query}, [repo, head.oid]
+      DB.one query, timeout: :infinity
+    end
 }

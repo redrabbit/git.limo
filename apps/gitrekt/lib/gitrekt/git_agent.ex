@@ -167,10 +167,9 @@ defmodule GitRekt.GitAgent do
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
   @default_config %{
-    cache: nil,
-    idle_timeout: :infinity,
-    stream_chunk_size: 1_000,
-    timeout: 5_000
+      stream_chunk_size: 1_000,
+      timeout: 5_000,
+      idle_timeout: :infinity
   }
 
   @exec_opts [:timeout]
@@ -556,9 +555,8 @@ defmodule GitRekt.GitAgent do
   def init({path, opts}) do
     case Git.repository_open(path) do
       {:ok, handle} ->
-        {cache, opts} = Keyword.pop_lazy(opts, :cache, fn -> init_cache(path, []) end)
         config = Map.merge(@default_config, Map.new(opts))
-        config = Map.put(config, :cache, cache)
+        config = Map.put_new_lazy(config, :cache, fn -> init_cache(path, []) end)
         {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
         {:stop, reason}
@@ -925,10 +923,6 @@ defmodule GitRekt.GitAgent do
 
   defp call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
     call_cache({handle, cache}, op, cache)
-  end
-
-  defp call_cache(handle, op, nil) do
-    telemetry(:execute, op, fn -> call(handle, op) end)
   end
 
   defp call_cache(handle, op, cache) do
