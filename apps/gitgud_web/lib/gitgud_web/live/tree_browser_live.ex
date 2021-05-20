@@ -78,7 +78,6 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp assign_revision!(socket, nil) do
-
     with {:ok, false} <- GitAgent.empty?(socket.assigns.agent),
          {:ok, head} <- GitAgent.head(socket.assigns.agent),
          {:ok, commit} <- GitAgent.peel(socket.assigns.agent, head) do
@@ -153,32 +152,47 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
-  defp resolve_tree!(agent, commit, []) do
-    case GitAgent.tree_entries(agent, commit, with: :commit) do
-      {:ok, tree_entries} ->
-        {
-          resolve_tree_commit_info!(agent, commit),
-          tree_entries
-          |> Enum.map(&resolve_tree_entry_commit_info!(agent, &1))
-          |> Enum.sort_by(fn {tree_entry, _commit} -> tree_entry.name end)
-        }
+  defp resolve_tree!(agent, commit, tree_path) do
+    case GitAgent.transaction(agent, {:tree_entries_with_commit, commit.oid, tree_path}, &resolve_tree(&1, commit, tree_path)) do
+      {:ok, tree} ->
+        tree
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
   end
 
-  defp resolve_tree!(agent, commit, tree_path) do
+  defp resolve_tree(agent, commit, []) do
+    case GitAgent.tree_entries(agent, commit, with: :commit) do
+      {:ok, tree_entries} ->
+        {
+          :ok,
+          {
+            resolve_tree_commit_info!(agent, commit),
+            tree_entries
+            |> Enum.map(&resolve_tree_entry_commit_info!(agent, &1))
+            |> Enum.sort_by(fn {tree_entry, _commit} -> tree_entry.name end)
+          }
+        }
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_tree(agent, commit, tree_path) do
     case GitAgent.tree_entries(agent, commit, path: Path.join(tree_path), with: :commit) do
       {:ok, tree_entries} ->
         [{_tree_entry, commit}|tree_entries] = Enum.to_list(tree_entries)
         {
-          resolve_tree_commit_info!(agent, commit),
-          tree_entries
-          |> Enum.map(&resolve_tree_entry_commit_info!(agent, &1))
-          |> Enum.sort_by(fn {tree_entry, _commit} -> tree_entry.name end)
+          :ok,
+          {
+            resolve_tree_commit_info!(agent, commit),
+            tree_entries
+            |> Enum.map(&resolve_tree_entry_commit_info!(agent, &1))
+            |> Enum.sort_by(fn {tree_entry, _commit} -> tree_entry.name end)
+          }
         }
       {:error, reason} ->
-        raise RuntimeError, message: reason
+        {:error, reason}
     end
   end
 

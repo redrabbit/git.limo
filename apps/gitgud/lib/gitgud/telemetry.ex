@@ -59,7 +59,8 @@ defmodule GitGud.Telemetry do
   defp map_git_agent_op_args(:tree_entry, [revision, {:oid, oid}]), do: [inspect(revision), inspect({:oid, inspect_oid(oid)})]
   defp map_git_agent_op_args(:index_add, [index, oid, path, file_size, mode, opts]), do: [inspect(index), inspect_oid(oid), inspect(path), inspect(file_size), inspect(mode), inspect(opts)]
   defp map_git_agent_op_args(:pack_create, [oids]), do: [inspect(Enum.map(oids, &inspect_oid/1))]
-  defp map_git_agent_op_args(:transaction, [{:commit_info, oid}, _callback]), do: [:commit_info, inspect_oid(oid)]
+  defp map_git_agent_op_args(:transaction, [{:blob_commit, oid, path}, _callback]), do: [":blob_commit", inspect_oid(oid), inspect(path)]
+  defp map_git_agent_op_args(:transaction, [{:tree_entries_with_commit, oid, path}, _callback]), do: [":tree_entries_with_commit", inspect_oid(oid), inspect(path)]
   defp map_git_agent_op_args(:transaction, [nil, callback]), do: [inspect(callback)]
   defp map_git_agent_op_args(_op, args), do: Enum.map(args, &inspect/1)
 

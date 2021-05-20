@@ -85,17 +85,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     end
   end
 
-  defp resolve_blob_commit!(agent, revision, tree_path) do
-    case GitAgent.tree_entry_by_path(agent, revision, Path.join(tree_path), with: :commit) do
-      {:ok, {_tree_entries, commit}} ->
-        resolve_blob_commit_info!(agent, commit)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
-    end
-  end
-
-  defp resolve_blob_commit_info!(agent, commit) do
-    case GitAgent.transaction(agent, &resolve_blob_commit_info(&1, commit)) do
+  defp resolve_blob_commit!(agent, commit, tree_path) do
+    case GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path)) do
       {:ok, commit_info} ->
         resolve_commit_info_db(commit_info)
       {:error, reason} ->
@@ -103,7 +94,16 @@ defmodule GitGud.Web.BlobHeaderLive do
     end
   end
 
-  defp resolve_blob_commit_info(agent, commit) do
+  defp resolve_blob_commit(agent, commit, tree_path) do
+    case GitAgent.tree_entry_by_path(agent, commit, Path.join(tree_path), with: :commit) do
+      {:ok, {_tree_entries, commit}} ->
+        resolve_commit_info(agent, commit)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_commit_info(agent, commit) do
     with {:ok, message} <- GitAgent.commit_message(agent, commit),
          {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
          {:ok, author} <- GitAgent.commit_author(agent, commit),
