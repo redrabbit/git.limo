@@ -123,8 +123,8 @@ defmodule GitGud.SSHKey do
   defp put_fingerprint(changeset) do
     if data = changeset.valid? && get_change(changeset, :data) do
       try do
-        [{key, attrs}] = :public_key.ssh_decode(data, :public_key)
-        fingerprint = :public_key.ssh_hostkey_fingerprint(key)
+        [{key, attrs}] = :ssh_file.decode(data, :public_key)
+        fingerprint = :ssh.hostkey_fingerprint(key)
         changeset = put_change(changeset, :fingerprint, to_string(fingerprint))
         if comment = !get_field(changeset, :name) && Keyword.get(attrs, :comment),
           do: put_change(changeset, :name, to_string(comment)),

@@ -9,8 +9,8 @@ defmodule GitGud.SSHKeyTest do
 
   test "creates a new ssh authentication key with valid params", %{user: user} do
     assert {:ok, ssh_key} = SSHKey.create(user, factory(:ssh_key))
-    assert [{key, _attrs}] = :public_key.ssh_decode(ssh_key.data, :public_key)
-    assert ssh_key.fingerprint == to_string(:public_key.ssh_hostkey_fingerprint(key))
+    assert [{key, _attrs}] = :ssh_file.decode(ssh_key.data, :public_key)
+    assert ssh_key.fingerprint == to_string(:ssh.hostkey_fingerprint(key))
     refute ssh_key.used_at
   end
 

@@ -79,7 +79,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def is_auth_key(key, login, _opts) do
     if user = UserQuery.by_login(to_string(login), preload: :ssh_keys) do
-      fingerprint = to_string(:public_key.ssh_hostkey_fingerprint(key))
+      fingerprint = to_string(:ssh.hostkey_fingerprint(key))
       if ssh_key = Enum.find(user.ssh_keys, &(&1.fingerprint == fingerprint)) do
         !!SSHKey.update_timestamp!(ssh_key)
       end
