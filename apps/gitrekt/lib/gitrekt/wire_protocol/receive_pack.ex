@@ -37,18 +37,20 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   """
   @spec apply_pack(t, :write | :write_dump) :: {:ok, [Git.oid] | map} | {:error, term}
   def apply_pack(%__MODULE__{agent: agent} = receive_pack, mode \\ :write) do
-    case GitAgent.odb(agent) do
-      {:ok, odb} ->
-        {objs, delta_refs} = resolve_pack(receive_pack)
-        pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
-        case mode do
-          :write ->
-            {:ok, Enum.map(pack, &apply_pack_obj(agent, odb, &1, mode))}
-          :write_dump ->
-            {:ok, Map.new(pack, &apply_pack_obj(agent, odb, &1, mode))}
-        end
-      {:error, reason} -> {:error, reason}
-    end
+    {objs, delta_refs} = resolve_pack(receive_pack)
+    pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
+    GitAgent.transaction(agent, fn agent ->
+      case GitAgent.odb(agent) do
+        {:ok, odb} ->
+          case mode do
+            :write ->
+              {:ok, Enum.map(pack, &apply_pack_obj(agent, odb, &1, mode))}
+            :write_dump ->
+              {:ok, Map.new(pack, &apply_pack_obj(agent, odb, &1, mode))}
+          end
+        {:error, reason} -> {:error, reason}
+      end
+    end)
   end
 
   @doc """
@@ -56,23 +58,25 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   """
   @spec apply_cmds(t) :: :ok | {:error, term}
   def apply_cmds(%__MODULE__{agent: agent, cmds: cmds} = _receive_pack) do
-    Enum.each(cmds, fn
-      {:create, new_oid, name} ->
-        :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
-      {:update, _old_oid, new_oid, name} ->
-        :ok = GitAgent.reference_create(agent, name, :oid, new_oid, force: true)
-      {:delete, _old_oid, name} ->
-        :ok = GitAgent.reference_delete(agent, name)
-    end)
+    GitAgent.transaction(agent, fn agent ->
+      Enum.each(cmds, fn
+        {:create, new_oid, name} ->
+          :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
+        {:update, _old_oid, new_oid, name} ->
+          :ok = GitAgent.reference_create(agent, name, :oid, new_oid, force: true)
+        {:delete, _old_oid, name} ->
+          :ok = GitAgent.reference_delete(agent, name)
+      end)
 
-    case GitAgent.empty?(agent) do
-      {:ok, true} ->
-        GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", force: true)
-      {:ok, false} ->
-        :ok
-      {:error, reason} ->
-        {:error, reason}
-    end
+      case GitAgent.empty?(agent) do
+        {:ok, true} ->
+          GitAgent.reference_create(agent, "HEAD", :symbolic, "refs/heads/master", force: true)
+        {:ok, false} ->
+          :ok
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end)
   end
 
   @doc """
