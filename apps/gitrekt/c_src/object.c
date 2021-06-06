@@ -122,8 +122,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary bin;
     ERL_NIF_TERM chunks, chunk_str, data;
-    int chunk_size = 16384;
-    char chunk[chunk_size];
+    int chunk_size;
     int error;
     z_stream z;
     z.zalloc = Z_NULL;
@@ -138,6 +137,9 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return geef_oom(env);
     }
 
+	if (!enif_get_uint(env, argv[1], &chunk_size))
+		return enif_make_badarg(env);
+
     z.avail_in = bin.size;
     z.next_in = bin.data;
 
@@ -145,6 +147,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
         return geef_oom(env);
 
     chunks = enif_make_list(env, 0);
+    char chunk[chunk_size];
     do {
         z.avail_out = chunk_size;
         z.next_out = chunk;

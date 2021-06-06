@@ -610,8 +610,8 @@ defmodule GitRekt.Git do
   @doc """
   Inflates the given `data` with *zlib*.
   """
-  @spec object_zlib_inflate(binary) :: {:ok, iodata, non_neg_integer} | {:error, term}
-  def object_zlib_inflate(_data) do
+  @spec object_zlib_inflate(binary, pos_integer) :: {:ok, iodata, non_neg_integer} | {:error, term}
+  def object_zlib_inflate(_data, _buffer_size \\ 16_384) do
     raise Code.LoadError, file: nif_path() <> ".so"
   end
 
