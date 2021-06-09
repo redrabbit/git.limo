@@ -120,63 +120,69 @@ geef_object_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary bin;
-    ERL_NIF_TERM chunks, chunk_str, data;
-    int chunk_size;
+    ErlNifBinary input, bin;
+    ERL_NIF_TERM chunks, data;
+    unsigned int chunk_size;
     int error;
     z_stream z;
     z.zalloc = Z_NULL;
     z.zfree = Z_NULL;
     z.opaque = Z_NULL;
 
-    if (!enif_inspect_binary(env, argv[0], &bin))
+    if (!enif_inspect_binary(env, argv[0], &input))
         return enif_make_badarg(env);
 
-    if (!geef_terminate_binary(&bin)) {
-        enif_release_binary(&bin);
+    if (!geef_terminate_binary(&input)) {
+        enif_release_binary(&input);
         return geef_oom(env);
     }
 
 	if (!enif_get_uint(env, argv[1], &chunk_size))
 		return enif_make_badarg(env);
 
-    z.avail_in = bin.size;
-    z.next_in = bin.data;
+    z.avail_in = input.size;
+    z.next_in = input.data;
 
     if (inflateInit(&z) != Z_OK)
         return geef_oom(env);
 
     chunks = enif_make_list(env, 0);
-    char chunk[chunk_size];
+    unsigned char chunk[chunk_size];
+    enif_alloc_binary(chunk_size, &bin);
+
     do {
         z.avail_out = chunk_size;
         z.next_out = chunk;
 
-        error = inflate(&z, Z_SYNC_FLUSH);
-
+        error = inflate(&z, Z_NO_FLUSH);
         switch (error) {
             case Z_NEED_DICT:
                 inflateEnd(&z);
+                enif_release_binary(&input);
                 enif_release_binary(&bin);
                 geef_string_to_bin(&bin, z.msg);
                 return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_need_dict, enif_make_binary(env, &bin)));
             case Z_DATA_ERROR:
                 inflateEnd(&z);
+                enif_release_binary(&input);
                 enif_release_binary(&bin);
                 geef_string_to_bin(&bin, z.msg);
                 return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_data_error, enif_make_binary(env, &bin)));
             case Z_STREAM_ERROR:
                 inflateEnd(&z);
+                enif_release_binary(&input);
                 enif_release_binary(&bin);
                 geef_string_to_bin(&bin, z.msg);
                 return enif_make_tuple2(env, atoms.error, enif_make_tuple2(env, atoms.zlib_stream_error, enif_make_binary(env, &bin)));
             case Z_MEM_ERROR:
+                enif_release_binary(&input);
                 inflateEnd(&z);
                 return geef_oom(env);
         }
 
         if (!enif_realloc_binary(&bin, chunk_size-z.avail_out)) {
             inflateEnd(&z);
+            enif_release_binary(&input);
             return geef_oom(env);
         }
         memmove(bin.data, chunk, bin.size);
@@ -185,6 +191,7 @@ geef_object_zlib_inflate(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     } while (z.avail_out == 0);
 
     inflateEnd(&z);
+    enif_release_binary(&input);
 
     if(enif_make_reverse_list(env, chunks, &data) < 0) {
         return geef_oom(env);
