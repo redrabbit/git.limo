@@ -74,11 +74,11 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   def next(%__MODULE__{state: :pack} = handle, []) do
     if Enum.empty?(handle.haves) do
-      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants)
+      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants, timeout: :infinity)
       {%{handle|state: :done}, [], [:nak, pack]}
     else
       haves = List.flatten(Enum.reverse(handle.haves))
-      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants ++ Enum.map(haves, &{&1, true}))
+      {:ok, pack} = GitAgent.pack_create(handle.agent, handle.wants ++ Enum.map(haves, &{&1, true}), timeout: :infinity)
       cond do
         "multi_ack" in handle.caps ->
           {%{handle|state: :done}, [], [{:ack, List.first(haves)}, pack]}
