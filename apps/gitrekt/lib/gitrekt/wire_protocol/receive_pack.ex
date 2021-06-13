@@ -39,7 +39,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   def apply_pack(%__MODULE__{agent: agent} = receive_pack, mode \\ :write) do
     {objs, delta_refs} = resolve_pack(receive_pack)
     pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
-    GitAgent.transaction(agent, fn agent ->
+    GitAgent.transaction(agent, nil, fn agent ->
       case GitAgent.odb(agent) do
         {:ok, odb} ->
           case mode do
@@ -50,7 +50,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
           end
         {:error, reason} -> {:error, reason}
       end
-    end)
+    end, timeout: :infinity)
   end
 
   @doc """
