@@ -21,7 +21,7 @@ ERL_NIF_TERM geef_odb_hash(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_odb_exists(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
+ERL_NIF_TERM geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 void geef_repository_free(ErlNifEnv *env, void *cd);
 void geef_odb_free(ErlNifEnv *env, void *cd);

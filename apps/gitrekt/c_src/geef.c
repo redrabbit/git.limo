@@ -233,6 +233,7 @@ static ErlNifFunc geef_funcs[] =
 	{"odb_object_exists?", 2, geef_odb_exists, 0},
 	{"odb_read", 2, geef_odb_read, 0},
 	{"odb_write", 3, geef_odb_write, 0},
+	{"odb_write_pack", 2, geef_odb_write_pack, 0},
 	{"reference_list", 1, geef_reference_list, 0},
 	{"reference_peel", 3, geef_reference_peel, 0},
 	{"reference_to_id", 2, geef_reference_to_id, 0},

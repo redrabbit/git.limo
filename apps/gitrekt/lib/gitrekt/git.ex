@@ -562,6 +562,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Writes the given `data` into the `odb`.
+  """
+  @spec odb_write_pack(odb, binary) :: :ok | {:error, term}
+  def odb_write_pack(_odb, _data) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
   Returns the SHA `hash` for the given `oid`.
   """
   @spec oid_fmt(oid) :: binary

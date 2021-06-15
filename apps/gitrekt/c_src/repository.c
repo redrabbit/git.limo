@@ -19,6 +19,11 @@ void geef_odb_free(ErlNifEnv *env, void *cd)
 	git_odb_free(odb->odb);
 }
 
+static int my_git_transfer_progress_callback(const git_indexer_progress *progress, void *payload) {
+    //printf("Got transfer callback\n");
+    return 0;
+}
+
 ERL_NIF_TERM
 geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -348,4 +353,31 @@ geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &oid_bin));
+}
+
+ERL_NIF_TERM
+geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	geef_odb *odb;
+	ErlNifBinary bin;
+	git_odb_writepack *writepack = NULL;
+	void *progress_payload = NULL;
+	git_indexer_progress progress = { 0 };
+
+	if (!enif_get_resource(env, argv[0], geef_odb_type, (void **) &odb))
+		return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+		return enif_make_badarg(env);
+
+	if (git_odb_write_pack(&writepack, odb->odb, my_git_transfer_progress_callback, progress_payload) < 0)
+		return geef_error(env);
+
+	if (writepack->append(writepack, bin.data, bin.size, &progress) < 0)
+		return geef_error(env);
+
+	if (writepack->commit(writepack, &progress) < 0)
+		return geef_error(env);
+
+	return atoms.ok;
 }

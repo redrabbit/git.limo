@@ -9,7 +9,7 @@ void geef_pack_free(ErlNifEnv *env, void *pb)
 {
 	geef_pack *pack = (geef_pack *) pb;
 	enif_release_resource(pack->repo);
-    git_packbuilder_free(pack->pack);
+	git_packbuilder_free(pack->pack);
 }
 
 ERL_NIF_TERM
@@ -44,9 +44,9 @@ geef_pack_insert_commit(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_pack *pack;
 	ErlNifBinary bin;
-    git_oid id;
+	git_oid id;
 
-	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **) &pack))
+	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **)&pack))
 		return enif_make_badarg(env);
 
 	if (!enif_inspect_binary(env, argv[1], &bin))
@@ -57,10 +57,10 @@ geef_pack_insert_commit(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_oid_fromraw(&id, bin.data);
 
-
-    if (git_packbuilder_insert_commit(pack->pack, &id) < 0) {
-        return geef_error(env);
-    }
+	if (git_packbuilder_insert_commit(pack->pack, &id) < 0)
+	{
+		return geef_error(env);
+	}
 
 	return atoms.ok;
 }
@@ -70,17 +70,18 @@ ERL_NIF_TERM
 geef_pack_insert_walk(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_pack *pack;
-    geef_revwalk *walk;
+	geef_revwalk *walk;
 
-	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **) &pack))
+	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **)&pack))
 		return enif_make_badarg(env);
 
-	if (!enif_get_resource(env, argv[1], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[1], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
-    if (git_packbuilder_insert_walk(pack->pack, walk->walk) < 0) {
-        return geef_error(env);
-    }
+	if (git_packbuilder_insert_walk(pack->pack, walk->walk) < 0)
+	{
+		return geef_error(env);
+	}
 
 	return atoms.ok;
 }
@@ -88,23 +89,23 @@ geef_pack_insert_walk(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_pack_data(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	git_buf buf = { NULL, 0, 0 };
-    ErlNifBinary data;
+	git_buf buf = {NULL, 0, 0};
+	ErlNifBinary data;
 	geef_pack *pack;
 
-	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **) &pack))
+	if (!enif_get_resource(env, argv[0], geef_pack_type, (void **)&pack))
 		return enif_make_badarg(env);
 
-    if (git_packbuilder_write_buf(&buf, pack->pack) < 0)
-        return geef_error(env);
+	if (git_packbuilder_write_buf(&buf, pack->pack) < 0)
+		return geef_error(env);
 
 	if (!enif_alloc_binary(buf.size, &data)) {
 		git_buf_free(&buf);
-        return geef_oom(env);
-    }
+		return geef_oom(env);
+	}
 
 	memcpy(data.data, buf.ptr, data.size);
-    git_buf_free(&buf);
+	git_buf_free(&buf);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &data));
 }
