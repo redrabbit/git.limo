@@ -16,7 +16,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @null_oid String.duplicate("0", 40)
   @null_iter {0, 0, ""}
 
-  defstruct [:agent, :callback, state: :disco, caps: [], cmds: [], pack: [], iter: @null_iter]
+  defstruct [:agent, :callback, state: :disco, caps: [], cmds: [], pack: [], pack_data: "PACK", pack_iter: @null_iter]
 
   @type callback :: {module, [term]} | nil
 
@@ -29,15 +29,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     caps: [binary],
     cmds: [cmd],
     pack: Packfile.obj_list,
-    iter: Packfile.obj_iter
+    pack_data: binary,
+    pack_iter: Packfile.obj_iter
   }
 
   @doc """
   Applies the given `receive_pack` *PACK* to the repository.
   """
-  @spec apply_pack(t, :write | :write_dump) :: {:ok, [Git.oid] | map} | {:error, term}
-  def apply_pack(%__MODULE__{agent: agent} = receive_pack, mode \\ :write) do
-    {objs, delta_refs} = resolve_pack(receive_pack)
+  @spec apply_pack(t, :write | :write_dump | :write_pack | :write_pack_dump) :: {:ok, [Git.oid] | map} | {:error, term}
+  def apply_pack(%__MODULE__{agent: agent, pack: pack, pack_data: pack_data} = _receive_pack, mode \\ :write) do
+    {objs, delta_refs} = resolve_pack(pack)
     pack = Map.values(objs) ++ Enum.map(delta_refs, &{:delta_reference, &1}) # TODO
     GitAgent.transaction(agent, nil, fn agent ->
       case GitAgent.odb(agent) do
@@ -47,8 +48,23 @@ defmodule GitRekt.WireProtocol.ReceivePack do
               {:ok, Enum.map(pack, &apply_pack_obj(agent, odb, &1, mode))}
             :write_dump ->
               {:ok, Map.new(pack, &apply_pack_obj(agent, odb, &1, mode))}
+            :write_pack ->
+              case GitAgent.odb_write_pack(agent, odb, pack_data) do
+                :ok ->
+                  {:ok, Enum.map(pack, &apply_pack_obj(agent, odb, &1, mode))}
+                {:error, reason} ->
+                  {:error, reason}
+              end
+            :write_pack_dump ->
+              case GitAgent.odb_write_pack(agent, odb, pack_data) do
+                :ok ->
+                  {:ok, Map.new(pack, &apply_pack_obj(agent, odb, &1, mode))}
+                {:error, reason} ->
+                  {:error, reason}
+              end
           end
-        {:error, reason} -> {:error, reason}
+        {:error, reason} ->
+          {:error, reason}
       end
     end, timeout: :infinity)
   end
@@ -82,8 +98,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   @doc """
   Returns the Git objects and Git delta-references for the given `receive_pack`.
   """
-  @spec resolve_pack(t) :: {map, [term]}
-  def resolve_pack(%__MODULE__{pack: pack} = _receive_pack) do
+  @spec resolve_pack(binary) :: {map, [term]}
+  def resolve_pack(pack) do
     {objs, delta_refs} = Enum.split_with(pack, fn
       {:delta_reference, _delta_ref} -> false
       {_obj_type, _obj_data} -> true
@@ -122,13 +138,17 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     {%{handle|state: :pack, caps: caps, cmds: parse_cmds(cmds)}, lines, []}
   end
 
-  def next(%__MODULE__{state: :pack} = handle, lines) do
-    {read_pack(handle, lines), [], []}
+  def next(%__MODULE__{state: :pack} = handle, [{:pack, pack_data}]) do
+    case Packfile.parse(pack_data, handle.pack_iter) do
+      {[{:buffer, pack, iter}], ""} ->
+        {%{handle|state: :buffer, pack: handle.pack ++ pack, pack_data: handle.pack_data <> pack_data, pack_iter: iter}, [], []}
+      {pack, ""} ->
+        {%{handle|state: :done, pack: handle.pack ++ pack, pack_data: handle.pack_data <> pack_data, pack_iter: @null_iter}, [], []}
+    end
   end
 
-  def next(%__MODULE__{state: :buffer} = handle, pack) do
-    {lines, ""} = Packfile.parse(pack, handle.iter)
-    {%{handle|state: :pack}, lines, []}
+  def next(%__MODULE__{state: :buffer} = handle, pack_data) do
+    {%{handle|state: :pack}, [{:pack, pack_data}], []}
   end
 
   def next(%__MODULE__{state: :done} = handle, []) do
@@ -182,9 +202,6 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     else: []
   end
 
-  defp read_pack(handle, [{:buffer, pack, iter}]), do: %{handle|state: :buffer, pack: handle.pack ++ pack, iter: iter}
-  defp read_pack(handle, pack) when is_list(pack), do: %{handle|state: :done, pack: handle.pack ++ pack, iter: @null_iter}
-
   defp parse_cmds(cmds) do
     Enum.map(cmds, fn cmd ->
       case String.split(cmd, " ", parts: 3) do
@@ -220,6 +237,14 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   defp apply_pack_obj(agent, odb, obj, :write_dump) do
     {apply_pack_obj(agent, odb, obj, :write), obj}
+  end
+
+  defp apply_pack_obj(_agent, _odb, _obj, :write_pack) do
+    "git_odb_hash" # TODO
+  end
+
+  defp apply_pack_obj(agent, odb, obj, :write_pack_dump) do
+    {apply_pack_obj(agent, odb, obj, :write_pack), obj}
   end
 
   defp batch_resolve_objects(objs, delta_refs) do

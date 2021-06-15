@@ -62,7 +62,7 @@ defmodule GitGud.RepoStorage do
   @spec push_pack(Repo.t, User.t, ReceivePack.t) :: {:ok, GitAgent.agent, [ReceivePack.cmd], [any]} | {:error, term}
   def push_pack(%Repo{} = repo, %User{} = user, %ReceivePack{agent: agent, cmds: cmds} = receive_pack) do
     with  :ok <- check_pack(repo, user, receive_pack),
-         {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_dump),
+         {:ok, objs} <- ReceivePack.apply_pack(receive_pack, :write_pack_dump),
           :ok <- ReceivePack.apply_cmds(receive_pack), do:
       {:ok, agent, cmds, objs}
   end

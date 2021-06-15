@@ -212,6 +212,12 @@ defmodule GitRekt.GitAgent do
   def odb_write(agent, odb, data, type, opts \\ []), do: exec(agent, {:odb_write, odb, data, type}, opts)
 
   @doc """
+  Writes the given `data` into the `odb`.
+  """
+  @spec odb_write_pack(agent, GitOdb.t, binary, keyword) :: {:ok, Git.oid} | {:error, term}
+  def odb_write_pack(agent, odb, data, opts \\ []), do: exec(agent, {:odb_write_pack, odb, data}, opts)
+
+  @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewise returns `false`.
   """
   @spec odb_object_exists?(agent, GitOdb.t, Git.oid, keyword) :: {:ok, boolean} | {:error, term}
@@ -756,6 +762,7 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
+  defp call(_handle, {:odb_write_pack, %GitOdb{__ref__: odb}, data}), do: Git.odb_write_pack(odb, data)
   defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}) do
     {:ok, Git.odb_object_exists?(odb, oid)}
   end

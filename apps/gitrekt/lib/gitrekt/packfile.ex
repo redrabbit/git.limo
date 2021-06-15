@@ -23,9 +23,8 @@ defmodule GitRekt.Packfile do
   """
   @spec parse(binary, obj_iter) :: {obj_list, binary}
   def parse(pack, iterator) when is_list(pack), do: parse(IO.iodata_to_binary(pack), iterator)
-  def parse(pack, {i, max, rest} = _iterator) when is_binary(pack) do
-    unpack_obj_next(i, max, rest <> pack, [])
-  end
+  def parse(pack, {0, 0, ""} = _iterator) when is_binary(pack), do: parse(pack)
+  def parse(pack, {i, max, rest} = _iterator) when is_binary(pack), do: unpack_obj_next(i, max, rest <> pack, [])
 
   @doc """
   Returns the *PACK* version and the number of objects it contains.
