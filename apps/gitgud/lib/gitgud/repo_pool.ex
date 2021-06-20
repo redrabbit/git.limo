@@ -7,6 +7,7 @@ defmodule GitGud.RepoPool do
   alias GitRekt.GitAgent
 
   alias GitGud.Repo
+  alias GitGud.RepoMonitor
   alias GitGud.RepoStorage
   alias GitGud.RepoRegistry
 
@@ -36,13 +37,12 @@ defmodule GitGud.RepoPool do
   """
   @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
   def start_agent(repo) do
-    pool_child_spec = %{id: :pool, start: {__MODULE__, :start_pool, [repo]}, restart: :temporary}
-    agent_child_spec = %{id: :agent, start: {GitAgent, :start_link, []}, restart: :temporary}
-    case DynamicSupervisor.start_child(__MODULE__, pool_child_spec) do
+    child_spec = %{id: :pool, start: {__MODULE__, :start_pool, [repo]}, restart: :temporary}
+    case DynamicSupervisor.start_child(__MODULE__, child_spec) do
       {:ok, pool} ->
-        DynamicSupervisor.start_child(pool, agent_child_spec)
+        start_pool_agent(pool)
       {:error, {:already_started, pool}} ->
-        DynamicSupervisor.start_child(pool, agent_child_spec)
+        start_pool_agent(pool)
       {:error, reason} ->
         {:error, reason}
     end
@@ -81,7 +81,7 @@ defmodule GitGud.RepoPool do
       extra_arguments: [
         workdir,
         [
-          cache: GitAgent.init_cache(workdir, []),
+          cache: :ets.new(Module.concat(__MODULE__, Cache), [:set, :public]),
           idle_timeout: 120_000
         ]
       ]
@@ -91,6 +91,17 @@ defmodule GitGud.RepoPool do
   #
   # Helpers
   #
+
+  defp start_pool_agent(pool) do
+    child_spec = %{id: :agent, start: {GitAgent, :start_link, []}, restart: :temporary}
+    case DynamicSupervisor.start_child(pool, child_spec) do
+      {:ok, agent} ->
+        RepoMonitor.monitor(pool, agent)
+        {:ok, agent}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   defp lookup_agent(%Repo{} = repo), do: lookup_agent(Path.join(repo.owner_login, repo.name))
   defp lookup_agent(path) do

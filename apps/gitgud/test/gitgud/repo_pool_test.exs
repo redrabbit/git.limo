@@ -1,26 +1,65 @@
 defmodule GitGud.RepoPoolTest do
-  use GitGud.DataCase, async: true
+  use GitGud.DataCase, async: false
   use GitGud.DataFactory
 
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoPool
+  alias GitGud.RepoRegistry
   alias GitGud.RepoStorage
 
   setup [:create_user, :create_repo]
 
-  test "starts repository agent", %{repo: repo} do
-    assert {:ok, _pid} = RepoPool.start_agent(repo)
+  test "starts pool for a repository", %{repo: repo} do
+    assert {:ok, pool} = RepoPool.start_pool(repo)
+    assert Enum.empty?(DynamicSupervisor.which_children(pool))
   end
 
-  test "ensures pool cannot start duplicate repositories", %{repo: repo} do
-    assert {:ok, pid} = RepoPool.start_agent(repo)
-    assert {:error, {:already_started, ^pid}} = RepoPool.start_agent(repo)
+  test "fails to start multiple pool for a single repository", %{repo: repo} do
+    assert {:ok, pool} = RepoPool.start_pool(repo)
+    assert {:error, {:already_started, ^pool}} = RepoPool.start_pool(repo)
   end
 
-  test "fetches repository from registry", %{repo: repo} do
-    assert {:ok, pid} = RepoPool.start_agent(repo)
-    assert RepoPool.lookup(repo) == pid
+  test "starts an agent within a pool", %{repo: repo} do
+    assert {:ok, agent} = RepoPool.start_agent(repo)
+    assert Process.alive?(agent)
+  end
+
+  test "fails to starts more than five agent within a pool", %{repo: repo} do
+    assert {:ok, _} = RepoPool.start_agent(repo)
+    assert {:ok, _} = RepoPool.start_agent(repo)
+    assert {:ok, _} = RepoPool.start_agent(repo)
+    assert {:ok, _} = RepoPool.start_agent(repo)
+    assert {:ok, _} = RepoPool.start_agent(repo)
+    assert {:error, :max_children} = RepoPool.start_agent(repo)
+  end
+
+  test "iterates over available agents using round-robin once pool is saturated", %{repo: repo} do
+    assert {:ok, agent1} = RepoPool.get_or_create(repo)
+    assert {:ok, agent2} = RepoPool.get_or_create(repo)
+    assert {:ok, agent3} = RepoPool.get_or_create(repo)
+    assert {:ok, agent4} = RepoPool.get_or_create(repo)
+    assert {:ok, agent5} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent1} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent2} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent3} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent4} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent5} = RepoPool.get_or_create(repo)
+    assert {:ok, ^agent1} = RepoPool.get_or_create(repo)
+  end
+
+  test "ensures pools are available via registry", %{repo: repo} do
+    assert {:ok, _agent} = RepoPool.get_or_create(repo)
+    assert [{pool, nil}] = Registry.lookup(RepoRegistry, Path.join(repo.owner_login, repo.name))
+    assert Process.alive?(pool)
+  end
+
+  test "ensures empty pools are terminated gracefully", %{repo: repo} do
+    assert {:ok, agent} = RepoPool.get_or_create(repo)
+    assert [{pool, nil}] = Registry.lookup(RepoRegistry, Path.join(repo.owner_login, repo.name))
+    assert :ok = GenServer.stop(agent)
+    Process.sleep(20)
+    refute Process.alive?(pool)
   end
 
   #

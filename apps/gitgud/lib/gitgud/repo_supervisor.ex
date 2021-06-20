@@ -4,6 +4,7 @@ defmodule GitGud.RepoSupervisor do
   """
   use Supervisor
 
+  alias GitGud.RepoMonitor
   alias GitGud.RepoPool
 
   @doc """
@@ -22,6 +23,7 @@ defmodule GitGud.RepoSupervisor do
   @impl true
   def init([]) do
     children = [
+      {RepoMonitor, []},
       {RepoPool, []},
       {Registry, keys: :unique, name: GitGud.RepoRegistry}
     ]
