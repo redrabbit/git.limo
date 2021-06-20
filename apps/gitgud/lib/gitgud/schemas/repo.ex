@@ -307,16 +307,7 @@ defmodule GitGud.Repo do
   #
 
   defimpl GitRekt.GitRepo do
-    def get_agent(repo) do
-      case RepoPool.start_agent(repo) do
-        {:ok, agent} ->
-          {:ok, agent}
-        {:error, :max_children} ->
-          {:ok, RepoPool.lookup(repo)}
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
+    def get_agent(repo), do: RepoPool.get_or_create(repo)
   end
 
   defimpl GitGud.AuthorizationPolicies do
