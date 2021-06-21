@@ -166,11 +166,13 @@ defmodule GitRekt.GitAgent do
   @type git_object :: GitCommit.t | GitBlob.t | GitTree.t | GitTag.t
   @type git_revision :: GitRef.t | GitTag.t | GitCommit.t
 
-  @default_config %{
+  @default_config Map.new(
+    Application.compile_env(:gitrekt, __MODULE__, %{
       stream_chunk_size: 1_000,
       timeout: 5_000,
       idle_timeout: :infinity
-  }
+    })
+  )
 
   @exec_opts [:timeout]
 

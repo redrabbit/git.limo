@@ -23,3 +23,7 @@ config :gitgud, GitGud.SSHServer,
 # Configure your Git storage location
 config :gitgud, GitGud.RepoStorage,
   git_root: Path.absname("test/data/git", Path.dirname(__DIR__))
+
+# Configure your repository pool
+config :gitgud, GitGud.RepoPool,
+  max_children_per_pool: 3

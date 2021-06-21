@@ -11,7 +11,8 @@ defmodule GitGud.RepoPool do
   alias GitGud.RepoStorage
   alias GitGud.RepoRegistry
 
-  @max_children_per_pool 5
+  @agent_idle_timeout Application.compile_env(:gitgud, [__MODULE__, :idle_timeout], 3_600_000)
+  @max_children_per_pool Application.compile_env(:gitgud, [__MODULE__, :max_children_per_pool], 5)
 
   @doc """
   Starts the pool as part of a supervision tree.
@@ -82,7 +83,7 @@ defmodule GitGud.RepoPool do
         workdir,
         [
           cache: :ets.new(Module.concat(__MODULE__, Cache), [:set, :public]),
-          idle_timeout: 120_000
+          idle_timeout: @agent_idle_timeout
         ]
       ]
     )

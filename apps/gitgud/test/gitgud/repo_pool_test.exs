@@ -25,9 +25,7 @@ defmodule GitGud.RepoPoolTest do
     assert Process.alive?(agent)
   end
 
-  test "fails to starts more than five agent within a pool", %{repo: repo} do
-    assert {:ok, _} = RepoPool.start_agent(repo)
-    assert {:ok, _} = RepoPool.start_agent(repo)
+  test "fails to starts more than three agent within a pool", %{repo: repo} do
     assert {:ok, _} = RepoPool.start_agent(repo)
     assert {:ok, _} = RepoPool.start_agent(repo)
     assert {:ok, _} = RepoPool.start_agent(repo)
@@ -38,13 +36,9 @@ defmodule GitGud.RepoPoolTest do
     assert {:ok, agent1} = RepoPool.get_or_create(repo)
     assert {:ok, agent2} = RepoPool.get_or_create(repo)
     assert {:ok, agent3} = RepoPool.get_or_create(repo)
-    assert {:ok, agent4} = RepoPool.get_or_create(repo)
-    assert {:ok, agent5} = RepoPool.get_or_create(repo)
     assert {:ok, ^agent1} = RepoPool.get_or_create(repo)
     assert {:ok, ^agent2} = RepoPool.get_or_create(repo)
     assert {:ok, ^agent3} = RepoPool.get_or_create(repo)
-    assert {:ok, ^agent4} = RepoPool.get_or_create(repo)
-    assert {:ok, ^agent5} = RepoPool.get_or_create(repo)
     assert {:ok, ^agent1} = RepoPool.get_or_create(repo)
   end
 

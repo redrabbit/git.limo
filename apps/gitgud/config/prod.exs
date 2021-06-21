@@ -16,3 +16,7 @@ config :gitgud, GitGud.SSHServer,
 # Configure your Git storage location
 config :gitgud, GitGud.RepoStorage,
   git_root: System.get_env("GIT_ROOT")
+
+# Configure your repository pool
+config :gitgud, GitGud.RepoPool,
+  max_children_per_pool: 10
