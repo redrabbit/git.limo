@@ -179,7 +179,7 @@ defmodule GitRekt.GitAgent do
   """
   @spec start_link(Path.t, keyword) :: GenServer.on_start
   def start_link(path, opts \\ []) do
-    {agent_opts, server_opts} = Keyword.split(opts, Map.keys(@default_config))
+    {agent_opts, server_opts} = Keyword.split(opts, [:cache|Map.keys(@default_config)])
     GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
