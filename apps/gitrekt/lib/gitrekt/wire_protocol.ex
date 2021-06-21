@@ -15,9 +15,8 @@ defmodule GitRekt.WireProtocol do
   """
 
   alias GitRekt.Git
-  alias GitRekt.GitRepo
-  alias GitRekt.GitRef
   alias GitRekt.GitAgent
+  alias GitRekt.GitRef
 
   @upload_caps ~w(multi_ack multi_ack_detailed)
   @receive_caps ~w(report-status delete-refs)
@@ -51,9 +50,8 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a new service object for the given `repo` and `executable`.
   """
-  @spec new(GitRepo.t, binary, keyword) :: struct
-  def new(repo, executable, init_values \\ []) do
-    {:ok, agent} = GitRepo.get_agent(repo)
+  @spec new(GitAgent.agent, binary, keyword) :: struct
+  def new(agent, executable, init_values \\ []) do
     struct(exec_impl(executable), Keyword.put(init_values, :agent, agent))
   end
 

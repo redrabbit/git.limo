@@ -50,7 +50,7 @@ defmodule GitGud.SmartHTTPBackend do
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
 
-  alias GitRekt.GitRepo
+  alias GitRekt.GitAgent
   alias GitRekt.WireProtocol
 
   alias GitGud.Account
@@ -147,12 +147,16 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
     if authorized?(conn, repo, exec) do
-      {:ok, agent} = GitRepo.get_agent(repo)
-      refs = WireProtocol.reference_discovery(agent, exec)
-      info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
-      conn
-      |> put_resp_content_type("application/x-#{exec}-advertisement")
-      |> send_resp(:ok, info)
+      case GitAgent.start_link(RepoStorage.workdir(repo)) do
+        {:ok, agent} ->
+          refs = WireProtocol.reference_discovery(agent, exec)
+          info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
+          conn
+          |> put_resp_content_type("application/x-#{exec}-advertisement")
+          |> send_resp(:ok, info)
+        {:error, _reason} ->
+          send_resp(conn, :internal_server_error, "Something went wrong")
+      end
     end
   end
 
@@ -160,17 +164,22 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_pack(conn, repo, exec) do
     if authorized?(conn, repo, exec) do
-      conn = put_resp_content_type(conn, "application/x-#{exec}-result")
-      conn = send_chunked(conn, :ok)
-      service = WireProtocol.new(repo, exec, callback: {RepoStorage, [repo, conn.assigns[:current_user]]})
-      service = WireProtocol.skip(service)
-      case git_stream_pack(conn, service) do
-        {:ok, conn} ->
-          halt(conn)
+      case GitAgent.start_link(RepoStorage.workdir(repo)) do
+        {:ok, agent} ->
+          conn = put_resp_content_type(conn, "application/x-#{exec}-result")
+          conn = send_chunked(conn, :ok)
+          service = WireProtocol.new(agent, exec, callback: {RepoStorage, [repo, conn.assigns[:current_user]]})
+          service = WireProtocol.skip(service)
+          case git_stream_pack(conn, service) do
+            {:ok, conn} ->
+              halt(conn)
+            {:error, _reason} ->
+              conn
+              |> send_resp(:internal_server_error, "Something went wrong")
+              |> halt()
+          end
         {:error, _reason} ->
-          conn
-          |> send_resp(:internal_server_error, "Something went wrong")
-          |> halt()
+          send_resp(conn, :internal_server_error, "Something went wrong")
       end
     end
   end
