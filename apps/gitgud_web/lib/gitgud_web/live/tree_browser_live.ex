@@ -102,7 +102,12 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp assign_tree!(socket) when is_nil(socket.assigns.revision), do: socket
   defp assign_tree!(socket) do
-    tree_commit_info = if Enum.empty?(socket.assigns.tree_path), do: resolve_tree_commit_info!(socket.assigns.agent, socket.assigns.commit)
+    tree_commit_info =
+      if Enum.empty?(socket.assigns.tree_path) do
+        socket.assigns.agent
+        |> resolve_tree_commit_info!(socket.assigns.commit)
+        |> resolve_commit_info_db()
+      end
     tree_entries = resolve_tree_entries!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     tree_readme = Enum.find_value(tree_entries, &resolve_tree_readme!(socket.assigns.agent, &1))
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: Enum.map(tree_entries, &{&1, nil}), tree_readme: tree_readme)
@@ -154,8 +159,11 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_tree!(agent, commit, tree_path) do
     case GitAgent.transaction(agent, {:tree_entries_with_commit, commit.oid, tree_path}, &resolve_tree(&1, commit, tree_path)) do
-      {:ok, tree} ->
-        tree
+      {:ok, {commit_info, tree_entries}} ->
+        {
+          resolve_commit_info_db(commit_info),
+          tree_entries
+        }
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
@@ -199,7 +207,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_tree_commit_info!(agent, commit) do
     case GitAgent.transaction(agent, &resolve_tree_commit_info(&1, commit)) do
       {:ok, commit_info} ->
-        resolve_commit_info_db(commit_info)
+        commit_info
       {:error, reason} ->
         raise RuntimeError, message: reason
     end
