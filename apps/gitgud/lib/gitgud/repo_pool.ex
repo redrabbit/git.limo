@@ -11,7 +11,7 @@ defmodule GitGud.RepoPool do
   alias GitGud.RepoStorage
   alias GitGud.RepoRegistry
 
-  @agent_idle_timeout Application.compile_env(:gitgud, [__MODULE__, :idle_timeout], 3_600_000)
+  @agent_idle_timeout Application.compile_env(:gitgud, [__MODULE__, :idle_timeout], 1_800_000)
   @max_children_per_pool Application.compile_env(:gitgud, [__MODULE__, :max_children_per_pool], 5)
 
   @doc """
@@ -24,7 +24,7 @@ defmodule GitGud.RepoPool do
   end
 
   @doc """
-  Starts a pool supervisor for the given `repo`.
+  Starts a dedicated supervisor for the given `repo`.
   """
   @spec start_pool(Repo.t, keyword) :: Supervisor.on_start
   def start_pool(repo, opts \\ []) do
@@ -34,31 +34,29 @@ defmodule GitGud.RepoPool do
   end
 
   @doc """
-  Starts a `GitRekt.GitAgent` process for the given `repo`.
+  Returns a `GitRekt.GitAgent` process for the given `repo`.
   """
-  @spec start_agent(Repo.t) :: {:ok, pid} | {:error, term}
-  def start_agent(repo) do
-    child_spec = %{id: :pool, start: {__MODULE__, :start_pool, [repo]}, restart: :temporary}
-    case DynamicSupervisor.start_child(__MODULE__, child_spec) do
-      {:ok, pool} ->
-        start_pool_agent(pool)
-      {:error, {:already_started, pool}} ->
-        start_pool_agent(pool)
+  @spec checkout(Repo.t) :: {:ok, pid} | {:error, term}
+  def checkout(%Repo{} = repo) do
+    case spawn_pool_agent(repo) do
+      {:ok, agent} ->
+        {:ok, agent}
+      {:error, :max_children} ->
+        lookup_agent(repo)
       {:error, reason} ->
         {:error, reason}
     end
   end
 
   @doc """
-  Returns a `GitRekt.GitAgent` process for the given `repo`.
+  Similar to `checkout/1`, but also monitors the agent process.
   """
-  @spec get_or_create(Repo.t) :: {:ok, pid} | {:error, term}
-  def get_or_create(%Repo{} = repo) do
-    case start_agent(repo) do
+  @spec checkout_monitor(Repo.t) :: {:ok, pid} | {:error, term}
+  def checkout_monitor(repo) do
+    case checkout(repo) do
       {:ok, agent} ->
+        Process.monitor(agent)
         {:ok, agent}
-      {:error, :max_children} ->
-        lookup_agent(repo)
       {:error, reason} ->
         {:error, reason}
     end
@@ -93,12 +91,23 @@ defmodule GitGud.RepoPool do
   # Helpers
   #
 
-  defp start_pool_agent(pool) do
+  defp spawn_pool_agent(repo) do
+    child_spec = %{id: :pool, start: {__MODULE__, :start_pool, [repo]}, restart: :temporary}
+    case DynamicSupervisor.start_child(__MODULE__, child_spec) do
+      {:ok, pool} ->
+        spawn_agent(pool)
+      {:error, {:already_started, pool}} ->
+        spawn_agent(pool)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp spawn_agent(pool) do
     child_spec = %{id: :agent, start: {GitAgent, :start_link, []}, restart: :temporary}
     case DynamicSupervisor.start_child(pool, child_spec) do
       {:ok, agent} ->
-        RepoMonitor.monitor(pool, agent)
-        {:ok, agent}
+        GenServer.call(RepoMonitor, {:monitor, pool, agent})
       {:error, reason} ->
         {:error, reason}
     end
@@ -108,8 +117,8 @@ defmodule GitGud.RepoPool do
   defp lookup_agent(path) do
     case Registry.lookup(GitGud.RepoRegistry, path) do
       [{pool, nil}] ->
-        children = DynamicSupervisor.which_children(pool)
         index = :ets.update_counter(__MODULE__, path, {2, 1, @max_children_per_pool - 1, 0})
+        children = DynamicSupervisor.which_children(pool)
         case Enum.at(children, rem(index, length(children))) do
           {:undefined, agent, :worker, [_mod]} when is_pid(agent) ->
             {:ok, agent}

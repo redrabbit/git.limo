@@ -89,8 +89,8 @@ defmodule GitLimo.Umbrella.Mixfile do
           GitGud.UserQuery
         ],
         "Repository Management": [
+          GitGud.RepoMonitor,
           GitGud.RepoPool,
-          GitGud.RepoPoolMonitor,
           GitGud.RepoStorage,
           GitGud.RepoSupervisor,
         ],

@@ -13,12 +13,6 @@ defmodule GitGud.RepoMonitor do
     GenServer.start_link(__MODULE__, [], opts)
   end
 
-  @doc """
-  Monitors the given `agent` in the given `pool`.
-  """
-  @spec monitor(pid, pid) :: :ok
-  def monitor(pool, agent), do: GenServer.cast(__MODULE__, {:monitor, pool, agent})
-
   #
   # Callbacks
   #
@@ -29,32 +23,28 @@ defmodule GitGud.RepoMonitor do
   end
 
   @impl true
-  def handle_cast({:monitor, pool, agent}, state) do
+  def handle_call({:monitor, pool, agent}, _from, state) do
     ref = Process.monitor(agent)
-    {:noreply, Map.update(state, pool, [ref], &[ref|&1])}
+    {:reply, {:ok, agent}, Map.update(state, pool, [ref], &[ref|&1])}
   end
 
   @impl true
   def handle_info({:DOWN, ref, :process, _agent, _reason}, state) do
-    {
-      :noreply,
-      state
-      |> Enum.flat_map(&remove_ref(&1, ref))
-      |> Enum.into(%{})
-    }
+    {state, empty_pools} = Enum.flat_map_reduce(state, [], &demonitor(&1, ref, &2))
+    Enum.each(empty_pools, &DynamicSupervisor.stop/1)
+    {:noreply, Map.new(state)}
   end
 
   #
   # Helpers
   #
 
-  defp remove_ref({pool, refs}, ref) do
+  defp demonitor({pool, refs}, ref, acc) do
     case refs do
       [^ref] ->
-        DynamicSupervisor.stop(pool)
-        []
+        {[], [pool|acc]}
       refs ->
-        [{pool, List.delete(refs, ref)}]
+        {[{pool, List.delete(refs, ref)}], acc}
     end
   end
 end

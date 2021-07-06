@@ -307,7 +307,7 @@ defmodule GitGud.Repo do
   #
 
   defimpl GitRekt.GitRepo do
-    def get_agent(repo), do: RepoPool.get_or_create(repo)
+    def get_agent(repo), do: RepoPool.checkout_monitor(repo)
   end
 
   defimpl GitGud.AuthorizationPolicies do
