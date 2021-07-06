@@ -58,7 +58,7 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Runs the given `service` to the next step.
   """
-  @spec next(struct, binary | :discovery) :: {struct, iolist}
+  @spec next(struct, binary | :discovery) :: {:cont | :halt, struct, iolist}
   def next(service, data \\ :discovery)
   def next(service, :discovery) do
     {service, lines} = exec_next(service, [])
@@ -68,10 +68,10 @@ defmodule GitRekt.WireProtocol do
   def next(service, data) do
     if service.state == :buffer do
       {service, lines} = exec_next(service, data)
-      {service, encode(lines)}
+      exec_after(service, lines)
     else
       {service, lines} = exec_next(service, Enum.to_list(decode(data)))
-      {service, encode(lines)}
+      exec_after(service, lines)
     end
   end
 
@@ -158,6 +158,16 @@ defmodule GitRekt.WireProtocol do
       end
     result
   end
+
+  defp exec_after(service, lines) do
+    if service.state == :done do
+      {service, lines} = exec_next(service, [], lines)
+      {:halt, service, encode(lines)}
+    else
+      {:cont, service, encode(lines)}
+    end
+  end
+
 
   defp exec_all(service, lines, acc \\ []) do
     done? = done?(service)

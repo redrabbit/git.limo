@@ -187,26 +187,17 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_stream_pack(conn, service, request_size \\ 0) do
     if request_size <= Application.get_env(:gitgud, :git_max_request_size, :infinity) do
       case read_body(conn) do
-        {:ok, body, conn} ->
-          {service, data} = WireProtocol.next(service, body)
-          case chunk(conn, data) do
-            {:ok, conn} ->
-              if WireProtocol.done?(service) do
-                {_service, data} = WireProtocol.next(service)
-                chunk(conn, data)
-              else
-                git_stream_pack(conn, service, request_size + byte_size(body))
+        {ok_or_more, body, conn} when ok_or_more in [:ok, :more] ->
+          case WireProtocol.next(service, body) do
+            {:cont, service, output} ->
+              case chunk(conn, output) do
+                {:ok, conn} ->
+                  git_stream_pack(conn, service, request_size + byte_size(body))
+                {:error, reason} ->
+                  {:error, reason}
               end
-            {:error, reason} ->
-              {:error, reason}
-          end
-        {:more, body, conn} ->
-          {service, data} = WireProtocol.next(service, body)
-          case chunk(conn, data) do
-            {:ok, conn} ->
-              git_stream_pack(conn, service, request_size + byte_size(body))
-            {:error, reason} ->
-              {:error, reason}
+            {:halt, _service, output} ->
+              chunk(conn, output)
           end
         {:error, reason} ->
           {:error, reason}

@@ -124,15 +124,14 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:data, chan, _type, data}}, %__MODULE__{conn: conn, chan: chan, service: service, request_size: request_size} = state) do
     if request_size <= Application.get_env(:gitgud, :git_max_request_size, :infinity) do
-      {service, output} = WireProtocol.next(service, data)
-      :ssh_connection.send(conn, chan, output)
-      if WireProtocol.done?(service) do
-        {service, output} = WireProtocol.next(service)
-        :ssh_connection.send(conn, chan, output)
-        :ssh_connection.send_eof(conn, chan)
-        {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
-      else
-        {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
+      case WireProtocol.next(service, data) do
+        {:cont, service, output} ->
+          :ssh_connection.send(conn, chan, output)
+          {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
+        {:halt, service, output} ->
+          :ssh_connection.send(conn, chan, output)
+          :ssh_connection.send_eof(conn, chan)
+          {:ok, %{state|service: service, request_size: request_size + byte_size(data)}}
       end
     else
       :ssh_connection.send(conn, chan, 1, "Request entity too large, aborting.\r\n")
