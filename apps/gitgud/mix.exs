@@ -45,7 +45,7 @@ defmodule GitGud.Mixfile do
       {:plug, "~> 1.11", optional: true},
       {:plug_cowboy, "~> 2.5", only: :test},
       {:postgrex, "~> 0.15"},
-      {:telemetry, "~> 0.4"},
+      {:telemetry, "~> 0.4"}
     ]
   end
 

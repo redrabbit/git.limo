@@ -34,19 +34,19 @@ defmodule GitGud.Web.Mixfile do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6", override: true},
+      {:absinthe, "~> 1.6"},
       {:absinthe_relay, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
-      {:bamboo, "~> 2.1"},
+      {:bamboo, "~> 2.2"},
       {:bamboo_phoenix, "~> 1.0"},
       {:earmark, "~> 1.4"},
       {:ecto, "~> 3.5"},
-      {:floki, "~> 0.30", only: :test},
+      {:floki, "~> 0.31", only: :test},
       {:gettext, "~> 0.17"},
       {:gitgud, in_umbrella: true},
       {:oauth2, "~> 2.0"},
       {:phoenix, "~> 1.5"},
-      {:phoenix_ecto, "~> 4.2"},
+      {:phoenix_ecto, "~> 4.3"},
       {:phoenix_html, "~> 2.14"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.15"},
