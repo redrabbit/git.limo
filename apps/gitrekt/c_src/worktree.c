@@ -14,7 +14,7 @@ void geef_worktree_free(ErlNifEnv *env, void *cd)
 ERL_NIF_TERM
 geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR < 27
+#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR >= 27
     ErlNifBinary name_bin, path_bin, ref_bin;
 	int override;
 	geef_repository *repo;
@@ -91,7 +91,7 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_worktree_prune(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR < 27
+#if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR >= 27
 	geef_worktree *worktree;
 
 	if (!enif_get_resource(env, argv[0], geef_worktree_type, (void **) &worktree))
