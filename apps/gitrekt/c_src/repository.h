@@ -17,24 +17,12 @@ ERL_NIF_TERM geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM ar
 ERL_NIF_TERM geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
-ERL_NIF_TERM geef_odb_hash(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-ERL_NIF_TERM geef_odb_exists(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-ERL_NIF_TERM geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-ERL_NIF_TERM geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-ERL_NIF_TERM geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
-
 void geef_repository_free(ErlNifEnv *env, void *cd);
-void geef_odb_free(ErlNifEnv *env, void *cd);
 
 extern ErlNifResourceType *geef_repository_type;
-extern ErlNifResourceType *geef_odb_type;
 
 typedef struct {
     git_repository *repo;
 } geef_repository;
-
-typedef struct {
-    git_odb *odb;
-} geef_odb;
 
 #endif

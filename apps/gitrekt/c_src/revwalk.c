@@ -6,7 +6,7 @@
 
 void geef_revwalk_free(ErlNifEnv *env, void *cd)
 {
-	geef_revwalk *walk = (geef_revwalk *) cd;
+	geef_revwalk *walk = (geef_revwalk *)cd;
 	enif_release_resource(walk->repo);
 	git_revwalk_free(walk->walk);
 }
@@ -18,7 +18,7 @@ geef_revwalk_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_repository *res_repo;
 	ERL_NIF_TERM term_repo;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
 	res_repo = walk->repo;
@@ -34,14 +34,15 @@ geef_revwalk_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_revwalk *walk;
 	ERL_NIF_TERM walk_term;
 
-	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **)&repo))
 		return enif_make_badarg(env);
 
 	walk = enif_alloc_resource(geef_revwalk_type, sizeof(geef_revwalk));
 	if (!walk)
 		return geef_oom(env);
 
-	if (git_revwalk_new(&walk->walk, repo->repo) < 0) {
+	if (git_revwalk_new(&walk->walk, repo->repo) < 0)
+	{
 		enif_release_resource(walk);
 		return geef_error(env);
 	}
@@ -61,7 +62,7 @@ geef_revwalk_push(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	geef_revwalk *walk;
 	int hide;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
 	if (!enif_inspect_binary(env, argv[1], &bin))
@@ -82,13 +83,14 @@ geef_revwalk_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ErlNifBinary bin;
 	geef_revwalk *walk;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
 	if (!enif_alloc_binary(GIT_OID_RAWSZ, &bin))
 		return geef_oom(env);
 
-	if ((error = git_revwalk_next((git_oid *)bin.data, walk->walk)) < 0) {
+	if ((error = git_revwalk_next((git_oid *)bin.data, walk->walk)) < 0)
+	{
 		if (error == GIT_ITEROVER)
 			return enif_make_tuple2(env, atoms.error, atoms.iterover);
 
@@ -105,10 +107,11 @@ geef_revwalk_sorting(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	ERL_NIF_TERM term, head = argv[1];
 	unsigned int flags = 0;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
-	while (enif_get_list_cell(env, head, &term, &head)) {
+	while (enif_get_list_cell(env, head, &term, &head))
+	{
 		if (!enif_compare(atoms.toposort, term))
 			flags |= GIT_SORT_TOPOLOGICAL;
 		else if (!enif_compare(atoms.timesort, term))
@@ -129,7 +132,7 @@ geef_revwalk_simplify_first_parent(ErlNifEnv *env, int argc, const ERL_NIF_TERM 
 {
 	geef_revwalk *walk;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
 	git_revwalk_simplify_first_parent(walk->walk);
@@ -142,7 +145,7 @@ geef_revwalk_reset(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_revwalk *walk;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
 	git_revwalk_reset(walk->walk);
@@ -153,36 +156,38 @@ geef_revwalk_reset(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_revwalk_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	git_buf buf = { NULL, 0, 0 };
+	git_buf buf = {NULL, 0, 0};
 	geef_revwalk *walk;
-    git_packbuilder* pb;
-    ErlNifBinary pack;
+	git_packbuilder *pb;
+	ErlNifBinary pack;
 	int error;
 
-	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **) &walk))
+	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
-    if (git_packbuilder_new(&pb, walk->repo->repo) < 0)
-        return geef_error(env);
+	if (git_packbuilder_new(&pb, walk->repo->repo) < 0)
+		return geef_error(env);
 
-    if (git_packbuilder_insert_walk(pb, walk->walk) < 0) {
-        git_packbuilder_free(pb);
-        return geef_error(env);
-    }
+	if (git_packbuilder_insert_walk(pb, walk->walk) < 0)
+	{
+		git_packbuilder_free(pb);
+		return geef_error(env);
+	}
 
-    error = git_packbuilder_write_buf(&buf, pb);
-    git_packbuilder_free(pb);
+	error = git_packbuilder_write_buf(&buf, pb);
+	git_packbuilder_free(pb);
 
-    if (error < 0)
-        return geef_error(env);
+	if (error < 0)
+		return geef_error(env);
 
-	if (!enif_alloc_binary(buf.size, &pack)) {
+	if (!enif_alloc_binary(buf.size, &pack))
+	{
 		git_buf_free(&buf);
-        return geef_oom(env);
-    }
+		return geef_oom(env);
+	}
 
 	memcpy(pack.data, buf.ptr, pack.size);
-    git_buf_free(&buf);
+	git_buf_free(&buf);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &pack));
 }

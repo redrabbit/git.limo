@@ -7,21 +7,20 @@ defmodule GitRekt.Packfile do
 
   alias GitRekt.Git
 
-  @type obj_iter :: {non_neg_integer, non_neg_integer, binary}
-  @type obj :: {Git.obj_type, binary} | {:buffer, obj_list, obj_iter}
-  @type obj_list :: [obj]
+  @type obj       :: {Git.obj_type, binary}
+  @type obj_iter  :: {non_neg_integer, non_neg_integer, binary}
 
   @doc """
   Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
-  @spec parse(binary) :: {obj_list, binary}
+  @spec parse(binary) :: {[obj] | {:buffer, [obj], obj_iter}, binary}
   def parse("PACK" <> pack), do: parse(pack)
   def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 
   @doc """
   Same as `parse/1` but starts from the given `iterator`.
   """
-  @spec parse(binary, obj_iter) :: {obj_list, binary}
+  @spec parse(binary, obj_iter) :: {[obj] | {:buffer, [obj], obj_iter}, binary}
   def parse(pack, iterator) when is_list(pack), do: parse(IO.iodata_to_binary(pack), iterator)
   def parse(pack, {0, 0, ""} = _iterator) when is_binary(pack), do: parse(pack)
   def parse(pack, {i, max, rest} = _iterator) when is_binary(pack), do: unpack_obj_next(i, max, rest <> pack, [])

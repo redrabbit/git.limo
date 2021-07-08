@@ -236,26 +236,29 @@ defmodule GitRekt.Git do
   can use a dedicated process, so that its access can be serialized.
   """
 
-  @type repo          :: reference
+  @type repo                    :: reference
 
-  @type oid           :: binary
-  @type signature     :: {binary, binary, non_neg_integer, non_neg_integer}
+  @type oid                     :: binary
+  @type signature               :: {binary, binary, non_neg_integer, non_neg_integer}
 
-  @type odb           :: reference
-  @type odb_type      :: atom
+  @type odb                     :: reference
+  @type odb_type                :: atom
 
-  @type ref_iter      :: reference
-  @type ref_type      :: :oid | :symbolic
+  @type odb_writepack           :: reference
+  @type odb_writepack_progress  :: map
 
-  @type config        :: reference
-  @type blob          :: reference
-  @type commit        :: reference
-  @type tag           :: reference
+  @type ref_iter                :: reference
+  @type ref_type                :: :oid | :symbolic
 
-  @type obj           :: blob | commit | tree | tag
-  @type obj_type      :: :blob | :commit | :tree | :tag
+  @type config                  :: reference
+  @type blob                    :: reference
+  @type commit                  :: reference
+  @type tag                     :: reference
 
-  @type reflog_entry  :: {
+  @type obj                     :: blob | commit | tree | tag
+  @type obj_type                :: :blob | :commit | :tree | :tag
+
+  @type reflog_entry            :: {
     binary,
     binary,
     non_neg_integer,
@@ -265,18 +268,18 @@ defmodule GitRekt.Git do
     binary
   }
 
-  @type tree          :: reference
-  @type tree_entry    :: {integer, :blob | :tree, oid, binary}
+  @type tree                    :: reference
+  @type tree_entry              :: {integer, :blob | :tree, oid, binary}
 
-  @type diff          :: reference
-  @type diff_format   :: :patch | :patch_header | :raw | :name_only | :name_status
-  @type diff_delta    :: {diff_file, diff_file, non_neg_integer, non_neg_integer}
-  @type diff_file     :: {oid, binary, integer, non_neg_integer}
-  @type diff_hunk     :: {binary, integer, integer, integer, integer}
-  @type diff_line     :: {char, integer, integer, integer, integer, binary}
+  @type diff                    :: reference
+  @type diff_format             :: :patch | :patch_header | :raw | :name_only | :name_status
+  @type diff_delta              :: {diff_file, diff_file, non_neg_integer, non_neg_integer}
+  @type diff_file               :: {oid, binary, integer, non_neg_integer}
+  @type diff_hunk               :: {binary, integer, integer, integer, integer}
+  @type diff_line               :: {char, integer, integer, integer, integer, binary}
 
-  @type index         :: reference
-  @type index_entry   :: {
+  @type index                   :: reference
+  @type index_entry             :: {
     integer,
     integer,
     non_neg_integer,
@@ -291,12 +294,14 @@ defmodule GitRekt.Git do
     binary
   }
 
-  @type revwalk       :: reference
-  @type revwalk_sort  :: :sort_topo | :sort_time | :sort_reverse
+  @type indexer_progress        :: reference
 
-  @type pack          :: reference
+  @type revwalk                 :: reference
+  @type revwalk_sort            :: :sort_topo | :sort_time | :sort_reverse
 
-  @type worktree      :: reference
+  @type pack                    :: reference
+
+  @type worktree                :: reference
 
   @on_load :load_nif
 
@@ -554,7 +559,7 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Writes the given `data` into the `odb`.
+  Writes the given object `data` with the given `type` into the `odb`.
   """
   @spec odb_write(odb, binary, odb_type) :: {:ok, oid} | {:error, term}
   def odb_write(_odb, _data, _type) do
@@ -562,10 +567,34 @@ defmodule GitRekt.Git do
   end
 
   @doc """
-  Writes the given `data` into the `odb`.
+  Writes the given PACK `data` into the `odb`.
   """
   @spec odb_write_pack(odb, binary) :: :ok | {:error, term}
   def odb_write_pack(_odb, _data) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
+  Returns an ODB write-pack for the given `odb`.
+  """
+  @spec odb_get_writepack(odb) :: {:ok, odb_writepack} | {:error, term}
+  def odb_get_writepack(_odb) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
+  Appends the given `data` to the `odb_writepack`.
+  """
+  @spec odb_writepack_append(odb_writepack, binary, indexer_progress) :: :ok | {:error, term}
+  def odb_writepack_append(_odb_writepack, _data, _progress) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
+  Commits the written data to the `odb_writepack`.
+  """
+  @spec odb_writepack_commit(odb_writepack, indexer_progress) :: :ok | {:error, term}
+  def odb_writepack_commit(_odb_writepack, _progress) do
     raise Code.LoadError, file: nif_path() <> ".so"
   end
 

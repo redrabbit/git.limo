@@ -35,6 +35,14 @@ typedef struct {
 	ERL_NIF_TERM iterover;
 	ERL_NIF_TERM reflog_entry;
 
+	ERL_NIF_TERM indexer_total_objects;
+	ERL_NIF_TERM indexer_indexed_objects;
+	ERL_NIF_TERM indexer_received_objects;
+	ERL_NIF_TERM indexer_local_objects;
+	ERL_NIF_TERM indexer_total_deltas;
+	ERL_NIF_TERM indexer_indexed_deltas;
+	ERL_NIF_TERM indexer_received_bytes;
+
 	ERL_NIF_TERM zlib_need_dict;
 	ERL_NIF_TERM zlib_data_error;
 	ERL_NIF_TERM zlib_stream_error;

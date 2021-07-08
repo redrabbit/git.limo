@@ -226,6 +226,12 @@ defmodule GitRekt.GitAgent do
   def odb_object_exists?(agent, odb, oid, opts \\ []), do: exec(agent, {:odb_object_exists?, odb, oid}, opts)
 
   @doc """
+  Returns an ODB writepack.
+  """
+  @spec odb_writepack(agent, GitOdb.t, keyword) :: {:ok, Git.odb_writepack} | {:error, term}
+  def odb_writepack(agent, odb, opts \\ []), do: exec(agent, {:odb_writepack, odb}, opts)
+
+  @doc """
   Returns the Git reference for `HEAD`.
   """
   @spec head(agent, keyword) :: {:ok, GitRef.t} | {:error, term}
@@ -768,6 +774,8 @@ defmodule GitRekt.GitAgent do
   defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}) do
     {:ok, Git.odb_object_exists?(odb, oid)}
   end
+
+  defp call(_handle, {:odb_writepack, %GitOdb{__ref__: odb}}), do: Git.odb_get_writepack(odb)
 
   defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do

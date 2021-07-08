@@ -3,6 +3,7 @@
 #include "reference.h"
 #include "oid.h"
 #include "object.h"
+#include "odb.h"
 #include "commit.h"
 #include "tree.h"
 #include "blob.h"
@@ -26,6 +27,7 @@
 
 ErlNifResourceType *geef_repository_type;
 ErlNifResourceType *geef_odb_type;
+ErlNifResourceType *geef_odb_writepack_type;
 ErlNifResourceType *geef_ref_iter_type;
 ErlNifResourceType *geef_object_type;
 ErlNifResourceType *geef_revwalk_type;
@@ -53,6 +55,12 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	if (geef_odb_type == NULL)
 		return -1;
 
+	geef_odb_writepack_type = enif_open_resource_type(env, NULL,
+		"odb_writepack_type", geef_odb_writepack_free, ERL_NIF_RT_CREATE, NULL);
+
+	if (geef_odb_writepack_type == NULL)
+		return -1;
+
 	geef_ref_iter_type = enif_open_resource_type(env, NULL,
 		"ref_iter_type", geef_ref_iter_free, ERL_NIF_RT_CREATE, NULL);
 
@@ -62,25 +70,43 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	geef_object_type = enif_open_resource_type(env, NULL,
 		"object_type", geef_object_free, ERL_NIF_RT_CREATE, NULL);
 
+	if (geef_object_type == NULL)
+		return -1;
+
 	geef_revwalk_type = enif_open_resource_type(env, NULL,
 		"revwalk_type", geef_revwalk_free, ERL_NIF_RT_CREATE, NULL);
+
+	if (geef_revwalk_type == NULL)
+		return -1;
 
 	geef_diff_type = enif_open_resource_type(env, NULL,
 		"diff_type", geef_diff_free, ERL_NIF_RT_CREATE, NULL);
 
+	if (geef_diff_type == NULL)
+		return -1;
+
 	geef_index_type = enif_open_resource_type(env, NULL,
 		"index_type", geef_index_free, ERL_NIF_RT_CREATE, NULL);
+
+	if (geef_index_type == NULL)
+		return -1;
 
 	geef_config_type = enif_open_resource_type(env, NULL,
 		"config_type", geef_config_free, ERL_NIF_RT_CREATE, NULL);
 
+	if (geef_config_type == NULL)
+		return -1;
+
 	geef_pack_type = enif_open_resource_type(env, NULL,
 		"pack_type", geef_pack_free, ERL_NIF_RT_CREATE, NULL);
+
+	if (geef_pack_type == NULL)
+		return -1;
 
 	geef_worktree_type = enif_open_resource_type(env, NULL,
 		"worktree_type", geef_worktree_free, ERL_NIF_RT_CREATE, NULL);
 
-	if (geef_repository_type == NULL)
+	if (geef_worktree_type == NULL)
 		return -1;
 
 	atoms.ok = enif_make_atom(env, "ok");
@@ -110,6 +136,14 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.timesort    = enif_make_atom(env, "sort_time");
 	atoms.reversesort = enif_make_atom(env, "sort_reverse");
 	atoms.iterover    = enif_make_atom(env, "iterover");
+	/* Indexer progress */
+	atoms.indexer_total_objects = enif_make_atom(env, "total_objects");
+	atoms.indexer_indexed_objects = enif_make_atom(env, "indexed_objects");
+	atoms.indexer_received_objects = enif_make_atom(env, "received_objects");
+	atoms.indexer_local_objects = enif_make_atom(env, "local_objects");
+	atoms.indexer_total_deltas = enif_make_atom(env, "total_deltas");
+	atoms.indexer_indexed_deltas = enif_make_atom(env, "indexed_deltas");
+	atoms.indexer_received_bytes = enif_make_atom(env, "received_bytes");
 	/* Errors */
 	atoms.zlib_need_dict = enif_make_atom(env, "zlib_need_dict");
 	atoms.zlib_data_error = enif_make_atom(env, "zlib_data_error");
@@ -234,6 +268,9 @@ static ErlNifFunc geef_funcs[] =
 	{"odb_read", 2, geef_odb_read, 0},
 	{"odb_write", 3, geef_odb_write, 0},
 	{"odb_write_pack", 2, geef_odb_write_pack, 0},
+	{"odb_get_writepack", 1, geef_odb_get_writepack, 0},
+	{"odb_writepack_append", 3, geef_odb_writepack_append, 0},
+	{"odb_writepack_commit", 2, geef_odb_writepack_commit, 0},
 	{"reference_list", 1, geef_reference_list, 0},
 	{"reference_peel", 3, geef_reference_peel, 0},
 	{"reference_to_id", 2, geef_reference_to_id, 0},
