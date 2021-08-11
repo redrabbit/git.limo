@@ -146,10 +146,10 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   def next(%__MODULE__{state: :pack} = handle, [{:pack, pack_data}]) do
     handle = odb_writepack_append(handle, pack_data)
     case Packfile.parse(pack_data, handle.pack_iter) do
-      {[{:buffer, pack, iter}], ""} ->
-        {%{handle|state: :buffer, pack: handle.pack ++ pack, pack_data: handle.pack_data <> pack_data, pack_iter: iter}, [], []}
-      {pack, ""} ->
+      {:pack, pack} ->
         {%{handle|state: :done, pack: handle.pack ++ pack, pack_data: handle.pack_data <> pack_data, pack_iter: @null_iter}, [], []}
+      {:buffer, pack, iter} ->
+        {%{handle|state: :buffer, pack: handle.pack ++ pack, pack_data: handle.pack_data <> pack_data, pack_iter: iter}, [], []}
     end
   end
 

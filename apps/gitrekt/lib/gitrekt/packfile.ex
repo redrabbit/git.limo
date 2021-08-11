@@ -13,14 +13,14 @@ defmodule GitRekt.Packfile do
   @doc """
   Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
-  @spec parse(binary) :: {[obj] | {:buffer, [obj], obj_iter}, binary}
+  @spec parse(binary) :: [obj] | {:buffer, [obj], obj_iter}
   def parse("PACK" <> pack), do: parse(pack)
   def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 
   @doc """
   Same as `parse/1` but starts from the given `iterator`.
   """
-  @spec parse(binary, obj_iter) :: {[obj] | {:buffer, [obj], obj_iter}, binary}
+  @spec parse(binary, obj_iter) :: {:pack, [obj]} | {:buffer, [obj], obj_iter}
   def parse(pack, iterator) when is_list(pack), do: parse(IO.iodata_to_binary(pack), iterator)
   def parse(pack, {0, 0, ""} = _iterator) when is_binary(pack), do: parse(pack)
   def parse(pack, {i, max, rest} = _iterator) when is_binary(pack), do: unpack_obj_next(i, max, rest <> pack, [])
@@ -45,13 +45,11 @@ defmodule GitRekt.Packfile do
       {obj_type, obj, rest} ->
         unpack_obj_next(i+1, max, rest, [{obj_type, obj}|acc])
       :need_more ->
-        {[{:buffer, Enum.reverse(acc), {i, max, rest}}], ""}
+        {:buffer, Enum.reverse(acc), {i, max, rest}}
     end
   end
 
-  defp unpack_obj_next(max, max, <<_checksum::binary-20, rest::binary>>, acc) do
-    {Enum.reverse(acc), rest}
-  end
+  defp unpack_obj_next(max, max, <<_checksum::binary-20>>, acc), do: {:pack, Enum.reverse(acc)}
 
   defp unpack_obj(data) when byte_size(data) > 2 do
     {id_type, inflate_size, rest} = unpack_obj_head(data)
