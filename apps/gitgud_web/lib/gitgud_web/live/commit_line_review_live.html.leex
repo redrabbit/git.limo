@@ -19,7 +19,7 @@
     <div class="timeline-item">
       <div class="timeline-content">
         <div class="comment-form">
-          <%= live_component(@socket, GitGud.Web.CommentFormLive,
+          <%= live_component(GitGud.Web.CommentFormLive,
             id: "review-#{@review_id}-comment-form",
             current_user: @current_user,
             repo: @repo,

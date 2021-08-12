@@ -54,7 +54,7 @@
 <div id="feed" class="columns" phx-hook="IssueFeed">
   <div class="column is-three-quarters">
     <div class="thread">
-      <%= live_component(@socket, GitGud.Web.CommentLive,
+      <%= live_component(GitGud.Web.CommentLive,
         id: "comment-#{@issue_comment.id}",
         current_user: @current_user,
         repo: @repo,
@@ -85,7 +85,7 @@
               </div>
             <% {event, index} -> %>
               <div id="issue-event-<%= index %>" class="timeline-item">
-                <%= live_component(@socket, GitGud.Web.IssueEventLive,
+                <%= live_component(GitGud.Web.IssueEventLive,
                   id: "event-#{index}",
                   repo: @repo,
                   event: event
@@ -96,7 +96,7 @@
       </div>
       <%= if :comment in @issue_permissions do %>
         <div class="comment-form">
-          <%= live_component(@socket, GitGud.Web.CommentFormLive,
+          <%= live_component(GitGud.Web.CommentFormLive,
             id: "issue-comment-form",
             current_user: @current_user,
             repo: @repo,

@@ -24,7 +24,7 @@
     </div>
   <% true -> %>
     <div id="<%= @id %>" class="comment-form">
-      <%= live_component(@socket, GitGud.Web.CommentFormLive,
+      <%= live_component(GitGud.Web.CommentFormLive,
         id: "comment-#{@comment.id}-form",
         current_user: @current_user,
         repo: @repo,
