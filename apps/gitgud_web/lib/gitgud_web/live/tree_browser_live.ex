@@ -6,7 +6,6 @@ defmodule GitGud.Web.TreeBrowserLive do
   use GitGud.Web, :live_view
 
   alias GitRekt.GitAgent
-  alias GitRekt.GitRef
   alias GitRekt.GitTreeEntry
 
   alias GitGud.DB
@@ -127,15 +126,10 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
   end
 
-  defp assign_stats!(socket) when is_nil(socket.assigns.revision) or map_size(socket.assigns.stats) > 0 or socket.assigns.tree_path != [], do: socket
-  defp assign_stats!(socket) when is_struct(socket.assigns.repo.stats, Ecto.Association.NotLoaded) do
-    socket
-    |> assign(:repo, DB.preload(socket.assigns.repo, :stats))
-    |> assign_stats!()
-  end
-
   defp assign_stats!(socket) do
-    assign(socket, :stats, resolve_stats!(socket.assigns.repo, socket.assigns.agent, socket.assigns.revision))
+    stats = resolve_stats!(socket.assigns.agent, socket.assigns.revision)
+    stats = Map.put(stats, :contributors, RepoQuery.count_contributors(socket.assigns.repo))
+    assign(socket, stats: stats)
   end
 
   defp assign_page_title(socket) do
@@ -253,6 +247,21 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_tree_readme!(_agent, %GitTreeEntry{}), do: nil
 
+  defp resolve_stats!(agent, revision) do
+    with {:ok, branches} <- GitAgent.branches(agent),
+         {:ok, tags} <- GitAgent.tags(agent),
+         {:ok, commit_count} <- GitAgent.history_count(agent, revision) do
+      %{
+        branches: Enum.count(branches),
+        tags: Enum.count(tags),
+        commits: commit_count,
+      }
+    else
+      {:error, reason} ->
+        raise RuntimeError, message: reason
+    end
+  end
+
   defp resolve_commit_info_db(%{author: %{email: email}, committer: %{email: email}} = commit_info) do
       if user = UserQuery.by_email(email),
         do: %{commit_info|author: user, committer: user},
@@ -266,32 +275,5 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_user(%{email: email} = map, users) do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
-  end
-
-  defp resolve_stats!(repo, _agent, _revision) when is_nil(repo.stats) or is_struct(repo.stats, Ecto.Association.NotLoaded) do
-    raise RuntimeError, message: "cannot retrieve stats for repository #{repo.owner_login}/#{repo.name}"
-  end
-
-  defp resolve_stats!(repo, agent, revision) do
-    ref_groups = Enum.group_by(repo.stats.refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
-    %{
-      commits: resolve_stats_revision_ancestor_count!(agent, revision, repo.stats.refs),
-      branches: Enum.count(Map.get(ref_groups, "heads", [])),
-      tags: Enum.count(Map.get(ref_groups, "tags", [])),
-      contributors: RepoQuery.count_contributors(repo)
-    }
-  end
-
-  defp resolve_stats_revision_ancestor_count!(_agent, %GitRef{} = revision, refs) do
-    get_in(refs, [to_string(revision), "ancestor_count"]) || raise RuntimeError, message: "cannot retrieve number of ancestors for #{revision}"
-  end
-
-  defp resolve_stats_revision_ancestor_count!(agent, revision, _refs) do
-    case GitAgent.history_count(agent, revision) do
-      {:ok, commit_count} ->
-        commit_count
-      {:error, reason} ->
-        raise RuntimeError, message: reason
-    end
   end
 end

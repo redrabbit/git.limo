@@ -7,7 +7,6 @@ defmodule GitGud.Web.RepoController do
 
   alias GitGud.UserQuery
   alias GitGud.Repo
-  alias GitGud.Stats
   alias GitGud.RepoQuery
   alias GitGud.IssueQuery
 
@@ -22,12 +21,12 @@ defmodule GitGud.Web.RepoController do
   """
   @spec index(Plug.Conn.t, map) :: Plug.Conn.t
   def index(conn, %{"user_login" => user_login} = _params) do
-    if user = UserQuery.by_login(user_login, preload: [:public_email, repos: :stats], viewer: current_user(conn)) do
+    if user = UserQuery.by_login(user_login, preload: [:public_email, :repos], viewer: current_user(conn)) do
       batch_stats = %{
         contributors: RepoQuery.count_contributors(user.repos),
         issues: IssueQuery.count_repo_issues(user.repos, status: :open)
       }
-      render(conn, "index.html", user: user, repos: Enum.map(user.repos, &{&1, stats(&1, batch_stats)}))
+      render(conn, "index.html", user: user, stats: Map.new(user.repos, &{&1.id, stats(&1, batch_stats)}))
     end || {:error, :not_found}
   end
 
@@ -117,15 +116,12 @@ defmodule GitGud.Web.RepoController do
   # Helpers
   #
 
-  defp stats(%Repo{id: repo_id, stats: %Stats{refs: stats_refs}}, batch) when is_map(stats_refs) do
-    rev_groups = Enum.group_by(stats_refs, fn {"refs/" <> ref_name_suffix, _stats} -> hd(Path.split(ref_name_suffix)) end)
+  defp stats(%Repo{id: repo_id}, batch) do
     %{
-      branches: Enum.count(Map.get(rev_groups, "heads", [])),
-      tags: Enum.count(Map.get(rev_groups, "tags", [])),
+      branches: 0,
+      tags: 0,
       issues: Map.get(batch.issues, repo_id, 0),
       contributors: Map.get(batch.contributors, repo_id, 0)
     }
   end
-
-  defp stats(%Repo{}, _contributors), do: nil
 end

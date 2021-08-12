@@ -7,25 +7,25 @@
         <li>
           <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, []) %>">
             <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
-            <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats.commits %></span></span>
+            <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats[:commits] || 0 %></span></span>
           </a>
         </li>
         <li>
           <a href="<%= Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo) %>">
             <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
-            <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats.branches %></span></span>
+            <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats[:branches] || 0 %></span></span>
           </a>
         </li>
         <li>
           <a href="<%= Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo) %>">
             <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
-            <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats.tags %></span></span>
+            <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats[:tags] || 0 %></span></span>
           </a>
         </li>
         <li>
           <a>
             <span class="icon"><i class="fa fa-user-friends" aria-hidden="true"></i></span>
-            <span>Contributors&nbsp;&nbsp;<span class="tag"><%= @stats.contributors %></span></span>
+            <span>Contributors&nbsp;&nbsp;<span class="tag"><%= @stats[:contributors] || 0 %></span></span>
           </a>
         </li>
       </ul>

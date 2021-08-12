@@ -80,11 +80,9 @@ defmodule GitLimo.Umbrella.Mixfile do
           GitGud.IssueQuery,
           GitGud.Maintainer,
           GitGud.Repo,
-          GitGud.RepoStats,
           GitGud.RepoQuery,
           GitGud.ReviewQuery,
           GitGud.SSHKey,
-          GitGud.Stats,
           GitGud.User,
           GitGud.UserQuery
         ],

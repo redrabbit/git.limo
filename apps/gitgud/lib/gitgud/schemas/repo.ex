@@ -9,22 +9,16 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
-  alias GitRekt.GitAgent
-  alias GitRekt.WireProtocol.ReceivePack
-
   alias GitGud.DB
   alias GitGud.Issue
   alias GitGud.IssueLabel
   alias GitGud.User
   alias GitGud.RepoPool
   alias GitGud.RepoQuery
-  alias GitGud.Stats
   alias GitGud.RepoStorage
   alias GitGud.Maintainer
 
   import Ecto.Changeset
-
-  import GitRekt.Git, only: [oid_fmt: 1]
 
   schema "repositories" do
     belongs_to :owner, User
@@ -36,7 +30,6 @@ defmodule GitGud.Repo do
     has_many :issues, Issue
     many_to_many :maintainers, User, join_through: Maintainer, on_replace: :delete
     many_to_many :contributors, User, join_through: "repositories_contributors", on_replace: :delete
-    has_one :stats, Stats, on_replace: :update
     timestamps()
     field :pushed_at, :naive_datetime
   end
@@ -50,7 +43,6 @@ defmodule GitGud.Repo do
     description: binary,
     maintainers: [User.t],
     contributors: [User.t],
-    stats: Stats.t,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t,
     pushed_at: NaiveDateTime.t,
@@ -186,66 +178,6 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Updates the given `repo` with the given push `cmds`.
-  """
-  @spec push(t, User.t, GitAgent.agent, [ReceivePack.cmd]) :: {:ok, t} | {:error, term}
-  def push(%__MODULE__{stats: nil} = repo, user, agent, cmds), do: push(struct(repo, stats: struct(Stats, refs: %{})), user, agent, cmds)
-  def push(%__MODULE__{stats: stats} = repo, user, agent, cmds) when is_struct(stats, Ecto.Association.NotLoaded), do: push(DB.preload(repo, :stats), user, agent, cmds)
-  def push(%__MODULE__{stats: stats} = repo, _user, agent, cmds) do
-    case push_stats_refs(stats.refs, agent, cmds) do
-      {:ok, stats_refs} ->
-        repo
-        |> change(stats: %{refs: stats_refs}, pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second))
-        |> cast_assoc(:stats, with: &change(struct(&1, repo_id: repo.id), &2))
-        |> DB.update()
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
-  Similar to `push/4`, but raises an `Ecto.InvalidChangesetError` if an error occurs.
-  """
-  @spec push!(t, User.t, GitAgent.agent, [ReceivePack.cmd]) :: t
-  def push!(repo, user, agent, cmds) do
-    case push(repo, user, agent, cmds) do
-      {:ok, repo} ->
-        repo
-      {:error, changeset} when is_struct(changeset, Ecto.Changeset) ->
-        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
-    end
-  end
-
-  @doc """
-  Refreshes the stats for the given `repo`.
-  """
-  @spec refresh_stats(t) :: {:ok, t} | {:error, term}
-  def refresh_stats(%__MODULE__{stats: stats} = repo) when is_struct(stats, Ecto.Association.NotLoaded), do: refresh_stats(DB.preload(repo, :stats))
-  def refresh_stats(repo) do
-    with {:ok, agent} <- GitAgent.unwrap(repo),
-         {:ok, refs} <- GitAgent.references(agent),
-         {:ok, stats_refs} <- refresh_stats_refs(agent, refs) do
-      repo
-      |> change(stats: %{refs: stats_refs})
-      |> cast_assoc(:stats, with: &change(struct(&1, repo_id: repo.id), &2))
-      |> DB.update()
-    end
-  end
-
-  @doc """
-  Similar to `refresh_stats/1`, but raises an exception if an error occurs.
-  """
-  @spec refresh_stats!(t) :: t
-  def refresh_stats!(repo) do
-    case refresh_stats(repo) do
-      {:ok, repo} ->
-        repo
-      {:error, changeset} when is_struct(changeset, Ecto.Changeset) ->
-        raise Ecto.InvalidChangesetError, action: changeset.action, changeset: changeset
-    end
-  end
-
-  @doc """
   Deletes the given `repo`.
 
   ```elixir
@@ -371,54 +303,4 @@ defmodule GitGud.Repo do
   end
 
   defp cleanup(_db, %{repo: repo}), do: RepoStorage.cleanup(repo)
-
-  defp push_stats_refs(nil, agent, cmds), do: push_stats_refs(%{}, agent, cmds)
-  defp push_stats_refs(refs, agent, cmds) do
-    Enum.reduce_while(cmds, {:ok, refs}, fn cmd, {:ok, refs} ->
-      case push_stats_ref(refs, agent, cmd) do
-        {:ok, stats} ->
-          {:cont, {:ok, stats}}
-        {:error, reason} ->
-          {:halt, {:error, reason}}
-      end
-    end)
-  end
-
-  defp push_stats_ref(refs, agent, {:create, oid, ref_name}) do
-    with {:ok, ref} <- GitAgent.reference(agent, ref_name),
-         {:ok, count} <- GitAgent.history_count(agent, ref) do
-      {:ok, Map.put(refs, ref_name, %{"oid" => oid_fmt(oid), "ancestor_count" => count})}
-    end
-  end
-
-  defp push_stats_ref(refs, agent, {:update, old_oid, new_oid, ref_name}) do
-    if Map.has_key?(refs, ref_name) do
-      case GitAgent.graph_ahead_behind(agent, new_oid, old_oid) do
-        {:ok, {ahead, behind}} ->
-          {
-            :ok,
-            refs
-            |> put_in([ref_name, "oid"], oid_fmt(new_oid))
-            |> update_in([ref_name, "ancestor_count"], &(&1 + ahead - behind))
-          }
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      push_stats_ref(refs, agent, {:create, new_oid, ref_name})
-    end
-  end
-
-  defp refresh_stats_refs(agent, refs) do
-    GitAgent.transaction(agent, fn agent ->
-      Enum.reduce_while(refs, {:ok, %{}}, fn ref, {:ok, refs} ->
-        case GitAgent.history_count(agent, ref) do
-          {:ok, count} ->
-            {:cont, {:ok, Map.put(refs, to_string(ref), %{"oid" => oid_fmt(ref.oid), "ancestor_count" => count})}}
-          {:error, reason} ->
-            {:halt, {:error, reason}}
-        end
-      end)
-    end)
-  end
 end
