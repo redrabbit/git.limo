@@ -72,9 +72,10 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
-  defp assign_repo_open_issue_count(socket) when socket.connected?, do: socket
   defp assign_repo_open_issue_count(socket) do
-    assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
+    if connected?(socket),
+      do: assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open)),
+    else: socket
   end
 
   defp assign_revision!(socket, nil) do
@@ -113,9 +114,11 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: Enum.map(tree_entries, &{&1, nil}), tree_readme: tree_readme)
   end
 
-  defp assign_tree_commits_async(socket) when not socket.connected?, do: socket
   defp assign_tree_commits_async(socket) do
-    send(self(), :assign_tree_commits) && socket
+    if connected?(socket) do
+      send(self(), :assign_tree_commits)
+    end
+    socket
   end
 
   defp assign_tree_commits!(socket) when is_nil(socket.assigns.revision), do: socket

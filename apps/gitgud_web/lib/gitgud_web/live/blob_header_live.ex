@@ -53,9 +53,11 @@ defmodule GitGud.Web.BlobHeaderLive do
     assign(socket, :blob_commit_info, resolve_blob_commit!(socket.assigns.agent, socket.assigns.revision, socket.assigns.tree_path))
   end
 
-  defp assign_blob_commit_async(socket) when not socket.connected?, do: socket
-  defp assign_blob_commit_async(socket) when socket.connected? do
-    send(self(), :assign_blob_commit) && socket
+  defp assign_blob_commit_async(socket) do
+    if connected?(socket) do
+      send(self(), :assign_blob_commit)
+    end
+    socket
   end
 
   defp resolve_revision!(agent, "branch:" <> branch_name) do

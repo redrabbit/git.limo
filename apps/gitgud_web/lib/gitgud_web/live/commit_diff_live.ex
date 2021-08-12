@@ -135,15 +135,17 @@ defmodule GitGud.Web.CommitDiffLive do
   # Helpers
   #
 
-  defp subscribe_topic(socket) when not socket.connected?, do: socket
   defp subscribe_topic(socket) do
-    subscribe("commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}")
+    if connected?(socket) do
+      subscribe("commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}")
+    end
     socket
   end
 
-  defp assign_repo_permissions(socket) when not socket.connected?, do: assign(socket, :repo_permissions, [])
   defp assign_repo_permissions(socket) do
-    assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket)))
+    if connected?(socket),
+      do: assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket))),
+    else: assign(socket, :repo_permissions, [])
   end
 
   defp assign_agent!(socket) do

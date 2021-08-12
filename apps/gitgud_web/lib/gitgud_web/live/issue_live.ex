@@ -238,9 +238,10 @@ defmodule GitGud.Web.IssueLive do
   # Helpers
   #
 
-  defp subscribe_topic(socket) when not socket.connected?, do: socket
   defp subscribe_topic(socket) do
-    subscribe("issue:#{socket.assigns.issue.id}")
+    if connected?(socket) do
+      subscribe("issue:#{socket.assigns.issue.id}")
+    end
     socket
   end
 
@@ -249,12 +250,12 @@ defmodule GitGud.Web.IssueLive do
     assign(socket, :repo, DB.one!(query))
   end
 
-  defp assign_repo_permissions(socket) when not socket.connected?, do: assign(socket, :repo_permissions, [])
   defp assign_repo_permissions(socket) do
-    assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket)))
+    if connected?(socket),
+      do: assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket))),
+    else: assign(socket, :repo_permissions, [])
   end
 
-  defp assign_repo_open_issue_count(socket) when socket.connected?, do: socket
   defp assign_repo_open_issue_count(socket) do
     assign(socket, :repo_open_issue_count, IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
   end
@@ -274,18 +275,20 @@ defmodule GitGud.Web.IssueLive do
     assign_issue(socket, DB.one!(query))
   end
 
-  defp assign_issue_permissions(socket) when not socket.connected?, do: assign(socket, :issue_permissions, [])
   defp assign_issue_permissions(socket) do
-    assign(socket, :issue_permissions, IssueQuery.permissions(socket.assigns.issue, current_user(socket), socket.assigns.repo_permissions))
+    if connected?(socket),
+      do: assign(socket, :issue_permissions, IssueQuery.permissions(socket.assigns.issue, current_user(socket), socket.assigns.repo_permissions)),
+    else: assign(socket, :issue_permissions, [])
   end
 
   defp assign_page_title(socket) do
     assign(socket, :page_title, "#{socket.assigns.issue.title} ##{socket.assigns.issue.number} · #{socket.assigns.repo.owner_login}/#{socket.assigns.repo.name}")
   end
 
-  defp assign_title_changeset(socket) when not socket.connected?, do: socket
   defp assign_title_changeset(socket) do
-    assign(socket, :title_changeset, title_changeset(socket.assigns.issue))
+    if connected?(socket),
+      do: assign(socket, :title_changeset, title_changeset(socket.assigns.issue)),
+    else: socket
   end
 
   defp resolve_feed(issue) do

@@ -22,15 +22,21 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   Similar to `authenticate/2` but only applies when `socket` is connected.
   """
   @spec authenticate_when_connected(Phoenix.LiveView.Socket.t, map) :: Phoenix.LiveView.Socket.t
-  def authenticate_when_connected(socket, %{"user_id" => user_id} = _session) when socket.connected?, do: assign(socket, :current_user, UserQuery.by_id(user_id))
-  def authenticate_when_connected(socket, _session), do: assign(socket, :current_user, nil)
+  def authenticate_when_connected(socket, session) do
+    if connected?(socket),
+      do: assign(socket, :current_user, UserQuery.by_id(session["user_id"])),
+    else: assign(socket, :current_user, nil)
+  end
 
   @doc """
   Prepares `socket` for authenticating later on.
   """
   @spec authenticate_later(Phoenix.LiveView.Socket.t, map) :: Phoenix.LiveView.Socket.t
-  def authenticate_later(socket, %{"user_id" => user_id} = _session) when socket.connected?, do: assign(socket, current_user: nil, user_id: user_id)
-  def authenticate_later(socket, _session), do: assign(socket, :current_user, nil)
+  def authenticate_later(socket, session) do
+    if connected?(socket),
+      do: assign(socket, current_user: nil, user_id: session["user_id"]),
+    else: assign(socket, :current_user, nil)
+  end
 
   @doc """
   Authenticates `socket`.
