@@ -51,7 +51,14 @@ module.exports = (env, options) => {
               loader: MiniCssExtractPlugin.loader,
             },
             'css-loader',
-            'sass-loader'
+            {
+              loader: "sass-loader",
+              options: {
+                sassOptions: {
+                  quietDeps: true,
+                },
+              },
+            },
           ]
         },
         {
