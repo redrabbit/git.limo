@@ -49,6 +49,8 @@ defmodule GitGud.Telemetry do
 
   defp map_git_agent_op_args(:odb_read, [odb, oid]), do: [inspect(odb), inspect_oid(oid)]
   defp map_git_agent_op_args(:odb_write, [odb, data, type]), do: [inspect(odb), "<<... #{byte_size(data)} bytes>>", inspect(type)]
+  defp map_git_agent_op_args(:odb_writepack_append, [writepack, data, _progress]), do: [inspect(writepack), "<<... #{byte_size(data)} bytes>>"]
+  defp map_git_agent_op_args(:odb_writepack_commit, [writepack, progress]), do: [inspect(writepack), "#{progress.received_objects} objects - #{progress.received_bytes} bytes"]
   defp map_git_agent_op_args(:odb_object_exists?, [odb, oid]), do: [inspect(odb), inspect_oid(oid)]
   defp map_git_agent_op_args(:references, [:undefined, opts]), do: Enum.map(opts, &inspect/1)
   defp map_git_agent_op_args(:references_with, [:undefined, opts]), do: Enum.map(opts, &inspect/1)

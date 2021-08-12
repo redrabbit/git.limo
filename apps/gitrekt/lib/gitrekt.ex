@@ -154,4 +154,16 @@ defmodule GitRekt do
       def inspect(odb, _opts), do: "<GitOdb:#{inspect odb.__ref__}>"
     end
   end
+
+  defmodule GitWritePack do
+    @moduledoc """
+    Represents a Git writepack.
+    """
+    defstruct [:__ref__]
+    @type t :: %__MODULE__{__ref__: Git.odb_writepack}
+
+    defimpl Inspect do
+      def inspect(writepack, _opts), do: "<GitWritePack:#{inspect writepack.__ref__}>"
+    end
+  end
 end

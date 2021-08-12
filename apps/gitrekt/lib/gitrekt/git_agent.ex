@@ -156,7 +156,8 @@ defmodule GitRekt.GitAgent do
     GitTreeEntry,
     GitIndex,
     GitIndexEntry,
-    GitDiff
+    GitDiff,
+    GitWritePack
   }
 
   @behaviour GitRekt.Cache
@@ -214,12 +215,6 @@ defmodule GitRekt.GitAgent do
   def odb_write(agent, odb, data, type, opts \\ []), do: exec(agent, {:odb_write, odb, data, type}, opts)
 
   @doc """
-  Writes the given `data` into the `odb`.
-  """
-  @spec odb_write_pack(agent, GitOdb.t, binary, keyword) :: {:ok, Git.oid} | {:error, term}
-  def odb_write_pack(agent, odb, data, opts \\ []), do: exec(agent, {:odb_write_pack, odb, data}, opts)
-
-  @doc """
   Returns `true` if the given `oid` exists in `odb`; elsewise returns `false`.
   """
   @spec odb_object_exists?(agent, GitOdb.t, Git.oid, keyword) :: {:ok, boolean} | {:error, term}
@@ -228,8 +223,20 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns an ODB writepack.
   """
-  @spec odb_writepack(agent, GitOdb.t, keyword) :: {:ok, Git.odb_writepack} | {:error, term}
+  @spec odb_writepack(agent, GitOdb.t, keyword) :: {:ok, GitWritePack.t} | {:error, term}
   def odb_writepack(agent, odb, opts \\ []), do: exec(agent, {:odb_writepack, odb}, opts)
+
+  @doc """
+  Appends `data` to the given `writepack`.
+  """
+  @spec odb_writepack_append(agent, GitWritePack.t, binary, Git.odb_writepack_progress, keyword) :: {:ok, Git.odb_writepack_progress} | {:error, term}
+  def odb_writepack_append(agent, writepack, data, progress, opts \\ []), do: exec(agent, {:odb_writepack_append, writepack, data, progress}, opts)
+
+  @doc """
+  Commits the given `writepack` to the ODB.
+  """
+  @spec odb_writepack_append(agent, GitWritePack.t, Git.odb_writepack_progress, keyword) :: {:ok, Git.odb_writepack_progress} | {:error, term}
+  def odb_writepack_commit(agent, writepack, progress, opts \\ []), do: exec(agent, {:odb_writepack_commit, writepack, progress}, opts)
 
   @doc """
   Returns the Git reference for `HEAD`.
@@ -770,12 +777,22 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
-  defp call(_handle, {:odb_write_pack, %GitOdb{__ref__: odb}, data}), do: Git.odb_write_pack(odb, data)
+
   defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}) do
     {:ok, Git.odb_object_exists?(odb, oid)}
   end
 
-  defp call(_handle, {:odb_writepack, %GitOdb{__ref__: odb}}), do: Git.odb_get_writepack(odb)
+  defp call(_handle, {:odb_writepack, %GitOdb{__ref__: odb}}) do
+    case Git.odb_get_writepack(odb) do
+      {:ok, writepack} ->
+        {:ok, resolve_writepack(writepack)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp call(_handle, {:odb_writepack_append, %GitWritePack{__ref__: writepack}, data, progress}), do: Git.odb_writepack_append(writepack, data, progress)
+  defp call(_handle, {:odb_writepack_commit, %GitWritePack{__ref__: writepack}, progress}), do: Git.odb_writepack_commit(writepack, progress)
 
   defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do
@@ -996,6 +1013,8 @@ defmodule GitRekt.GitAgent do
   end
 
   defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
+
+  defp resolve_writepack(writepack), do: %GitWritePack{__ref__: writepack}
 
   defp resolve_reference({nil, nil, :oid, _oid}), do: nil
   defp resolve_reference({name, nil, :oid, oid}) do

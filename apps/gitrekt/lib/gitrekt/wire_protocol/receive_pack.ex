@@ -40,7 +40,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     state: :disco | :update_req | :pack | :buffer | :done,
     caps: [binary],
     cmds: [cmd],
-    writepack: Git.odb_writepack,
+    writepack: GitWritePack.t,
     writepack_progress: Git.odb_writepack_progress
   }
 
@@ -76,7 +76,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   def next(%__MODULE__{state: :pack} = handle, [{:pack, pack_data}]) do
-    case Git.odb_writepack_append(handle.writepack, pack_data, handle.writepack_progress) do
+    case GitAgent.odb_writepack_append(handle.agent, handle.writepack, pack_data, handle.writepack_progress) do
       {:ok, progress} ->
         progress = Map.update!(progress, :received_bytes, &(&1 + byte_size(pack_data)))
         if progress.received_objects < progress.total_objects,
@@ -92,7 +92,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   def next(%__MODULE__{state: :done} = handle, []) do
-    with {:ok, _progress} <- Git.odb_writepack_commit(handle.writepack, handle.writepack_progress),
+    with {:ok, _progress} <- GitAgent.odb_writepack_commit(handle.agent, handle.writepack, handle.writepack_progress),
           :ok <- Enum.each(handle.cmds, &push_cmd(handle.agent, &1)) do
       {handle, [], report_status(handle)}
     else
