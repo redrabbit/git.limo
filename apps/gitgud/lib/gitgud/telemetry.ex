@@ -45,6 +45,7 @@ defmodule GitGud.Telemetry do
     |> Base.encode16(case: :lower)
     |> String.slice(0, 7)
     |> inspect()
+    |> then(&("<GitCommit:#{&1}>"))
   end
 
   defp map_git_agent_op_args(:odb_read, [odb, oid]), do: [inspect(odb), inspect_oid(oid)]
@@ -62,6 +63,7 @@ defmodule GitGud.Telemetry do
   defp map_git_agent_op_args(:index_add, [index, oid, path, file_size, mode, opts]), do: [inspect(index), inspect_oid(oid), inspect(path), inspect(file_size), inspect(mode), inspect(opts)]
   defp map_git_agent_op_args(:pack_create, [oids]), do: [inspect(Enum.map(oids, &inspect_oid/1))]
   defp map_git_agent_op_args(:transaction, [{:blob_commit, oid, path}, _callback]), do: [":blob_commit", inspect_oid(oid), inspect(path)]
+  defp map_git_agent_op_args(:transaction, [{:history_count, oid}, _callback]), do: [":history_count", inspect_oid(oid)]
   defp map_git_agent_op_args(:transaction, [{:tree_entries_with_commit, oid, path}, _callback]), do: [":tree_entries_with_commit", inspect_oid(oid), inspect(path)]
   defp map_git_agent_op_args(:transaction, [nil, callback]), do: [inspect(callback)]
   defp map_git_agent_op_args(_op, args), do: Enum.map(args, &inspect/1)

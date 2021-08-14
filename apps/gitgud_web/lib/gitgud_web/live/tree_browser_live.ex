@@ -250,7 +250,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_stats!(agent, revision) do
     with {:ok, branches} <- GitAgent.branches(agent),
          {:ok, tags} <- GitAgent.tags(agent),
-         {:ok, commit_count} <- GitAgent.history_count(agent, revision) do
+         {:ok, commit_count} <- GitAgent.transaction(agent, {:history_count, revision.oid}, &resolve_history_count(&1, revision)) do
       %{
         branches: Enum.count(branches),
         tags: Enum.count(tags),
@@ -275,5 +275,14 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_user(%{email: email} = map, users) do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
+  end
+
+  defp resolve_history_count(agent, revision) do
+    case GitAgent.history(agent, revision, target: :commit_oid) do
+      {:ok, stream} ->
+        {:ok, Enum.count(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end

@@ -45,43 +45,6 @@ defmodule GitRekt.GitAgent do
   Note that replacing `start_link/1` with `GitRekt.Git.repository_open/1` would print the exact same output.
   This works because `t:agent/0` can be either a process id (PID) or a `t:GitRekt.Git.repo/0`.
 
-  ## Cache
-
-  `GitRekt.GitAgent` implements a very basic caching mechanism built on top of Erlang Term Storage (ETS).
-
-  When a Git command is executed successfully, the agent is able to cache the result of the command.
-  Further calls will retrieve results from the cache without having to run low-level `GitRekt.Git` functions.
-
-  We'll use `history_count/2` as an example because it is a relatively expensive operation:
-
-  ```
-  # fetch commit for HEAD
-  {:ok, head} = GitAgent.head(agent)
-  {:ok, commit} = GitAgent.peel(agent, head)
-
-  # count the number of ancestors and store result to cache
-  {:ok, count} = GitAgent.history_count(agent, commit)
-
-  # same thing, but retrieve result from cache
-  {:ok, count} = GitAgent.history_count(agent, commit)
-  ```
-
-  Here's the corresponding log output:
-
-  ```log
-  [debug] [Git Agent] head() executed in 95 µs
-  [debug] [Git Agent] peel(<GitRef:refs/heads/master>, :commit) executed in 41 µs
-  [debug] [Git Agent] history_count(<GitCommit:fad48c4>) executed in 568.0 ms
-  [debug] [Git Agent] history_count(<GitCommit:fad48c4>) executed in ⚡ 3 µs
-  ```
-
-  We can clearly see that the second call only need a fraction of the time to return.
-
-  Note that the default implemententation is quite restrictive and only caches expensive operations and
-  explicitly named transactions (more on that later).
-
-  See `GitRekt.Cache` for more details on how to implement your own caching behaviour.
-
   ## Transactions
 
   You can execute a serie of commands inside a transaction.
@@ -128,12 +91,12 @@ defmodule GitRekt.GitAgent do
 
   ```log
   [debug] [Git Agent] transaction(:commit_info, "b662d32") executed in 361 µs
-  [debug] [Git Agent] | commit_author(<GitCommit:b662d32>) executed in 6 µs
-  [debug] [Git Agent] | commit_committer(<GitCommit:b662d32>) executed in 5 µs
-  [debug] [Git Agent] | commit_message(<GitCommit:b662d32>) executed in 1 µs
-  [debug] [Git Agent] | commit_parents(<GitCommit:b662d32>) executed in 4 µs
-  [debug] [Git Agent] | commit_timestamp(<GitCommit:b662d32>) executed in 11 µs
-  [debug] [Git Agent] | commit_gpg_signature(<GitCommit:b662d32>) executed in 6 µs
+  [debug] [Git Agent] > commit_author(<GitCommit:b662d32>) executed in 6 µs
+  [debug] [Git Agent] > commit_committer(<GitCommit:b662d32>) executed in 5 µs
+  [debug] [Git Agent] > commit_message(<GitCommit:b662d32>) executed in 1 µs
+  [debug] [Git Agent] > commit_parents(<GitCommit:b662d32>) executed in 4 µs
+  [debug] [Git Agent] > commit_timestamp(<GitCommit:b662d32>) executed in 11 µs
+  [debug] [Git Agent] > commit_gpg_signature(<GitCommit:b662d32>) executed in 6 µs
   [debug] [Git Agent] transaction(:commit_info, "b662d32") executed in ⚡ 3 µs
   ```
 
@@ -540,12 +503,6 @@ defmodule GitRekt.GitAgent do
   end
 
   @doc """
-  Returns the number of commit ancestors for the given `revision`.
-  """
-  @spec history_count(agent, git_revision, keyword) :: {:ok, non_neg_integer} | {:error, term}
-  def history_count(agent, revision, opts \\ []), do: exec(agent, {:history_count, revision}, opts)
-
-  @doc """
   Peels the given `obj` until a Git object of the specified type is met.
   """
   @spec peel(agent, git_revision | GitTreeEntry.t, keyword) :: {:ok, git_object} | {:error, term}
@@ -657,9 +614,7 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def make_cache_key({:history_count, %GitRef{oid: oid}}), do: {:history_count, oid}
-  def make_cache_key({:history_count, %GitCommit{oid: oid}}), do: {:history_count, oid}
-  def make_cache_key({:transaction, name, _cb}) when not is_nil(name), do: {:transaction, name}
+  def make_cache_key({:transaction, name, _cb} = _op) when not is_nil(name), do:  name
   def make_cache_key(_op), do: nil
 
   #
@@ -934,19 +889,8 @@ defmodule GitRekt.GitAgent do
   defp call(_handle, {:index_remove_dir, %GitIndex{__ref__: index}, path}), do: Git.index_remove_dir(index, path)
   defp call(_handle, {:index_read_tree, %GitIndex{__ref__: index}, %GitTree{__ref__: tree}}), do: Git.index_read_tree(index, tree)
   defp call(handle, {:index_write_tree, %GitIndex{__ref__: index}}), do: Git.index_write_tree(index, handle)
-
   defp call(handle, {:history, rev, opts}), do: walk_history(rev, handle, opts)
-  defp call(handle, {:history_count, rev}) do
-    case walk_history(rev, handle) do
-      {:ok, stream} ->
-        {:ok, Enum.count(stream)}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   defp call(handle, {:peel, obj, target}), do: fetch_target(obj, target, handle)
-
   defp call(handle, {:pack, oids}) do
     with {:ok, walk} <- Git.revwalk_new(handle),
           :ok <- walk_insert(walk, oid_mask(oids)),
@@ -1323,7 +1267,13 @@ defmodule GitRekt.GitAgent do
          {:ok, commit} <- fetch_target(rev, :commit, handle),
           :ok <- Git.revwalk_push(walk, commit.oid),
          {:ok, stream} <- Git.revwalk_stream(walk) do
-      stream = Stream.map(stream, &lookup_object!(&1, handle))
+      stream =
+        case Keyword.get(opts, :target, :commit) do
+          :commit_oid ->
+            stream
+          :commit ->
+            Stream.map(stream, &lookup_object!(&1, handle))
+        end
       if pathspec = Keyword.get(opts, :pathspec),
         do: {:ok, Stream.filter(stream, &pathspec_match_commit(&1, List.wrap(pathspec), handle))},
       else: {:ok, stream}
