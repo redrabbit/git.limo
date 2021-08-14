@@ -198,7 +198,7 @@ defmodule GitRekt.GitAgent do
   @doc """
   Commits the given `writepack` to the ODB.
   """
-  @spec odb_writepack_append(agent, GitWritePack.t, Git.odb_writepack_progress, keyword) :: {:ok, Git.odb_writepack_progress} | {:error, term}
+  @spec odb_writepack_commit(agent, GitWritePack.t, Git.odb_writepack_progress, keyword) :: {:ok, Git.odb_writepack_progress} | {:error, term}
   def odb_writepack_commit(agent, writepack, progress, opts \\ []), do: exec(agent, {:odb_writepack_commit, writepack, progress}, opts)
 
   @doc """
@@ -694,7 +694,6 @@ defmodule GitRekt.GitAgent do
 
   defp call(handle, {:reference_create, name, type, target, force}), do: Git.reference_create(handle, name, type, target, force)
   defp call(handle, {:reference_delete, name}), do: Git.reference_delete(handle, name)
-
   defp call(handle, {:revision, spec}) do
     case Git.revparse_ext(handle, spec) do
       {:ok, obj, obj_type, oid, name} ->
@@ -732,7 +731,6 @@ defmodule GitRekt.GitAgent do
   end
 
   defp call(_handle, {:odb_write, %GitOdb{__ref__: odb}, data, type}), do: Git.odb_write(odb, data, type)
-
   defp call(_handle, {:odb_object_exists?, %GitOdb{__ref__: odb}, oid}) do
     {:ok, Git.odb_object_exists?(odb, oid)}
   end
@@ -746,9 +744,16 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call(_handle, {:odb_writepack_append, %GitWritePack{__ref__: writepack}, data, progress}), do: Git.odb_writepack_append(writepack, data, progress)
-  defp call(_handle, {:odb_writepack_commit, %GitWritePack{__ref__: writepack}, progress}), do: Git.odb_writepack_commit(writepack, progress)
+  defp call(_handle, {:odb_writepack_append, %GitWritePack{__ref__: writepack}, data, progress}) do
+    case Git.odb_writepack_append(writepack, data, progress) do
+      {:ok, progress} ->
+        {:ok, Map.update!(progress, :received_bytes, &(&1 + byte_size(data)))}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
+  defp call(_handle, {:odb_writepack_commit, %GitWritePack{__ref__: writepack}, progress}), do: Git.odb_writepack_commit(writepack, progress)
   defp call(handle, {:object, oid}) do
     case Git.object_lookup(handle, oid) do
       {:ok, obj_type, obj} ->
@@ -760,7 +765,6 @@ defmodule GitRekt.GitAgent do
 
   defp call(_handle, {:tag_author, obj}), do: fetch_author(obj)
   defp call(_handle, {:tag_message, obj}), do: fetch_author(obj)
-
   defp call(_handle, {:commit_author, obj}), do: fetch_author(obj)
   defp call(_handle, {:commit_committer, obj}), do: fetch_committer(obj)
   defp call(_handle, {:commit_message, obj}), do: fetch_message(obj)

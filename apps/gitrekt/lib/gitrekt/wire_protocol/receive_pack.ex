@@ -77,11 +77,10 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   def next(%__MODULE__{state: :pack} = handle, [{:pack, pack_data}]) do
     case GitAgent.odb_writepack_append(handle.agent, handle.writepack, pack_data, handle.writepack_progress) do
+      {:ok, progress} when progress.received_objects == progress.total_objects ->
+        {%{handle|state: :done, writepack_progress: progress}, [], []}
       {:ok, progress} ->
-        progress = Map.update!(progress, :received_bytes, &(&1 + byte_size(pack_data)))
-        if progress.received_objects < progress.total_objects,
-          do: {%{handle|state: :buffer, writepack_progress: progress}, [], []},
-        else: {%{handle|state: :done, writepack_progress: progress}, [], []}
+        {%{handle|state: :buffer, writepack_progress: progress}, [], []}
       {:error, reason} ->
         raise reason # TODO
     end
@@ -92,8 +91,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   def next(%__MODULE__{state: :done} = handle, []) do
-    with {:ok, _progress} <- GitAgent.odb_writepack_commit(handle.agent, handle.writepack, handle.writepack_progress),
-          :ok <- Enum.each(handle.cmds, &push_cmd(handle.agent, &1)) do
+    with :ok <- push_pack(handle.agent, handle.writepack, handle.writepack_progress),
+         :ok <- Enum.each(handle.cmds, &push_cmd(handle.agent, &1)) do
       {handle, [], report_status(handle)}
     else
       {:error, reason} ->
@@ -136,6 +135,16 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     if "report-status" in caps,
       do: List.flatten(["unpack ok", Enum.map(cmds, &"ok #{elem(&1, :erlang.tuple_size(&1)-1)}"), :flush]),
     else: []
+  end
+
+  defp push_pack(_agent, _writepack, progress) when progress.received_bytes == 0, do: :ok
+  defp push_pack(agent, writepack, progress) do
+    case GitAgent.odb_writepack_commit(agent, writepack, progress) do
+      {:ok, _progress} ->
+        :ok
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp push_cmd(agent, {:create, new_oid, name}), do: :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
