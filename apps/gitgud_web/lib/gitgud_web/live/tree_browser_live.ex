@@ -28,6 +28,7 @@ defmodule GitGud.Web.TreeBrowserLive do
       :ok,
       socket
       |> authenticate(session)
+      |> assign(:stats, %{})
       |> assign_repo!(user_login, repo_name)
       |> assign_repo_open_issue_count()
       |> assign_agent!()
@@ -40,7 +41,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     {
       :noreply,
       socket
-      |> assign(tree_path: params["path"] || [], stats: %{})
+      |> assign(tree_path: params["path"] || [])
       |> assign_tree!()
       |> assign_tree_commits_async()
       |> assign_stats!()
@@ -126,10 +127,11 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
   end
 
+  defp assign_stats!(socket) when socket.assigns.tree_path != [] or socket.assigns.stats != %{}, do: socket
   defp assign_stats!(socket) do
     stats = resolve_stats!(socket.assigns.agent, socket.assigns.revision)
     stats = Map.put(stats, :contributors, RepoQuery.count_contributors(socket.assigns.repo))
-    assign(socket, stats: stats)
+    assign(socket, :stats, stats)
   end
 
   defp assign_page_title(socket) do
