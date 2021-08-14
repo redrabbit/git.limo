@@ -7,6 +7,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   alias GitRekt.Git
   alias GitRekt.GitAgent
+  alias GitRekt.GitRepo
 
   require Logger
 
@@ -21,6 +22,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     state: :disco,
     caps: [],
     cmds: [],
+    repo: nil,
     writepack: nil,
     writepack_progress: %{
       total_objects: 0,
@@ -40,6 +42,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     state: :disco | :update_req | :pack | :buffer | :done,
     caps: [binary],
     cmds: [cmd],
+    repo: GitRepo.t,
     writepack: GitWritePack.t,
     writepack_progress: Git.odb_writepack_progress
   }
@@ -91,12 +94,17 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   def next(%__MODULE__{state: :done} = handle, []) do
-    with :ok <- push_pack(handle.agent, handle.writepack, handle.writepack_progress),
-         :ok <- Enum.each(handle.cmds, &push_cmd(handle.agent, &1)) do
-      {handle, [], report_status(handle)}
+    if handle.cmds != [] do
+      with  :ok <- push_pack(handle.agent, handle.writepack, handle.writepack_progress),
+            :ok <- push_cmds(handle.agent, handle.cmds),
+           {:ok, repo} <- GitRepo.push(handle.repo, handle.cmds) do
+        {%{handle|repo: repo}, [], report_status(handle)}
+      else
+        {:error, reason} ->
+          {handle, [], ["unpack #{inspect reason}"]}
+      end
     else
-      {:error, reason} ->
-        {handle, [], ["unpack #{inspect reason}"]}
+      {handle, [], []}
     end
   end
 
@@ -146,6 +154,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
         {:error, reason}
     end
   end
+
+  defp push_cmds(agent, cmds), do: Enum.each(cmds, &push_cmd(agent, &1))
 
   defp push_cmd(agent, {:create, new_oid, name}), do: :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
   defp push_cmd(agent, {:update, _old_oid, new_oid, name}), do: :ok = GitAgent.reference_create(agent, name, :oid, new_oid, force: true)

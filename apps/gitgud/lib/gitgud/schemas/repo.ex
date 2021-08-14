@@ -138,7 +138,7 @@ defmodule GitGud.Repo do
   end
 
   @doc """
-  Updates the associated issues labels for given `repo` with the given `params`.
+  Updates the associated issues labels for the given `repo` with the given `params`.
 
   ```elixir
   {:ok, repo} = GitGud.Repo.update_issue_labels(repo, issue_labels_params)
@@ -240,6 +240,8 @@ defmodule GitGud.Repo do
 
   defimpl GitRekt.GitRepo do
     def get_agent(repo), do: RepoPool.checkout_monitor(repo)
+
+    def push(repo, _cmds), do: DB.update(change(repo, pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)))
   end
 
   defimpl GitGud.AuthorizationPolicies do

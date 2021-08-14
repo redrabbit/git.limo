@@ -168,7 +168,7 @@ defmodule GitGud.SmartHTTPBackend do
         {:ok, agent} ->
           conn = put_resp_content_type(conn, "application/x-#{exec}-result")
           conn = send_chunked(conn, :ok)
-          service = WireProtocol.skip(WireProtocol.new(agent, exec))
+          service = WireProtocol.skip(WireProtocol.new(agent, exec, repo: repo))
           case git_stream_pack(conn, service) do
             {:ok, conn} ->
               halt(conn)
