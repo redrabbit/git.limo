@@ -144,12 +144,12 @@ defmodule GitRekt.WireProtocol do
 
   defp exec_next(service, lines, acc \\ []) do
     old_service = service
-    event_time = System.monotonic_time(:nanosecond)
+    event_time = System.monotonic_time(:microsecond)
     result =
       case apply(service.__struct__, :next, [service, lines]) do
         {service, [], out} ->
           if old_service.state not in [:buffer] do
-            duration = System.monotonic_time(:nanosecond) - event_time
+            duration = System.monotonic_time(:microsecond) - event_time
             :telemetry.execute([:gitrekt, :wire_protocol, service_command(old_service)], %{duration: duration}, %{service: old_service})
           end
           {service, acc ++ out}
