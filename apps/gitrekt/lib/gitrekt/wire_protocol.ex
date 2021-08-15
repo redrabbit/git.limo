@@ -206,17 +206,21 @@ defmodule GitRekt.WireProtocol do
   defp pkt_next(""), do: {:halt, nil}
   defp pkt_next("0000" <> rest), do: {[:flush], rest}
   defp pkt_next("PACK" <> _rest = pack), do: {[{:pack, pack}], ""}
-  defp pkt_next(<<hex::bytes-size(4), payload::binary>>) do
-    {payload_size, ""} = Integer.parse(hex, 16)
-    data_size = payload_size - 4
-    data_size_skip_lf = data_size - 1
-    case payload do
-      <<data::bytes-size(data_size_skip_lf), "\n", rest::binary>> ->
-        {[data], rest}
-      <<data::bytes-size(data_size), rest::binary>> ->
-        {[data], rest}
-      <<data::bytes-size(data_size)>> ->
-        {[data], ""}
+  defp pkt_next(<<hex::bytes-size(4), payload::binary>> = pkt) do
+    case Integer.parse(hex, 16) do
+      {payload_size, ""} ->
+        data_size = payload_size - 4
+        data_size_skip_lf = data_size - 1
+        case payload do
+          <<data::bytes-size(data_size_skip_lf), "\n", rest::binary>> ->
+            {[data], rest}
+          <<data::bytes-size(data_size), rest::binary>> ->
+            {[data], rest}
+          <<data::bytes-size(data_size)>> ->
+            {[data], ""}
+        end
+      :error ->
+        raise "Invalid PKT line #{inspect pkt}" # TODO
     end
   end
 
