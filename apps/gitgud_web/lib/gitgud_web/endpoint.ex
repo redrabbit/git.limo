@@ -16,7 +16,7 @@ defmodule GitGud.Web.Endpoint do
 
   plug Plug.Static,
     at: "/", from: :gitgud_web, gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(css fonts images js favicon.ico apple-touch-icon.png icon-192.png icon-512.png manifest.webmanifest robots.txt)
 
   if code_reloading? do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket

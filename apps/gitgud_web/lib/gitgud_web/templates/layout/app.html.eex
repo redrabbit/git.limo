@@ -13,6 +13,10 @@
 
     <title><%= title(@conn) %></title>
 
+    <link rel="icon" href="<%= Routes.static_path(@conn, "/favicon.ico") %>" sizes="any">
+    <link rel="icon" href="<%= Routes.static_path(@conn, "/images/logo.svg") %>">
+    <link rel="apple-touch-icon" href="<%= Routes.static_path(@conn, "/apple-touch-icon.png") %>">
+    <link rel="manifest" href="<%= Routes.static_path(@conn, "/manifest.webmanifest") %>">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
   </head>
 
