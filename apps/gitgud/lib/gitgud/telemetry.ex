@@ -45,7 +45,7 @@ defmodule GitGud.Telemetry do
     |> Base.encode16(case: :lower)
     |> String.slice(0, 7)
     |> inspect()
-    |> then(&("<GitCommit:#{&1}>"))
+    |> then(&("<GitOID:#{&1}>"))
   end
 
   defp map_git_agent_op_args(:odb_read, [odb, oid]), do: [inspect(odb), inspect_oid(oid)]
@@ -55,7 +55,7 @@ defmodule GitGud.Telemetry do
   defp map_git_agent_op_args(:odb_object_exists?, [odb, oid]), do: [inspect(odb), inspect_oid(oid)]
   defp map_git_agent_op_args(:references, [:undefined, opts]), do: Enum.map(opts, &inspect/1)
   defp map_git_agent_op_args(:references_with, [:undefined, opts]), do: Enum.map(opts, &inspect/1)
-  defp map_git_agent_op_args(:reference_create, [name, :oid, oid, force]), do: [inspect(name), inspect(:oid), inspect_oid(oid), inspect(force)]
+  defp map_git_agent_op_args(:reference_create, [name, :oid, oid, force]), do: [inspect(name), inspect(:oid), inspect_oid(oid), "force: #{force}"]
   defp map_git_agent_op_args(:object, [oid]), do: [inspect_oid(oid)]
   defp map_git_agent_op_args(:graph_ahead_behind, [oid, oid]), do: [inspect_oid(oid), inspect_oid(oid)]
   defp map_git_agent_op_args(:commit_create, [update_ref, author, committer, message, tree_oid, parents_oids]), do: [inspect(update_ref), inspect(author), inspect(committer), inspect(message), inspect_oid(tree_oid), inspect(Enum.map(parents_oids, &inspect_oid/1))]
