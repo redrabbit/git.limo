@@ -5,10 +5,14 @@ defmodule GitGud.Web.RepoController do
 
   use GitGud.Web, :controller
 
+  alias GitRekt.GitAgent
+
   alias GitGud.UserQuery
   alias GitGud.Repo
   alias GitGud.RepoQuery
   alias GitGud.IssueQuery
+
+  require Logger
 
   plug :ensure_authenticated when action != :index
   plug :put_layout, :user_profile when action == :index
@@ -116,12 +120,25 @@ defmodule GitGud.Web.RepoController do
   # Helpers
   #
 
-  defp stats(%Repo{id: repo_id}, batch) do
-    %{
-      branches: 0,
-      tags: 0,
-      issues: Map.get(batch.issues, repo_id, 0),
-      contributors: Map.get(batch.contributors, repo_id, 0)
-    }
+  defp stats(repo, batch) do
+    with {:ok, agent} <- GitAgent.unwrap(repo),
+         {:ok, refs} = GitAgent.references(agent) do
+      group_refs = Enum.group_by(refs, &(&1.type))
+      %{
+        branches: length(group_refs[:branch] || []),
+        tags: length(group_refs[:tag] || []),
+        issues: batch.issues[repo.id] || 0,
+        contributors: batch.contributors[repo.id] || 0
+      }
+    else
+      {:error, reason} ->
+        Logger.warn(reason)
+        %{
+          branches: 0,
+          tags: 0,
+          issues: batch.issues[repo.id] || 0,
+          contributors: batch.contributors[repo.id] || 0
+        }
+    end
   end
 end
