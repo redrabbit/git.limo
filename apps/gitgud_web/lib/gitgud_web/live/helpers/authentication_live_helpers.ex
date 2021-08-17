@@ -41,7 +41,7 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   @doc """
   Authenticates `socket`.
   """
-  def authenticate(socket) when is_nil(socket.assigns.current_user) and is_map_key(socket.assigns, :user_id), do: assign(socket, :current_user, UserQuery.by_id(socket.assigns.user_id))
+  def authenticate(socket) when is_nil(socket.assigns.current_user) and not is_nil(socket.assigns.user_id), do: assign(socket, :current_user, UserQuery.by_id(socket.assigns.user_id))
   def authenticate(socket), do: socket
 
   @doc """
