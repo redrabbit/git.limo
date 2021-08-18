@@ -117,7 +117,7 @@ defmodule GitGud.DataFactory do
 
   defp make_gpg_key(name, emails) do
     gen_key =
-    Enum.reduce(emails, "%no-protection\n%pubring -\nKey-Type: default\nSubkey-Type: default", fn email, acc ->
+    Enum.reduce(emails, "%no-protection\n%pubring -\nKey-Type: eddsa\nKey-Curve: Ed25519\nSubkey-Type: ecdh\nSubkey-Curve: Curve25519", fn email, acc ->
       acc <> "\nName-Real: #{name}\nName-Email: #{email}"
     end)
 
