@@ -600,8 +600,8 @@ defmodule GitRekt.GitAgent do
     {:reply, call_stream_next(stream, chunk_size), state, config.idle_timeout}
   end
 
-  def handle_call(op, _from, {handle, %{cache: cache} = config} = state) do
-    {:reply, call_cache(handle, op, cache), state, config.idle_timeout}
+  def handle_call(op, {pid, _tag}, {handle, %{cache: cache} = config} = state) do
+    {:reply, call_cache(handle, op, cache, pid), state, config.idle_timeout}
   end
 
   @impl true
@@ -903,24 +903,25 @@ defmodule GitRekt.GitAgent do
 
   defp call(handle, {:transaction, _name, cb}), do: cb.(handle)
 
-  defp call_cache(handle, {:transaction, _name, _cb} = op, cache) when not is_tuple(handle) do
-    call_cache({handle, cache}, op, cache)
+  defp call_cache(handle, op, cache), do: call_cache(handle, op, cache, self())
+  defp call_cache(handle, {:transaction, _name, _cb} = op, cache, pid) when not is_tuple(handle) do
+    call_cache({handle, cache}, op, cache, pid)
   end
 
-  defp call_cache(handle, op, cache) do
+  defp call_cache(handle, op, cache, pid) do
     cache_adapter = Keyword.get(Application.get_env(:gitrekt, __MODULE__, []), :cache_adapter, __MODULE__)
     if cache_key = cache_adapter.make_cache_key(op) do
-      event_time = System.monotonic_time(:microsecond)
+      event_time = :os.system_time(:microsecond)
       if cache_result = cache_adapter.fetch_cache(cache, cache_key) do
-        telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time}, %{cache: cache_key})
+        telemetry(:execute, op, %{duration: :os.system_time(:microsecond) - event_time}, %{cache: cache_key, pid: pid})
         {:ok, cache_result}
       else
         case call(handle, op) do
           :ok ->
-            telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time})
+            telemetry(:execute, op, %{duration: :os.system_time(:microsecond) - event_time}, %{pid: pid})
             :ok
           {:ok, result} ->
-            telemetry(:execute, op, %{duration: System.monotonic_time(:microsecond) - event_time})
+            telemetry(:execute, op, %{duration: :os.system_time(:microsecond) - event_time}, %{pid: pid})
             cache_adapter.put_cache(cache, cache_key, result)
             {:ok, result}
           {:error, reason} ->
@@ -928,7 +929,7 @@ defmodule GitRekt.GitAgent do
         end
       end
     else
-      telemetry(:execute, op, fn -> call(handle, op) end)
+      telemetry(:execute, op, fn -> call(handle, op) end, %{pid: pid})
     end
   end
 
@@ -948,7 +949,6 @@ defmodule GitRekt.GitAgent do
     else: {head, :halt}
   end
 
-  defp telemetry(event_name, op, measurements, meta \\ %{})
   defp telemetry(event_name, op, measurements, meta) when is_map(measurements) do
     {name, args} = map_operation(op)
     :telemetry.execute([:gitrekt, :git_agent, event_name], measurements, Map.merge(%{op: name, args: args}, meta))

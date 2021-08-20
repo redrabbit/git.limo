@@ -129,6 +129,10 @@ defmodule GitRekt.WireProtocol do
     |> Kernel.<>("\n")
   end
 
+  @doc false
+  def __type__(%{__struct__: GitRekt.WireProtocol.UploadPack}), do: :upload_pack
+  def __type__(%{__struct__: GitRekt.WireProtocol.ReceivePack}), do: :receive_pack
+
   #
   # Helpers
   #
@@ -144,13 +148,13 @@ defmodule GitRekt.WireProtocol do
 
   defp exec_next(service, lines, acc \\ []) do
     old_service = service
-    event_time = System.monotonic_time(:microsecond)
+    event_time = :os.system_time(:microsecond)
     result =
       case apply(service.__struct__, :next, [service, lines]) do
         {service, [], out} ->
           if old_service.state not in [:buffer] do
-            duration = System.monotonic_time(:microsecond) - event_time
-            :telemetry.execute([:gitrekt, :wire_protocol, service_command(old_service)], %{duration: duration}, %{service: old_service})
+            duration = :os.system_time(:microsecond) - event_time
+            :telemetry.execute([:gitrekt, :wire_protocol, __type__(old_service)], %{duration: duration}, %{service: old_service})
           end
           {service, acc ++ out}
         {service, lines, out} ->
@@ -183,9 +187,6 @@ defmodule GitRekt.WireProtocol do
 
   defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
   defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
-
-  defp service_command(%{__struct__: GitRekt.WireProtocol.UploadPack}), do: :upload_pack
-  defp service_command(%{__struct__: GitRekt.WireProtocol.ReceivePack}), do: :receive_pack
 
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
