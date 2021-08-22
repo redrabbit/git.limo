@@ -19,7 +19,7 @@ defmodule GitGud.SmartHTTPBackend do
     plug :fetch_query_params
     plug :dispatch
 
-    get "/:user_login/:repo_name/info/refs", to: GitGud.SmartHTTPBackend, init_opts: :discovery
+    get "/:user_login/:repo_name/info/refs", to: GitGud.SmartHTTPBackend, init_opts: :discover
     post "/:user_login/:repo_name/git-receive-pack", to: GitGud.SmartHTTPBackend, init_opts: :receive_pack
     post "/:user_login/:repo_name/git-upload-pack", to: GitGud.SmartHTTPBackend, init_opts: :upload_pack
   end
@@ -65,8 +65,8 @@ defmodule GitGud.SmartHTTPBackend do
   @doc """
   Returns all references available for the given Git repository.
   """
-  @spec discovery(Plug.Conn.t, keyword) :: Plug.Conn.t
-  def discovery(conn, _opts) do
+  @spec discover(Plug.Conn.t, keyword) :: Plug.Conn.t
+  def discover(conn, _opts) do
     if repo = fetch_user_repo(conn),
       do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
     else: require_authentication_or_404(conn)

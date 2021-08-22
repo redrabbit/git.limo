@@ -7,7 +7,7 @@ defmodule GitGud.SmartHTTPBackendRouter do
   plug :fetch_query_params
   plug :dispatch
 
-  get "/:user_login/:repo_name/info/refs", to: SmartHTTPBackend, init_opts: :discovery
+  get "/:user_login/:repo_name/info/refs", to: SmartHTTPBackend, init_opts: :discover
   post "/:user_login/:repo_name/git-receive-pack", to: SmartHTTPBackend, init_opts: :receive_pack
   post "/:user_login/:repo_name/git-upload-pack", to: SmartHTTPBackend, init_opts: :upload_pack
 end
