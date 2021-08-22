@@ -41,7 +41,7 @@ defmodule GitGud.SmartHTTPBackendTest do
   test "fails to advertise references to dump clients", %{user: user, repo: repo} do
     conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
     conn = SmartHTTPBackend.call(conn, :discover)
-    assert conn.status == 403
+    assert conn.status == 400
   end
 
   describe "when repository is empty" do

@@ -45,11 +45,11 @@ defmodule GitGud.Web.CodebaseController do
           )
         else
           {:ok, {_object, _reference}} ->
-            {:error, :unauthorized}
+            {:error, :forbidden}
           {:error, reason} ->
             {:error, reason}
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -71,13 +71,13 @@ defmodule GitGud.Web.CodebaseController do
           )
         else
           {:ok, {_object, _reference}} ->
-            {:error, :unauthorized}
+            {:error, :not_found}
           {:ok, %GitTreeEntry{type: :blob}} ->
             {:error, :not_found}
           {:error, reason} ->
             {:error, reason}
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -146,7 +146,7 @@ defmodule GitGud.Web.CodebaseController do
             )
           end
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -173,13 +173,13 @@ defmodule GitGud.Web.CodebaseController do
          )
         else
           {:ok, {_object, _reference}} ->
-            {:error, :unauthorized}
+            {:error, :not_found}
           {:ok, %GitTree{}} ->
             {:error, :not_found}
           {:error, reason} ->
             {:error, reason}
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -242,7 +242,7 @@ defmodule GitGud.Web.CodebaseController do
             )
           end
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -273,7 +273,7 @@ defmodule GitGud.Web.CodebaseController do
           {:error, reason} ->
             {:error, reason}
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -329,7 +329,7 @@ defmodule GitGud.Web.CodebaseController do
           {:error, reason} ->
             {:error, reason}
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 

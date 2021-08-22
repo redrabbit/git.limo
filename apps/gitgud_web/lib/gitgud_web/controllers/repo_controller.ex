@@ -41,7 +41,7 @@ defmodule GitGud.Web.RepoController do
   def new(conn, %{} = _params) do
     if verified?(conn),
       do: render(conn, "new.html", changeset: Repo.changeset(%Repo{})),
-    else: {:error, :unauthorized}
+    else: {:error, :forbidden}
   end
 
   @doc """
@@ -62,7 +62,7 @@ defmodule GitGud.Web.RepoController do
           |> put_status(:bad_request)
           |> render("new.html", changeset: %{changeset|action: :insert})
       end
-    end || {:error, :unauthorized}
+    end || {:error, :forbidden}
   end
 
   @doc """
@@ -73,7 +73,7 @@ defmodule GitGud.Web.RepoController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       if authorized?(conn, repo, :admin),
         do: render(conn, "edit.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: Repo.changeset(repo)),
-      else: {:error, :unauthorized}
+      else: {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -96,7 +96,7 @@ defmodule GitGud.Web.RepoController do
             |> put_status(:bad_request)
             |> render("edit.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -112,7 +112,7 @@ defmodule GitGud.Web.RepoController do
         conn
         |> put_flash(:info, "Repository '#{repo.owner_login}/#{repo.name}' deleted.")
         |> redirect(to: Routes.user_path(conn, :show, user))
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 

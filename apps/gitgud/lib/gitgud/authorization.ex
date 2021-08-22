@@ -16,11 +16,11 @@ defmodule GitGud.Authorization do
   @doc """
   Enforces the authorization policy.
   """
-  @spec enforce_policy(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: {:ok, GitGud.AuthorizationPolicies.t} | {:error, :unauthorized}
+  @spec enforce_policy(User.t | nil, GitGud.AuthorizationPolicies.t, atom) :: {:ok, GitGud.AuthorizationPolicies.t} | {:error, :forbidden}
   def enforce_policy(user, resource, action) do
     if authorized?(user, resource, action),
       do: {:ok, resource},
-    else: {:error, :unauthorized}
+    else: {:error, :forbidden}
   end
 
   @doc """
@@ -30,7 +30,7 @@ defmodule GitGud.Authorization do
   def enforce_policy!(user, resource, action, default \\ nil) do
     case enforce_policy(user, resource, action) do
       {:ok, resource} -> resource
-      {:error, :unauthorized} -> default
+      {:error, :forbidden} -> default
     end
   end
 

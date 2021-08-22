@@ -67,9 +67,12 @@ defmodule GitGud.SmartHTTPBackend do
   """
   @spec discover(Plug.Conn.t, keyword) :: Plug.Conn.t
   def discover(conn, _opts) do
-    if repo = fetch_user_repo(conn),
-      do: git_info_refs(conn, repo, conn.params["service"]) || require_authentication(conn),
-    else: require_authentication_or_404(conn)
+    case fetch_user_repo(conn) do
+      {:ok, repo} ->
+        git_info_refs(conn, repo)
+      {:error, status_error} ->
+        halt_with_error(conn, status_error)
+    end
   end
 
   @doc """
@@ -77,9 +80,13 @@ defmodule GitGud.SmartHTTPBackend do
   """
   @spec receive_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
   def receive_pack(conn, _opts) do
-    if repo = fetch_user_repo(conn),
-      do: git_pack(conn, repo, "git-receive-pack") || require_authentication(conn),
-    else: require_authentication_or_404(conn)
+    service = "git-receive-pack"
+    case fetch_user_repo(conn, service) do
+      {:ok, repo} ->
+        git_pack(conn, repo, service)
+      {:error, status_error} ->
+        halt_with_error(conn, status_error)
+    end
   end
 
   @doc """
@@ -87,9 +94,13 @@ defmodule GitGud.SmartHTTPBackend do
   """
   @spec upload_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
   def upload_pack(conn, _opts) do
-    if repo = fetch_user_repo(conn),
-      do: git_pack(conn, repo, "git-upload-pack") || require_authentication(conn),
-    else: require_authentication_or_404(conn)
+    service = "git-upload-pack"
+    case fetch_user_repo(conn, service) do
+      {:ok, repo} ->
+        git_pack(conn, repo, service)
+      {:error, status_error} ->
+        halt_with_error(conn, status_error)
+    end
   end
 
   #
@@ -109,11 +120,32 @@ defmodule GitGud.SmartHTTPBackend do
   # Helpers
   #
 
-  defp fetch_user_repo(conn) do
+  defp fetch_user_repo(conn, service \\ nil) do
     user_login = conn.params["user_login"]
     repo_name = conn.params["repo_name"]
-    if String.ends_with?(repo_name, ".git") do
-      RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5), viewer: conn.assigns[:current_user])
+    service = service || conn.params["service"]
+    cond do
+      is_nil(user_login) ->
+        {:error, :not_found}
+      is_nil(repo_name) ->
+        {:error, :not_found}
+      !String.ends_with?(repo_name, ".git") ->
+        {:error, :not_found}
+      service not in ["git-receive-pack", "git-upload-pack"] ->
+        {:error, :bad_request}
+      repo = RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5), viewer: conn.assigns[:current_user]) ->
+        cond do
+          authorized?(conn, repo, service) ->
+            {:ok, repo}
+          is_nil(conn.assigns[:current_user]) ->
+            {:error, :unauthorized}
+          true ->
+            {:error, :forbidden}
+        end
+      is_nil(conn.assigns[:current_user]) ->
+        {:error, :unauthorized}
+      true ->
+        {:error, :not_found}
     end
   end
 
@@ -132,54 +164,58 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
-  defp require_authentication(conn) do
-    conn
-    |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
-    |> send_resp(:unauthorized, "Unauthorized")
-    |> halt()
-  end
-
-  defp require_authentication_or_404(conn) do
-    if is_nil(conn.assigns[:current_user]),
-      do: require_authentication(conn),
-    else: send_resp(conn, :not_found, "Not found")
-  end
-
-  defp git_info_refs(conn, repo, exec) when exec in ["git-upload-pack", "git-receive-pack"] do
-    if authorized?(conn, repo, exec) do
-      case GitAgent.start_link(RepoStorage.workdir(repo)) do
-        {:ok, agent} ->
-          refs = WireProtocol.reference_discovery(agent, exec)
-          info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
-          conn
-          |> put_resp_content_type("application/x-#{exec}-advertisement")
-          |> send_resp(:ok, info)
-        {:error, _reason} ->
-          send_resp(conn, :internal_server_error, "Something went wrong")
-      end
+  defp halt_with_error(conn, status) do
+    case status do
+      :bad_request ->
+        conn
+        |> send_resp(:bad_request, "Bad Request")
+        |> halt()
+      :unauthorized ->
+        conn
+        |> put_resp_header("www-authenticate", "Basic realm=\"GitGud\"")
+        |> send_resp(:unauthorized, "Unauthorized")
+        |> halt()
+      :forbidden ->
+        conn
+        |> send_resp(:forbidden, "Forbidden")
+        |> halt()
+      :not_found ->
+        conn
+        |> send_resp(:not_found, "Not Found")
+        |> halt()
     end
   end
 
-  defp git_info_refs(conn, _repo, _exec), do: send_resp(conn, :forbidden, "Forbidden")
+  defp git_info_refs(conn, repo) do
+    case GitAgent.start_link(RepoStorage.workdir(repo)) do
+      {:ok, agent} ->
+        exec = conn.params["service"]
+        refs = WireProtocol.reference_discovery(agent, exec)
+        info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
+        conn
+        |> put_resp_content_type("application/x-#{exec}-advertisement")
+        |> send_resp(:ok, info)
+      {:error, _reason} ->
+        send_resp(conn, :internal_server_error, "Something went wrong")
+    end
+  end
 
   defp git_pack(conn, repo, exec) do
-    if authorized?(conn, repo, exec) do
-      case GitAgent.start_link(RepoStorage.workdir(repo)) do
-        {:ok, agent} ->
-          conn = put_resp_content_type(conn, "application/x-#{exec}-result")
-          conn = send_chunked(conn, :ok)
-          service = WireProtocol.skip(WireProtocol.new(agent, exec, repo: repo))
-          case git_stream_pack(conn, service) do
-            {:ok, conn} ->
-              halt(conn)
-            {:error, _reason} ->
-              conn
-              |> send_resp(:internal_server_error, "Something went wrong")
-              |> halt()
-          end
-        {:error, _reason} ->
-          send_resp(conn, :internal_server_error, "Something went wrong")
-      end
+    case GitAgent.start_link(RepoStorage.workdir(repo)) do
+      {:ok, agent} ->
+        conn = put_resp_content_type(conn, "application/x-#{exec}-result")
+        conn = send_chunked(conn, :ok)
+        service = WireProtocol.skip(WireProtocol.new(agent, exec, repo: repo))
+        case git_stream_pack(conn, service) do
+          {:ok, conn} ->
+            halt(conn)
+          {:error, _reason} ->
+            conn
+            |> send_resp(:internal_server_error, "Something went wrong")
+            |> halt()
+        end
+      {:error, _reason} ->
+        send_resp(conn, :internal_server_error, "Something went wrong")
     end
   end
 

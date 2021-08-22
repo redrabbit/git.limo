@@ -48,7 +48,7 @@ defmodule GitGud.Web.IssueController do
           repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
           changeset: Issue.changeset(%Issue{})
         )
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -73,7 +73,7 @@ defmodule GitGud.Web.IssueController do
             |> put_status(:bad_request)
             |> render("new.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :insert})
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 

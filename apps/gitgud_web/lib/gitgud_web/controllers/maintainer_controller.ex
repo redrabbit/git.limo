@@ -33,7 +33,7 @@ defmodule GitGud.Web.MaintainerController do
           maintainers: RepoQuery.maintainers(repo),
           changeset: changeset
         )
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end  || {:error, :not_found}
   end
 
@@ -76,7 +76,7 @@ defmodule GitGud.Web.MaintainerController do
             changeset: %{changeset|action: :insert}
           )
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -102,7 +102,7 @@ defmodule GitGud.Web.MaintainerController do
             end
           end
         end || {:error, :bad_request}
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 
@@ -122,7 +122,7 @@ defmodule GitGud.Web.MaintainerController do
             |> redirect(to: Routes.maintainer_path(conn, :index, user_login, repo_name))
           end
         end || {:error, :bad_request}
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 end

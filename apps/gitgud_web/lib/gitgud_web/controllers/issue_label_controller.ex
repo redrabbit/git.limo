@@ -50,7 +50,7 @@ defmodule GitGud.Web.IssueLabelController do
             |> put_status(:bad_request)
             |> render("index.html", repo: repo, repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open), changeset: %{changeset|action: :update})
         end
-      end || {:error, :unauthorized}
+      end || {:error, :forbidden}
     end || {:error, :not_found}
   end
 end
