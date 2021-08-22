@@ -21,7 +21,3 @@ defprotocol GitRekt.GitRepo do
   @spec push(t, [ReceivePack.cmd]) :: {:ok, t} | {:error, term}
   def push(repo, cmds)
 end
-
-defimpl GitRekt.GitRepo, for: Any do
-  def push(repo, _cmds), do: {:ok, repo}
-end
