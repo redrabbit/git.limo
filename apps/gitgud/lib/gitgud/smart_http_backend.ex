@@ -60,6 +60,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   alias GitGud.Authorization
 
+  plug :fetch_session
   plug :basic_authentication
 
   @doc """
@@ -121,9 +122,9 @@ defmodule GitGud.SmartHTTPBackend do
   #
 
   defp fetch_user_repo(conn, service \\ nil) do
-    user_login = conn.params["user_login"]
-    repo_name = conn.params["repo_name"]
-    service = service || conn.params["service"]
+    user_login = conn.path_params["user_login"]
+    repo_name = conn.path_params["repo_name"]
+    service = service || conn.query_params["service"]
     cond do
       is_nil(user_login) ->
         {:error, :not_found}
@@ -158,7 +159,9 @@ defmodule GitGud.SmartHTTPBackend do
          {:ok, credentials} <- decode64(auth),
          [login, passwd] <- split(credentials, ":", parts: 2),
          %User{} = user <- Account.check_credentials(login, passwd) do
-      assign(conn, :current_user, user)
+      conn
+      |> put_session(:user_id, user.id)
+      |> assign(:current_user, user)
     else
       _ -> conn
     end
@@ -189,7 +192,7 @@ defmodule GitGud.SmartHTTPBackend do
   defp git_info_refs(conn, repo) do
     case GitAgent.start_link(RepoStorage.workdir(repo)) do
       {:ok, agent} ->
-        exec = conn.params["service"]
+        exec = conn.query_params["service"]
         refs = WireProtocol.reference_discovery(agent, exec)
         info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
         conn
