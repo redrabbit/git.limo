@@ -561,43 +561,43 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:references, glob, opts}, _from, {handle, config} = state) do
+  def handle_call({:references, glob, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:references, glob, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:references, glob, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:references_with, with_target, glob, opts}, _from, {handle, config} = state) do
+  def handle_call({:references_with, with_target, glob, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:references_with, with_target, glob, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:references_with, with_target, glob, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:history, obj, opts}, _from, {handle, config} = state) do
+  def handle_call({:history, obj, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:history, obj, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:history, obj, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:tree_entries, tree, opts}, _from, {handle, config} = state) do
+  def handle_call({:tree_entries, tree, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries, tree, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:tree_entries, tree, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:tree_entries, rev, path, opts}, _from, {handle, config} = state) do
+  def handle_call({:tree_entries, rev, path, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries, rev, path, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:tree_entries, rev, path, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:tree_entries_with, with_target, rev, path, opts}, _from, {handle, config} = state) do
+  def handle_call({:tree_entries_with, with_target, rev, path, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries_with, with_target, rev, path, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:tree_entries_with, with_target, rev, path, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:commit_parents, commit, opts}, _from, {handle, config} = state) do
+  def handle_call({:commit_parents, commit, opts}, {pid, _tag}, {handle, config} = state) do
     {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:commit_parents, commit, opts}, chunk_size), state, config.idle_timeout}
+    {:reply, call_stream(handle, {:commit_parents, commit, opts}, chunk_size, pid), state, config.idle_timeout}
   end
 
-  def handle_call({:stream_next, stream, chunk_size}, _from, {_handle, config} = state) do
-    {:reply, call_stream_next(stream, chunk_size), state, config.idle_timeout}
+  def handle_call({:stream_next, op, stream, chunk_size}, {pid, _tag}, {_handle, config} = state) do
+    {:reply, call_stream_next(op, stream, chunk_size, pid), state, config.idle_timeout}
   end
 
   def handle_call(op, {pid, _tag}, {handle, %{cache: cache} = config} = state) do
@@ -905,7 +905,12 @@ defmodule GitRekt.GitAgent do
 
   defp call_cache(handle, op, cache), do: call_cache(handle, op, cache, self())
   defp call_cache(handle, {:transaction, _name, _cb} = op, cache, pid) when not is_tuple(handle) do
-    call_cache({handle, cache}, op, cache, pid)
+    ref = make_ref()
+    event_time = :os.system_time(:microsecond)
+    telemetry(:transaction_start, op, %{}, %{ref: ref, pid: pid})
+    result = call_cache({handle, cache}, op, cache, pid)
+    telemetry(:transaction_stop, op, %{duration: :os.system_time(:microsecond) - event_time}, %{ref: ref, pid: pid})
+    result
   end
 
   defp call_cache(handle, op, cache, pid) do
@@ -933,18 +938,25 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp call_stream(handle, op, chunk_size) do
-    case call(handle, op) do
-      {:ok, stream} ->
-        {:ok, async_stream(op, stream, chunk_size)}
-      {:error, reason} ->
-        {:error, reason}
-    end
+  defp call_stream(handle, op, chunk_size, pid) do
+    telemetry(:execute, op, fn ->
+      case call(handle, op) do
+        {:ok, stream} ->
+          if chunk_size == :infinity,
+            do: {:ok, Enum.to_list(stream)},
+          else: {:ok, async_stream(op, stream, chunk_size, pid)}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end, %{stream_chunk_size: chunk_size, pid: pid})
   end
 
-  def call_stream_next(stream, chunk_size) do
+  def call_stream_next(op, stream, chunk_size, pid) do
+    event_time = :os.system_time(:microsecond)
     {head, tail} = StreamSplit.take_and_drop(stream, chunk_size)
-    if length(head) == chunk_size,
+    buffer_size = length(head)
+    telemetry(:stream, op, %{duration: :os.system_time(:microsecond) - event_time}, %{stream_buffer_size: buffer_size, stream_chunk_size: chunk_size, pid: pid})
+    if buffer_size == chunk_size,
       do: {head, tail},
     else: {head, :halt}
   end
@@ -1336,8 +1348,7 @@ defmodule GitRekt.GitAgent do
     end
   end
 
-  defp async_stream(_op, stream, :infinity), do: Enum.to_list(stream)
-  defp async_stream(op, stream, chunk_size) do
+  defp async_stream(op, stream, chunk_size, pid) do
     agent = self()
     Stream.resource(
       fn -> stream end,
@@ -1345,10 +1356,10 @@ defmodule GitRekt.GitAgent do
           {:halt, agent}
          stream ->
           if agent == self(),
-            do: call_stream_next(stream, chunk_size),
-          else: telemetry(:stream, op, fn -> GenServer.call(agent, {:stream_next, stream, chunk_size}, @default_config.timeout) end, %{chunk_size: chunk_size})
+            do: call_stream_next(op, stream, chunk_size, pid),
+          else: GenServer.call(agent, {:stream_next, op, stream, chunk_size}, @default_config.timeout)
       end,
-      &(&1)
+      fn stream -> stream end
     )
   end
 

@@ -5,9 +5,24 @@ defmodule GitGud.Application do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    :telemetry.attach_many("git-agent", [[:gitrekt, :git_agent, :execute], [:gitrekt, :git_agent, :stream]], &GitGud.Telemetry.handle_event/4, %{})
-    :telemetry.attach("git-upload-pack", [:gitrekt, :wire_protocol, :upload_pack], &GitGud.Telemetry.handle_event/4, %{})
-    :telemetry.attach("git-receive-pack", [:gitrekt, :wire_protocol, :receive_pack], &GitGud.Telemetry.handle_event/4, %{})
+    :telemetry.attach_many("git-agent",
+      [
+        [:gitrekt, :git_agent, :execute],
+        [:gitrekt, :git_agent, :stream],
+        [:gitrekt, :git_agent, :transaction_start],
+        [:gitrekt, :git_agent, :transaction_stop]
+      ],
+      &GitGud.Telemetry.handle_event/4, %{}
+    )
+
+    :telemetry.attach_many("git-wire-protocol",
+      [
+        [:gitrekt, :wire_protocol, :start],
+        [:gitrekt, :wire_protocol, :stop]
+      ],
+      &GitGud.Telemetry.handle_event/4, %{}
+    )
+
     :telemetry.attach("graphql", [:absinthe, :execute, :operation, :stop], &GitGud.Telemetry.handle_event/4, %{})
 
     children = [

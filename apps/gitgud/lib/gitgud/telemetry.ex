@@ -4,19 +4,31 @@ defmodule GitGud.Telemetry do
   require Logger
 
   def handle_event([:gitrekt, :git_agent, :execute], %{duration: duration}, %{op: op, args: args} = meta, _config) do
-    args = Enum.join(map_git_agent_op_args(op, args), ", ")
+    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
     if Map.get(meta, :cache),
       do: Logger.debug("[Git Agent] #{op}(#{args}) executed in ⚡ #{duration_inspect(duration)}"),
     else: Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
   end
 
-  def handle_event([:gitrekt, :git_agent, :stream], %{duration: duration}, %{op: op, args: args, chunk_size: chunk_size}, _config) do
+  def handle_event([:gitrekt, :git_agent, :transaction_start], _measurements, %{op: op, args: args} = meta, _config) do
     args = Enum.join(map_git_agent_op_args(op, args), ", ")
-    Logger.debug("[Git Agent] #{op}(#{args}) streamed #{chunk_size} items in #{duration_inspect(duration)}")
+    Logger.debug("[Git Agent] #{op}(#{args}) started")
   end
 
-  def handle_event([:gitrekt, :wire_protocol, command], %{duration: duration}, %{service: service}, _config) do
-    Logger.debug("[Wire Protocol] #{command} executed #{service.state} in #{duration_inspect(duration)}")
+  def handle_event([:gitrekt, :git_agent, :transaction_stop], _measurements, _meta, _config) do
+  end
+
+  def handle_event([:gitrekt, :git_agent, :stream], %{duration: duration}, %{op: op, args: args} = meta, _config) do
+    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
+    Logger.debug("[Git Agent] #{op}(#{args}) streamed #{meta.stream_buffer_size} items in #{duration_inspect(duration)}")
+  end
+
+  def handle_event([:gitrekt, :wire_protocol, :start], _measurements, %{service: service, state: state} = _meta, _config) do
+    Logger.debug("[Wire Protocol] #{service} start #{state}")
+  end
+
+  def handle_event([:gitrekt, :wire_protocol, :stop], %{duration: duration}, %{service: service, state: state} = _meta, _config) do
+    Logger.debug("[Wire Protocol] #{service} executed #{state} in #{duration_inspect(duration)}")
   end
 
   def handle_event([:absinthe, :execute, :operation, :stop], %{duration: duration}, meta, _config) do
@@ -67,6 +79,9 @@ defmodule GitGud.Telemetry do
   defp map_git_agent_op_args(:transaction, [{:tree_entries_with_commit, oid, path}, _callback]), do: [":tree_entries_with_commit", inspect_oid(oid), inspect(path)]
   defp map_git_agent_op_args(:transaction, [nil, callback]), do: [inspect(callback)]
   defp map_git_agent_op_args(_op, args), do: Enum.map(args, &inspect/1)
+
+  defp map_git_agent_op_opts(_op, %{stream_chunk_size: chunk_size}), do: ["stream_chunk_size: #{chunk_size}"]
+  defp map_git_agent_op_opts(_op, _meta), do: []
 
   defp map_absinthe_op(%Absinthe.Blueprint.Document.Operation{name: name, type: type, variable_definitions: var_defs, variable_uses: var_uses}) when is_binary(name) do
     %{name: name, type: type, args: Enum.map(var_uses, fn %{name: name} -> {name, Enum.find_value(var_defs, &(&1.name == name && map_absinthe_input_value(&1.provided_value)))} end)}

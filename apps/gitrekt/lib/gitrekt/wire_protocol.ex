@@ -133,6 +133,10 @@ defmodule GitRekt.WireProtocol do
   def __type__(%{__struct__: GitRekt.WireProtocol.UploadPack}), do: :upload_pack
   def __type__(%{__struct__: GitRekt.WireProtocol.ReceivePack}), do: :receive_pack
 
+  @doc false
+  def __service__(:upload_pack), do: GitRekt.WireProtocol.UploadPack
+  def __service__(:receive_pack), do: GitRekt.WireProtocol.ReceivePack
+
   #
   # Helpers
   #
@@ -147,20 +151,20 @@ defmodule GitRekt.WireProtocol do
   end
 
   defp exec_next(service, lines, acc \\ []) do
-    old_service = service
-    event_time = :os.system_time(:microsecond)
-    result =
-      case apply(service.__struct__, :next, [service, lines]) do
-        {service, [], out} ->
-          if old_service.state not in [:buffer] do
-            duration = :os.system_time(:microsecond) - event_time
-            :telemetry.execute([:gitrekt, :wire_protocol, __type__(old_service)], %{duration: duration}, %{service: old_service})
-          end
-          {service, acc ++ out}
-        {service, lines, out} ->
-          exec_next(service, lines, acc ++ out)
-      end
-    result
+    ref = make_ref()
+    telemetry_start(service, service.state, ref)
+    exec_next_state(service, lines, acc, service.state, ref, :os.system_time(:microsecond))
+  end
+
+  defp exec_next_state(service, lines, acc, old_state, ref, event_time) do
+    case apply(service.__struct__, :next, [service, lines]) do
+      {service, [], out} ->
+        telemetry_stop(service, old_state, ref, event_time)
+        {service, acc ++ out}
+      {service, lines, out} ->
+        telemetry_next(service, old_state, ref, event_time)
+        exec_next_state(service, lines, acc ++ out, service.state, ref, event_time)
+    end
   end
 
   defp exec_after(service, lines) do
@@ -171,7 +175,6 @@ defmodule GitRekt.WireProtocol do
       {:cont, service, encode(lines)}
     end
   end
-
 
   defp exec_all(service, lines, acc \\ []) do
     done? = done?(service)
@@ -187,6 +190,22 @@ defmodule GitRekt.WireProtocol do
 
   defp exec_impl("git-upload-pack"),  do: GitRekt.WireProtocol.UploadPack
   defp exec_impl("git-receive-pack"), do: GitRekt.WireProtocol.ReceivePack
+
+  defp telemetry_start(_service, state, _ref) when state == :buffer, do: :ok
+  defp telemetry_start(service, state, ref) do
+    :telemetry.execute([:gitrekt, :wire_protocol, :start], %{}, %{ref: ref, service: __type__(service), state: state})
+  end
+
+  defp telemetry_stop(_service, state, _ref, _event_time) when state == :buffer, do: :ok
+  defp telemetry_stop(service, state, ref, event_time) do
+    :telemetry.execute([:gitrekt, :wire_protocol, :stop], %{duration: :os.system_time(:microsecond) - event_time}, %{ref: ref, service: __type__(service), state: state})
+  end
+
+  defp telemetry_next(service, state, _ref, _event_time) when service.state == state, do: :ok
+  defp telemetry_next(service, state, ref, event_time) do
+    telemetry_stop(service, state, ref, event_time)
+    telemetry_start(service, service.state, ref)
+  end
 
   defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
   defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
