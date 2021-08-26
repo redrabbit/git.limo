@@ -53,11 +53,11 @@ defmodule GitRekt.WireProtocol.ReceivePack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
+    {%{handle|state: :done, caps: []}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
   end
 
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :update_req}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
+    {%{handle|state: :update_req, caps: []}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
   end
 
   def next(%__MODULE__{state: :update_req} = handle, [:flush|lines]) do
@@ -113,7 +113,7 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   @impl true
-  def skip(%__MODULE__{state: :disco} = handle), do: %{handle|state: :update_req}
+  def skip(%__MODULE__{state: :disco} = handle), do: %{handle|state: :update_req, caps: []}
   def skip(%__MODULE__{state: :update_req} = handle), do: %{handle|state: :pack}
   def skip(%__MODULE__{state: :pack} = handle), do: %{handle|state: :done}
   def skip(%__MODULE__{state: :done} = handle), do: handle
