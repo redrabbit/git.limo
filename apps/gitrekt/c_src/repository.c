@@ -8,8 +8,6 @@
 #include <string.h>
 #include <git2.h>
 
-typedef git_transfer_progress git_indexer_progress;
-
 void geef_repository_free(ErlNifEnv *env, void *cd)
 {
 	geef_repository *grepo = (geef_repository *)cd;
