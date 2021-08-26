@@ -86,7 +86,7 @@ defmodule GitGud.Web.RepoControllerTest do
       user2 = User.create!(factory(:user))
       conn = Plug.Test.init_test_session(conn, user_id: user2.id)
       conn = get(conn, Routes.repo_path(conn, :edit, user1, repo))
-      assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
+      assert {:ok, html} = Floki.parse_document(html_response(conn, 403))
       assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
     end
 
