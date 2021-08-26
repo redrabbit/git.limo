@@ -89,6 +89,10 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
+  def next(%__MODULE__{state: :pack} = handle, []) do
+    {%{handle|state: :done}, [], []}
+  end
+
   def next(%__MODULE__{state: :buffer} = handle, pack_data) do
     {%{handle|state: :pack}, [{:pack, pack_data}], []}
   end
