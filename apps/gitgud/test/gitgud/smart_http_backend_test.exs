@@ -10,37 +10,36 @@ defmodule GitGud.SmartHTTPBackendTest do
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoStorage
-  alias GitGud.SmartHTTPBackend
   alias GitGud.SmartHTTPBackendRouter
 
   setup [:create_user, :create_repo]
 
   test "authenticates with valid credentials", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
+    conn = conn(:get, "/#{repo.owner_login}/#{repo.name}.git/info/refs?service=git-receive-pack")
     conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwertz"))
-    conn = SmartHTTPBackend.call(conn, :discover)
+    conn = SmartHTTPBackendRouter.call(conn, [])
     assert conn.assigns.current_user == user
     assert conn.status == 200
   end
 
-  test "fails to call backend without authentication header", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
-    conn = SmartHTTPBackend.call(conn, :discover)
+  test "fails to call backend without authentication header", %{repo: repo} do
+    conn = conn(:get, "/#{repo.owner_login}/#{repo.name}.git/info/refs?service=git-receive-pack")
+    conn = SmartHTTPBackendRouter.call(conn, :discover)
     assert conn.status == 401
     assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
   end
 
   test "fails to authenticates with invalid credentials", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs?service=git-receive-pack", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
+    conn = conn(:get, "/#{repo.owner_login}/#{repo.name}.git/info/refs?service=git-receive-pack")
     conn = put_req_header(conn, "authorization", "Basic " <> Base.encode64("#{user.login}:qwerty"))
-    conn = SmartHTTPBackend.call(conn, :discover)
+    conn = SmartHTTPBackendRouter.call(conn, :discover)
     assert conn.status == 401
     assert {"www-authenticate", ~s(Basic realm="GitGud")} in conn.resp_headers
   end
 
-  test "fails to advertise references to dump clients", %{user: user, repo: repo} do
-    conn = conn(:get, "/info/refs", %{"user_login" => user.login, "repo_name" => repo.name <> ".git"})
-    conn = SmartHTTPBackend.call(conn, :discover)
+  test "fails to advertise references to dump clients", %{repo: repo} do
+    conn = conn(:get, "/#{repo.owner_login}/#{repo.name}.git/info/refs")
+    conn = SmartHTTPBackendRouter.call(conn, :discover)
     assert conn.status == 400
   end
 
@@ -86,7 +85,7 @@ defmodule GitGud.SmartHTTPBackendTest do
 
     @tag :skip
     test "clones repository", %{user: user, repo: repo, workdir: workdir} do
-      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git", workdir])
+      assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git", workdir], stderr_to_stdout: true)
       assert {:ok, agent} = GitAgent.unwrap(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
