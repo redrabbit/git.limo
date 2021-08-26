@@ -105,19 +105,26 @@ defmodule GitGud.SSHServer do
 
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
-    [exec|args] = String.split(to_string(cmd))
-    [repo|_args] = parse_args(user, args)
-    if authorized?(user, repo, exec) do
-      case GitAgent.start_link(RepoStorage.workdir(repo)) do
-        {:ok, agent} ->
-          {service, output} = WireProtocol.next(WireProtocol.new(agent, exec, repo: repo))
-          :ssh_connection.send(conn, chan, output)
-          {:ok, %{state|repo: repo, service: service}}
-        {:error, reason} ->
-          {:error, reason}
-      end
-    else
-      {:stop, chan, state}
+    case parse_cmd(to_string(cmd)) do
+      {:ok, exec, {user_login, repo_name} = repo_path, _extra_args} ->
+        if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+          if authorized?(user, repo, exec) do
+            case GitAgent.start_link(RepoStorage.workdir(repo)) do
+              {:ok, agent} ->
+                {service, output} = WireProtocol.next(WireProtocol.new(agent, exec, repo: repo))
+                :ssh_connection.send(conn, chan, output)
+                {:ok, %{state|repo: repo, service: service}}
+              {:error, _reason} ->
+                {:stop, chan, state}
+            end
+          else
+            {:stop, chan, state}
+          end
+        else
+          {:stop, chan, state}
+        end
+      :error ->
+        {:stop, chan, state}
     end
   end
 
@@ -177,7 +184,17 @@ defmodule GitGud.SSHServer do
      system_dir: to_charlist(system_dir)]
   end
 
-  defp parse_args(user, args) do
+  defp parse_cmd(cmd) do
+    [exec|args] = String.split(cmd)
+    case parse_args(args) do
+      {repo_path, extra_args} ->
+        {:ok, exec, repo_path, extra_args}
+      nil ->
+        :error
+    end
+  end
+
+  defp parse_args(args) do
     if idx = Enum.find_index(args, &(!String.starts_with?(to_string(&1), "--"))) do
       {path, args} = List.pop_at(args, idx)
       [user_login, repo_name] =
@@ -187,9 +204,9 @@ defmodule GitGud.SSHServer do
         |> Path.relative()
         |> Path.split()
       if String.ends_with?(repo_name, ".git") do
-        [RepoQuery.user_repo(user_login, String.slice(repo_name, 0..-5), viewer: user)|args]
+        {{user_login, String.slice(repo_name, 0..-5)}, args}
       end
-    end || [nil|args]
+    end
   end
 
   defp check_credentials(login, password) do
