@@ -98,13 +98,13 @@ defmodule GitRekt.WireProtocol do
   @doc """
   Returns a stream describing each ref and it current value.
   """
-  @spec reference_discovery(GitAgent.agent, binary) :: iolist
-  def reference_discovery(agent, service) do
+  @spec reference_discovery(GitAgent.agent, binary, [binary]) :: iolist
+  def reference_discovery(agent, service, extra_capabilities \\ []) do
     {:ok, refs} = GitAgent.references(agent, target: :commit)
     [reference_head(agent)|Enum.to_list(refs)]
     |> List.flatten()
     |> Enum.map(&format_ref_line/1)
-    |> List.update_at(0, &(&1 <> "\0" <> server_capabilities(service)))
+    |> List.update_at(0, &(&1 <> "\0" <> Enum.join(server_capabilities(service) ++ extra_capabilities, " ")))
     |> Enum.concat([:flush])
   end
 
@@ -207,8 +207,10 @@ defmodule GitRekt.WireProtocol do
     telemetry_start(service, service.state, ref)
   end
 
-  defp server_capabilities("git-upload-pack"), do: Enum.join(@upload_caps, " ")
-  defp server_capabilities("git-receive-pack"), do: Enum.join(@receive_caps, " ")
+  defp server_agent_capability, do: "agent=gitrekt/#{Application.spec(:gitrekt, :vsn)}"
+
+  defp server_capabilities("git-receive-pack"), do: [server_agent_capability()|@receive_caps]
+  defp server_capabilities("git-upload-pack"), do: [server_agent_capability()|@upload_caps]
 
   defp format_ref_line(%GitRef{oid: oid, prefix: prefix, name: name}), do: "#{Git.oid_fmt(oid)} #{prefix <> name}"
 

@@ -190,7 +190,7 @@ defmodule GitGud.SmartHTTPBackend do
     case GitAgent.start_link(RepoStorage.workdir(repo)) do
       {:ok, agent} ->
         exec = conn.query_params["service"]
-        refs = WireProtocol.reference_discovery(agent, exec)
+        refs = WireProtocol.reference_discovery(agent, exec, extra_server_capabilities(exec))
         info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
         conn
         |> put_resp_content_type("application/x-#{exec}-advertisement")
@@ -205,7 +205,7 @@ defmodule GitGud.SmartHTTPBackend do
       {:ok, agent} ->
         conn = put_resp_content_type(conn, "application/x-#{exec}-result")
         conn = send_chunked(conn, :ok)
-        service = WireProtocol.skip(WireProtocol.new(agent, exec, repo: repo))
+        service = WireProtocol.skip(WireProtocol.new(agent, exec, caps: extra_server_capabilities(exec), repo: repo))
         case git_stream_pack(conn, service) do
           {:ok, conn} ->
             halt(conn)
@@ -269,4 +269,7 @@ defmodule GitGud.SmartHTTPBackend do
         :none
     end
   end
+
+  defp extra_server_capabilities("git-receive-pack"), do: []
+  defp extra_server_capabilities("git-upload-pack"), do: ["no-done"]
 end

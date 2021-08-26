@@ -8,7 +8,7 @@ defmodule GitRekt.WireProtocol.UploadPack do
   alias GitRekt.Git
   alias GitRekt.GitAgent
 
-  import GitRekt.WireProtocol, only: [reference_discovery: 2]
+  import GitRekt.WireProtocol, only: [reference_discovery: 3]
 
   @service_name "git-upload-pack"
 
@@ -28,11 +28,11 @@ defmodule GitRekt.WireProtocol.UploadPack do
 
   @impl true
   def next(%__MODULE__{state: :disco} = handle, [:flush|lines]) do
-    {%{handle|state: :done}, lines, reference_discovery(handle.agent, @service_name)}
+    {%{handle|state: :done}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
   end
 
   def next(%__MODULE__{state: :disco} = handle, lines) do
-    {%{handle|state: :upload_req}, lines, reference_discovery(handle.agent, @service_name)}
+    {%{handle|state: :upload_req}, lines, reference_discovery(handle.agent, @service_name, handle.caps)}
   end
 
   def next(%__MODULE__{state: :upload_req} = handle, [:flush|lines]) do
