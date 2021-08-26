@@ -60,7 +60,6 @@ defmodule GitGud.SmartHTTPBackend do
 
   alias GitGud.Authorization
 
-  plug :fetch_session
   plug :basic_authentication
 
   @doc """
@@ -159,9 +158,7 @@ defmodule GitGud.SmartHTTPBackend do
          {:ok, credentials} <- decode64(auth),
          [login, passwd] <- split(credentials, ":", parts: 2),
          %User{} = user <- Account.check_credentials(login, passwd) do
-      conn
-      |> put_session(:user_id, user.id)
-      |> assign(:current_user, user)
+      assign(conn, :current_user, user)
     else
       _ -> conn
     end
@@ -224,7 +221,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp git_stream_pack(conn, service, request_size \\ 0) do
     if request_size <= Application.get_env(:gitgud, :git_max_request_size, :infinity) do
-      case read_body(conn) do
+      case read_next(conn) do
         {ok_or_more, body, conn} when ok_or_more in [:ok, :more] ->
           case WireProtocol.next(service, body) do
             {:cont, service, output} ->
@@ -246,6 +243,30 @@ defmodule GitGud.SmartHTTPBackend do
     # error_body = Plug.Conn.Status.reason_phrase(error_code)
       {:ok, conn} = chunk(conn, WireProtocol.encode([:flush]))
       {:ok, halt(conn)}
+    end
+  end
+
+  defp read_next(conn) do
+    case read_body(conn) do
+      {ok_or_more, body, conn} when ok_or_more in [:ok, :more] ->
+        {ok_or_more, inflate_body(body, body_encoding(conn.req_headers)), conn}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp inflate_body(<<31, 139, 8, _rest::binary>> = body, :gzip), do: :zlib.gunzip(body)
+  defp inflate_body(body, :deflate), do: :zlib.unzip(body)
+  defp inflate_body(body, :none), do: body
+
+  defp body_encoding(headers) do
+    cond do
+      Enum.any?(headers, &(&1 in [{"content-encoding", "gzip"}, {"content-encoding", "x-gzip"}])) ->
+        :gzip
+      Enum.member?(headers, {"content-encoding", "deflate"}) ->
+        :deflate
+      true ->
+        :none
     end
   end
 end
