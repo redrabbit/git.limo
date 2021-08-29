@@ -1,8 +1,8 @@
 <h2 class="subtitle">Tags</h2>
 
-<%= unless Enum.empty?(@page.slice) do %>
-  <table class="table tags-table is-fullwidth">
-    <tbody>
+<table class="table tags-table is-fullwidth">
+  <tbody>
+    <%= unless Enum.empty?(@page.slice) do %>
       <%= for {tag, author, timestamp} <- @page.slice do %>
         <tr>
           <td>
@@ -18,11 +18,16 @@
           </td>
         </tr>
       <% end %>
-    </tbody>
-  </table>
-  <%= pagination(@conn, @page) %>
-<% else %>
-  <article class="message is-light">
-    <div class="message-body">This repository has no tags.</div>
-  </article>
-<% end %>
+    <% else %>
+      <tr>
+        <td colspan="2">
+          <article class="message is-light">
+            <div class="message-body">This repository has no tags.</div>
+          </article>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= pagination(@conn, @page) %>

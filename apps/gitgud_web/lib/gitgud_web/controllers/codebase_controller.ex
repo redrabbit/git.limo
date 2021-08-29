@@ -406,16 +406,25 @@ defmodule GitGud.Web.CodebaseController do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
            {:ok, head} <- GitAgent.head(agent),
-           {:ok, branches} <- GitAgent.branches(agent),
-           {:ok, branches_authors} <- resolve_revisions_authors(agent, Enum.to_list(branches)) do
-        page = paginate(conn, Enum.sort_by(branches_authors, &elem(&1, 2), &>=/2))
-        branches_authors = resolve_revisions_authors_db(page.slice)
-        render(conn, "branch_list.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          head: head,
-          page: %{page|slice: branches_authors}
-        )
+           {:ok, branches} <- GitAgent.branches(agent, stream_chunk_size: :infinity),
+           {:ok, branches} <- resolve_revisions(agent, branches) do
+        if head_index = Enum.find_index(branches, &match?({^head, _, _}, &1)) do
+          head = Enum.at(branches, head_index)
+          branches = Enum.sort_by(List.delete_at(branches, head_index), &elem(&1, 2), {:desc, Date})
+          page = paginate(conn, branches)
+          [{head, author, timestamp}|slice] = resolve_revisions_db([head|page.slice])
+          case resolve_revisions_graph(agent, head, slice) do
+            {:ok, slice} ->
+              render(conn, "branch_list.html",
+                repo: repo,
+                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                head: Map.merge(Map.take(head, [:oid, :name]), %{author: author, timestamp: timestamp}),
+                page: Map.put(page, :slice, slice)
+              )
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end
       end
     end || {:error, :not_found}
   end
@@ -427,19 +436,14 @@ defmodule GitGud.Web.CodebaseController do
   def tags(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, tags} <- GitAgent.tags(agent) do
-        page = paginate(conn, Enum.reverse(tags))
-        case resolve_revisions_authors(agent, page.slice) do
-          {:ok, tags_authors} ->
-            tags_authors = resolve_revisions_authors_db(tags_authors)
-            render(conn, "tag_list.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              page: %{page|slice: tags_authors}
-            )
-          {:error, reason} ->
-            {:error, reason}
-        end
+           {:ok, tags} <- GitAgent.tags(agent),
+           {:ok, tags} <- resolve_revisions(agent, tags) do
+        page = paginate(conn, Enum.sort_by(tags, &elem(&1, 2), {:desc, Date}))
+        render(conn, "tag_list.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          page: Map.update!(page, :slice, &resolve_revisions_db/1)
+        )
       end
     end || {:error, :not_found}
   end
@@ -627,33 +631,49 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp resolve_revisions_authors(agent, revs) do
+  defp resolve_revisions(agent, revs) do
     GitAgent.transaction(agent, fn agent ->
-      Enum.reduce_while(Enum.reverse(revs), {:ok, []}, &resolve_revision_author(agent, &1, &2))
+      Enum.reduce_while(Enum.reverse(revs), {:ok, []}, &resolve_revision(agent, &1, &2))
     end)
   end
 
-  defp resolve_revisions_authors_db(revs_authors) do
-    users = UserQuery.by_email(Enum.uniq(Enum.map(revs_authors, &(elem(&1, 1).email))), preload: :emails)
-    Enum.map(revs_authors, fn {rev, author, timestamp} ->
+  defp resolve_revisions_graph(agent, head, revs) do
+    GitAgent.transaction(agent, fn agent ->
+      Enum.reduce_while(Enum.reverse(revs), {:ok, []}, &resolve_revision_graph(agent, head, &1, &2))
+    end)
+  end
+
+  defp resolve_revisions_db(revs) do
+    users = UserQuery.by_email(Enum.uniq(Enum.map(revs, &(elem(&1, 1).email))), preload: :emails)
+    Enum.map(revs, fn {rev, author, timestamp} ->
       {rev, resolve_db_user(author, users), timestamp}
     end)
   end
 
-  defp resolve_revision_author(agent, %GitRef{} = rev, {:ok, acc}) do
+  defp resolve_revision(agent, %GitRef{} = rev, {:ok, acc}) do
     with {:ok, commit} <- GitAgent.peel(agent, rev, target: :commit),
-         {:ok, author} <- GitAgent.commit_author(agent, commit) do
-      {:cont, {:ok, [{rev, author, author.timestamp}|acc]}}
+         {:ok, author} <- GitAgent.commit_author(agent, commit),
+         {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit) do
+      {:cont, {:ok, [{rev, author, timestamp}|acc]}}
     else
       {:error, reason} ->
         {:halt, {:error, reason}}
     end
   end
 
-  defp resolve_revision_author(agent, %GitTag{} = tag, {:ok, acc}) do
+  defp resolve_revision(agent, %GitTag{} = tag, {:ok, acc}) do
     case GitAgent.tag_author(agent, tag) do
       {:ok, author} ->
         {:cont, {:ok, [{tag, author, author.timestamp}|acc]}}
+      {:error, reason} ->
+        {:halt, {:error, reason}}
+    end
+  end
+
+  defp resolve_revision_graph(agent, head, {rev, author, timestamp}, {:ok, acc}) do
+    case GitAgent.graph_ahead_behind(agent, rev.oid, head.oid) do
+      {:ok, graph_diff} ->
+        {:cont, {:ok, [{rev, author, timestamp, graph_diff}|acc]}}
       {:error, reason} ->
         {:halt, {:error, reason}}
     end

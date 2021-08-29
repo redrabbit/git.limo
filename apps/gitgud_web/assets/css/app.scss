@@ -480,6 +480,44 @@ textarea.textarea {
   min-width: 120px;
 }
 
+.a-b-count-default {
+  width: 180px;
+  text-align: center;
+}
+
+.a-b-count {
+  .count-half {
+    position: relative;
+    float: left;
+    text-align: right;
+    width: 90px;
+    padding-bottom: 6px;
+    &:last-child {
+      text-align: left;
+      border-left: 1px solid $grey;
+    }
+
+    .count-value {
+      position: relative;
+      top: -1px;
+      display: block;
+      padding: 0 8px;
+      font-size: $size-7;
+    }
+
+    .count-bar {
+      position: absolute;
+      min-width: 3px;
+      height: 4px;
+      background-color: $grey-lighter;
+
+      &.count-bar-behind {
+        right: 0;
+      }
+    }
+  }
+}
+
 .branch-select {
   .dropdown {
     .dropdown-menu {

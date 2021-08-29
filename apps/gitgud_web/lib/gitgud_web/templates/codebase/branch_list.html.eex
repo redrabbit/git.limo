@@ -1,12 +1,32 @@
 <h2 class="subtitle">Branches</h2>
 
-<%= unless Enum.empty?(@page.slice) do %>
-  <table class="table branches-table is-fullwidth">
-    <tbody>
-      <%= for {branch, author, timestamp} <- @page.slice do %>
+<table class="table branches-table is-fullwidth">
+  <thead>
+    <tr>
+      <td>
+        <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, @head.name, []) %>" class="button is-primary is-small has-text-weight-medium"><%= @head.name %></a>
+      </td>
+      <td>
+        updated <%= datetime_format(@head.timestamp, "{relative}") %> by
+        <%= if Map.has_key?(@head.author, :id) do %>
+          <a href="<%= Routes.user_path(@conn, :show, @head.author) %>" class="tag user"><%= @head.author %></a>
+        <% else %>
+          <a href="mailto:<%= @head.author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= @head.author.email %>"><%= @head.author.name %></a>
+        <% end %>
+      </td>
+      <td>
+        <div class="a-b-count-default is-white">
+          <span class="tag">default</span>
+        </div>
+      </td>
+    </tr>
+  </thead>
+  <tbody>
+    <%= unless Enum.empty?(@page.slice) do %>
+      <%= for {branch, author, timestamp, {ahead, behind}} <- @page.slice do %>
         <tr>
           <td>
-            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, branch, []) %>" class="button is-small <%= if branch.oid == @head.oid, do: "is-primary" %> has-text-weight-medium"><%= branch %></a>
+            <a href="<%= Routes.codebase_path(@conn, :tree, @repo.owner_login, @repo, branch, []) %>" class="button is-small has-text-weight-medium"><%= branch %></a>
           </td>
           <td>
             updated <%= datetime_format(timestamp, "{relative}") %> by
@@ -16,13 +36,32 @@
               <a href="mailto:<%= author.email %>" class="tag tooltip has-text-black" data-tooltip="<%= author.email %>"><%= author.name %></a>
             <% end %>
           </td>
+          <td>
+            <%= with {ahead_width, behind_width} <- branch_graph_count_width(ahead, behind) do %>
+              <div class="a-b-count tooltip is-pulled-left" data-tooltip="<%= ahead %> commit<%= if ahead != 1 do %>s<% end %> ahead, <%= behind %> commit<%= if ahead != 1 do %>s<% end %> behind <%= @head.name %>">
+                <div class="count-half">
+                  <div class="count-value count-behind"><%= behind %></div>
+                  <div class="count-bar count-bar-behind" style="width:<%= behind_width %>%"></div>
+                </div>
+                <div class="count-half">
+                  <div class="count-value count-ahead"><%= ahead %></div>
+                  <div class="count-bar count-bar-ahead" style="width:<%= ahead_width %>%"></div>
+                </div>
+              </div>
+            <% end %>
+          </td>
         </tr>
       <% end %>
-    </tbody>
-  </table>
-  <%= pagination(@conn, @page) %>
-<% else %>
-  <article class="message is-light">
-    <div class="message-body">This repository has no branches.</div>
-  </article>
-<% end %>
+    <% else %>
+      <tr>
+        <td colspan="3">
+          <article class="message is-light">
+            <div class="message-body">This repository has only one branch.</div>
+          </article>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= pagination(@conn, @page) %>

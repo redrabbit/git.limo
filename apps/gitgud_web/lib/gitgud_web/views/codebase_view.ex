@@ -32,6 +32,12 @@ defmodule GitGud.Web.CodebaseView do
     )
   end
 
+  @spec branch_graph_count_width(non_neg_integer(), non_neg_integer()) :: {float, float}
+  def branch_graph_count_width(ahead, behind) do
+    total = max(:math.pow(10, length(Integer.digits(ahead))), :math.pow(10, length(Integer.digits(behind))))
+    {ahead / total * 100, behind / total * 100}
+  end
+
   @spec blob_header_live(Plug.Conn.t, Repo.t, GitAgent.git_revision, Path.t) :: binary
   def blob_header_live(conn, repo, revision, tree_path) do
     live_render(conn, GitGud.Web.BlobHeaderLive,
