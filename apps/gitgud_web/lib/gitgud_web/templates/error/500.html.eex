@@ -1,3 +1,8 @@
 <%= render_layout "error.html", assigns do %>
-  <strong>Internal server error</strong>
+  <h2 class="subtitle">Internal Server Error</h2>
+  <%= if :error_reason in assigns do %>
+    <article class="message is-warning">
+      <div class="message-body"><%= @error_reason %></div>
+    </article>
+  <% end %>
 <% end %>

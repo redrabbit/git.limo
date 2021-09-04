@@ -1,3 +1,3 @@
 <%= render_layout "error.html", assigns do %>
-  <strong>Page not found</strong>
+  <h2 class="subtitle">Page Not Found</h2>
 <% end %>
