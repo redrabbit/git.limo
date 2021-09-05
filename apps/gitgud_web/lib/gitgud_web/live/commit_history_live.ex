@@ -27,35 +27,61 @@ defmodule GitGud.Web.CommitHistoryLive do
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = _params, session, socket) do
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign(rev_spec: nil, revision: nil, commit: nil)
-      |> assign_repo!(user_login, repo_name)
-      |> assign_repo_open_issue_count()
-      |> assign_agent!()
-    }
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
+    "live_view"
+    |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+    |> Appsignal.Span.set_name("GitGud.Web.CommitHistoryLive#mount")
+    |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+    |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+    |> Appsignal.Span.set_sample_data("params", params)
+    |> Appsignal.Span.set_sample_data("session_data", session)
+    Appsignal.instrument("GitGud.Web.CommitHistoryLive", "mount.live_view", fn ->
+      {
+        :ok,
+        socket
+        |> authenticate(session)
+        |> assign(rev_spec: nil, revision: nil, commit: nil)
+        |> assign_repo!(user_login, repo_name)
+        |> assign_repo_open_issue_count()
+        |> assign_agent!()
+      }
+    end)
   end
 
   @impl true
   def handle_params(_params, _uri, socket) when is_nil(socket.assigns.repo.pushed_at) do
-    {:noreply, assign_page_title(socket)}
+    socket = assign_page_title(socket)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    {:noreply, socket}
   end
 
   def handle_params(params, _uri, socket) when is_map_key(params, "revision") do
-    {
-      :noreply,
-      socket
-      |> assign_history!(params)
-      |> assign_page_title()
-    }
+    unless Appsignal.Tracer.current_span() do
+      "live_view"
+      |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+      |> Appsignal.Span.set_name("GitGud.Web.CommitHistoryLive#patch")
+      |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+    end
+    result =
+      Appsignal.instrument("GitGud.Web.CommitHistoryLive", "handle_params.live_view", fn ->
+        {
+          :noreply,
+          socket
+          |> assign_history!(params)
+          |> assign_page_title()
+        }
+      end)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    result
   end
 
   def handle_params(params, _uri, socket) do
     case GitAgent.head(socket.assigns.agent) do
       {:ok, head} ->
+        Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
         {:noreply, push_patch(socket, to: Routes.codebase_path(socket, :history, socket.assigns.repo.owner_login, socket.assigns.repo.name, head, Map.get(params, "path", [])))}
       {:error, error} ->
         raise error

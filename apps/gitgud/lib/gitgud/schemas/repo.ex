@@ -241,9 +241,19 @@ defmodule GitGud.Repo do
   #
 
   defimpl GitRekt.GitRepo do
-    def get_agent(repo), do: RepoPool.checkout_monitor(repo)
+    def get_agent(repo), do: appsignal_instrument(fn -> RepoPool.checkout_monitor(repo) end)
 
     def push(repo, _cmds), do: DB.update(change(repo, pushed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)))
+
+    #
+    # Helpers
+    #
+
+    defp appsignal_instrument(cb) do
+      if Appsignal.Tracer.current_span(),
+        do: Appsignal.instrument("GitRekt.GitRepo.get_agent/1", "get_agent.git", cb),
+      else: cb.()
+    end
   end
 
   defimpl GitGud.AuthorizationPolicies do

@@ -24,45 +24,63 @@ defmodule GitGud.Web.IssueLive do
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name, "number" => number}, session, socket) do
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign_repo!(user_login, repo_name)
-      |> assign_repo_permissions()
-      |> assign_repo_open_issue_count()
-      |> assign_issue(String.to_integer(number))
-      |> assign_page_title()
-      |> assign_title_changeset()
-      |> assign_presence!()
-      |> assign_presence_map()
-      |> assign_users_typing()
-      |> subscribe_topic!(),
-      temporary_assigns: [issue_feed: []]
-    }
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name, "number" => number} = params, session, socket) do
+    Appsignal.instrument("GitGud.Web.IssueLive#mount", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> Appsignal.Span.set_sample_data("session_data", session)
+      Appsignal.instrument("GitGud.Web.IssueLive", "mount.live_view", fn ->
+        {
+          :ok,
+          socket
+          |> authenticate(session)
+          |> assign_repo!(user_login, repo_name)
+          |> assign_repo_permissions()
+          |> assign_repo_open_issue_count()
+          |> assign_issue(String.to_integer(number))
+          |> assign_page_title()
+          |> assign_title_changeset()
+          |> assign_presence!()
+          |> assign_presence_map()
+          |> assign_users_typing()
+          |> subscribe_topic!(),
+          temporary_assigns: [issue_feed: []]
+        }
+      end)
+    end)
   end
 
   @impl true
-  def handle_event("update_title", %{"issue" => issue_params}, socket) do
-    changeset = title_changeset(socket.assigns.issue, issue_params)
-    case Ecto.Changeset.apply_action(changeset, :update) do
-      {:ok, data} ->
-        issue = Issue.update_title!(socket.assigns.issue, data.title, user_id: current_user(socket).id)
-        event = List.last(issue.events)
-        broadcast_from(self(), issue_topic(socket), "update_title", %{title: issue.title, event: event})
-        {
-          :noreply,
-          socket
-          |> assign(:issue, issue)
-          |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
-          |> assign_page_title()
-          |> assign(:title_edit, false)
-          |> assign(:title_changeset, title_changeset(issue))
-        }
-      {:error, changeset} ->
-        {:noreply, assign(socket, :title_changeset, changeset)}
-    end
+  def handle_event("update_title", %{"issue" => issue_params} = params, socket) do
+    Appsignal.instrument("GitGud.Web.IssueLive#update_title", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.IssueLive", "handle_event.live_view", fn ->
+        changeset = title_changeset(socket.assigns.issue, issue_params)
+        case Ecto.Changeset.apply_action(changeset, :update) do
+          {:ok, data} ->
+            issue = Issue.update_title!(socket.assigns.issue, data.title, user_id: current_user(socket).id)
+            event = List.last(issue.events)
+            broadcast_from(self(), issue_topic(socket), "update_title", %{title: issue.title, event: event})
+            {
+              :noreply,
+              socket
+              |> assign(:issue, issue)
+              |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
+              |> assign_page_title()
+              |> assign(:title_edit, false)
+              |> assign(:title_changeset, title_changeset(issue))
+            }
+          {:error, changeset} ->
+            {:noreply, assign(socket, :title_changeset, changeset)}
+        end
+      end)
+    end)
   end
 
   def handle_event("validate_title", %{"issue" => issue_params}, socket) do
@@ -77,23 +95,32 @@ defmodule GitGud.Web.IssueLive do
     {:noreply, assign(socket, title_edit: false, title_changeset: title_changeset(socket.assigns.issue))}
   end
 
-  def handle_event("add_comment", %{"comment" => comment_params}, socket) do
-    case Issue.add_comment(socket.assigns.issue, current_user(socket), comment_params["body"]) do
-      {:ok, comment} ->
-        send_update(GitGud.Web.CommentFormLive, id: "issue-comment-form", changeset: Comment.changeset(%Comment{}))
-        broadcast_from(self(), issue_topic(socket), "add_comment", %{comment_id: comment.id})
-        {
-          :noreply,
-          socket
-          |> assign(:issue_comment_count, socket.assigns.issue_comment_count + 1)
-          |> assign(:issue_feed, [comment])
-          |> assign_presence_typing!(false)
-          |> push_event("add_comment", %{comment_id: comment.id})
-        }
-      {:error, changeset} ->
-        send_update(GitGud.Web.CommentFormLive, id: "issue-comment-form", changeset: changeset)
-        {:noreply, assign_presence_typing!(socket, false)}
-    end
+  def handle_event("add_comment", %{"comment" => comment_params} = params, socket) do
+    Appsignal.instrument("GitGud.Web.IssueLive#add_comment", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.IssueLive", "handle_event.live_view", fn ->
+        case Issue.add_comment(socket.assigns.issue, current_user(socket), comment_params["body"]) do
+          {:ok, comment} ->
+            send_update(GitGud.Web.CommentFormLive, id: "issue-comment-form", changeset: Comment.changeset(%Comment{}))
+            broadcast_from(self(), issue_topic(socket), "add_comment", %{comment_id: comment.id})
+            {
+              :noreply,
+              socket
+              |> assign(:issue_comment_count, socket.assigns.issue_comment_count + 1)
+              |> assign(:issue_feed, [comment])
+              |> assign_presence_typing!(false)
+              |> push_event("add_comment", %{comment_id: comment.id})
+            }
+          {:error, changeset} ->
+            send_update(GitGud.Web.CommentFormLive, id: "issue-comment-form", changeset: changeset)
+            {:noreply, assign_presence_typing!(socket, false)}
+        end
+      end)
+    end)
   end
 
   def handle_event("validate_comment", %{"comment" => comment_params}, socket) do
@@ -103,40 +130,67 @@ defmodule GitGud.Web.IssueLive do
   end
 
   def handle_event("close", _params, socket) do
-    issue = Issue.close!(socket.assigns.issue, user_id: current_user(socket).id)
-    event = List.last(issue.events)
-    broadcast_from(self(), issue_topic(socket), "close", %{event: event})
-    {
-      :noreply,
-      socket
-      |> assign(:issue, issue)
-      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
-    }
+    Appsignal.instrument("GitGud.Web.IssueLive#close", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", %{})
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.IssueLive", "handle_event.live_view", fn ->
+        issue = Issue.close!(socket.assigns.issue, user_id: current_user(socket).id)
+        event = List.last(issue.events)
+        broadcast_from(self(), issue_topic(socket), "close", %{event: event})
+        {
+          :noreply,
+          socket
+          |> assign(:issue, issue)
+          |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
+        }
+      end)
+    end)
   end
 
   def handle_event("reopen", _params, socket) do
-    issue = Issue.reopen!(socket.assigns.issue, user_id: current_user(socket).id)
-    event = List.last(issue.events)
-    broadcast_from(self(), issue_topic(socket), "reopen", %{event: event})
-    {
-      :noreply,
-      socket
-      |> assign(:issue, issue)
-      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
-    }
+    Appsignal.instrument("GitGud.Web.IssueLive#reopen", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", %{})
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.IssueLive", "handle_event.live_view", fn ->
+        issue = Issue.reopen!(socket.assigns.issue, user_id: current_user(socket).id)
+        event = List.last(issue.events)
+        broadcast_from(self(), issue_topic(socket), "reopen", %{event: event})
+        {
+          :noreply,
+          socket
+          |> assign(:issue, issue)
+          |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
+        }
+      end)
+    end)
   end
 
   @impl true
   def handle_info({:update_labels, {push_ids, pull_ids} = changes}, socket) do
-    issue = Issue.update_labels!(socket.assigns.issue, changes, user_id: current_user(socket).id)
-    event = List.last(issue.events)
-    broadcast_from(self(), issue_topic(socket), "update_labels", %{push_ids: push_ids, pull_ids: pull_ids, event: event})
-    {
-      :noreply,
-      socket
-      |> assign(:issue, issue)
-      |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
-    }
+    Appsignal.instrument("GitGud.Web.IssueLive#update_labels", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", %{"push" => push_ids, "pull" => pull_ids})
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.IssueLive", "handle_event.live_view", fn ->
+        issue = Issue.update_labels!(socket.assigns.issue, changes, user_id: current_user(socket).id)
+        event = List.last(issue.events)
+        broadcast_from(self(), issue_topic(socket), "update_labels", %{push_ids: push_ids, pull_ids: pull_ids, event: event})
+        {
+          :noreply,
+          socket
+          |> assign(:issue, issue)
+          |> assign(:issue_feed, [{Map.put(event, "user", current_user(socket)), length(issue.events)}])
+        }
+      end)
+    end)
   end
 
   def handle_info({:update_comment, comment_id}, socket) do

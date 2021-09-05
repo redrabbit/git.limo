@@ -24,24 +24,39 @@ defmodule GitGud.Web.BlobViewerLive do
 
   @impl true
   def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign(rev_spec: nil, revision: nil, commit: nil, blob_commit_info: nil)
-      |> assign(:blob_path, Map.fetch!(params, "path"))
-      |> assign_repo!(user_login, repo_name)
-      |> assign_repo_open_issue_count()
-      |> assign_agent!()
-      |> assign_blob!(params)
-      |> assign_page_title()
-      |> assign_blob_commit_async()
-    }
+    span =
+      "live_view"
+      |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+      |> Appsignal.Span.set_name("GitGud.Web.BlobViewerLive#mount")
+      |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> Appsignal.Span.set_sample_data("session_data", session)
+    result =
+      Appsignal.instrument("GitGud.Web.BlobViewerLive", "mount.live_view", fn ->
+        {
+          :ok,
+          socket
+          |> authenticate(session)
+          |> assign(rev_spec: nil, revision: nil, commit: nil, blob_commit_info: nil)
+          |> assign(:blob_path, Map.fetch!(params, "path"))
+          |> assign_repo!(user_login, repo_name)
+          |> assign_repo_open_issue_count()
+          |> assign_agent!()
+          |> assign_blob!(params)
+          |> assign_page_title()
+          |> assign_blob_commit_async()
+        }
+      end)
+    unless connected?(socket), do: Appsignal.Tracer.close_span(span)
+    result
   end
 
   @impl true
   def handle_info(:assign_blob_commit, socket) do
-    {:noreply, assign_blob_commit!(socket)}
+    socket = Appsignal.instrument("GitGud.Web.BlobViewerLive", "handle_info.live_view", fn -> assign_blob_commit!(socket) end)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    {:noreply, socket}
   end
 
   #

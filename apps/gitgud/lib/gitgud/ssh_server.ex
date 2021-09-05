@@ -105,7 +105,8 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     case parse_cmd(to_string(cmd)) do
-      {:ok, exec, {user_login, repo_name}, _extra_args} ->
+      {:ok, exec, {user_login, repo_name} = repo_path, _extra_args} ->
+        appsignal_create_span(conn, chan, user, repo_path, exec)
         if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
           if authorized?(user, repo, exec) do
             case GitRepo.get_agent(repo) do
@@ -166,7 +167,7 @@ defmodule GitGud.SSHServer do
   end
 
   @impl true
-  def terminate(_reason, _state), do: :ok
+  def terminate(_reason, _state), do: Appsignal.Tracer.close_span(Appsignal.Tracer.root_span())
 
   #
   # Helpers
@@ -181,6 +182,30 @@ defmodule GitGud.SSHServer do
      parallel_login: true,
      pwdfun: &check_credentials/2,
      system_dir: to_charlist(system_dir)]
+  end
+
+
+  defp appsignal_create_span(conn, chan, user, repo_path, "git-receive-pack"), do: appsignal_create_span(conn, chan, user, repo_path, :receive_pack)
+  defp appsignal_create_span(conn, chan, user, repo_path, "git-upload-pack"), do: appsignal_create_span(conn, chan, user, repo_path, :upload_pack)
+  defp appsignal_create_span(conn, chan, user, {user_login, repo_name} = _repo_path, service_type) when service_type in [:receive_pack, :upload_pack] do
+    "ssh"
+    |> Appsignal.Tracer.create_span()
+    |> Appsignal.Span.set_name("GitGud.SSHServer##{service_type}")
+    |> Appsignal.Span.set_attribute("appsignal:category", "#{service_type}.wire_protocol")
+    |> Appsignal.Span.set_sample_data("params", %{"user_login" => user_login, "repo_name" => repo_name})
+    |> Appsignal.Span.set_sample_data("session_data", %{"user_id" => user.id})
+    |> Appsignal.Span.set_sample_data("environment", appsignal_config_env(conn, chan, service_type))
+  end
+
+  defp appsignal_config_env(conn, _chan, _service_type) do
+    {:sockname, {addr, port}} = :ssh.connection_info(conn, :sockname)
+    case :inet.gethostbyaddr(addr) do
+      {:ok, {:hostent, hostname, _aliases, _addr_type, _len, _addr_list}} ->
+        %{
+          "host" => to_string(hostname),
+          "port" => port,
+        }
+    end
   end
 
   defp parse_cmd(cmd) do

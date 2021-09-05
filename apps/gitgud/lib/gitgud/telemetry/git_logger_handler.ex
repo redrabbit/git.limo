@@ -84,6 +84,7 @@ defmodule GitGud.Telemetry.GitLoggerHandler do
   defp map_git_agent_op_args(:transaction, [{:history_count, oid}, _callback]), do: [":history_count", inspect_oid(oid)]
   defp map_git_agent_op_args(:transaction, [{:tree_entries_with_commit, oid, path}, _callback]), do: [":tree_entries_with_commit", inspect_oid(oid), inspect(path)]
   defp map_git_agent_op_args(:transaction, [nil, callback]), do: [inspect(callback)]
+
   defp map_git_agent_op_args(_op, args), do: Enum.map(args, &inspect/1)
 
   defp map_git_agent_op_opts(_op, %{stream_chunk_size: chunk_size}), do: ["stream_chunk_size: #{chunk_size}"]

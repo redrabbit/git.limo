@@ -66,12 +66,14 @@ defmodule GitGud.SmartHTTPBackend do
   """
   @spec discover(Plug.Conn.t, keyword) :: Plug.Conn.t
   def discover(conn, _opts) do
-    case fetch_user_repo(conn) do
-      {:ok, repo} ->
-        git_info_refs(conn, repo)
-      {:error, status_error} ->
-        halt_with_error(conn, status_error)
-    end
+    appsignal_instrument(conn, :discover, fn ->
+      case fetch_user_repo(conn) do
+        {:ok, repo} ->
+          git_info_refs(conn, repo)
+        {:error, status_error} ->
+          halt_with_error(conn, status_error)
+      end
+    end)
   end
 
   @doc """
@@ -80,12 +82,14 @@ defmodule GitGud.SmartHTTPBackend do
   @spec receive_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
   def receive_pack(conn, _opts) do
     service = "git-receive-pack"
-    case fetch_user_repo(conn, service) do
-      {:ok, repo} ->
-        git_pack(conn, repo, service)
-      {:error, status_error} ->
-        halt_with_error(conn, status_error)
-    end
+    appsignal_instrument(conn, :receive_pack, service, fn ->
+      case fetch_user_repo(conn, service) do
+        {:ok, repo} ->
+          git_pack(conn, repo, service)
+        {:error, status_error} ->
+          halt_with_error(conn, status_error)
+      end
+    end)
   end
 
   @doc """
@@ -94,12 +98,14 @@ defmodule GitGud.SmartHTTPBackend do
   @spec upload_pack(Plug.Conn.t, keyword) :: Plug.Conn.t
   def upload_pack(conn, _opts) do
     service = "git-upload-pack"
-    case fetch_user_repo(conn, service) do
-      {:ok, repo} ->
-        git_pack(conn, repo, service)
-      {:error, status_error} ->
-        halt_with_error(conn, status_error)
-    end
+    appsignal_instrument(conn, :upload_pack, service, fn ->
+      case fetch_user_repo(conn, service) do
+        {:ok, repo} ->
+          git_pack(conn, repo, service)
+        {:error, status_error} ->
+          halt_with_error(conn, status_error)
+      end
+    end)
   end
 
   #
@@ -185,11 +191,34 @@ defmodule GitGud.SmartHTTPBackend do
     end
   end
 
+  defp appsignal_instrument(conn, name, fun), do: appsignal_instrument(conn, name, conn.query_params["service"], fun)
+  defp appsignal_instrument(conn, name, service_type, fun) when is_binary(service_type), do: appsignal_instrument(conn, name, map_service_type(service_type), fun)
+  defp appsignal_instrument(conn, name, service_type, fun) do
+    span =
+      "http_request"
+      |> Appsignal.Tracer.create_span()
+      |> Appsignal.Span.set_name("GitGud.SmartHTTPBackend##{name}")
+      |> Appsignal.Span.set_attribute("appsignal:category", "#{service_type}.wire_protocol")
+      |> Appsignal.Span.set_sample_data("params", conn.params)
+      |> appsignal_span_set_session_data(conn)
+    conn = fun.()
+    span
+    |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(conn))
+    |> Appsignal.Tracer.close_span()
+    conn
+  end
+
+  defp appsignal_span_set_session_data(span, conn) do
+    if user = conn.assigns[:current_user],
+      do: Appsignal.Span.set_sample_data(span, "session_data", %{"user_id" => user.id}),
+    else: span
+  end
+
   defp git_info_refs(conn, repo) do
     case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         exec = conn.query_params["service"]
-        refs = WireProtocol.reference_discovery(agent, exec, extra_server_capabilities(exec))
+        refs = Appsignal.instrument("GitRekt.WireProtocol.#{Macro.camelize(to_string(map_service_type(exec)))}", "disco.wire_protocol", fn -> WireProtocol.reference_discovery(agent, exec, extra_server_capabilities(exec)) end)
         info = WireProtocol.encode(["# service=#{exec}", :flush] ++ refs)
         conn
         |> put_resp_content_type("application/x-#{exec}-advertisement")
@@ -271,4 +300,7 @@ defmodule GitGud.SmartHTTPBackend do
 
   defp extra_server_capabilities("git-receive-pack"), do: []
   defp extra_server_capabilities("git-upload-pack"), do: ["no-done"]
+
+  defp map_service_type("git-receive-pack"), do: :receive_pack
+  defp map_service_type("git-upload-pack"), do: :upload_pack
 end

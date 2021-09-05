@@ -34,74 +34,117 @@ defmodule GitGud.Web.CommitDiffLive do
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = _params, session, socket) do
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign_repo!(user_login, repo_name)
-      |> assign_repo_permissions()
-      |> assign_repo_open_issue_count()
-      |> assign_agent!(),
-      temporary_assigns: [reviews: []]
-    }
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
+    "live_view"
+    |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+    |> Appsignal.Span.set_name("GitGud.Web.CommitDiffLive#mount")
+    |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+    |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+    |> Appsignal.Span.set_sample_data("params", params)
+    |> Appsignal.Span.set_sample_data("session_data", session)
+    Appsignal.instrument("GitGud.Web.CommitDiffLive", "mount.live_view", fn ->
+      {
+        :ok,
+        socket
+        |> authenticate(session)
+        |> assign_repo!(user_login, repo_name)
+        |> assign_repo_permissions()
+        |> assign_repo_open_issue_count()
+        |> assign_agent!(),
+        temporary_assigns: [reviews: []]
+      }
+    end)
   end
 
   @impl true
   def handle_params(_params, _uri, socket) when is_nil(socket.assigns.repo.pushed_at) do
-    {:noreply, assign_page_title(socket)}
+    socket = assign_page_title(socket)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    {:noreply, socket}
   end
 
-  def handle_params(%{"oid" => commit_oid} = _params, _uri, socket) do
-    {
-      :noreply,
-      socket
-      |> assign_diff!(oid_parse(commit_oid))
-      |> assign_reviews()
-      |> assign_comment_count()
-      |> assign_page_title()
-      |> assign_presence!()
-      |> assign_presence_map()
-      |> assign_users_typing()
-      |> subscribe_topic!()
-    }
+  def handle_params(%{"oid" => commit_oid} = params, _uri, socket) do
+    unless Appsignal.Tracer.current_span() do
+      "live_view"
+      |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+      |> Appsignal.Span.set_name("GitGud.Web.CommitDiffLive#patch")
+      |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+    end
+    result =
+      Appsignal.instrument("GitGud.Web.CommitDiffLive", "handle_params.live_view", fn ->
+        {
+          :noreply,
+          socket
+          |> assign_diff!(oid_parse(commit_oid))
+          |> assign_reviews()
+          |> assign_comment_count()
+          |> assign_page_title()
+          |> assign_presence!()
+          |> assign_presence_map()
+          |> assign_users_typing()
+          |> subscribe_topic!()
+        }
+      end)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    result
   end
 
   @impl true
-  def handle_event("add_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params}, socket) do
-    case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
-      {:ok, comment, review} ->
-        send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [struct(review, comments: [comment])])
-        broadcast_from(self(), commit_topic(socket), "add_review", %{review_id: review.id})
-        {
-          :noreply,
-          socket
-          |> push_event("add_comment", %{comment_id: comment.id})
-          |> push_event("delete_review_form", %{oid: oid, hunk: hunk, line: line})
-        }
-      {:error, changeset} ->
-        send_update(GitGud.Web.CommentFormLive, id: "review-#{oid}-#{hunk}-#{line}-comment-form", changeset: changeset)
-        {:noreply, socket}
-    end
+  def handle_event("add_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params} = params, socket) do
+    Appsignal.instrument("GitGud.Web.CommitDiffLive#add_comment", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.CommitDiffLive", "handle_event.live_view", fn ->
+        case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
+          {:ok, comment, review} ->
+            send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [struct(review, comments: [comment])])
+            broadcast_from(self(), commit_topic(socket), "add_review", %{review_id: review.id})
+            {
+              :noreply,
+              socket
+              |> push_event("add_comment", %{comment_id: comment.id})
+              |> push_event("delete_review_form", %{oid: oid, hunk: hunk, line: line})
+            }
+          {:error, changeset} ->
+            send_update(GitGud.Web.CommentFormLive, id: "review-#{oid}-#{hunk}-#{line}-comment-form", changeset: changeset)
+            {:noreply, socket}
+        end
+      end)
+    end)
   end
 
-  def handle_event("add_comment", %{"review_id" => review_id, "comment" => comment_params}, socket) do
-    review_id = String.to_integer(review_id)
-    case CommitLineReview.add_comment({socket.assigns.repo.id, review_id}, current_user(socket), comment_params["body"]) do
-      {:ok, comment} ->
-        send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
-        send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
-        broadcast_from(self(), commit_topic(socket), "add_comment", %{review_id: review_id, comment_id: comment.id})
-        {
-          :noreply,
-          socket
-          |> assign_presence_typing!(review_id, false)
-          |> push_event("add_comment", %{comment_id: comment.id})
-        }
-      {:error, changeset} ->
-        send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: changeset)
-        {:noreply, assign_presence_typing!(socket, review_id, false)}
-    end
+  def handle_event("add_comment", %{"review_id" => review_id, "comment" => comment_params} = params, socket) do
+    Appsignal.instrument("GitGud.Web.CommitDiffLive#add_comment", "call.live_view", fn span ->
+      span
+      |> Appsignal.Span.set_namespace("live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+      Appsignal.instrument("GitGud.Web.CommitDiffLive", "handle_event.live_view", fn ->
+        review_id = String.to_integer(review_id)
+        case CommitLineReview.add_comment({socket.assigns.repo.id, review_id}, current_user(socket), comment_params["body"]) do
+          {:ok, comment} ->
+            send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
+            send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
+            broadcast_from(self(), commit_topic(socket), "add_comment", %{review_id: review_id, comment_id: comment.id})
+            {
+              :noreply,
+              socket
+              |> assign_presence_typing!(review_id, false)
+              |> push_event("add_comment", %{comment_id: comment.id})
+            }
+          {:error, changeset} ->
+            send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: changeset)
+            {:noreply, assign_presence_typing!(socket, review_id, false)}
+        end
+      end)
+    end)
   end
 
   def handle_event("validate_comment", %{"oid" => oid, "hunk" => hunk, "line" => line, "comment" => comment_params}, socket) do

@@ -44,6 +44,8 @@ defmodule GitGud.Web do
     quote do
       use Phoenix.View, unquote(Keyword.merge(opts, root: "lib/gitgud_web/templates", namespace: GitGud.Web))
 
+      use Appsignal.Phoenix.View
+
       import Phoenix.Controller, only: [get_flash: 2, controller_module: 1, view_module: 1, action_name: 1]
 
       unquote(view_helpers())

@@ -23,36 +23,63 @@ defmodule GitGud.Web.TreeBrowserLive do
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = _params, session, socket) do
-    {
-      :ok,
-      socket
-      |> authenticate(session)
-      |> assign(rev_spec: nil, revision: nil, commit: nil, stats: %{})
-      |> assign_repo!(user_login, repo_name)
-      |> assign_repo_open_issue_count()
-      |> assign_agent!()
-    }
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
+    "live_view"
+    |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+    |> Appsignal.Span.set_name("GitGud.Web.TreeBrowserLive#mount")
+    |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+    |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+    |> Appsignal.Span.set_sample_data("params", params)
+    |> Appsignal.Span.set_sample_data("session_data", session)
+    Appsignal.instrument("GitGud.Web.TreeBrowserLive", "mount.live_view", fn ->
+      {
+        :ok,
+        socket
+        |> authenticate(session)
+        |> assign(rev_spec: nil, revision: nil, commit: nil, stats: %{})
+        |> assign_repo!(user_login, repo_name)
+        |> assign_repo_open_issue_count()
+        |> assign_agent!()
+      }
+    end)
   end
 
   @impl true
   def handle_params(_params, _uri, socket) when is_nil(socket.assigns.repo.pushed_at) do
-    {:noreply, assign_page_title(socket)}
+    socket = assign_page_title(socket)
+    unless connected?(socket), do: Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    {:noreply, socket}
   end
 
   def handle_params(params, _uri, socket) do
-    {
-      :noreply,
-      socket
-      |> assign_tree!(params)
-      |> assign_tree_commits_async()
-      |> assign_page_title()
-    }
+    unless Appsignal.Tracer.current_span() do
+      "live_view"
+      |> Appsignal.Tracer.create_span(Appsignal.Tracer.current_span())
+      |> Appsignal.Span.set_name("GitGud.Web.TreeBrowserLive#patch")
+      |> Appsignal.Span.set_attribute("appsignal:category", "call.live_view")
+      |> Appsignal.Span.set_sample_data("environment", Appsignal.Metadata.metadata(socket))
+      |> Appsignal.Span.set_sample_data("params", params)
+      |> appsignal_span_set_session_data(socket)
+    end
+    result =
+      Appsignal.instrument("GitGud.Web.TreeBrowserLive", "handle_params.live_view", fn ->
+        {
+          :noreply,
+          socket
+          |> assign_tree!(params)
+          |> assign_tree_commits_async()
+          |> assign_page_title()
+        }
+      end)
+    unless connected?(socket), do: Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    result
   end
 
   @impl true
   def handle_info(:assign_tree_commits, socket) do
-    {:noreply, assign_tree_commits!(socket)}
+    socket = Appsignal.instrument("GitGud.Web.TreeBrowserLive", "handle_info.live_view", fn -> assign_tree_commits!(socket) end)
+    Appsignal.Tracer.close_span(Appsignal.Tracer.current_span())
+    {:noreply, socket}
   end
 
   #

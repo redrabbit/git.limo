@@ -60,4 +60,14 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   """
   @spec current_user(Phoenix.LiveView.Socket.t) :: User.t | nil
   def current_user(socket), do: socket.assigns[:current_user]
+
+  @doc """
+  Sets the session data according to authentication for the given `span`.
+  """
+  @spec appsignal_span_set_session_data(Appsignal.Span.t, Phoenix.LiveSocket.t) :: Appsignal.Span.t
+  def appsignal_span_set_session_data(span, socket) do
+    if user = current_user(socket),
+      do: Appsignal.Span.set_sample_data(span, "session_data", %{"user_id" => user.id}),
+    else: span
+  end
 end

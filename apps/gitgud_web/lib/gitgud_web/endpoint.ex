@@ -4,7 +4,9 @@ defmodule GitGud.Web.Endpoint do
   """
 
   use Phoenix.Endpoint, otp_app: :gitgud_web
+
   use Absinthe.Phoenix.Endpoint
+  use Appsignal.Phoenix
 
   @session_opts [
     store: :cookie,
@@ -39,6 +41,7 @@ defmodule GitGud.Web.Endpoint do
 
   plug GitGud.Web.Router
 
+  @impl true
   def init(_key, config) do
     if config[:load_from_system_env] do
       port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
