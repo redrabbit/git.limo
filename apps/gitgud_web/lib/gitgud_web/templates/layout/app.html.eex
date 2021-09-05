@@ -33,7 +33,7 @@
         <div class="navbar-menu">
           <div class="navbar-start">
             <div class="navbar-item">
-              <%= live_render(@conn, GitGud.Web.GlobalSearchLive, container: {:div, class: "search"}) %>
+              <%= live_render(@conn, GitGud.Web.GlobalSearchLive, container: {:div, id: "global-search", class: "search", data_phx_connect_later: true}) %>
             </div>
           </div>
 
