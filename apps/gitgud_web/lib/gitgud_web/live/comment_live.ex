@@ -52,7 +52,7 @@ defmodule GitGud.Web.CommentLive do
       :ok,
       socket
       |> assign(assigns)
-      |> assign_body_html()
+      |> assign_body_html(assigns)
       |> assign_changeset()
     }
   end
@@ -99,9 +99,9 @@ defmodule GitGud.Web.CommentLive do
   # Helpers
   #
 
-  defp assign_body_html(socket) when not is_nil(socket.assigns.comment_body_html), do: socket
-  defp assign_body_html(socket) do
-    assign(socket, :comment_body_html, markdown_safe(socket.assigns.comment.body, repo: socket.assigns.repo, agent: socket.assigns.agent))
+  defp assign_body_html(socket, assigns) when not is_nil(assigns.comment_body_html), do: socket
+  defp assign_body_html(socket, assigns) do
+    assign(socket, :comment_body_html, markdown_safe(assigns.comment.body, repo: socket.assigns.repo, agent: socket.assigns.agent))
   end
 
   defp assign_changeset(socket) when is_map_key(socket.assigns, :changeset), do: socket
