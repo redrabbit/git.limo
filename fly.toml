@@ -1,0 +1,49 @@
+# fly.toml file generated for git-limo on 2021-05-06T23:00:58+02:00
+
+app = "git-limo"
+
+kill_signal = "SIGTERM"
+kill_timeout = 5
+
+[env]
+  GIT_ROOT = "/data/git"
+  SSH_HOST_KEY_DIR = "/app/ssh-keys"
+
+[experimental]
+  auto_rollback = true
+
+[mounts]
+  source="git_limo_data"
+  destination="/data"
+
+[[services]]
+  http_checks = []
+  internal_port = 4000
+  protocol = "tcp"
+  script_checks = []
+
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    grace_period = "30s"
+    interval = "15s"
+    restart_limit = 6
+    timeout = "2s"
+
+[[services]]
+  internal_port = 1022
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 10022

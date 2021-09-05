@@ -7,4 +7,5 @@ import Config
 # before starting your production server.
 config :gitgud_web, GitGud.Web.Endpoint,
   url: [host: "git.limo"],
+  force_ssl: [rewrite_on: [:x_forwarded_proto]],
   cache_static_manifest: "priv/static/cache_manifest.json"

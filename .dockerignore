@@ -1,0 +1,9 @@
+/_build
+/apps/gitrekt/priv/geef_nif.so
+/apps/gitgud/priv/git-data
+/apps/gitgud/priv/ssh-keys
+/apps/gitgud_web/assets/node_modules
+/apps/gitgud_web/assets/js/components/__generated__
+/apps/gitgud_web/priv/graphql
+/apps/gitgud_web/priv/static/assets
+/deps
