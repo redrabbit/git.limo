@@ -10,7 +10,7 @@ defmodule GitGud.Telemetry do
     else: Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
   end
 
-  def handle_event([:gitrekt, :git_agent, :transaction_start], _measurements, %{op: op, args: args} = meta, _config) do
+  def handle_event([:gitrekt, :git_agent, :transaction_start], _measurements, %{op: op, args: args} = _meta, _config) do
     args = Enum.join(map_git_agent_op_args(op, args), ", ")
     Logger.debug("[Git Agent] #{op}(#{args}) started")
   end

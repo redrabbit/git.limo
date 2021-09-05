@@ -106,7 +106,7 @@ defmodule GitGud.SSHServer do
   @impl true
   def handle_ssh_msg({:ssh_cm, conn, {:exec, chan, _reply, cmd}}, %__MODULE__{conn: conn, chan: chan, user: user} = state) do
     case parse_cmd(to_string(cmd)) do
-      {:ok, exec, {user_login, repo_name} = repo_path, _extra_args} ->
+      {:ok, exec, {user_login, repo_name}, _extra_args} ->
         if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
           if authorized?(user, repo, exec) do
             case GitAgent.start_link(RepoStorage.workdir(repo)) do
