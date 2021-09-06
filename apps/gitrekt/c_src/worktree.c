@@ -16,7 +16,7 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 #if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR >= 27
     ErlNifBinary name_bin, path_bin, ref_bin;
-	int override;
+	int override, error;
 	geef_repository *repo;
 	geef_worktree *worktree;
 	ERL_NIF_TERM worktree_term;
@@ -54,16 +54,18 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_reference *ref;
 	if (override) {
-		if (git_reference_lookup(&ref, repo->repo, (char *) ref_bin.data) < 0)
-			return geef_error(env);
+		error = git_reference_lookup(&ref, repo->repo, (char *) ref_bin.data);
+		if (error < 0)
+			return geef_error_struct(env, error);
 		// TODO
 		//opts.ref = ref;
 		enif_release_binary(&ref_bin);
 	}
 
-	if (git_worktree_add(&worktree->worktree, repo->repo, (char *) name_bin.data, (char *) path_bin.data, &opts) < 0) {
+	error = git_worktree_add(&worktree->worktree, repo->repo, (char *) name_bin.data, (char *) path_bin.data, &opts);
+	if (error < 0) {
 		//enif_release_resource(worktree);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	enif_release_binary(&name_bin);
@@ -83,7 +85,7 @@ geef_worktree_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 #else
     ErlNifBinary bin;
 	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
-		return geef_error(env);
+		return geef_oom(env);
 	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
 #endif
 }
@@ -92,6 +94,7 @@ ERL_NIF_TERM
 geef_worktree_prune(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 #if LIBGIT2_VER_MAJOR > 0 || LIBGIT2_VER_MINOR >= 27
+	int error;
 	geef_worktree *worktree;
 
 	if (!enif_get_resource(env, argv[0], geef_worktree_type, (void **) &worktree))
@@ -99,15 +102,17 @@ geef_worktree_prune(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_worktree_prune_options opts = GIT_WORKTREE_PRUNE_OPTIONS_INIT;
 	opts.flags |= GIT_WORKTREE_PRUNE_VALID;
-	if (git_worktree_prune(worktree->worktree, &opts) < 0) {
-		return geef_error(env);
+
+	error = git_worktree_prune(worktree->worktree, &opts);
+	if (error < 0) {
+		return geef_error_struct(env, error);
 	}
 
 	return atoms.ok;
 #else
     ErlNifBinary bin;
 	if (geef_string_to_bin(&bin, "libgit2 version >= 0.27.x required") < 0)
-		return geef_error(env);
+		return geef_oom(env);
 	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
 #endif
 }

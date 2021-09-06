@@ -21,6 +21,7 @@ geef_commit_parent_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_commit_parent(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin;
 	geef_object *obj, *parent;
 	ERL_NIF_TERM term_parent;
@@ -34,8 +35,9 @@ geef_commit_parent(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	parent = enif_alloc_resource(geef_object_type, sizeof(geef_object));
 
-	if (git_commit_parent((git_commit **) &parent->obj, (git_commit *) obj->obj, nth) < 0)
-		return geef_error(env);
+	error = git_commit_parent((git_commit **) &parent->obj, (git_commit *) obj->obj, nth);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_parent = enif_make_resource(env, parent);
 	enif_release_resource(parent);
@@ -70,6 +72,7 @@ geef_commit_tree_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_commit_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin;
 	geef_object *obj, *tree;
 	ERL_NIF_TERM term_tree;
@@ -79,8 +82,9 @@ geef_commit_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	tree = enif_alloc_resource(geef_object_type, sizeof(geef_object));
 
-	if (git_commit_tree((git_tree **) &tree->obj, (git_commit *) obj->obj) < 0)
-		return geef_error(env);
+	error = git_commit_tree((git_tree **) &tree->obj, (git_commit *) obj->obj);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_tree = enif_make_resource(env, tree);
 	enif_release_resource(tree);
@@ -97,6 +101,7 @@ geef_commit_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_commit_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	ErlNifBinary bin;
 	char *ref = NULL, *encoding = NULL, *message = NULL;
@@ -172,9 +177,9 @@ geef_commit_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		i++;
 	}
 
-	if (git_commit_create_from_ids(&commit_id, repo->repo, ref, author, committer, encoding, message,
-			      &tree, parents_len, parents_ids_ptrs) < 0)
-		return geef_error(env);
+	error = git_commit_create_from_ids(&commit_id, repo->repo, ref, author, committer, encoding, message, &tree, parents_len, parents_ids_ptrs);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	if (!enif_realloc_binary(&bin, GIT_OID_RAWSZ))
 		return geef_oom(env);
@@ -196,7 +201,7 @@ geef_commit_message(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	msg = git_commit_message((git_commit *) obj->obj);
 	if (geef_string_to_bin(&bin, msg) < 0)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
 }
@@ -268,7 +273,7 @@ geef_commit_raw_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	raw_header = git_commit_raw_header((git_commit *) obj->obj);
 	if (geef_string_to_bin(&bin, raw_header) < 0)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
 }
@@ -276,6 +281,7 @@ geef_commit_raw_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_commit_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	git_buf buf = { NULL, 0, 0 };
 	ErlNifBinary bin;
 	geef_object *obj;
@@ -289,8 +295,9 @@ geef_commit_header(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
         return geef_oom(env);
 
-	if (git_commit_header_field(&buf, (git_commit *) obj->obj, (char *) bin.data) < 0) {
-		return geef_error(env);
+	error = git_commit_header_field(&buf, (git_commit *) obj->obj, (char *) bin.data);
+	if (error < 0) {
+		return geef_error_struct(env, error);
 	}
 
 	if (!enif_alloc_binary(buf.size, &bin)) {

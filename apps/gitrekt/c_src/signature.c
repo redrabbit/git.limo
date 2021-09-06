@@ -5,6 +5,7 @@
 
 int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *err, ERL_NIF_TERM term)
 {
+	int error;
 	const ERL_NIF_TERM *tuple;
 	ErlNifBinary name, email;
 	git_signature *sig;
@@ -38,10 +39,11 @@ int geef_signature_from_erl(git_signature **out, ErlNifEnv *env, ERL_NIF_TERM *e
 	if (!enif_get_int(env, tuple[3], &offset))
 		goto on_badarg;
 
-	if (git_signature_new(&sig, (char *)name.data, (char *)email.data, gtime, offset) < 0) {
+	error = git_signature_new(&sig, (char *)name.data, (char *)email.data, gtime, offset);
+	if (error < 0) {
 		enif_release_binary(&name);
 		enif_release_binary(&email);
-		*err = geef_error(env);
+		*err = geef_error_struct(env, error);
 		return -1;
 	}
 
@@ -99,8 +101,9 @@ geef_signature_default(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
 		return enif_make_badarg(env);
 
-	if (git_signature_default(&sig, repo->repo) < 0)
-		return geef_error(env);
+	error = git_signature_default(&sig, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	error = geef_signature_to_erl(&name, &email, &time, &offset, env, sig);
 	git_signature_free(sig);
@@ -143,7 +146,7 @@ geef_signature_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		error = git_signature_new(&sig, (char *)name.data, (char *)email.data, at, 0);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	len = strlen(sig->name);
 	if (!enif_realloc_binary(&name, len))

@@ -150,6 +150,11 @@ static int load(ErlNifEnv *env, void **priv, ERL_NIF_TERM load_info)
 	atoms.zlib_stream_error = enif_make_atom(env, "zlib_stream_error");
 	atoms.enomem = enif_make_atom(env, "enomem");
 	atoms.eunknown = enif_make_atom(env, "eunknown");
+	atoms.estruct = enif_make_atom(env, "__struct__");
+	atoms.emod = enif_make_atom(env, "Elixir.GitRekt.GitError");
+	atoms.ex = enif_make_atom(env, "__exception__");
+	atoms.emsg = enif_make_atom(env, "message");
+	atoms.ecode = enif_make_atom(env, "code");
 
 	return 0;
 }
@@ -189,6 +194,51 @@ geef_error(ErlNifEnv *env)
 	memcpy(bin.data, error->message, len);
 
 	return enif_make_tuple2(env, atoms.error, enif_make_binary(env, &bin));
+}
+
+ERL_NIF_TERM
+geef_error_struct(ErlNifEnv *env, int code)
+{
+	ERL_NIF_TERM struct_term;
+	ERL_NIF_TERM keys[] = {
+		atoms.estruct,
+		atoms.ex,
+		atoms.emsg,
+		atoms.ecode
+	};
+
+	const git_error *error;
+	ErlNifBinary bin;
+	size_t len;
+
+	error = giterr_last();
+
+	if (!error)
+		return enif_make_tuple2(env, atoms.error, atoms.eunknown);
+
+	if (error->klass == GITERR_NOMEMORY)
+		return geef_oom(env);
+
+	if (!error->message)
+		return enif_make_tuple2(env, atoms.error, atoms.eunknown);
+
+	len = strlen(error->message);
+	if (!enif_alloc_binary(len, &bin))
+		return geef_oom(env);
+
+	memcpy(bin.data, error->message, len);
+	ERL_NIF_TERM values[] = {
+		atoms.emod,
+		atoms.true,
+		enif_make_binary(env, &bin),
+		enif_make_int(env, code)
+	};
+
+	error = enif_make_map_from_arrays(env, keys, values, 4, &struct_term);
+	if (error < 0)
+		return geef_error_struct(env, error);
+
+	return enif_make_tuple2(env, atoms.error, struct_term);
 }
 
 ERL_NIF_TERM

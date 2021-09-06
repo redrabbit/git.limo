@@ -66,6 +66,7 @@ geef_object_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+    int error;
     geef_repository *repo;
     ErlNifBinary bin;
     git_oid id;
@@ -87,8 +88,9 @@ geef_object_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     if (!obj)
         return geef_oom(env);
 
-    if (git_object_lookup(&obj->obj, repo->repo, &id, GIT_OBJ_ANY) < 0)
-        return geef_error(env);
+    error = git_object_lookup(&obj->obj, repo->repo, &id, GIT_OBJ_ANY);
+    if (error < 0)
+        return geef_error_struct(env, error);
 
     term_obj = enif_make_resource(env, obj);
     enif_release_resource(obj);

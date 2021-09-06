@@ -17,7 +17,7 @@ void geef_repository_free(ErlNifEnv *env, void *cd)
 ERL_NIF_TERM
 geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-	int bare;
+	int bare, error;
 	git_repository *repo;
 	geef_repository *res_repo;
 	ErlNifBinary bin;
@@ -30,9 +30,9 @@ geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 
 	bare = !enif_compare(argv[1], atoms.true);
-
-	if (git_repository_init(&repo, (char *)bin.data, bare) < 0)
-		return geef_error(env);
+	error = git_repository_init(&repo, (char *)bin.data, bare);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
 	res_repo->repo = repo;
@@ -45,6 +45,7 @@ geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	git_repository *repo;
 	geef_repository *res_repo;
 	ErlNifBinary bin;
@@ -56,8 +57,9 @@ geef_repository_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if (git_repository_open(&repo, (char *)bin.data) < 0)
-		return geef_error(env);
+	error = git_repository_open(&repo, (char *)bin.data);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	res_repo = enif_alloc_resource(geef_repository_type, sizeof(geef_repository));
 	res_repo->repo = repo;
@@ -83,7 +85,7 @@ geef_repository_discover(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	error = git_repository_discover(&buf, (char *)bin.data, 0, NULL);
 	enif_release_binary(&bin);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	if (!enif_alloc_binary(strlen(buf.ptr), &path))
 		return geef_oom(env);
@@ -175,6 +177,7 @@ geef_repository_is_empty(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	geef_config *cfg;
 	ERL_NIF_TERM term_cfg;
@@ -183,8 +186,9 @@ geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	cfg = enif_alloc_resource(geef_config_type, sizeof(geef_config));
-	if (git_repository_config(&cfg->config, repo->repo) < 0)
-		return geef_error(env);
+	error = git_repository_config(&cfg->config, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_cfg = enif_make_resource(env, cfg);
 	enif_release_resource(cfg);
@@ -195,6 +199,7 @@ geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	geef_odb *odb;
 	ERL_NIF_TERM term_odb;
@@ -203,8 +208,9 @@ geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	odb = enif_alloc_resource(geef_odb_type, sizeof(geef_odb));
-	if (git_repository_odb(&odb->odb, repo->repo) < 0)
-		return geef_error(env);
+	error = git_repository_odb(&odb->odb, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_odb = enif_make_resource(env, odb);
 	enif_release_resource(odb);
@@ -215,6 +221,7 @@ geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	geef_index *index;
 	ERL_NIF_TERM term_index;
@@ -223,9 +230,9 @@ geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	index = enif_alloc_resource(geef_index_type, sizeof(geef_index));
-
-	if (git_repository_index(&index->index, repo->repo) < 0)
-		return geef_error(env);
+	error = git_repository_index(&index->index, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_index = enif_make_resource(env, index);
 	enif_release_resource(index);

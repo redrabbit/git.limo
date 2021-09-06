@@ -30,6 +30,7 @@ geef_revwalk_repository(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_revwalk_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	geef_revwalk *walk;
 	ERL_NIF_TERM walk_term;
@@ -41,10 +42,11 @@ geef_revwalk_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!walk)
 		return geef_oom(env);
 
-	if (git_revwalk_new(&walk->walk, repo->repo) < 0)
+	error = git_revwalk_new(&walk->walk, repo->repo);
+	if (error < 0)
 	{
 		enif_release_resource(walk);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	walk_term = enif_make_resource(env, walk);
@@ -89,12 +91,14 @@ geef_revwalk_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_alloc_binary(GIT_OID_RAWSZ, &bin))
 		return geef_oom(env);
 
-	if ((error = git_revwalk_next((git_oid *)bin.data, walk->walk)) < 0)
+
+	error = git_revwalk_next((git_oid *)bin.data, walk->walk);
+	if (error < 0)
 	{
 		if (error == GIT_ITEROVER)
 			return enif_make_tuple2(env, atoms.error, atoms.iterover);
 
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
@@ -165,20 +169,22 @@ geef_revwalk_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_revwalk_type, (void **)&walk))
 		return enif_make_badarg(env);
 
-	if (git_packbuilder_new(&pb, walk->repo->repo) < 0)
-		return geef_error(env);
+	error = git_packbuilder_new(&pb, walk->repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
-	if (git_packbuilder_insert_walk(pb, walk->walk) < 0)
+	error = git_packbuilder_insert_walk(pb, walk->walk);
+	if (error < 0)
 	{
 		git_packbuilder_free(pb);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	error = git_packbuilder_write_buf(&buf, pb);
 	git_packbuilder_free(pb);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	if (!enif_alloc_binary(buf.size, &pack))
 	{

@@ -5,6 +5,7 @@
 #include "erl_nif.h"
 
 ERL_NIF_TERM geef_error(ErlNifEnv *env);
+ERL_NIF_TERM geef_error_struct(ErlNifEnv *env, int code);
 ERL_NIF_TERM geef_oom(ErlNifEnv *env);
 
 typedef struct {
@@ -48,6 +49,11 @@ typedef struct {
 	ERL_NIF_TERM zlib_stream_error;
 	ERL_NIF_TERM enomem;
 	ERL_NIF_TERM eunknown;
+	ERL_NIF_TERM estruct;
+	ERL_NIF_TERM emod;
+	ERL_NIF_TERM ex;
+	ERL_NIF_TERM emsg;
+	ERL_NIF_TERM ecode;
 } geef_atoms;
 
 extern geef_atoms atoms;

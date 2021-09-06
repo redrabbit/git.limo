@@ -27,7 +27,7 @@ geef_config_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&bin);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	term_cfg = enif_make_resource(env, cfg);
 	enif_release_resource(cfg);
@@ -68,7 +68,7 @@ geef_config_set_bool(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&bin);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -89,7 +89,7 @@ geef_config_get_bool(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&bin);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	ret = val ? atoms.true : atoms.false;
 	return enif_make_tuple2(env, atoms.ok, ret);
@@ -115,7 +115,7 @@ geef_config_set_int(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&bin);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -137,13 +137,13 @@ geef_config_get_string(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&bin);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	error = geef_string_to_bin(&result, buf.ptr);
 	git_buf_free(&buf);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &result));
 }
@@ -171,7 +171,7 @@ geef_config_set_string(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&val);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }

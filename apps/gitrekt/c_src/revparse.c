@@ -9,6 +9,7 @@
 ERL_NIF_TERM
 geef_revparse_single(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin, id;
 	geef_repository *repo;
 	geef_object *obj;
@@ -27,9 +28,10 @@ geef_revparse_single(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!obj)
 		return geef_oom(env);
 
-	if (git_revparse_single(&obj->obj, repo->repo, (char *) bin.data) < 0) {
+	error = git_revparse_single(&obj->obj, repo->repo, (char *) bin.data);
+	if (error < 0) {
 		enif_release_binary(&bin);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	type = geef_object_type2atom(git_object_type(obj->obj));
@@ -50,6 +52,7 @@ geef_revparse_single(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_revparse_ext(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	size_t len;
 	const char *name;
 	git_reference *ref = NULL;
@@ -72,9 +75,10 @@ geef_revparse_ext(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!obj)
 		return geef_oom(env);
 
-	if (git_revparse_ext(&obj->obj, &ref, repo->repo, (char *) bin.data) < 0) {
+	error = git_revparse_ext(&obj->obj, &ref, repo->repo, (char *) bin.data);
+	if (error < 0) {
 		enif_release_binary(&bin);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	if (ref) {

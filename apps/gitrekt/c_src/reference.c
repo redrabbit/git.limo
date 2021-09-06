@@ -93,6 +93,7 @@ static int append_to_list(const char *name, void *payload)
 ERL_NIF_TERM
 geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	size_t i;
 	git_strarray array;
 	geef_repository *repo;
@@ -101,8 +102,9 @@ geef_reference_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
 		return enif_make_badarg(env);
 
-	if (git_reference_list(&array, repo->repo) < 0)
-		return geef_error(env);
+	error = git_reference_list(&array, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	list = enif_make_list(env, 0);
 	for (i = 0; i < array.count; i++) {
@@ -152,7 +154,7 @@ geef_reference_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	error = git_reference_lookup(&ref, repo->repo, (char *)bin.data);
 	enif_release_binary(&bin);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	peeled = enif_alloc_resource(geef_object_type, sizeof(geef_object));
 	if (!peeled)
@@ -160,7 +162,7 @@ geef_reference_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	error = git_reference_peel(&peeled->obj, ref, type);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	if (geef_oid_bin(&id, git_object_id(peeled->obj)) < 0) {
 		enif_release_resource(peeled);
@@ -175,7 +177,7 @@ geef_reference_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_reference_free(ref);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return enif_make_tuple4(env, atoms.ok, geef_object_type2atom(git_object_type(peeled->obj)),
 				enif_make_binary(env, &id), term_peeled);
@@ -202,7 +204,7 @@ geef_reference_lookup(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	error = git_reference_lookup(&ref, repo->repo, (char *)bin.data);
 	enif_release_binary(&bin);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	type = ref_type(ref);
 	if (ref_target(&target, env, ref) < 0)
@@ -251,7 +253,7 @@ geef_reference_iterator(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		error = git_reference_iterator_new(&iter, repo->repo);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	res_iter = enif_alloc_resource(geef_ref_iter_type, sizeof(geef_ref_iter));
 	res_iter->iter = iter;
@@ -281,7 +283,7 @@ geef_reference_next(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (error == GIT_ITEROVER)
 		return enif_make_tuple2(env, atoms.error, atoms.iterover);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	type = ref_type(ref);
 	if (ref_target(&target, env, ref) < 0) {
@@ -316,10 +318,11 @@ void geef_ref_iter_free(ErlNifEnv *env, void *cd)
 ERL_NIF_TERM
 geef_reference_resolve(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	size_t len;
 	const char *name;
 	ErlNifBinary bin, id;
-    ERL_NIF_TERM shorthand;
+	ERL_NIF_TERM shorthand;
 	geef_repository *repo;
 	git_reference *ref, *resolved;
 
@@ -332,11 +335,13 @@ geef_reference_resolve(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if (git_reference_lookup(&ref, repo->repo, (char *) bin.data) < 0)
-		return geef_error(env);
+	error = git_reference_lookup(&ref, repo->repo, (char *) bin.data);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
-	if (git_reference_resolve(&resolved, ref) < 0)
-		return geef_error(env);
+	error = git_reference_resolve(&resolved, ref);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	git_reference_free(ref);
 	name = git_reference_name(resolved);
@@ -366,6 +371,7 @@ on_oom:
 ERL_NIF_TERM
 geef_reference_dwim(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin;
 	ERL_NIF_TERM target, type;
 	geef_repository *repo;
@@ -382,9 +388,10 @@ geef_reference_dwim(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if (git_reference_dwim(&ref, repo->repo, (char *)bin.data) < 0) {
+	error = git_reference_dwim(&ref, repo->repo, (char *)bin.data);
+	if (error < 0) {
 		enif_release_binary(&bin);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	type = ref_type(ref);
@@ -429,7 +436,7 @@ geef_reference_glob(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	enif_release_binary(&bin);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return data.list;
 }
@@ -437,6 +444,7 @@ geef_reference_glob(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_reference_to_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_repository *repo;
 	ErlNifBinary bin;
 	git_oid id;
@@ -450,8 +458,9 @@ geef_reference_to_id(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if (git_reference_name_to_id(&id, repo->repo, (char *)bin.data) < 0)
-		return geef_error(env);
+	error = git_reference_name_to_id(&id, repo->repo, (char *)bin.data);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	if (geef_oid_bin(&bin, &id) < 0)
 		return geef_oom(env);
@@ -503,7 +512,7 @@ geef_reference_create(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&name);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -528,12 +537,12 @@ geef_reference_delete(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	error = git_reference_lookup(&ref, repo->repo, (char *)bin.data);
 	enif_release_binary(&bin);
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
     error = git_reference_delete(ref);
     git_reference_free(ref);
     if (error < 0)
-        return geef_error(env);
+        return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -563,7 +572,7 @@ geef_reference_has_log(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	enif_release_binary(&name);
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	ret = error ? atoms.true : atoms.false;
 

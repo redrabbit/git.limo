@@ -100,7 +100,7 @@ static ERL_NIF_TERM indexer_progress_to_map(ErlNifEnv *env, git_indexer_progress
 	};
 
 	if (enif_make_map_from_arrays(env, keys, values, 7, &map_term) < 0)
-		return geef_error(env);
+		return geef_error(env); // TODO
 
 	return map_term;
 }
@@ -108,6 +108,7 @@ static ERL_NIF_TERM indexer_progress_to_map(ErlNifEnv *env, git_indexer_progress
 ERL_NIF_TERM
 geef_odb_hash(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin, oid_bin;
 	git_oid oid;
 	git_otype type;
@@ -119,10 +120,11 @@ geef_odb_hash(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_inspect_binary(env, argv[1], &bin))
 		return enif_make_badarg(env);
 
-	if (git_odb_hash(&oid, bin.data, bin.size, type) < 0)
+	error = git_odb_hash(&oid, bin.data, bin.size, type);
+	if (error < 0)
 	{
 		enif_release_binary(&bin);
-		return geef_error(env);
+		return geef_error_struct(env, error);
 	}
 
 	enif_release_binary(&bin);
@@ -156,6 +158,7 @@ geef_odb_exists(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	ErlNifBinary bin;
 	git_oid id;
 	git_otype type;
@@ -175,8 +178,9 @@ geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_oid_fromraw(&id, bin.data);
 
-	if (git_odb_read(&obj, odb->odb, &id) < 0)
-		return geef_error(env);
+	error = git_odb_read(&obj, odb->odb, &id);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	type = git_odb_object_type(obj);
 
@@ -198,6 +202,7 @@ geef_odb_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	git_otype type;
 	git_oid oid;
 	geef_odb *odb;
@@ -210,8 +215,9 @@ geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	type = geef_object_atom2type(argv[2]);
-	if (git_odb_write(&oid, odb->odb, contents.data, contents.size, type) < 0)
-		return geef_error(env);
+	error = git_odb_write(&oid, odb->odb, contents.data, contents.size, type);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	if (geef_oid_bin(&oid_bin, &oid) < 0)
 		return geef_oom(env);
@@ -222,6 +228,7 @@ geef_odb_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_odb *odb;
 	ErlNifBinary bin;
 	git_odb_writepack *writepack = NULL;
@@ -234,14 +241,17 @@ geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_inspect_binary(env, argv[1], &bin))
 		return enif_make_badarg(env);
 
-	if (git_odb_write_pack(&writepack, odb->odb, noop_indexer_progress_callback, progress_payload) < 0)
-		return geef_error(env);
+	error = git_odb_write_pack(&writepack, odb->odb, noop_indexer_progress_callback, progress_payload);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
-	if (writepack->append(writepack, bin.data, bin.size, &progress) < 0)
-		return geef_error(env);
+	error = writepack->append(writepack, bin.data, bin.size, &progress);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
-	if (writepack->commit(writepack, &progress) < 0)
-		return geef_error(env);
+	error = writepack->commit(writepack, &progress);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -249,6 +259,7 @@ geef_odb_write_pack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_get_writepack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_odb *odb;
 	geef_odb_writepack *odb_writepack;
 	ERL_NIF_TERM term_odb_writepack;
@@ -258,8 +269,9 @@ geef_odb_get_writepack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return enif_make_badarg(env);
 
 	odb_writepack = enif_alloc_resource(geef_odb_writepack_type, sizeof(geef_odb_writepack));
-	if (git_odb_write_pack(&odb_writepack->odb_writepack, odb->odb, noop_indexer_progress_callback, progress_payload) < 0)
-		return geef_error(env);
+	error = git_odb_write_pack(&odb_writepack->odb_writepack, odb->odb, noop_indexer_progress_callback, progress_payload);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term_odb_writepack = enif_make_resource(env, odb_writepack);
 	enif_release_resource(odb_writepack);
@@ -270,6 +282,7 @@ geef_odb_get_writepack(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_writepack_append(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_odb_writepack *odb_writepack;
 	ErlNifBinary bin;
 
@@ -283,8 +296,9 @@ geef_odb_writepack_append(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (indexer_progress_from_map(env, argv[2], &progress) < 0)
 		return enif_make_badarg(env);
 
-	if (odb_writepack->odb_writepack->append(odb_writepack->odb_writepack, bin.data, bin.size, &progress) < 0)
-		return geef_error(env);
+	error = odb_writepack->odb_writepack->append(odb_writepack->odb_writepack, bin.data, bin.size, &progress);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
         return enif_make_tuple2(env, atoms.ok, indexer_progress_to_map(env, &progress));
 }
@@ -292,6 +306,7 @@ geef_odb_writepack_append(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_odb_writepack_commit(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_odb_writepack *odb_writepack;
 
 	if (!enif_get_resource(env, argv[0], geef_odb_writepack_type, (void **)&odb_writepack))
@@ -301,8 +316,9 @@ geef_odb_writepack_commit(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (indexer_progress_from_map(env, argv[1], &progress) < 0)
 		return enif_make_badarg(env);
 
-	if (odb_writepack->odb_writepack->commit(odb_writepack->odb_writepack, &progress) < 0)
-		return geef_error(env);
+	error = odb_writepack->odb_writepack->commit(odb_writepack->odb_writepack, &progress);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
         return enif_make_tuple2(env, atoms.ok, indexer_progress_to_map(env, &progress));
 }

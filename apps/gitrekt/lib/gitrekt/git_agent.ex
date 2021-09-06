@@ -120,7 +120,8 @@ defmodule GitRekt.GitAgent do
     GitIndex,
     GitIndexEntry,
     GitDiff,
-    GitWritePack
+    GitWritePack,
+    GitError
   }
 
   @behaviour GitRekt.Cache
@@ -995,8 +996,8 @@ defmodule GitRekt.GitAgent do
     case fetch_reference_target(resolve_reference(ref), target, handle) do
       {:ok, target} ->
         target
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -1004,8 +1005,8 @@ defmodule GitRekt.GitAgent do
     case fetch_target(obj, target, handle) do
       {:ok, target} ->
         target
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -1051,8 +1052,8 @@ defmodule GitRekt.GitAgent do
     case Git.object_lookup(handle, oid) do
       {:ok, obj_type, obj} ->
         resolve_object({obj, obj_type, oid})
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -1252,7 +1253,7 @@ defmodule GitRekt.GitAgent do
   defp fetch_target(%GitBlob{} = blob, :blob, _handle), do: {:ok, blob}
 
   defp fetch_target(source, target, _handle) do
-    {:error, "cannot peel #{inspect source} to #{target}"}
+    {:error, %GitError{message: "cannot peel #{inspect source} to #{target}", code: -3}}
   end
 
   defp fetch_author(%GitCommit{__ref__: commit}) do

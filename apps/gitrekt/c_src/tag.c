@@ -10,6 +10,7 @@
 ERL_NIF_TERM
 geef_tag_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	size_t i;
 	git_strarray array;
 	geef_repository *repo;
@@ -18,8 +19,9 @@ geef_tag_list(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **) &repo))
 		return enif_make_badarg(env);
 
-	if (git_tag_list(&array, repo->repo) < 0)
-		return geef_error(env);
+	error = git_tag_list(&array, repo->repo);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	list = enif_make_list(env, 0);
 	for (i = 0; i < array.count; i++) {
@@ -45,6 +47,7 @@ on_error:
 ERL_NIF_TERM
 geef_tag_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_object *obj, *peeled;
 	ERL_NIF_TERM term_peeled;
 	ErlNifBinary id;
@@ -59,8 +62,9 @@ geef_tag_peel(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!peeled)
 		return geef_oom(env);
 
-	if (git_tag_peel(&peeled->obj, (git_tag *)obj->obj) < 0)
-		return geef_error(env);
+	error = git_tag_peel(&peeled->obj, (git_tag *)obj->obj);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	if(geef_oid_bin(&id, git_object_id(peeled->obj)) < 0) {
 		enif_release_resource(peeled);
@@ -90,7 +94,7 @@ geef_tag_name(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	name = git_tag_name((git_tag *) obj->obj);
 	if (geef_string_to_bin(&bin, name) < 0)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
 }
@@ -107,7 +111,7 @@ geef_tag_message(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	msg = git_tag_message((git_tag *) obj->obj);
 	if (geef_string_to_bin(&bin, msg) < 0)
-		return geef_error(env);
+		return geef_oom(env);
 
 	return enif_make_tuple2(env, atoms.ok, enif_make_binary(env, &bin));
 }

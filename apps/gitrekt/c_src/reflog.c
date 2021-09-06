@@ -24,8 +24,9 @@ geef_reflog_count(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if ((error = git_reflog_read(&reflog, repo->repo, (char *)bin.data)) < 0)
-		return geef_error(env);
+	error = git_reflog_read(&reflog, repo->repo, (char *)bin.data);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	count = git_reflog_entrycount(reflog);
 	git_reflog_free(reflog);
@@ -52,8 +53,9 @@ geef_reflog_read(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
-	if ((error = git_reflog_read(&reflog, repo->repo, (char *)bin.data)) < 0)
-		return geef_error(env);
+	error = git_reflog_read(&reflog, repo->repo, (char *)bin.data);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	count = git_reflog_entrycount(reflog);
 	list = enif_make_list(env, 0);
@@ -113,5 +115,5 @@ geef_reflog_delete(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	enif_release_binary(&bin);
 
-	return error ? geef_error(env) : atoms.ok;
+	return error < 0 ? geef_error_struct(env, error) : atoms.ok;
 }

@@ -44,6 +44,7 @@ ERL_NIF_TERM entry_to_term(ErlNifEnv *env, const git_index_entry *entry)
 ERL_NIF_TERM
 geef_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_index *index;
 	ERL_NIF_TERM term;
 
@@ -51,8 +52,9 @@ geef_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!index)
 		return geef_oom(env);
 
-	if (git_index_new(&index->index) < 0)
-		return geef_error(env);
+	error = git_index_new(&index->index);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	term = enif_make_resource(env, index);
 	enif_release_resource(index);
@@ -63,13 +65,15 @@ geef_index_new(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_index_write(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_index *index;
 
 	if (!enif_get_resource(env, argv[0], geef_index_type, (void **) &index))
 		return enif_make_badarg(env);
 
-	if (git_index_write(index->index) < 0)
-		return geef_error(env);
+	error = git_index_write(index->index);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -96,7 +100,7 @@ geef_index_write_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	}
 
 	if (error < 0)
-		return geef_error(env);
+		return geef_error_struct(env, error);
 
 	if (geef_oid_bin(&bin, &id) < 0)
 		return geef_oom(env);
@@ -107,6 +111,7 @@ geef_index_write_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_index_read_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_index *index;
 	geef_object *tree;
 
@@ -116,8 +121,9 @@ geef_index_read_tree(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!enif_get_resource(env, argv[1], geef_object_type, (void **) &tree))
 		return enif_make_badarg(env);
 
-	if (git_index_read_tree(index->index, (git_tree *)tree->obj) < 0)
-		return geef_error(env);
+	error = git_index_read_tree(index->index, (git_tree *)tree->obj);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -127,7 +133,7 @@ geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
 	geef_index *index;
 	const ERL_NIF_TERM *eentry;
-	int arity;
+	int arity, error;
 	unsigned int tmp;
 	ErlNifBinary path, id;
 	git_index_entry entry;
@@ -197,8 +203,9 @@ geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	git_oid_fromraw(&entry.id, id.data);
 
-	if (git_index_add(index->index, &entry) < 0)
-		return geef_error(env);
+	error = git_index_add(index->index, &entry);
+	if (error < 0)
+		return geef_error_struct(env, error);
 
 	return atoms.ok;
 }
@@ -206,6 +213,7 @@ geef_index_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 ERL_NIF_TERM
 geef_index_remove(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_index *index;
 	ErlNifBinary path;
 	unsigned int stage;
@@ -224,18 +232,18 @@ geef_index_remove(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 	}
 
-	if (git_index_remove(index->index, (char *) path.data, stage) < 0) {
-		enif_release_binary(&path);
-		return geef_error(env);
-	}
-
+	error = git_index_remove(index->index, (char *) path.data, stage);
 	enif_release_binary(&path);
+	if (error < 0)
+		return geef_error_struct(env, error);
+
 	return atoms.ok;
 }
 
 ERL_NIF_TERM
 geef_index_remove_dir(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+	int error;
 	geef_index *index;
 	ErlNifBinary path;
 	unsigned int stage;
@@ -254,12 +262,11 @@ geef_index_remove_dir(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 		return geef_oom(env);
 	}
 
-	if (git_index_remove_directory(index->index, (char *) path.data, stage) < 0) {
-		enif_release_binary(&path);
-		return geef_error(env);
-	}
-
+	error = git_index_remove_directory(index->index, (char *) path.data, stage);
 	enif_release_binary(&path);
+	if (error < 0)
+		return geef_error_struct(env, error);
+
 	return atoms.ok;
 }
 

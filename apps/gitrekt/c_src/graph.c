@@ -10,6 +10,7 @@
 ERL_NIF_TERM
 geef_graph_ahead_behind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+    int error;
     geef_repository *repo;
     ErlNifBinary bin;
     git_oid local, upstream;
@@ -34,8 +35,9 @@ geef_graph_ahead_behind(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
     git_oid_fromraw(&upstream, bin.data);
 
-    if (git_graph_ahead_behind(&ahead, &behind, repo->repo, &local, &upstream) > 0)
-		return geef_error(env);
+    error = git_graph_ahead_behind(&ahead, &behind, repo->repo, &local, &upstream);
+    if (error < 0)
+		return geef_error_struct(env, error);
 
 	return enif_make_tuple3(env, atoms.ok, enif_make_uint64(env, ahead), enif_make_uint64(env, behind));
 }

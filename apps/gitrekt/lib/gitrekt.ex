@@ -166,4 +166,9 @@ defmodule GitRekt do
       def inspect(writepack, _opts), do: "<GitWritePack:#{inspect writepack.__ref__}>"
     end
   end
+
+  defmodule GitError do
+    @moduledoc false
+    defexception [:message, :code]
+  end
 end
