@@ -56,7 +56,6 @@ defmodule GitGud.Telemetry do
     oid
     |> Base.encode16(case: :lower)
     |> String.slice(0, 7)
-    |> inspect()
     |> then(&("<GitOID:#{&1}>"))
   end
 
