@@ -19,14 +19,16 @@ defmodule GitGud.Web.CodebaseView do
 
   @external_resource highlight_languages = Path.join(:code.priv_dir(:gitgud_web), "highlight-languages.txt")
 
-  @spec branch_select_live(Plug.Conn.t, Repo.t, GitAgent.git_revision, Path.t) :: binary
-  def branch_select_live(conn, repo, revision, tree_path) do
+  @spec branch_select_live(Plug.Conn.t, Repo.t, GitAgent.git_revision, Path.t, keyword) :: binary
+  def branch_select_live(conn, repo, revision, tree_path, opts \\ []) do
+    connect_later = !Keyword.get(opts, :autoconnect, false)
     live_render(conn, GitGud.Web.BranchSelectContainerLive,
-      container: {:div, class: "branch-select"},
+      container: {:div, id: "branch-select", class: "branch-select", data_phx_connect_later: connect_later},
       session: %{
         "repo_id" => repo.id,
         "rev_spec" => revision_spec(revision),
         "action" => revision_action(action_name(conn)),
+        "active" => connect_later,
         "tree_path" => tree_path
       }
     )

@@ -31,6 +31,7 @@ defmodule GitGud.Web.BranchSelectLive do
       |> assign(assigns)
       |> assign_label()
       |> assign_tab()
+      |> assign_refs!(assigns)
     }
   end
 
@@ -85,6 +86,9 @@ defmodule GitGud.Web.BranchSelectLive do
         assign(socket, :tab, revision_type)
     end
   end
+
+  defp assign_refs!(socket, assigns) when assigns.active == false, do: socket
+  defp assign_refs!(socket, _assigns), do: assign_refs!(socket)
 
   defp assign_refs!(socket) do
     assign(socket, :refs, resolve_references!(socket.assigns.agent))

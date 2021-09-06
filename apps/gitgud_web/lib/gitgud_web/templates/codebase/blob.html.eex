@@ -1,7 +1,7 @@
 <nav class="level">
   <div class="level-left">
     <div class="level-item">
-      <%= branch_select_live(@conn, @repo, @revision, @tree_path) %>
+      <%= branch_select_live(@conn, @repo, @revision, @tree_path, autoconnect: true) %>
     </div>
     <div class="level-item">
       <%= render "_breadcrumb.html", assigns %>

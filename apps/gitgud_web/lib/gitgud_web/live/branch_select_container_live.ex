@@ -12,7 +12,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   import GitRekt.Git, only: [oid_parse: 1]
 
   @impl true
-  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "action" => action, "tree_path" => tree_path}, socket) do
+  def mount(_params, %{"repo_id" => repo_id, "rev_spec" => rev_spec, "action" => action, "tree_path" => tree_path} = session, socket) do
     {
       :ok,
       socket
@@ -20,7 +20,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
       |> assign_agent!()
       |> assign_revision!(rev_spec)
       |> assign_commit!()
-      |> assign(action: action, tree_path: tree_path)
+      |> assign(active: connected?(socket) && !!session["active"], action: action, tree_path: tree_path)
     }
   end
 
@@ -34,7 +34,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
         revision: @revision,
         commit: @commit,
         tree_path: @tree_path,
-        action: @action
+        action: @action,
+        active: @active
       ) %>
     """
   end
@@ -47,8 +48,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     case GitAgent.unwrap(socket.assigns.repo) do
       {:ok, agent} ->
         assign(socket, :agent, agent)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
  end
 
@@ -64,8 +65,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     case GitAgent.branch(agent, branch_name) do
       {:ok, tag} ->
         tag
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -73,8 +74,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     case GitAgent.tag(agent, tag_name) do
       {:ok, tag} ->
         tag
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -82,8 +83,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     case GitAgent.object(agent, oid_parse(commit_oid)) do
       {:ok, commit} ->
         commit
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -91,8 +92,8 @@ defmodule GitGud.Web.BranchSelectContainerLive do
     case GitAgent.peel(agent, revision, target: :commit) do
       {:ok, commit} ->
         commit
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 end
