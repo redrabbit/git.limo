@@ -48,8 +48,9 @@ defmodule GitGud.Web.PaginationHelpers do
           {Enum.take(slice, limit), false, Enum.count(slice) > limit}
       end
 
-    before_cursor = if previous?, do: cursor_fn.(List.first(slice))
-    after_cursor = if next?, do: cursor_fn.(List.last(slice))
+    slice_size = length(slice)
+    before_cursor = if previous? && slice_size > 0, do: cursor_fn.(List.first(slice))
+    after_cursor = if next? && slice_size > 0, do: cursor_fn.(List.last(slice))
 
     %{slice: slice, previous?: previous?, before: before_cursor, next?: next?, after: after_cursor}
   end
