@@ -156,32 +156,34 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob edit form.
   """
   def edit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :push) do
-        with {:ok, agent} <- GitAgent.unwrap(repo),
-             {:ok, {commit, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
-             {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)),
-             {:ok, blob} <- GitAgent.peel(agent, tree_entry),
-             {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
-          render(conn, "edit.html",
-            repo: repo,
-            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-            revision: reference,
-            commit: commit,
-            tree_path: blob_path,
-            breadcrumb: %{action: :tree, cwd?: false, tree?: true},
-            changeset: blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: branch_name}, %{})
-         )
-        else
-          {:ok, {_object, _reference}} ->
-            {:error, :not_found}
-          {:ok, %GitTreeEntry{type: :tree}} ->
-            {:error, :not_found}
-          {:error, reason} ->
-            {:error, reason}
-        end
-      end || {:error, :forbidden}
+    unless Enum.empty?(blob_path) do
+      user = current_user(conn)
+      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+        if authorized?(user, repo, :push) do
+          with {:ok, agent} <- GitAgent.unwrap(repo),
+              {:ok, {commit, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
+              {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)),
+              {:ok, blob} <- GitAgent.peel(agent, tree_entry),
+              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
+            render(conn, "edit.html",
+              repo: repo,
+              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+              revision: reference,
+              commit: commit,
+              tree_path: blob_path,
+              breadcrumb: %{action: :tree, cwd?: false, tree?: true},
+              changeset: blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: branch_name}, %{})
+          )
+          else
+            {:ok, {_object, _reference}} ->
+              {:error, :not_found}
+            {:ok, %GitTreeEntry{type: :tree}} ->
+              {:error, :not_found}
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end || {:error, :forbidden}
+      end
     end || {:error, :not_found}
   end
 
@@ -190,73 +192,75 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec update(Plug.Conn.t, map) :: Plug.Conn.t
   def update(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :push) do
-        with {:ok, agent} <- GitAgent.unwrap(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-             {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-             {:ok, tree} <- GitAgent.tree(agent, commit),
-             {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
-             {:ok, blob} <- GitAgent.peel(agent, tree_entry),
-             {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
-          breadcrumb = %{action: :tree, cwd?: false, tree?: true}
-          changeset = blob_commit_changeset(%{name: tree_entry.name, content: blob_content}, commit_params)
-          if changeset.valid? do # TODO
-            blob_content = blob_changeset_content(changeset)
-            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
-            commit_committer_sig = commit_author_sig
-            commit_message = commit_changeset_message(changeset)
-            commit_update_ref = commit_changeset_update_ref(changeset)
-            case Ecto.Changeset.fetch_field(changeset, :name) do
-              {:data, blob_name} ->
-                with {:ok, index} <- GitAgent.index(agent),
-                      :ok <- GitAgent.index_read_tree(agent, index, tree),
-                     {:ok, odb} <- GitAgent.odb(agent),
-                     {:ok, blob_oid} <- GitAgent.odb_write(agent, odb, blob_content, :blob),
-                      :ok <- GitAgent.index_add(agent, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
-                     {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
-                     {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
-                     {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
-                     {:ok, repo} <- GitRepo.push(repo, [{:update, old_ref.oid, commit_oid, commit_update_ref}]) do
-                  conn
-                  |> put_flash(:info, "File #{blob_name} updated.")
-                  |> redirect(to: Routes.codebase_path(conn, :blob, user_login, repo.name, Path.basename(commit_update_ref), blob_path))
-                end
-              {:changes, new_name} ->
-                changeset = Ecto.Changeset.add_error(changeset, :name, "Cannot rename #{changeset.data.name} to #{new_name}")
-                conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
-                conn = put_status(conn, :bad_request)
-                render(conn, "edit.html",
-                  repo: repo,
-                  repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-                  revision: reference || commit,
-                  commit: commit,
-                  tree_path: blob_path,
-                  breadcrumb: breadcrumb,
-                  changeset: %{changeset|action: :update}
-                )
+    unless Enum.empty?(blob_path) do
+      user = current_user(conn)
+      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+        if authorized?(user, repo, :push) do
+          with {:ok, agent} <- GitAgent.unwrap(repo),
+              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
+              {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
+              {:ok, tree} <- GitAgent.tree(agent, commit),
+              {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, object, Path.join(blob_path)),
+              {:ok, blob} <- GitAgent.peel(agent, tree_entry),
+              {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
+            breadcrumb = %{action: :tree, cwd?: false, tree?: true}
+            changeset = blob_commit_changeset(%{name: tree_entry.name, content: blob_content}, commit_params)
+            if changeset.valid? do # TODO
+              blob_content = blob_changeset_content(changeset)
+              commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
+              commit_committer_sig = commit_author_sig
+              commit_message = commit_changeset_message(changeset)
+              commit_update_ref = commit_changeset_update_ref(changeset)
+              case Ecto.Changeset.fetch_field(changeset, :name) do
+                {:data, blob_name} ->
+                  with {:ok, index} <- GitAgent.index(agent),
+                        :ok <- GitAgent.index_read_tree(agent, index, tree),
+                      {:ok, odb} <- GitAgent.odb(agent),
+                      {:ok, blob_oid} <- GitAgent.odb_write(agent, odb, blob_content, :blob),
+                        :ok <- GitAgent.index_add(agent, index, blob_oid, Path.join(blob_path), byte_size(blob_content), 0o100644),
+                      {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
+                      {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
+                      {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
+                      {:ok, repo} <- GitRepo.push(repo, [{:update, old_ref.oid, commit_oid, commit_update_ref}]) do
+                    conn
+                    |> put_flash(:info, "File #{blob_name} updated.")
+                    |> redirect(to: Routes.codebase_path(conn, :blob, user_login, repo.name, Path.basename(commit_update_ref), blob_path))
+                  end
+                {:changes, new_name} ->
+                  changeset = Ecto.Changeset.add_error(changeset, :name, "Cannot rename #{changeset.data.name} to #{new_name}")
+                  conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
+                  conn = put_status(conn, :bad_request)
+                  render(conn, "edit.html",
+                    repo: repo,
+                    repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                    revision: reference || commit,
+                    commit: commit,
+                    tree_path: blob_path,
+                    breadcrumb: breadcrumb,
+                    changeset: %{changeset|action: :update}
+                  )
+              end
+            else
+              conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
+              conn = put_status(conn, :bad_request)
+              render(conn, "edit.html",
+                repo: repo,
+                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                revision: reference || commit,
+                commit: commit,
+                tree_path: blob_path,
+                breadcrumb: breadcrumb,
+                changeset: %{changeset|action: :update}
+              )
             end
           else
-            conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
-            conn = put_status(conn, :bad_request)
-            render(conn, "edit.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: reference || commit,
-              commit: commit,
-              tree_path: blob_path,
-              breadcrumb: breadcrumb,
-              changeset: %{changeset|action: :update}
-            )
+            {:ok, %GitTreeEntry{type: :tree}} ->
+              {:error, :not_found}
+            {:error, reason} ->
+              {:error, reason}
           end
-        else
-          {:ok, %GitTreeEntry{type: :tree}} ->
-            {:error, :not_found}
-          {:error, reason} ->
-            {:error, reason}
-        end
-      end || {:error, :forbidden}
+        end || {:error, :forbidden}
+      end
     end || {:error, :not_found}
   end
 
@@ -264,30 +268,32 @@ defmodule GitGud.Web.CodebaseController do
   Renders a blob delete form.
   """
   def confirm_delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :push) do
-        with {:ok, agent} <- GitAgent.unwrap(repo),
-             {:ok, {commit, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
-             {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)) do
-          render(conn, "confirm_delete.html",
-            repo: repo,
-            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-            revision: reference,
-            commit: commit,
-            tree_path: blob_path,
-            breadcrumb: %{action: :tree, cwd?: true, tree?: false},
-            changeset: commit_changeset(%{branch: branch_name}, %{})
-          )
-        else
-          {:ok, {_object, _reference}} ->
-            {:error, :not_found}
-          {:ok, %GitTreeEntry{type: :tree}} ->
-            {:error, :not_found}
-          {:error, reason} ->
-            {:error, reason}
-        end
-      end || {:error, :forbidden}
+    unless Enum.empty?(blob_path) do
+      user = current_user(conn)
+      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+        if authorized?(user, repo, :push) do
+          with {:ok, agent} <- GitAgent.unwrap(repo),
+              {:ok, {commit, %GitRef{type: :branch, name: branch_name} = reference}} <- GitAgent.revision(agent, revision),
+              {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)) do
+            render(conn, "confirm_delete.html",
+              repo: repo,
+              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+              revision: reference,
+              commit: commit,
+              tree_path: blob_path,
+              breadcrumb: %{action: :tree, cwd?: true, tree?: false},
+              changeset: commit_changeset(%{branch: branch_name}, %{})
+            )
+          else
+            {:ok, {_object, _reference}} ->
+              {:error, :not_found}
+            {:ok, %GitTreeEntry{type: :tree}} ->
+              {:error, :not_found}
+            {:error, reason} ->
+              {:error, reason}
+          end
+        end || {:error, :forbidden}
+      end
     end || {:error, :not_found}
   end
 
@@ -297,53 +303,55 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec delete(Plug.Conn.t, map) :: Plug.Conn.t
   def delete(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path, "commit" => commit_params} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :push) do
-        with {:ok, agent} <- GitAgent.unwrap(repo),
-             {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-             {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-             {:ok, tree} <- GitAgent.tree(agent, commit),
-             {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)) do
-          breadcrumb = %{action: :tree, cwd?: true, tree?: false}
-          changeset = commit_changeset(%{}, commit_params)
-          if changeset.valid? do # TODO
-            tree_path = Enum.drop(blob_path, -1)
-            commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
-            commit_committer_sig = commit_author_sig
-            commit_message = commit_changeset_message(changeset)
-            commit_update_ref = commit_changeset_update_ref(changeset)
-            with {:ok, index} <- GitAgent.index(agent),
-                  :ok <- GitAgent.index_read_tree(agent, index, tree),
-                  :ok <- GitAgent.index_remove(agent, index, Path.join(blob_path)),
-                 {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
-                 {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
-                 {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
-                 {:ok, repo} <- GitRepo.push(repo, [{:update, old_ref.oid, commit_oid, commit_update_ref}]) do
-              conn
-              |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
-              |> redirect(to: Routes.codebase_path(conn, :tree, user_login, repo.name, Path.basename(commit_update_ref), tree_path))
+    unless Enum.empty?(blob_path) do
+      user = current_user(conn)
+      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
+        if authorized?(user, repo, :push) do
+          with {:ok, agent} <- GitAgent.unwrap(repo),
+              {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
+              {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
+              {:ok, tree} <- GitAgent.tree(agent, commit),
+              {:ok, %GitTreeEntry{type: :blob}} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)) do
+            breadcrumb = %{action: :tree, cwd?: true, tree?: false}
+            changeset = commit_changeset(%{}, commit_params)
+            if changeset.valid? do # TODO
+              tree_path = Enum.drop(blob_path, -1)
+              commit_author_sig = commit_signature(user, DateTime.now!("Etc/UTC"))
+              commit_committer_sig = commit_author_sig
+              commit_message = commit_changeset_message(changeset)
+              commit_update_ref = commit_changeset_update_ref(changeset)
+              with {:ok, index} <- GitAgent.index(agent),
+                    :ok <- GitAgent.index_read_tree(agent, index, tree),
+                    :ok <- GitAgent.index_remove(agent, index, Path.join(blob_path)),
+                  {:ok, tree_oid} <- GitAgent.index_write_tree(agent, index),
+                  {:ok, old_ref} <- GitAgent.reference(agent, commit_update_ref),
+                  {:ok, commit_oid} <- GitAgent.commit_create(agent, commit_author_sig, commit_committer_sig, commit_message, tree_oid, [commit.oid], update_ref: commit_update_ref),
+                  {:ok, repo} <- GitRepo.push(repo, [{:update, old_ref.oid, commit_oid, commit_update_ref}]) do
+                conn
+                |> put_flash(:info, "File #{List.last(blob_path)} deleted.")
+                |> redirect(to: Routes.codebase_path(conn, :tree, user_login, repo.name, Path.basename(commit_update_ref), tree_path))
+              end
+            else
+              conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
+              conn = put_status(conn, :bad_request)
+              render(conn, "confirm_delete.html",
+                repo: repo,
+                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                revision: reference || commit,
+                commit: commit,
+                tree_path: blob_path,
+                breadcrumb: breadcrumb,
+                changeset: %{changeset|action: :delete}
+              )
             end
           else
-            conn = put_flash(conn, :error, "Something went wrong! Please check error(s) below.")
-            conn = put_status(conn, :bad_request)
-            render(conn, "confirm_delete.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: reference || commit,
-              commit: commit,
-              tree_path: blob_path,
-              breadcrumb: breadcrumb,
-              changeset: %{changeset|action: :delete}
-            )
+            {:ok, %GitTreeEntry{type: :tree}} ->
+              {:error, :not_found}
+            {:error, reason} ->
+              {:error, reason}
           end
-        else
-          {:ok, %GitTreeEntry{type: :tree}} ->
-            {:error, :not_found}
-          {:error, reason} ->
-            {:error, reason}
-        end
-      end || {:error, :forbidden}
+        end || {:error, :forbidden}
+      end
     end || {:error, :not_found}
   end
 
@@ -371,29 +379,31 @@ defmodule GitGud.Web.CodebaseController do
   """
   @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
   def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
-           {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-           {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)),
-           {:ok, blob} <- GitAgent.peel(agent, tree_entry),
-           {:ok, blob_content} <- GitAgent.blob_content(agent, blob),
-           {:ok, blob_size} <- GitAgent.blob_size(agent, blob) do
-        render(conn, "blob.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          revision: reference || commit,
-          commit: commit,
-          tree_path: blob_path,
-          breadcrumb: %{action: :tree, cwd?: true, tree?: false},
-          blob_content: blob_content,
-          blob_size: blob_size
-        )
-      else
-        {:ok, %GitTreeEntry{type: :tree}} ->
-          {:error, :not_found}
-        {:error, reason} ->
-          {:error, reason}
+    unless Enum.empty?(blob_path) do
+      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
+        with {:ok, agent} <- GitAgent.unwrap(repo),
+            {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
+            {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
+            {:ok, %GitTreeEntry{type: :blob} = tree_entry} <- GitAgent.tree_entry_by_path(agent, commit, Path.join(blob_path)),
+            {:ok, blob} <- GitAgent.peel(agent, tree_entry),
+            {:ok, blob_content} <- GitAgent.blob_content(agent, blob),
+            {:ok, blob_size} <- GitAgent.blob_size(agent, blob) do
+          render(conn, "blob.html",
+            repo: repo,
+            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            revision: reference || commit,
+            commit: commit,
+            tree_path: blob_path,
+            breadcrumb: %{action: :tree, cwd?: true, tree?: false},
+            blob_content: blob_content,
+            blob_size: blob_size
+          )
+        else
+          {:ok, %GitTreeEntry{type: :tree}} ->
+            {:error, :not_found}
+          {:error, reason} ->
+            {:error, reason}
+        end
       end
     end || {:error, :not_found}
   end
