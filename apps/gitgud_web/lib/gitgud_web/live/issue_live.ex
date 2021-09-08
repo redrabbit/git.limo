@@ -303,7 +303,7 @@ defmodule GitGud.Web.IssueLive do
   defp feed_sort_field(%Comment{} = comment), do: comment.inserted_at
   defp feed_sort_field({event, _index}), do: NaiveDateTime.from_iso8601!(event["timestamp"])
 
-  def title_changeset(issue, params \\ %{}) do
+  defp title_changeset(issue, params \\ %{}) do
     types = %{title: :string}
     data = %{title: issue.title}
     {data, types}
