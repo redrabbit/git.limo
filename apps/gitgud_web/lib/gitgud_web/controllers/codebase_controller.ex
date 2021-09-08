@@ -519,25 +519,8 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitAgent.unwrap(repo),
-           {:ok, head} <- GitAgent.head(agent),
-           {:ok, commit} <- GitAgent.peel(agent, head, target: :commit),
-           {:ok, history} <- GitAgent.history(agent, head, stream_chunk_size: 21) do
-        page = paginate_cursor(conn, history, &(oid_fmt(&1.oid) == &2), &oid_fmt(&1.oid))
-        case resolve_commits_infos(agent, page.slice) do
-          {:ok, commits_infos} ->
-            commits_infos = resolve_commits_info_db(repo, commits_infos)
-            render(conn, "commit_list.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: head,
-              commit: commit,
-              tree_path: [],
-              breadcrumb: %{action: :history, cwd?: true, tree?: true},
-              page: %{page|slice: commits_infos}
-            )
-          {:error, reason} ->
-            {:error, reason}
-        end
+           {:ok, head} <- GitAgent.head(agent) do
+        redirect(conn, to: Routes.codebase_path(conn, :history, user_login, repo_name, head, []))
       end
     end || {:error, :not_found}
   end
