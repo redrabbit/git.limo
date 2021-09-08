@@ -152,8 +152,8 @@ defmodule GitGud.Web.CommitDiffLive do
     case GitAgent.unwrap(socket.assigns.repo) do
       {:ok, agent} ->
         assign(socket, :agent, agent)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -179,8 +179,8 @@ defmodule GitGud.Web.CommitDiffLive do
     case GitAgent.object(agent, oid) do
       {:ok, commit} ->
         commit
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -191,8 +191,8 @@ defmodule GitGud.Web.CommitDiffLive do
          {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
       %{diff_stats: diff_stats, diff_deltas: diff_deltas}
     else
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 end

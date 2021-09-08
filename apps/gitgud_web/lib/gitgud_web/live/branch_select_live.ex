@@ -105,8 +105,8 @@ defmodule GitGud.Web.BranchSelectLive do
         |> Enum.map(&map_reference_timestamp!(agent, &1))
         |> Enum.sort_by(&elem(&1, 1), {:desc, NaiveDateTime})
         |> Enum.map(&elem(&1, 0))
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -114,8 +114,8 @@ defmodule GitGud.Web.BranchSelectLive do
     case GitAgent.commit_timestamp(agent, commit) do
       {:ok, timestamp} ->
         {ref, timestamp}
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 end

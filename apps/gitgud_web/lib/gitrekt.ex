@@ -62,3 +62,9 @@ end
 defimpl Phoenix.Param, for: GitTreeEntry do
   def to_param(%GitTreeEntry{name: name}), do: name
 end
+
+defimpl Plug.Exception, for: GitRekt.GitError do
+  def actions(_error), do: []
+  def status(error) when error.code == -3, do: 404
+  def status(_error), do: 500
+end

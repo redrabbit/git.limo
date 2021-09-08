@@ -13,5 +13,9 @@ defmodule GitGud.Web.ErrorView do
   end
 
   @spec title(atom, map) :: binary
-  def title(_action, _assigns), do: "Oops, something went wrong!"
+  def title(reason, _assigns) do
+    reason
+    |> Plug.Conn.Status.code()
+    |> Plug.Conn.Status.reason_phrase()
+  end
 end

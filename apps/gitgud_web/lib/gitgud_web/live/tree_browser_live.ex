@@ -67,8 +67,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     case GitAgent.unwrap(socket.assigns.repo) do
       {:ok, agent} ->
         assign(socket, :agent, agent)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -84,8 +84,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     else
       {:ok, true} ->
         assign(socket, revision_spec: nil, revision: nil, commit: nil)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -94,8 +94,8 @@ defmodule GitGud.Web.TreeBrowserLive do
          {:ok, commit} <- GitAgent.peel(socket.assigns.agent, obj, target: :commit) do
       assign(socket, revision_spec: rev_spec, revision: ref || commit, commit: commit)
     else
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -140,8 +140,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     case GitAgent.tree_entries(agent, commit) do
       {:ok, tree_entries} ->
         Enum.sort_by(tree_entries, &(&1.name))
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -149,8 +149,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     case GitAgent.tree_entries(agent, commit, path: Path.join(tree_path)) do
       {:ok, tree_entries} ->
         Enum.sort_by(tree_entries, &(&1.name))
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -161,8 +161,8 @@ defmodule GitGud.Web.TreeBrowserLive do
           resolve_commit_info_db(commit_info),
           tree_entries
         }
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -205,8 +205,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     case GitAgent.transaction(agent, &resolve_tree_commit_info(&1, commit)) do
       {:ok, commit_info} ->
         commit_info
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -222,8 +222,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     case GitAgent.transaction(agent, &resolve_tree_entry_commit_info(&1, commit)) do
       {:ok, commit_info} ->
         {tree_entry, commit_info}
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -257,8 +257,8 @@ defmodule GitGud.Web.TreeBrowserLive do
         commits: commit_count,
       }
     else
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 

@@ -40,8 +40,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     case GitAgent.unwrap(socket.assigns.repo) do
       {:ok, agent} ->
         assign(socket, :agent, agent)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
  end
 
@@ -64,8 +64,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     case GitAgent.branch(agent, branch_name) do
       {:ok, tag} ->
         tag
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -73,8 +73,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     case GitAgent.tag(agent, tag_name) do
       {:ok, tag} ->
         tag
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -82,8 +82,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     case GitAgent.object(agent, oid_parse(commit_oid)) do
       {:ok, commit} ->
         commit
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -91,8 +91,8 @@ defmodule GitGud.Web.BlobHeaderLive do
     case GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path)) do
       {:ok, commit_info} ->
         resolve_commit_info_db(commit_info)
-      {:error, reason} ->
-        raise RuntimeError, message: reason
+      {:error, error} ->
+        raise error
     end
   end
 

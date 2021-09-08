@@ -1,3 +1,3 @@
 <%= render_layout "error.html", assigns do %>
-  <h2 class="subtitle">Unauthorized</h2>
+  <h2 class="subtitle"><%= Plug.Conn.Status.reason_phrase(@conn.status) %></h2>
 <% end %>

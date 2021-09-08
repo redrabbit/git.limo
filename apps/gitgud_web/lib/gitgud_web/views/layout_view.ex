@@ -26,7 +26,12 @@ defmodule GitGud.Web.LayoutView do
 
   defp view_title(conn) do
     try do
-      apply(view_module(conn), :title, [action_name(conn), conn.assigns])
+      case view_module(conn) do
+        GitGud.Web.ErrorView = view ->
+          apply(view, :title, [Plug.Conn.Status.reason_atom(conn.status), conn.assigns])
+        view ->
+          apply(view, :title, [action_name(conn), conn.assigns])
+      end
     rescue
       _error ->
         nil
