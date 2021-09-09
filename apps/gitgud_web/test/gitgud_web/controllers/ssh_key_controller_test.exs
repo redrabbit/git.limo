@@ -19,7 +19,7 @@ defmodule GitGud.Web.SSHKeyControllerTest do
   test "fails to render ssh authentication key creation form if not authenticated", %{conn: conn} do
     conn = get(conn, Routes.ssh_key_path(conn, :new))
     assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
-    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
+    assert Floki.text(Floki.find(html, "title")) == Plug.Conn.Status.reason_phrase(401)
   end
 
   test "creates ssh authentication key with valid params", %{conn: conn, user: user} do

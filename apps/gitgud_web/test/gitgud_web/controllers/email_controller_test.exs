@@ -22,7 +22,7 @@ defmodule GitGud.Web.EmailControllerTest do
   test "fails to render email settings if not authenticated", %{conn: conn} do
     conn = get(conn, Routes.email_path(conn, :index))
     assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
-    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
+    assert Floki.text(Floki.find(html, "title")) == Plug.Conn.Status.reason_phrase(401)
   end
 
   test "creates emails with valid params", %{conn: conn, user: user} do

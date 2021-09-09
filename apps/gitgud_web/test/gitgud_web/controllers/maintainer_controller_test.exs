@@ -21,7 +21,7 @@ defmodule GitGud.Web.MaintainerControllerTest do
   test "fails to render repository maintainer settings if not authenticated", %{conn: conn, users: [user1, _user2], repo: repo} do
     conn = get(conn, Routes.maintainer_path(conn, :index, user1, repo))
     assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
-    assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
+    assert Floki.text(Floki.find(html, "title")) == Plug.Conn.Status.reason_phrase(401)
   end
 
   test "creates repository maintainer with valid params", %{conn: conn, users: [user1, user2], repo: repo} do

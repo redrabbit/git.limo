@@ -70,7 +70,7 @@ defmodule GitGud.Web.UserControllerTest do
     test "fails to render profile edit form if not authenticated", %{conn: conn} do
       conn = get(conn, Routes.user_path(conn, :edit_profile))
       assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
-      assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
+      assert Floki.text(Floki.find(html, "title")) == Plug.Conn.Status.reason_phrase(401)
     end
 
     test "updates profile with valid params", %{conn: conn, user: user} do
@@ -111,7 +111,7 @@ defmodule GitGud.Web.UserControllerTest do
     test "fails to render password edit form if not authenticated", %{conn: conn} do
       conn = get(conn, Routes.user_path(conn, :edit_password))
       assert {:ok, html} = Floki.parse_document(html_response(conn, 401))
-      assert Floki.text(Floki.find(html, "title")) == "Oops, something went wrong!"
+      assert Floki.text(Floki.find(html, "title")) == Plug.Conn.Status.reason_phrase(401)
     end
 
     test "updates password with valid params", %{conn: conn, user: user} do
