@@ -248,12 +248,12 @@ defmodule GitGud.Web.TreeBrowserLive do
   defp resolve_tree_readme!(_agent, %GitTreeEntry{}), do: nil
 
   defp resolve_stats!(agent, revision) do
-    with {:ok, branches} <- GitAgent.branches(agent),
-         {:ok, tags} <- GitAgent.tags(agent),
-         {:ok, commit_count} <- GitAgent.transaction(agent, {:history_count, revision.oid}, &resolve_history_count(&1, revision)) do
+    with {:ok, branch_count} <- GitAgent.transaction(agent, &resolve_branch_count/1),
+         {:ok, tag_count} <- GitAgent.transaction(agent, &resolve_tag_count/1),
+         {:ok, commit_count} <- GitAgent.transaction(agent, {:history_count, revision.oid}, &resolve_commit_count(&1, revision)) do
       %{
-        branches: Enum.count(branches),
-        tags: Enum.count(tags),
+        branches: branch_count,
+        tags: tag_count,
         commits: commit_count,
       }
     else
@@ -277,7 +277,25 @@ defmodule GitGud.Web.TreeBrowserLive do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
 
-  defp resolve_history_count(agent, revision) do
+  defp resolve_branch_count(agent) do
+    case GitAgent.branches(agent, target: :commit_oid) do
+      {:ok, stream} ->
+        {:ok, Enum.count(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_tag_count(agent) do
+    case GitAgent.tags(agent, target: :commit_oid) do
+      {:ok, stream} ->
+        {:ok, Enum.count(stream)}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_commit_count(agent, revision) do
     case GitAgent.history(agent, revision, target: :commit_oid) do
       {:ok, stream} ->
         {:ok, Enum.count(stream)}
