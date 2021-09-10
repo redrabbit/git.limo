@@ -37,12 +37,7 @@ defmodule GitGud.Web.BlobHeaderLive do
   #
 
   defp assign_agent!(socket) do
-    case GitAgent.unwrap(socket.assigns.repo) do
-      {:ok, agent} ->
-        assign(socket, :agent, agent)
-      {:error, error} ->
-        raise error
-    end
+    assign_new(socket, :agent, fn -> resolve_agent!(socket.assigns.repo) end)
  end
 
   defp assign_revision!(socket, rev_spec) do
@@ -58,6 +53,15 @@ defmodule GitGud.Web.BlobHeaderLive do
       send(self(), :assign_blob_commit)
     end
     socket
+  end
+
+  defp resolve_agent!(repo) do
+    case GitAgent.unwrap(repo) do
+      {:ok, agent} ->
+        agent
+      {:error, error} ->
+        raise error
+    end
   end
 
   defp resolve_revision!(agent, "branch:" <> branch_name) do

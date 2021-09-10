@@ -149,12 +149,7 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   defp assign_agent!(socket) do
-    case GitAgent.unwrap(socket.assigns.repo) do
-      {:ok, agent} ->
-        assign(socket, :agent, agent)
-      {:error, error} ->
-        raise error
-    end
+    assign_new(socket, :agent, fn -> resolve_agent!(socket.assigns.repo) end)
   end
 
   defp assign_commit!(socket, oid) do
@@ -173,6 +168,15 @@ defmodule GitGud.Web.CommitDiffLive do
     assign(socket, :comment_count, Map.new(Enum.group_by(socket.assigns.reviews, &(&1.blob_oid)), fn {blob_oid, reviews} ->
       {blob_oid, Enum.reduce(reviews, 0, fn review, acc -> acc + Enum.count(review.comments) end)}
     end))
+  end
+
+  defp resolve_agent!(repo) do
+    case GitAgent.unwrap(repo) do
+      {:ok, agent} ->
+        agent
+      {:error, error} ->
+        raise error
+    end
   end
 
   defp resolve_commit!(agent, oid) do

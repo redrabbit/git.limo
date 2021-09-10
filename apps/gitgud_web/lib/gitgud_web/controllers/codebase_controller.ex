@@ -367,6 +367,7 @@ defmodule GitGud.Web.CodebaseController do
         render(conn, "commit.html",
           repo: repo,
           repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          agent: agent,
           commit: commit,
           commit_info: resolve_db_commit_info(commit_info)
         )
@@ -391,6 +392,7 @@ defmodule GitGud.Web.CodebaseController do
           render(conn, "blob.html",
             repo: repo,
             repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            agent: agent,
             revision: reference || commit,
             commit: commit,
             tree_path: blob_path,
