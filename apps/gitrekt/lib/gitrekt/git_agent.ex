@@ -535,6 +535,7 @@ defmodule GitRekt.GitAgent do
     case Git.repository_open(path) do
       {:ok, handle} ->
         config = Map.merge(@default_config, Map.new(opts))
+        config = Map.put(config, :mon, %{})
         config = Map.put_new_lazy(config, :cache, fn -> init_cache(path, []) end)
         {:ok, {handle, config}, config.idle_timeout}
       {:error, reason} ->
@@ -562,50 +563,38 @@ defmodule GitRekt.GitAgent do
   end
 
   @impl true
-  def handle_call({:references, glob, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:references, glob, opts}, chunk_size, pid), state, config.idle_timeout}
+  def handle_call(op, {pid, _tag}, {handle, config} = state) when elem(op, 0) in [:references, :references_with, :history, :tree_entries, :tree_entries_with, :commit_parents] do
+    opts_index = tuple_size(op) - 1
+    {chunk_size, opts} = Keyword.pop(elem(op, opts_index), :stream_chunk_size, config.stream_chunk_size)
+    case call_stream(handle, put_elem(op, opts_index, opts), chunk_size, pid) do
+      {:ok, list} when is_list(list) ->
+        {:reply, {:ok, list}, {handle, collect_result_refs(config, list, pid)}, config.idle_timeout}
+      {:ok, stream} ->
+        {:reply, {:ok, stream}, state, config.idle_timeout}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state, config.idle_timeout}
+    end
   end
 
-  def handle_call({:references_with, with_target, glob, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:references_with, with_target, glob, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:history, obj, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:history, obj, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:tree_entries, tree, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries, tree, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:tree_entries, rev, path, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries, rev, path, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:tree_entries_with, with_target, rev, path, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:tree_entries_with, with_target, rev, path, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:commit_parents, commit, opts}, {pid, _tag}, {handle, config} = state) do
-    {chunk_size, opts} = Keyword.pop(opts, :stream_chunk_size, config.stream_chunk_size)
-    {:reply, call_stream(handle, {:commit_parents, commit, opts}, chunk_size, pid), state, config.idle_timeout}
-  end
-
-  def handle_call({:stream_next, op, stream, chunk_size}, {pid, _tag}, {_handle, config} = state) do
-    {:reply, call_stream_next(op, stream, chunk_size, pid), state, config.idle_timeout}
+  def handle_call({:stream_next, op, stream, chunk_size}, {pid, _tag}, {handle, config} = _state) do
+    {head, tail} = call_stream_next(op, stream, chunk_size, pid)
+    {:reply, {head, tail}, {handle, collect_result_refs(config, head, pid)}, config.idle_timeout}
   end
 
   def handle_call(op, {pid, _tag}, {handle, %{cache: cache} = config} = state) do
-    {:reply, call_cache(handle, op, cache, pid), state, config.idle_timeout}
+    case call_cache(handle, op, cache, pid) do
+      {:ok, result} ->
+        {:reply, {:ok, result}, {handle, collect_result_refs(config, result, pid)}, config.idle_timeout}
+      {:error, reason} ->
+        {:reply, {:error, reason}, state, config.idle_timeout}
+    end
   end
 
   @impl true
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, {handle, config} = _state) do
+    {:noreply, {handle, Map.update!(config, :mon, &Map.delete(&1, pid))}, config.idle_timeout}
+  end
+
   def handle_info(:timeout, {_handle, %{idle_timeout: :infinity}} = state) do
     {:noreply, state}
   end
@@ -952,7 +941,7 @@ defmodule GitRekt.GitAgent do
     end, %{stream_chunk_size: chunk_size, pid: pid})
   end
 
-  def call_stream_next(op, stream, chunk_size, pid) do
+  defp call_stream_next(op, stream, chunk_size, pid) do
     event_time = :os.system_time(:microsecond)
     {head, tail} = StreamSplit.take_and_drop(stream, chunk_size)
     buffer_size = length(head)
@@ -972,6 +961,22 @@ defmodule GitRekt.GitAgent do
     telemetry(event_name, op, %{duration: duration}, meta)
     result
   end
+
+  defp collect_result_refs(config, result, pid) when is_map_key(config.mon, pid), do: update_in(config, [:mon, pid], &scan_result_refs(result, &1))
+  defp collect_result_refs(config, result, pid) do
+    Process.monitor(pid)
+    Map.update!(config, :mon, &Map.put(&1, pid, scan_result_refs(result)))
+  end
+
+  defp scan_result_refs(result), do: scan_result_refs(result, MapSet.new())
+  defp scan_result_refs(map, set) when is_map(map) and not is_struct(map), do: Enum.reduce(map, set, fn {key, val}, set -> scan_result_refs(val, scan_result_refs(key, set)) end)
+  defp scan_result_refs(list, set) when is_list(list), do: Enum.reduce(list, set, &scan_result_refs/2)
+  defp scan_result_refs(tuple, set) when is_tuple(tuple), do: scan_result_refs(Tuple.to_list(tuple), set)
+  defp scan_result_refs(%GitCommit{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(%GitTag{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(%GitBlob{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(%GitTree{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(_term, set), do: set
 
   defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
 
