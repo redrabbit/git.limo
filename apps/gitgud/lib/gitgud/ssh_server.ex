@@ -34,7 +34,6 @@ defmodule GitGud.SSHServer do
   alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
-  alias GitGud.RepoStorage
   alias GitGud.SSHKey
 
   alias GitRekt.GitAgent
@@ -109,7 +108,7 @@ defmodule GitGud.SSHServer do
       {:ok, exec, {user_login, repo_name}, _extra_args} ->
         if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
           if authorized?(user, repo, exec) do
-            case GitAgent.start_link(RepoStorage.workdir(repo)) do
+            case GitAgent.unwrap(repo) do
               {:ok, agent} ->
                 {service, output} = WireProtocol.next(WireProtocol.new(agent, exec, repo: repo))
                 :ssh_connection.send(conn, chan, output)
