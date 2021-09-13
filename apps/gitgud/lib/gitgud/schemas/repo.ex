@@ -25,6 +25,7 @@ defmodule GitGud.Repo do
     field :owner_login, :string
     field :name, :string
     field :public, :boolean, default: true
+    field :volume, :string
     field :description, :string
     has_many :issue_labels, IssueLabel, on_replace: :delete
     has_many :issues, Issue
@@ -40,6 +41,7 @@ defmodule GitGud.Repo do
     owner: User.t,
     name: binary,
     public: boolean,
+    volume: binary,
     description: binary,
     maintainers: [User.t],
     contributors: [User.t],
