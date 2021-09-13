@@ -28,6 +28,7 @@ defmodule GitGud.Application do
     :telemetry.attach("graphql", [:absinthe, :execute, :operation, :stop], &GitGud.Telemetry.handle_event/4, %{})
 
     children = [
+      {Cluster.Supervisor, [Application.get_env(:libcluster, :topologies, []), [name: GitGud.ClusterSupervisor]]},
       {GitGud.DB, []},
       {GitGud.RepoSupervisor, []},
       {GitGud.SSHServer, []},

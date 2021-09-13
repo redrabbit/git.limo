@@ -25,7 +25,7 @@ defmodule GitGud.Repo do
     field :owner_login, :string
     field :name, :string
     field :public, :boolean, default: true
-    field :volume, :string
+    field :volume, :string, autogenerate: {RepoStorage, :volume, []}
     field :description, :string
     has_many :issue_labels, IssueLabel, on_replace: :delete
     has_many :issues, Issue
