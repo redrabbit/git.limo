@@ -583,6 +583,8 @@ defmodule GitRekt.GitAgent do
 
   def handle_call(op, {pid, _tag}, {handle, %{cache: cache} = config} = state) do
     case call_cache(handle, op, cache, pid) do
+      :ok ->
+        {:reply, :ok, state, config.idle_timeout}
       {:ok, result} ->
         {:reply, {:ok, result}, {handle, collect_result_refs(config, result, pid)}, config.idle_timeout}
       {:error, reason} ->
