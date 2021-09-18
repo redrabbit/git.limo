@@ -609,7 +609,7 @@ defmodule GitRekt.GitAgent do
   # Helpers
   #
 
-  defp exec(agent, op, opts) when is_pid(agent), do: GenServer.call(agent, op, Keyword.get(opts, :timeout, @default_config.timeout))
+  defp exec(agent, op, opts) when is_pid(agent), do: telemetry(:call, op, fn -> GenServer.call(agent, op, Keyword.get(opts, :timeout, @default_config.timeout)) end, %{pid: agent})
   defp exec(agent, op, _opts) when is_reference(agent), do: call(agent, op)
   defp exec({agent, cache}, op, _opts) when is_reference(agent), do: call_cache(agent, op, cache)
   defp exec(repo, op, opts) do
@@ -1375,7 +1375,7 @@ defmodule GitRekt.GitAgent do
          stream ->
           if agent == self(),
             do: call_stream_next(op, stream, chunk_size, pid),
-          else: GenServer.call(agent, {:stream_next, op, stream, chunk_size}, @default_config.timeout)
+          else: telemetry(:call_stream, op, fn -> GenServer.call(agent, {:stream_next, op, stream, chunk_size}, @default_config.timeout) end, %{stream_chunk_size: chunk_size, pid: agent})
       end,
       fn stream -> stream end
     )

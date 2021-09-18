@@ -3,6 +3,16 @@ defmodule GitGud.Telemetry do
 
   require Logger
 
+  def handle_event([:gitrekt, :git_agent, :call], %{duration: duration}, %{op: op, args: args} = meta, _config) do
+    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
+    Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
+  end
+
+  def handle_event([:gitrekt, :git_agent, :call_stream], %{duration: duration}, %{op: op, args: args} = meta, _config) do
+    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
+    Logger.debug("[Git Agent] #{op}(#{args}) streamed items in #{duration_inspect(duration)}")
+  end
+
   def handle_event([:gitrekt, :git_agent, :execute], %{duration: duration}, %{op: op, args: args} = meta, _config) do
     args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
     if Map.get(meta, :cache),
