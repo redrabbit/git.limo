@@ -5,6 +5,8 @@ defmodule GitGud.Web.CommentLive do
 
   use GitGud.Web, :live_component
 
+  alias GitRekt.GitRepo
+
   alias GitGud.Comment
 
   alias GitGud.UserQuery
@@ -109,7 +111,7 @@ defmodule GitGud.Web.CommentLive do
 
   defp unwrap_agent!(nil), do: nil
   defp unwrap_agent!(repo) do
-    case GitRekt.GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         agent
       {:error, reason} ->

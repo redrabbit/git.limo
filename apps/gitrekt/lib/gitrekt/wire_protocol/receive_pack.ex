@@ -65,16 +65,15 @@ defmodule GitRekt.WireProtocol.ReceivePack do
   end
 
   def next(%__MODULE__{state: :update_req} = handle, lines) do
-    with {:ok, odb} <- GitAgent.odb(handle.agent),
-         {:ok, writepack} <- GitAgent.odb_writepack(handle.agent, odb) do
-      {_shallows, lines} = Enum.split_while(lines, &match?({:shallow, _oid}, &1))
-      {cmds, lines} = Enum.split_while(lines, &is_binary/1)
-      {caps, cmds} = parse_caps(cmds)
-      [:flush|lines] = lines
-      {%{handle|state: :pack, caps: caps, cmds: parse_cmds(cmds), writepack: writepack}, lines, []}
-    else
-      {:error, reason} ->
-        raise reason # TODO
+    case GitAgent.odb_writepack(handle.agent) do
+      {:ok, writepack} ->
+        {_shallows, lines} = Enum.split_while(lines, &match?({:shallow, _oid}, &1))
+        {cmds, lines} = Enum.split_while(lines, &is_binary/1)
+        {caps, cmds} = parse_caps(cmds)
+        [:flush|lines] = lines
+        {%{handle|state: :pack, caps: caps, cmds: parse_cmds(cmds), writepack: writepack}, lines, []}
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -84,8 +83,8 @@ defmodule GitRekt.WireProtocol.ReceivePack do
         {%{handle|state: :done, writepack_progress: progress}, [], []}
       {:ok, progress} ->
         {%{handle|state: :buffer, writepack_progress: progress}, [], []}
-      {:error, reason} ->
-        raise reason # TODO
+      {:error, error} ->
+        raise error
     end
   end
 
@@ -159,7 +158,9 @@ defmodule GitRekt.WireProtocol.ReceivePack do
     end
   end
 
-  defp push_cmds(agent, cmds), do: Enum.each(cmds, &push_cmd(agent, &1))
+  defp push_cmds(agent, cmds) do
+    GitAgent.transaction(agent, fn agent -> Enum.each(cmds, &push_cmd(agent, &1)) end)
+  end
 
   defp push_cmd(agent, {:create, new_oid, name}), do: :ok = GitAgent.reference_create(agent, name, :oid, new_oid)
   defp push_cmd(agent, {:update, _old_oid, new_oid, name}), do: :ok = GitAgent.reference_create(agent, name, :oid, new_oid, force: true)

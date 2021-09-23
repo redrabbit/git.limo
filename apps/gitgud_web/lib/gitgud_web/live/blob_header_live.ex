@@ -20,9 +20,7 @@ defmodule GitGud.Web.BlobHeaderLive do
       :ok,
       socket
       |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
-      |> assign_agent!()
-      |> assign_revision!(rev_spec)
-      |> assign(tree_path: tree_path, blob_commit_info: nil)
+      |> assign(rev_spec: rev_spec, tree_path: tree_path, blob_commit_info: nil)
       |> assign_blob_commit_async()
     }
   end
@@ -36,16 +34,8 @@ defmodule GitGud.Web.BlobHeaderLive do
   # Helpers
   #
 
-  defp assign_agent!(socket) do
-    assign_new(socket, :agent, fn -> resolve_agent!(socket.assigns.repo) end)
- end
-
-  defp assign_revision!(socket, rev_spec) do
-    assign_new(socket, :revision, fn -> resolve_revision!(socket.assigns.agent, rev_spec) end)
-  end
-
   defp assign_blob_commit!(socket) do
-    assign(socket, :blob_commit_info, resolve_blob_commit!(socket.assigns.agent, socket.assigns.revision, socket.assigns.tree_path))
+    assign(socket, :blob_commit_info, resolve_blob_commit_info!(socket.assigns.repo, socket.assigns.rev_spec, socket.assigns.tree_path))
   end
 
   defp assign_blob_commit_async(socket) do
@@ -55,48 +45,35 @@ defmodule GitGud.Web.BlobHeaderLive do
     socket
   end
 
-  defp resolve_agent!(repo) do
-    case GitAgent.unwrap(repo) do
-      {:ok, agent} ->
-        agent
-      {:error, error} ->
-        raise error
-    end
-  end
-
-  defp resolve_revision!(agent, "branch:" <> branch_name) do
-    case GitAgent.branch(agent, branch_name) do
-      {:ok, tag} ->
-        tag
-      {:error, error} ->
-        raise error
-    end
-  end
-
-  defp resolve_revision!(agent, "tag:" <> tag_name) do
-    case GitAgent.tag(agent, tag_name) do
-      {:ok, tag} ->
-        tag
-      {:error, error} ->
-        raise error
-    end
-  end
-
-  defp resolve_revision!(agent, "commit:" <> commit_oid) do
-    case GitAgent.object(agent, oid_parse(commit_oid)) do
-      {:ok, commit} ->
-        commit
-      {:error, error} ->
-        raise error
-    end
-  end
-
-  defp resolve_blob_commit!(agent, commit, tree_path) do
-    case GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path)) do
+  defp resolve_blob_commit_info!(repo, revision, tree_path) do
+    case GitAgent.transaction(repo, &resolve_blob_commit_info(&1, revision, tree_path)) do
       {:ok, commit_info} ->
         resolve_commit_info_db(commit_info)
       {:error, error} ->
         raise error
+    end
+  end
+
+  defp resolve_blob_commit_info(agent, "branch:" <> branch_name, tree_path) do
+    with {:ok, branch} <- GitAgent.branch(agent, branch_name),
+         {:ok, commit} <- GitAgent.peel(agent, branch) do
+      GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path))
+    end
+  end
+
+  defp resolve_blob_commit_info(agent, "tag:" <> tag_name, tree_path) do
+    with {:ok, tag} <- GitAgent.tag(agent, tag_name),
+         {:ok, commit} <- GitAgent.peel(agent, tag) do
+      GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path))
+    end
+  end
+
+  defp resolve_blob_commit_info(agent, "commit:" <> commit_oid, tree_path) do
+    case GitAgent.object(agent, oid_parse(commit_oid)) do
+      {:ok, commit} ->
+        GitAgent.transaction(agent, {:blob_commit, commit.oid, tree_path}, &resolve_blob_commit(&1, commit, tree_path))
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

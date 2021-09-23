@@ -87,8 +87,8 @@ defmodule GitGud.Web.BranchSelectLive do
     end
   end
 
-  defp assign_refs!(socket, assigns) when assigns.active == false, do: socket
-  defp assign_refs!(socket, _assigns), do: assign_refs!(socket)
+  defp assign_refs!(socket, assigns) when assigns.active == true, do: assign_refs!(socket)
+  defp assign_refs!(socket, _assigns), do: socket
 
   defp assign_refs!(socket) do
     assign(socket, :refs, resolve_references!(socket.assigns.agent))
@@ -99,14 +99,22 @@ defmodule GitGud.Web.BranchSelectLive do
   defp resolve_tab(_rev), do: :branch
 
   defp resolve_references!(agent) do
-    case GitAgent.references(agent, with: :commit, target: :commit) do
+    case GitAgent.transaction(agent, &resolve_references/1) do
       {:ok, refs} ->
         refs
-        |> Enum.map(&map_reference_timestamp!(agent, &1))
         |> Enum.sort_by(&elem(&1, 1), {:desc, NaiveDateTime})
         |> Enum.map(&elem(&1, 0))
       {:error, error} ->
         raise error
+    end
+  end
+
+  defp resolve_references(agent) do
+    case GitAgent.references(agent, with: :commit, target: :commit) do
+      {:ok, refs} ->
+        {:ok, Enum.map(refs, &map_reference_timestamp!(agent, &1))}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

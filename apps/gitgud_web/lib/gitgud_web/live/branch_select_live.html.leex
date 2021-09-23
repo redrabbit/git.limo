@@ -1,10 +1,10 @@
 <div class="dropdown is-right<%= if @active, do: " is-active" %>">
   <div class="dropdown-trigger">
     <%= if connected?(@socket) do %>
-      <button class="button" aria-haspopup="true" aria-controls="dropdown-menu" phx-click="toggle_dropdown" phx-target="<%= @myself %>">
+      <a class="button" aria-haspopup="true" aria-controls="dropdown-menu" phx-click="toggle_dropdown" phx-target="<%= @myself %>">
         <span><%= String.capitalize(@label_type) %>: <span class="has-text-weight-semibold"><%= @label_name %></span></span>
         <span class="icon is-small"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
-      </button>
+      </a>
     <% else %>
       <%= case @label_type do %>
         <% "branch" -> %>

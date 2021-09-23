@@ -5,8 +5,8 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   use GitGud.Web, :live_view
 
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
-  alias GitRekt.GitTreeEntry
 
   alias GitGud.DB
   alias GitGud.DBQueryable
@@ -23,16 +23,15 @@ defmodule GitGud.Web.TreeBrowserLive do
   #
 
   @impl true
-  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = params, session, socket) do
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = _params, session, socket) do
     {
       :ok,
       socket
       |> authenticate(session)
-      |> assign(:stats, %{})
+      |> assign(rev_spec: nil, revision: nil, commit: nil, stats: %{})
       |> assign_repo!(user_login, repo_name)
       |> assign_repo_open_issue_count()
       |> assign_agent!()
-      |> assign_revision!(params["revision"])
     }
   end
 
@@ -41,10 +40,8 @@ defmodule GitGud.Web.TreeBrowserLive do
     {
       :noreply,
       socket
-      |> assign(tree_path: params["path"] || [])
-      |> assign_tree!()
+      |> assign_tree!(params)
       |> assign_tree_commits_async()
-      |> assign_stats!()
       |> assign_page_title()
     }
   end
@@ -64,7 +61,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp assign_agent!(socket) do
-    case GitAgent.unwrap(socket.assigns.repo) do
+    case GitRepo.get_agent(socket.assigns.repo) do
       {:ok, agent} ->
         assign(socket, :agent, agent)
       {:error, error} ->
@@ -76,40 +73,27 @@ defmodule GitGud.Web.TreeBrowserLive do
     assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
   end
 
-  defp assign_revision!(socket, nil) do
-    with {:ok, false} <- GitAgent.empty?(socket.assigns.agent),
-         {:ok, head} <- GitAgent.head(socket.assigns.agent),
-         {:ok, commit} <- GitAgent.peel(socket.assigns.agent, head) do
-      assign(socket, revision_spec: nil, revision: head, commit: commit)
-    else
-      {:ok, true} ->
-        assign(socket, revision_spec: nil, revision: nil, commit: nil)
-      {:error, error} ->
-        raise error
-    end
-  end
+  defp assign_tree!(socket, params) do
+    rev_spec = params["revision"]
+    tree_path = params["path"] || []
+    resolve_revision? = is_nil(socket.assigns.commit) or rev_spec != socket.assigns.rev_spec
+    resolve_stats? = tree_path == [] and (resolve_revision? or socket.assigns.stats == %{})
 
-  defp assign_revision!(socket, rev_spec) do
-    with {:ok, {obj, ref}} <- GitAgent.revision(socket.assigns.agent, rev_spec),
-         {:ok, commit} <- GitAgent.peel(socket.assigns.agent, obj, target: :commit) do
-      assign(socket, revision_spec: rev_spec, revision: ref || commit, commit: commit)
-    else
-      {:error, error} ->
-        raise error
-    end
-  end
+    assigns =
+      if resolve_stats?,
+        do: resolve_revision_tree_with_stats!(socket.assigns.agent, resolve_revision? && rev_spec || socket.assigns.commit, tree_path),
+      else: resolve_revision_tree!(socket.assigns.agent, resolve_revision? && rev_spec || socket.assigns.commit, tree_path)
+    assigns = Map.update!(assigns, :tree_commit_info, &resolve_commit_info_db/1)
+    assigns = Map.update!(assigns, :tree_entries, &Enum.sort_by(&1, fn tree_entry -> tree_entry.name end))
+    assigns = Map.update!(assigns, :tree_entries, &Enum.map(&1, fn tree_entry -> {tree_entry, nil} end))
+    assigns =
+      if resolve_stats?,
+        do: Map.update(assigns, :stats, %{}, &Map.put(&1, :contributors, RepoQuery.count_contributors(socket.assigns.repo))),
+      else: assigns
 
-  defp assign_tree!(socket) when is_nil(socket.assigns.revision), do: socket
-  defp assign_tree!(socket) do
-    tree_commit_info =
-      if Enum.empty?(socket.assigns.tree_path) do
-        socket.assigns.agent
-        |> resolve_tree_commit_info!(socket.assigns.commit)
-        |> resolve_commit_info_db()
-      end
-    tree_entries = resolve_tree_entries!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
-    tree_readme = Enum.find_value(tree_entries, &resolve_tree_readme!(socket.assigns.agent, &1))
-    assign(socket, tree_commit_info: tree_commit_info, tree_entries: Enum.map(tree_entries, &{&1, nil}), tree_readme: tree_readme)
+    socket
+    |> assign(rev_spec: rev_spec, tree_path: tree_path)
+    |> assign(assigns)
   end
 
   defp assign_tree_commits_async(socket) do
@@ -121,41 +105,98 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp assign_tree_commits!(socket) when is_nil(socket.assigns.revision), do: socket
   defp assign_tree_commits!(socket) do
-    {tree_commit_info, tree_entries} = resolve_tree!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
+    {tree_commit_info, tree_entries} = resolve_tree_with_commits!(socket.assigns.agent, socket.assigns.commit, socket.assigns.tree_path)
     assign(socket, tree_commit_info: tree_commit_info, tree_entries: tree_entries)
-  end
-
-  defp assign_stats!(socket) when is_nil(socket.assigns.revision) or socket.assigns.tree_path != [] or socket.assigns.stats != %{}, do: socket
-  defp assign_stats!(socket) do
-    stats = resolve_stats!(socket.assigns.agent, socket.assigns.revision)
-    stats = Map.put(stats, :contributors, RepoQuery.count_contributors(socket.assigns.repo))
-    assign(socket, :stats, stats)
   end
 
   defp assign_page_title(socket) do
     assign(socket, :page_title, GitGud.Web.CodebaseView.title(socket.assigns[:live_action], socket.assigns))
   end
 
-  defp resolve_tree_entries!(agent, commit, []) do
-    case GitAgent.tree_entries(agent, commit) do
-      {:ok, tree_entries} ->
-        Enum.sort_by(tree_entries, &(&1.name))
+  defp resolve_revision(agent, nil) do
+    with {:ok, false} <- GitAgent.empty?(agent),
+         {:ok, head} <- GitAgent.head(agent),
+         {:ok, commit} <- GitAgent.peel(agent, head) do
+      {:ok, {head, commit}}
+    else
+      {:ok, true} ->
+        {:error, "repository is empty"}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_revision(agent, rev_spec) do
+    with {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
+         {:ok, commit} <- GitAgent.peel(agent, obj, target: :commit) do
+      {:ok, {ref, commit}}
+    end
+  end
+
+  defp resolve_revision_tree!(agent, revision, tree_path) do
+    case GitAgent.transaction(agent, &resolve_revision_tree(&1, revision, tree_path)) do
+      {:ok, {ref, commit, commit_info, tree_entries, readme}} ->
+        %{revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
+      {:ok, {commit_info, tree_entries, readme}} ->
+        %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
       {:error, error} ->
         raise error
     end
   end
 
-  defp resolve_tree_entries!(agent, commit, tree_path) do
-    case GitAgent.tree_entries(agent, commit, path: Path.join(tree_path)) do
-      {:ok, tree_entries} ->
-        Enum.sort_by(tree_entries, &(&1.name))
+  defp resolve_revision_tree(agent, commit, tree_path) when is_struct(commit), do: resolve_tree(agent, commit, tree_path)
+  defp resolve_revision_tree(agent, rev_spec, tree_path) do
+    with {:ok, {ref, commit}} <- resolve_revision(agent, rev_spec),
+         {:ok, {commit_info, tree_entries, readme}} <- resolve_tree(agent, commit, tree_path) do
+      {:ok, {ref, commit, commit_info, tree_entries, readme}}
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp resolve_revision_tree_with_stats!(agent, rev_spec, tree_path) do
+    case GitAgent.transaction(agent, &resolve_revision_tree_with_stats(&1, rev_spec, tree_path)) do
+      {:ok, {ref, commit, commit_info, tree_entries, readme, stats}} ->
+        %{revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
+      {:ok, {commit_info, tree_entries, readme, stats}} ->
+        %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
       {:error, error} ->
         raise error
     end
   end
 
-  defp resolve_tree!(agent, commit, tree_path) do
-    case GitAgent.transaction(agent, {:tree_entries_with_commit, commit.oid, tree_path}, &resolve_tree(&1, commit, tree_path)) do
+  defp resolve_revision_tree_with_stats(agent, commit, tree_path) when is_struct(commit) do
+    with {:ok, {commit_info, tree_entries, readme}} <- resolve_revision_tree(agent, commit, tree_path),
+         {:ok, stats} <- resolve_stats(agent, commit) do
+      {:ok, {commit_info, tree_entries, readme, stats}}
+    end
+  end
+
+  defp resolve_revision_tree_with_stats(agent, rev_spec, tree_path) do
+    with {:ok, {ref, commit, commit_info, tree_entries, readme}} <- resolve_revision_tree(agent, rev_spec, tree_path),
+         {:ok, stats} <- resolve_stats(agent, commit) do
+      {:ok, {ref, commit, commit_info, tree_entries, readme, stats}}
+    end
+  end
+
+  defp resolve_tree(agent, commit, []) do
+    with {:ok, commit_info} <- resolve_tree_commit_info(agent, commit),
+         {:ok, tree_entries} <- GitAgent.tree_entries(agent, commit),
+         {:ok, tree_readme} <- resolve_tree_readme(agent, tree_entries) do
+      {:ok, {commit_info, Enum.to_list(tree_entries), tree_readme}}
+    end
+  end
+
+  defp resolve_tree(agent, commit, tree_path) do
+    with {:ok, tree_entries} <- GitAgent.tree_entries(agent, commit, path: Path.join(tree_path)),
+         {:ok, tree_readme} <- resolve_tree_readme(agent, tree_entries) do
+      {:ok, {nil, Enum.to_list(tree_entries), tree_readme}}
+    end
+  end
+
+  defp resolve_tree_with_commits!(agent, commit, tree_path) do
+    case GitAgent.transaction(agent, {:tree_entries_with_commit, commit.oid, tree_path}, &resolve_tree_with_commits(&1, commit, tree_path)) do
       {:ok, {commit_info, tree_entries}} ->
         {
           resolve_commit_info_db(commit_info),
@@ -166,7 +207,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
-  defp resolve_tree(agent, commit, []) do
+  defp resolve_tree_with_commits(agent, commit, []) do
     case GitAgent.tree_entries(agent, commit, with: :commit) do
       {:ok, tree_entries} ->
         {
@@ -183,7 +224,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     end
   end
 
-  defp resolve_tree(agent, commit, tree_path) do
+  defp resolve_tree_with_commits(agent, commit, tree_path) do
     case GitAgent.tree_entries(agent, commit, path: Path.join(tree_path), with: :commit) do
       {:ok, tree_entries} ->
         [{_tree_entry, commit}|tree_entries] = Enum.to_list(tree_entries)
@@ -233,32 +274,34 @@ defmodule GitGud.Web.TreeBrowserLive do
       {:ok, %{oid: commit.oid, message: message, timestamp: timestamp}}
   end
 
-  defp resolve_tree_readme!(agent, %GitTreeEntry{type: :blob, name: "README.md" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.peel(agent, tree_entry)
-    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
-    {GitGud.Web.Markdown.markdown_safe(blob_content), name}
+  defp resolve_tree_readme(agent, tree_entries) do
+    if tree_entry = Enum.find(tree_entries, &(&1.type == :blob && &1.name in ["README", "README.md"])) do
+      with {:ok, blob} <- GitAgent.peel(agent, tree_entry),
+           {:ok, blob_content} <- GitAgent.blob_content(agent, blob) do
+        if String.ends_with?(tree_entry.name, ".md"),
+          do: {:ok, {GitGud.Web.Markdown.markdown_safe(blob_content), tree_entry.name}},
+        else: {:ok, {blob_content, tree_entry.name}}
+      end
+    else
+      {:ok, nil}
+    end
   end
 
-  defp resolve_tree_readme!(agent, %GitTreeEntry{type: :blob, name: "README" = name} = tree_entry) do
-    {:ok, blob} = GitAgent.peel(agent, tree_entry)
-    {:ok, blob_content} = GitAgent.blob_content(agent, blob)
-    {blob_content, name}
-  end
-
-  defp resolve_tree_readme!(_agent, %GitTreeEntry{}), do: nil
-
-  defp resolve_stats!(agent, revision) do
+  defp resolve_stats(agent, revision) do
     with {:ok, branch_count} <- GitAgent.transaction(agent, &resolve_branch_count/1),
          {:ok, tag_count} <- GitAgent.transaction(agent, &resolve_tag_count/1),
          {:ok, commit_count} <- GitAgent.transaction(agent, {:history_count, revision.oid}, &resolve_commit_count(&1, revision)) do
-      %{
-        branches: branch_count,
-        tags: tag_count,
-        commits: commit_count,
+      {
+        :ok,
+        %{
+          branches: branch_count,
+          tags: tag_count,
+          commits: commit_count,
+        }
       }
     else
-      {:error, error} ->
-        raise error
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -269,9 +312,11 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp resolve_commit_info_db(%{author: author, committer: committer} = commit_info) do
-    users = UserQuery.by_email([author.email, committer.email])
+    users = UserQuery.by_email([author.email, committer.email], preload: :emails)
     %{commit_info|author: resolve_user(author, users), committer: resolve_user(committer, users)}
   end
+
+  defp resolve_commit_info_db(nil), do: nil
 
   defp resolve_user(%{email: email} = map, users) do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)

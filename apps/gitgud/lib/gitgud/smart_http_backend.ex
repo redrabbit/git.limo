@@ -50,7 +50,7 @@ defmodule GitGud.SmartHTTPBackend do
   import Base, only: [decode64: 1]
   import String, only: [split: 3]
 
-  alias GitRekt.GitAgent
+  alias GitRekt.GitRepo
   alias GitRekt.WireProtocol
 
   alias GitGud.Account
@@ -186,7 +186,7 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_info_refs(conn, repo) do
-    case GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         exec = conn.query_params["service"]
         refs = WireProtocol.reference_discovery(agent, exec, extra_server_capabilities(exec))
@@ -200,7 +200,7 @@ defmodule GitGud.SmartHTTPBackend do
   end
 
   defp git_pack(conn, repo, exec) do
-    case GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         conn = put_resp_content_type(conn, "application/x-#{exec}-result")
         conn = send_chunked(conn, :ok)

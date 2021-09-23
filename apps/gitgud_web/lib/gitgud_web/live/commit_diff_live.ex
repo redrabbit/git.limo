@@ -5,6 +5,7 @@ defmodule GitGud.Web.CommitDiffLive do
 
   use GitGud.Web, :live_view
 
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
   alias GitGud.CommitLineReview
@@ -33,7 +34,7 @@ defmodule GitGud.Web.CommitDiffLive do
       |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
       |> assign_repo_permissions()
       |> assign_agent!()
-      |> assign_commit!(oid)
+      |> assign(:commit_oid, oid)
       |> assign_diff!()
       |> assign_reviews()
       |> assign_comment_count()
@@ -152,16 +153,12 @@ defmodule GitGud.Web.CommitDiffLive do
     assign_new(socket, :agent, fn -> resolve_agent!(socket.assigns.repo) end)
   end
 
-  defp assign_commit!(socket, oid) do
-    assign_new(socket, :commit, fn -> resolve_commit!(socket.assigns.agent, oid) end)
-  end
-
   defp assign_diff!(socket) do
-    assign(socket, resolve_diff!(socket.assigns.agent, socket.assigns.commit))
+    assign(socket, resolve_diff!(socket.assigns.agent, socket.assigns.commit_oid))
   end
 
   defp assign_reviews(socket) do
-    assign(socket, :reviews, ReviewQuery.commit_line_reviews(socket.assigns.repo, socket.assigns.commit, preload: {:comments, :author}))
+    assign(socket, :reviews, ReviewQuery.commit_line_reviews(socket.assigns.repo, socket.assigns.commit_oid, preload: {:comments, :author}))
   end
 
   defp assign_comment_count(socket) do
@@ -171,7 +168,7 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   defp resolve_agent!(repo) do
-    case GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         agent
       {:error, error} ->
@@ -179,24 +176,22 @@ defmodule GitGud.Web.CommitDiffLive do
     end
   end
 
-  defp resolve_commit!(agent, oid) do
-    case GitAgent.object(agent, oid) do
-      {:ok, commit} ->
-        commit
+  defp resolve_diff!(agent, oid) do
+    case GitAgent.transaction(agent, &resolve_diff(&1, oid)) do
+      {:ok, {commit, diff_stats, diff_deltas}} ->
+        %{commit: commit, diff_stats: diff_stats, diff_deltas: diff_deltas}
       {:error, error} ->
         raise error
     end
   end
 
-  defp resolve_diff!(agent, commit) do
-    with {:ok, commit_parents} <- GitAgent.commit_parents(agent, commit),
+  defp resolve_diff(agent, oid) do
+    with {:ok, commit} <- GitAgent.object(agent, oid),
+         {:ok, commit_parents} <- GitAgent.commit_parents(agent, commit),
          {:ok, diff} <- GitAgent.diff(agent, Enum.at(commit_parents, 0), commit),
          {:ok, diff_stats} <- GitAgent.diff_stats(agent, diff),
          {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
-      %{diff_stats: diff_stats, diff_deltas: diff_deltas}
-    else
-      {:error, error} ->
-        raise error
+      {:ok, {commit, diff_stats, diff_deltas}}
     end
   end
 end

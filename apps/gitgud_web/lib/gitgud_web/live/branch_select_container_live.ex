@@ -5,6 +5,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
 
   use GitGud.Web, :live_view
 
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
   alias GitGud.RepoQuery
@@ -19,7 +20,6 @@ defmodule GitGud.Web.BranchSelectContainerLive do
       |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
       |> assign_agent!()
       |> assign_revision!(rev_spec)
-      |> assign_commit!()
       |> assign(active: connected?(socket) && !!session["active"], action: action, tree_path: tree_path)
     }
   end
@@ -49,15 +49,17 @@ defmodule GitGud.Web.BranchSelectContainerLive do
  end
 
   defp assign_revision!(socket, rev_spec) do
-    assign_new(socket, :revision, fn -> resolve_revision!(socket.assigns.agent, rev_spec) end)
-  end
-
-  defp assign_commit!(socket) do
-    assign_new(socket, :commit, fn -> resolve_commit!(socket.assigns.agent, socket.assigns.revision) end)
+    if connected?(socket) do
+      {revision, commit} = resolve_revision!(socket.assigns.agent, rev_spec)
+      assign(socket, revision: revision, commit: commit)
+    else
+      {conn_assigns, _} = socket.private.assign_new
+      assign(socket, Map.take(conn_assigns, [:revision, :commit]))
+    end
   end
 
   defp resolve_agent!(repo) do
-    case GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         agent
       {:error, error} ->
@@ -66,18 +68,18 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   end
 
   defp resolve_revision!(agent, "branch:" <> branch_name) do
-    case GitAgent.branch(agent, branch_name) do
-      {:ok, tag} ->
-        tag
+    case GitAgent.branch(agent, branch_name, with: :commit) do
+      {:ok, branch_with_commit} ->
+        branch_with_commit
       {:error, error} ->
         raise error
     end
   end
 
   defp resolve_revision!(agent, "tag:" <> tag_name) do
-    case GitAgent.tag(agent, tag_name) do
-      {:ok, tag} ->
-        tag
+    case GitAgent.tag(agent, tag_name, with: :commit) do
+      {:ok, tag_with_commit} ->
+        tag_with_commit
       {:error, error} ->
         raise error
     end
@@ -86,16 +88,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   defp resolve_revision!(agent, "commit:" <> commit_oid) do
     case GitAgent.object(agent, oid_parse(commit_oid)) do
       {:ok, commit} ->
-        commit
-      {:error, error} ->
-        raise error
-    end
-  end
-
-  defp resolve_commit!(agent, revision) do
-    case GitAgent.peel(agent, revision, target: :commit) do
-      {:ok, commit} ->
-        commit
+        {commit, commit}
       {:error, error} ->
         raise error
     end

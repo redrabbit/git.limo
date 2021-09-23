@@ -9,6 +9,7 @@ defmodule GitGud.Web.Markdown do
   alias GitGud.Web.Router.Helpers, as: Routes
   alias GitGud.Web.Emoji
 
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
   import Phoenix.HTML, only: [raw: 1]
@@ -118,7 +119,7 @@ defmodule GitGud.Web.Markdown do
 
   defp resolve_agent(nil), do: nil
   defp resolve_agent(repo) do
-    case GitAgent.unwrap(repo) do
+    case GitRepo.get_agent(repo) do
       {:ok, agent} ->
         agent
       {:error, _reason} ->

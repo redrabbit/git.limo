@@ -150,15 +150,11 @@ defmodule GitRekt.GitAgent do
     GenServer.start_link(__MODULE__, {path, agent_opts}, server_opts)
   end
 
-  @spec unwrap(GitRepo.t) :: {:ok, agent} | {:error, term}
-  defdelegate unwrap(repo), to: GitRepo, as: :get_agent
-
   @doc """
   Returns `true` if the repository is empty; otherwise returns `false`.
   """
   @spec empty?(agent, keyword) :: {:ok, boolean} | {:error, term}
   def empty?(agent, opts \\ []), do: exec(agent, :empty?, opts)
-
 
   @doc """
   Returns the ODB.
@@ -616,6 +612,14 @@ defmodule GitRekt.GitAgent do
   defp exec(agent, op, opts) when is_pid(agent), do: GenServer.call(agent, op, Keyword.get(opts, :timeout, @default_config.timeout))
   defp exec(agent, op, _opts) when is_reference(agent), do: call(agent, op)
   defp exec({agent, cache}, op, _opts) when is_reference(agent), do: call_cache(agent, op, cache)
+  defp exec(repo, op, opts) do
+    case GitRepo.get_agent(repo) do
+      {:ok, agent} ->
+        exec(agent, op, opts)
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   defp pop_exec_opts(opts), do: Enum.split_with(opts, fn {k, _v} -> k in @exec_opts end)
 

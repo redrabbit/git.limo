@@ -3,7 +3,7 @@ defmodule GitGud.GraphQL.RepoMiddleware do
 
   @behaviour Absinthe.Middleware
 
-  alias GitRekt.GitAgent
+  alias GitRekt.GitRepo
 
   alias GitGud.Repo
   alias GitGud.RepoQuery
@@ -38,7 +38,7 @@ defmodule GitGud.GraphQL.RepoMiddleware do
   #
 
   defp put_repo_ctx(resolution, repo) do
-    {:ok, agent} = GitAgent.unwrap(repo)
+    {:ok, agent} = GitRepo.get_agent(repo)
     resolution
     |> Map.update!(:context, &Map.put(&1, :repo, repo))
     |> Map.update!(:context, &Map.put(&1, :repo_agent, agent))

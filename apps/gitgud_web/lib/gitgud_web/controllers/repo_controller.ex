@@ -121,16 +121,15 @@ defmodule GitGud.Web.RepoController do
   #
 
   defp stats(repo, batch) do
-    with {:ok, agent} <- GitAgent.unwrap(repo),
-         {:ok, refs} = GitAgent.references(agent) do
-      group_refs = Enum.group_by(refs, &(&1.type))
-      %{
-        branches: length(group_refs[:branch] || []),
-        tags: length(group_refs[:tag] || []),
-        issues: batch.issues[repo.id] || 0,
-        contributors: batch.contributors[repo.id] || 0
-      }
-    else
+    case GitAgent.references(repo, stream_chunk_size: :infinity) do
+      {:ok, refs} ->
+        group_refs = Enum.group_by(refs, &(&1.type))
+        %{
+          branches: length(group_refs[:branch] || []),
+          tags: length(group_refs[:tag] || []),
+          issues: batch.issues[repo.id] || 0,
+          contributors: batch.contributors[repo.id] || 0
+        }
       {:error, reason} ->
         Logger.warn(reason)
         %{
