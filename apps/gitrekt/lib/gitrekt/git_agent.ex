@@ -894,7 +894,16 @@ defmodule GitRekt.GitAgent do
       do: Git.revwalk_pack(walk)
   end
 
-  defp call(handle, {:transaction, _name, cb}), do: cb.(handle)
+  defp call(handle, {:transaction, _name, cb}) do
+    try do
+      cb.(handle)
+    rescue
+      error ->
+        {:error, error}
+    end
+  end
+
+  defp call(_handle, op), do: {:error, %GitError{message: "invalid operation #{inspect op}", code: -21}}
 
   defp call_cache(handle, op, cache), do: call_cache(handle, op, cache, self())
   defp call_cache(handle, {:transaction, _name, _cb} = op, cache, pid) when not is_tuple(handle) do
