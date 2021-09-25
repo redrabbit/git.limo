@@ -224,7 +224,7 @@ defmodule GitRekt.GitAgent do
     {with_target, opts} = Keyword.pop(opts, :with)
     unless with_target,
       do: exec(agent, {:reference, "refs/heads/" <> name, :undefined}, opts),
-    else: exec(agent, {:reference_with, with_target, "refs/heads/" <> name}, opts)
+    else: exec(agent, {:reference_with, with_target, "refs/heads/" <> name, :undefined}, opts)
   end
 
   @doc """
