@@ -1,6 +1,7 @@
 import liveSocket from "../live-socket"
 
 function connectLiveSocket(e) {
+  e.currentTarget.dataset.phxConnectLater = "toggle_dropdown"
   e.preventDefault()
   liveSocket.connect()
 }
@@ -8,20 +9,24 @@ function connectLiveSocket(e) {
 export default () => {
   const branchSelect = document.getElementById("branch-select")
   if(branchSelect) {
-    const branchSelectButton = branchSelect.querySelector(".dropdown-trigger")
+    const branchSelectDropdown = branchSelect.querySelector(".dropdown")
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+      mutations.slice(-1).forEach((mutation) => {
         const {classList} = mutation.target
         if(classList.contains("phx-connected")) {
+          if(branchSelect.dataset.phxConnectLater=="toggle_dropdown") {
+            let hook = liveSocket.getViewByEl(branchSelect).getHook(branchSelectDropdown)
+            hook.pushEventTo(branchSelectDropdown, "toggle_dropdown", {})
+          }
           delete branchSelect.dataset.phxConnectLater
           observer.disconnect()
         } else if(classList.contains("phx-disconnected")) {
-          branchSelectButton.removeEventListener("click", connectLiveSocket)
+          branchSelect.removeEventListener("click", connectLiveSocket)
         }
       })
     })
 
-    branchSelectButton.addEventListener("click", connectLiveSocket)
+    branchSelect.addEventListener("click", connectLiveSocket)
     observer.observe(branchSelect, {attributes : true, attributeFilter: ["class"]})
   }
 }

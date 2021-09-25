@@ -28,7 +28,6 @@ defmodule GitGud.Web.CodebaseView do
         "repo_id" => repo.id,
         "rev_spec" => revision_spec(revision),
         "action" => revision_action(action_name(conn)),
-        "active" => connect_later,
         "tree_path" => tree_path
       }
     )

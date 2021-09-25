@@ -1,4 +1,4 @@
-<div class="dropdown is-right<%= if @active, do: " is-active" %>">
+<div id="branch-select-dropdown" class="dropdown is-right<%= if @active, do: " is-active" %>" phx-hook="BranchSelect">
   <div class="dropdown-trigger">
     <%= if connected?(@socket) do %>
       <a class="button" aria-haspopup="true" aria-controls="dropdown-menu" phx-click="toggle_dropdown" phx-target="<%= @myself %>">

@@ -9,7 +9,7 @@ export default () => {
   if(globalSearch) {
     const globalSearchInput = globalSearch.querySelector("input")
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
+      mutations.slice(-1).forEach((mutation) => {
         const {classList} = mutation.target
         if(classList.contains("phx-connected")) {
           delete globalSearch.dataset.phxConnectLater

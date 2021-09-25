@@ -66,6 +66,9 @@ function updateCounter(oid, callback) {
 
 let Hooks = {}
 
+Hooks.BranchSelect = {
+}
+
 Hooks.TreeBreadcrumb = {
   mounted() { treeBreadcrumb() },
   updated() { treeBreadcrumb() }
