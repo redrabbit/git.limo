@@ -187,8 +187,8 @@ defmodule GitRekt.GitAgent do
   @doc """
   Returns an ODB writepack.
   """
-  @spec odb_writepack(agent, GitOdb.t, keyword) :: {:ok, GitWritePack.t} | {:error, term}
-  def odb_writepack(agent, odb, opts \\ []), do: exec(agent, {:odb_writepack, odb}, opts)
+  @spec odb_writepack(agent, keyword) :: {:ok, GitWritePack.t} | {:error, term}
+  def odb_writepack(agent, opts \\ []), do: exec(agent, :odb_writepack, opts)
 
   @doc """
   Appends `data` to the given `writepack`.
@@ -727,13 +727,10 @@ defmodule GitRekt.GitAgent do
     {:ok, Git.odb_object_exists?(odb, oid)}
   end
 
-  defp call(_handle, {:odb_writepack, %GitOdb{__ref__: odb}}) do
-    case Git.odb_get_writepack(odb) do
-      {:ok, writepack} ->
-        {:ok, resolve_writepack(writepack)}
-      {:error, reason} ->
-        {:error, reason}
-    end
+  defp call(handle, :odb_writepack) do
+    with {:ok, odb} <- Git.repository_get_odb(handle),
+         {:ok, writepack} <- Git.odb_get_writepack(odb), do:
+      {:ok, resolve_writepack(writepack)}
   end
 
   defp call(_handle, {:odb_writepack_append, %GitWritePack{__ref__: writepack}, data, progress}) do
