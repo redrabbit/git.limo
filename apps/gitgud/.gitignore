@@ -16,3 +16,6 @@ erl_crash.dump
 
 # SSH public/private keys for Git SSH support.
 /priv/ssh-keys
+
+# Tests artefacts
+/test/data
