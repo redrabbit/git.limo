@@ -28,46 +28,22 @@ defmodule GitGud.Web.CodebaseController do
   @doc """
   Renders a blob creation form.
   """
-  @spec new(Plug.Conn.t, map) :: Plug.Conn.t
-  def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => []} = _params) do
-    user = current_user(conn)
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
-      if authorized?(user, repo, :push) do
-        case GitAgent.revision(repo, revision) do
-          {:ok, {commit, %GitRef{type: :branch, name: branch_name} = reference}} ->
-            render(conn, "new.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: reference,
-              commit: commit,
-              tree_path: [],
-              breadcrumb: %{action: :tree, cwd?: true, tree?: true},
-              changeset: blob_commit_changeset(%{branch: branch_name}, %{})
-            )
-          {:error, reason} ->
-            {:error, reason}
-        end
-      end || {:error, :forbidden}
-    end || {:error, :not_found}
-  end
-
   def new(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = _params) do
     user = current_user(conn)
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
       if authorized?(user, repo, :push) do
-        case GitAgent.transaction(repo, &resolve_tree(&1, revision, tree_path)) do
-          {:ok, {reference, commit, _tree}} ->
-            render(conn, "new.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: reference,
-              commit: commit,
-              tree_path: tree_path,
-              breadcrumb: %{action: :tree, cwd?: true, tree?: true},
-              changeset: blob_commit_changeset(%{branch: reference.name}, %{})
-            )
-          {:error, reason} ->
-            {:error, reason}
+        with {:ok, agent} <- GitRepo.get_agent(repo),
+             {:ok, {reference, commit, _tree}} <- GitAgent.transaction(agent, &resolve_tree(&1, revision, tree_path)) do
+          render(conn, "new.html",
+            repo: repo,
+            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            agent: agent,
+            revision: reference,
+            commit: commit,
+            tree_path: tree_path,
+            breadcrumb: %{action: :tree, cwd?: true, tree?: true},
+            changeset: blob_commit_changeset(%{branch: reference.name}, %{})
+          )
         end
       end || {:error, :forbidden}
     end || {:error, :not_found}
@@ -106,6 +82,7 @@ defmodule GitGud.Web.CodebaseController do
                 render(conn, "new.html",
                   repo: repo,
                   repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                  agent: agent,
                   revision: reference || commit,
                   commit: commit,
                   tree_path: tree_path,
@@ -121,6 +98,7 @@ defmodule GitGud.Web.CodebaseController do
             render(conn, "new.html",
               repo: repo,
               repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+              agent: agent,
               revision: reference || commit,
               commit: commit,
               tree_path: tree_path,
@@ -141,19 +119,18 @@ defmodule GitGud.Web.CodebaseController do
       user = current_user(conn)
       if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
         if authorized?(user, repo, :push) do
-          case GitAgent.transaction(repo, &resolve_blob(&1, revision, blob_path)) do
-            {:ok, {reference, commit, blob_content, _blob_size}} ->
-              render(conn, "edit.html",
-                repo: repo,
-                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-                revision: reference,
-                commit: commit,
-                tree_path: blob_path,
-                breadcrumb: %{action: :tree, cwd?: false, tree?: true},
-                changeset: blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: reference.name}, %{})
-              )
-            {:error, reason} ->
-              {:error, reason}
+          with {:ok, agent} <- GitRepo.get_agent(repo),
+               {:ok, {reference, commit, blob_content, _blob_size}} <- GitAgent.transaction(agent, &resolve_blob(&1, revision, blob_path)) do
+            render(conn, "edit.html",
+              repo: repo,
+              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+              agent: agent,
+              revision: reference,
+              commit: commit,
+              tree_path: blob_path,
+              breadcrumb: %{action: :tree, cwd?: false, tree?: true},
+              changeset: blob_commit_changeset(%{name: List.last(blob_path), content: blob_content, branch: reference.name}, %{})
+            )
           end
         end || {:error, :forbidden}
       end
@@ -170,7 +147,7 @@ defmodule GitGud.Web.CodebaseController do
       if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
         if authorized?(user, repo, :push) do
           with {:ok, agent} <- GitRepo.get_agent(repo),
-               {:ok, {reference, commit, blob_content, _blob_size}} <- GitAgent.transaction(repo, &resolve_blob(&1, revision, blob_path)) do
+               {:ok, {reference, commit, blob_content, _blob_size}} <- GitAgent.transaction(agent, &resolve_blob(&1, revision, blob_path)) do
             breadcrumb = %{action: :tree, cwd?: false, tree?: true}
             changeset = blob_commit_changeset(%{name: Path.basename(blob_path), content: blob_content}, commit_params)
             if changeset.valid? do # TODO
@@ -194,6 +171,7 @@ defmodule GitGud.Web.CodebaseController do
                   render(conn, "edit.html",
                     repo: repo,
                     repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                    agent: agent,
                     revision: reference || commit,
                     commit: commit,
                     tree_path: blob_path,
@@ -207,6 +185,7 @@ defmodule GitGud.Web.CodebaseController do
               render(conn, "edit.html",
                 repo: repo,
                 repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                agent: agent,
                 revision: reference || commit,
                 commit: commit,
                 tree_path: blob_path,
@@ -228,19 +207,18 @@ defmodule GitGud.Web.CodebaseController do
       user = current_user(conn)
       if repo = RepoQuery.user_repo(user_login, repo_name, viewer: user) do
         if authorized?(user, repo, :push) do
-          case GitAgent.transaction(repo, &resolve_blob(&1, revision, blob_path)) do
-            {:ok, {reference, commit, _blob_content, _blob_size}} ->
-              render(conn, "confirm_delete.html",
-                repo: repo,
-                repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-                revision: reference,
-                commit: commit,
-                tree_path: blob_path,
-                breadcrumb: %{action: :tree, cwd?: true, tree?: false},
-                changeset: commit_changeset(%{branch: reference.name}, %{})
-              )
-            {:error, reason} ->
-              {:error, reason}
+          with {:ok, agent} <- GitRepo.get_agent(repo),
+               {:ok, {reference, commit, _blob_content, _blob_size}} <- GitAgent.transaction(agent, &resolve_blob(&1, revision, blob_path)) do
+            render(conn, "confirm_delete.html",
+              repo: repo,
+              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+              agent: agent,
+              revision: reference,
+              commit: commit,
+              tree_path: blob_path,
+              breadcrumb: %{action: :tree, cwd?: true, tree?: false},
+              changeset: commit_changeset(%{branch: reference.name}, %{})
+            )
           end
         end || {:error, :forbidden}
       end
@@ -279,6 +257,7 @@ defmodule GitGud.Web.CodebaseController do
               render(conn, "confirm_delete.html",
                 repo: repo,
                 repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+                agent: agent,
                 revision: reference || commit,
                 commit: commit,
                 tree_path: blob_path,
@@ -299,7 +278,7 @@ defmodule GitGud.Web.CodebaseController do
   def commit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "oid" => oid} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       with {:ok, agent} <- GitRepo.get_agent(repo),
-           {:ok, {commit, commit_info}} <- GitAgent.transaction(repo, &resolve_commit(&1, oid_parse(oid))) do
+           {:ok, {commit, commit_info}} <- GitAgent.transaction(agent, &resolve_commit(&1, oid_parse(oid))) do
         render(conn, "commit.html",
           repo: repo,
           repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
@@ -318,20 +297,19 @@ defmodule GitGud.Web.CodebaseController do
   def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
     unless Enum.empty?(blob_path) do
       if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-        case GitAgent.transaction(repo, &resolve_blob(&1, revision, blob_path)) do
-          {:ok, {reference, commit, blob_content, blob_size}} ->
-            render(conn, "blob.html",
-              repo: repo,
-              repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-              revision: reference || commit,
-              commit: commit,
-              tree_path: blob_path,
-              breadcrumb: %{action: :tree, cwd?: true, tree?: false},
-              blob_content: blob_content,
-              blob_size: blob_size
-            )
-          {:error, reason} ->
-            {:error, reason}
+        with {:ok, agent} <- GitRepo.get_agent(repo),
+             {:ok, {reference, commit, blob_content, blob_size}} <- GitAgent.transaction(agent, &resolve_blob(&1, revision, blob_path)) do
+          render(conn, "blob.html",
+            repo: repo,
+            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            agent: agent,
+            revision: reference || commit,
+            commit: commit,
+            tree_path: blob_path,
+            breadcrumb: %{action: :tree, cwd?: true, tree?: false},
+            blob_content: blob_content,
+            blob_size: blob_size
+          )
         end
       end
     end || {:error, :not_found}
@@ -393,19 +371,18 @@ defmodule GitGud.Web.CodebaseController do
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       cursor = pagination_cursor(params)
-      case GitAgent.transaction(repo, &resolve_history(&1, revision, tree_path, cursor, 20)) do
-        {:ok, {reference, commit, tree_entry_type, {slice, more?}}} ->
-          render(conn, "commit_list.html",
-            repo: repo,
-            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-            revision: reference || commit,
-            commit: commit,
-            tree_path: tree_path,
-            breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry_type == :tree},
-            page: pagination_page(resolve_commits_info_db(repo, slice), cursor, more?)
-          )
-        {:error, reason} ->
-          {:error, reason}
+      with {:ok, agent} <- GitRepo.get_agent(repo),
+           {:ok, {reference, commit, tree_entry_type, {slice, more?}}} <- GitAgent.transaction(agent, &resolve_history(&1, revision, tree_path, cursor, 20)) do
+        render(conn, "commit_list.html",
+          repo: repo,
+          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+          agent: agent,
+          revision: reference || commit,
+          commit: commit,
+          tree_path: tree_path,
+          breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry_type == :tree},
+          page: pagination_page(resolve_commits_info_db(repo, slice), cursor, more?)
+        )
       end
     end || {:error, :not_found}
   end
