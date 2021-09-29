@@ -1,5 +1,5 @@
 import hljs from "highlight.js"
-import "highlight.js/styles/github-gist.css"
+import "highlight.js/styles/github.css"
 
 export default() => {
   document.querySelectorAll("pre code[class]").forEach(code => {

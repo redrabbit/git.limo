@@ -23,7 +23,6 @@ module.exports = (env, options) => {
     output: {
       filename: '[name].js',
       path: path.resolve(__dirname, '../priv/static/js'),
-      publicPath: '/js/'
     },
     devtool: devMode ? 'eval-cheap-module-source-map' : undefined,
     module: {
@@ -62,10 +61,9 @@ module.exports = (env, options) => {
           ]
         },
         {
-          test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
+          test: /\.(svg|eot|woff|woff2|ttf)$/,
           loader: 'file-loader',
           options: {
-            name: '[name].[ext]',
             outputPath: '../fonts/'
           }
         }
