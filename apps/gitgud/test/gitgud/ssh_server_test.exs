@@ -3,6 +3,7 @@ defmodule GitGud.SSHServerTest do
   use GitGud.DataFactory
 
   alias GitRekt.Git
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
   alias GitGud.User
@@ -56,7 +57,7 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       assert {:ok, commit} = GitAgent.peel(agent, head)
       assert {:ok, "Initial commit\n"} = GitAgent.commit_message(agent, commit)
@@ -72,7 +73,7 @@ defmodule GitGud.SSHServerTest do
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
@@ -85,7 +86,7 @@ defmodule GitGud.SSHServerTest do
     @tag :skip
     test "clones repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git", workdir], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}])
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)

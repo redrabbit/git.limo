@@ -5,6 +5,7 @@ defmodule GitGud.SmartHTTPBackendTest do
   use Plug.Test
 
   alias GitRekt.Git
+  alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
   alias GitGud.User
@@ -57,7 +58,7 @@ defmodule GitGud.SmartHTTPBackendTest do
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {"Everything up-to-date\n", 1} = System.cmd("git", ["push", "--set-upstream", "origin", "master"], cd: workdir, stderr_to_stdout: true)
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       assert {:ok, commit} = GitAgent.peel(agent, head)
       assert {:ok, "Initial commit\n"} = GitAgent.commit_message(agent, commit)
@@ -73,7 +74,7 @@ defmodule GitGud.SmartHTTPBackendTest do
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git"], cd: workdir)
       assert {"Everything up-to-date\n", 1} = System.cmd("git", ["push", "--set-upstream", "origin", "master"], cd: workdir, stderr_to_stdout: true)
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
@@ -86,7 +87,7 @@ defmodule GitGud.SmartHTTPBackendTest do
     @tag :skip
     test "clones repository", %{user: user, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--bare", "--quiet", "http://#{user.login}:qwertz@localhost:4001/#{user.login}/#{repo.name}.git", workdir], stderr_to_stdout: true)
-      assert {:ok, agent} = GitAgent.unwrap(repo)
+      assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
       assert {^output, 0} = System.cmd("git", ["rev-parse", "HEAD"], cd: workdir)
