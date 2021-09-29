@@ -24,10 +24,14 @@ defmodule GitGud.RepoStorageTest do
     File.rm_rf(RepoStorage.workdir(repo))
   end
 
+  test "ensures volume is valid" do
+    assert {:ok, vol} = RepoStorage.ensure_volume_tagged()
+    assert RepoStorage.volume() == vol
+  end
+
   test "ensures workdir is valid", %{user: user, repo: repo} do
     assert RepoStorage.workdir(repo) == Path.join([Keyword.fetch!(Application.get_env(:gitgud, RepoStorage), :git_root), user.login, repo.name])
   end
-
 
   describe "when Git repository exists" do
     setup :init_repo
