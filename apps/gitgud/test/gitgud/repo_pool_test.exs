@@ -5,7 +5,6 @@ defmodule GitGud.RepoPoolTest do
   alias GitGud.User
   alias GitGud.Repo
   alias GitGud.RepoPool
-  alias GitGud.RepoRegistry
   alias GitGud.RepoStorage
 
   setup [:create_user, :create_repo]
@@ -39,17 +38,8 @@ defmodule GitGud.RepoPoolTest do
 
   test "ensures pools are available via registry", %{repo: repo} do
     assert {:ok, pool} = RepoPool.start_pool(repo)
-    assert [{^pool, nil}] = Registry.lookup(RepoRegistry, Path.join(repo.owner_login, repo.name))
+    assert [{^pool, nil}] = Registry.lookup(RepoPool.Registry, Path.join(repo.owner_login, repo.name))
     assert Process.alive?(pool)
-  end
-
-  test "ensures empty pools are terminated gracefully", %{repo: repo} do
-    assert {:ok, agent} = RepoPool.checkout(repo)
-    assert [{pool, nil}] = Registry.lookup(RepoRegistry, Path.join(repo.owner_login, repo.name))
-    mon = Process.monitor(pool)
-    assert :ok = GenServer.stop(agent)
-    assert_receive {:DOWN, ^mon, :process, ^pool, :normal}
-    refute Process.alive?(pool)
   end
 
   #
