@@ -31,7 +31,7 @@ defmodule GitLimo.Umbrella.Mixfile do
   defp deps do
     [
       {:benchee, "~> 1.0", only: :dev},
-      {:ex_doc, "~> 0.24", only: :dev}
+      {:ex_doc, "~> 0.25", only: :dev}
     ]
   end
 
