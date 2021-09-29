@@ -8,11 +8,11 @@
 
 A Git source code management tool written in Elixir.
 
+* [x] Simple yet intuitive web interface.
 * [x] Git HTTP and SSH support.
-* [x] User authentication and permissions.
 * [x] Fully integrated GraphQL API.
-* [x] Native (NIF) implementation of Git commands.
 * [x] Customizable Git storage backend.
+* [x] Distributed setup (cluster).
 * [x] Issue tracker.
 * [x] Code reviews.
 * [ ] Continuous integration.
