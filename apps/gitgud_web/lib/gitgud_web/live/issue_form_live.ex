@@ -1,5 +1,8 @@
 defmodule GitGud.Web.IssueFormLive do
   use GitGud.Web, :live_view
+  @moduledoc """
+  Live view responsible for rendering issue forms.
+  """
 
   alias GitGud.Issue
 

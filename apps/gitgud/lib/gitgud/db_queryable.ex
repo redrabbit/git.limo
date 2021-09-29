@@ -5,8 +5,19 @@ defmodule GitGud.DBQueryable do
 
   import Ecto.Query, only: [order_by: 2, offset: 2, limit: 2]
 
+  @doc """
+  Returns a query for the given `name` and `args`.
+  """
   @callback query(name :: atom, args :: [term]) :: Ecto.Query.t
+
+  @doc """
+  Alters the given `query`.
+  """
   @callback alter_query(query :: Ecto.Query.t, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
+
+  @doc """
+  Add preloads for the given `query`.
+  """
   @callback preload_query(query :: Ecto.Query.t, preloads :: term, viewer :: GitGud.User.t | nil) :: Ecto.Query.t
 
   @doc """

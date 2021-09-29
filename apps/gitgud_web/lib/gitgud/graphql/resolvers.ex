@@ -533,6 +533,9 @@ defmodule GitGud.GraphQL.Resolvers do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
+  @doc """
+  Resolves the permissions for a given `issue`.
+  """
   @spec issue_permissions(Issue.t, %{}, Absinthe.Resolution.t) :: {:ok, [atom]} | {:error, term}
   def issue_permissions(issue, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, IssueQuery.permissions(issue, ctx[:current_user], ctx[:repo_perms])}
@@ -623,6 +626,9 @@ defmodule GitGud.GraphQL.Resolvers do
     batch({__MODULE__, :batch_users_by_ids, ctx[:current_user]}, user_id, fn users -> {:ok, users[user_id]} end)
   end
 
+  @doc """
+  Resolves the permissions for a given `comment`.
+  """
   @spec comment_permissions(Comment.t, %{}, Absinthe.Resolution.t) :: {:ok, [atom]} | {:error, term}
   def comment_permissions(comment, %{} = _args, %Absinthe.Resolution{context: ctx} = _info) do
     {:ok, CommentQuery.permissions(comment, ctx[:current_user], ctx[:repo_perms])}
