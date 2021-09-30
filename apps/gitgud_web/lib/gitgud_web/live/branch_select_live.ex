@@ -91,7 +91,8 @@ defmodule GitGud.Web.BranchSelectLive do
   defp assign_refs!(socket, _assigns), do: socket
 
   defp assign_refs!(socket) do
-    assign(socket, :refs, resolve_references!(socket.assigns.agent))
+    {head, refs} = resolve_references!(socket.assigns.agent)
+    assign(socket, head: head, refs: refs)
   end
 
   defp resolve_tab(%GitRef{type: type}), do: type
@@ -100,21 +101,29 @@ defmodule GitGud.Web.BranchSelectLive do
 
   defp resolve_references!(agent) do
     case GitAgent.transaction(agent, &resolve_references/1) do
-      {:ok, refs} ->
-        refs
-        |> Enum.sort_by(&elem(&1, 1), {:desc, NaiveDateTime})
-        |> Enum.map(&elem(&1, 0))
+      {:ok, {head, refs}} ->
+        {head, refs}
       {:error, error} ->
         raise error
     end
   end
 
   defp resolve_references(agent) do
-    case GitAgent.references(agent, with: :commit, target: :commit) do
-      {:ok, refs} ->
-        {:ok, Enum.map(refs, &map_reference_timestamp!(agent, &1))}
-      {:error, reason} ->
-        {:error, reason}
+    with {:ok, head} <- GitAgent.head(agent),
+         {:ok, refs} <- GitAgent.references(agent, with: :commit, target: :commit) do
+      refs = Enum.to_list(refs)
+      head_index = Enum.find_index(refs, &elem(&1, 0) == head)
+      {
+        :ok,
+        {
+          head,
+          refs
+          |> List.delete_at(head_index)
+          |> Enum.map(&map_reference_timestamp!(agent, &1))
+          |> Enum.sort_by(&elem(&1, 1), {:desc, NaiveDateTime})
+          |> Enum.map(&elem(&1, 0))
+        }
+      }
     end
   end
 
