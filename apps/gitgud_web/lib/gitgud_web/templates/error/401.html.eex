@@ -1,3 +1,6 @@
 <%= render_layout "error.html", assigns do %>
-  <h2 class="subtitle"><%= Plug.Conn.Status.reason_phrase(@conn.status) %></h2>
+  <div class="content">
+    <p>The page you are looking for requires user authentication.</p>
+    <p>You might try to <a class="has-text-black" href="<%= Routes.session_path(@conn, :new, redirect_to: @conn.request_path) %>">sign-in</a> in order to resolve the issue.</p>
+  </div>
 <% end %>

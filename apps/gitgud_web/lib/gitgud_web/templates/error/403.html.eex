@@ -1,3 +1,5 @@
 <%= render_layout "error.html", assigns do %>
-  <h2 class="subtitle"><%= Plug.Conn.Status.reason_phrase(@conn.status) %></h2>
+  <div class="content">
+    <p>The page you are looking for has restricted access.</p>
+  </div>
 <% end %>
