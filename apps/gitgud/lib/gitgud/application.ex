@@ -9,10 +9,10 @@ defmodule GitGud.Application do
       [
         [:gitrekt, :git_agent, :call],
         [:gitrekt, :git_agent, :call_stream],
-      # [:gitrekt, :git_agent, :execute],
-      # [:gitrekt, :git_agent, :stream],
-      # [:gitrekt, :git_agent, :transaction_start],
-      # [:gitrekt, :git_agent, :transaction_stop]
+        [:gitrekt, :git_agent, :execute],
+        [:gitrekt, :git_agent, :stream],
+        [:gitrekt, :git_agent, :transaction_start],
+        [:gitrekt, :git_agent, :transaction_stop]
       ],
       &GitGud.Telemetry.handle_event/4, %{}
     )

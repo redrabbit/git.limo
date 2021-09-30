@@ -4,13 +4,19 @@ defmodule GitGud.Telemetry do
   require Logger
 
   def handle_event([:gitrekt, :git_agent, :call], %{duration: duration}, %{op: op, args: args} = meta, _config) do
-    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
-    Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)}")
+    agent_node = :erlang.node(meta.pid)
+    if agent_node != Node.self() do
+      args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
+      Logger.debug("[Git Agent] #{op}(#{args}) executed in #{duration_inspect(duration)} on #{agent_node}")
+    end
   end
 
   def handle_event([:gitrekt, :git_agent, :call_stream], %{duration: duration}, %{op: op, args: args} = meta, _config) do
-    args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
-    Logger.debug("[Git Agent] #{op}(#{args}) streamed items in #{duration_inspect(duration)}")
+    agent_node = :erlang.node(meta.pid)
+    if agent_node != Node.self() do
+      args = Enum.join(map_git_agent_op_args(op, args) ++ map_git_agent_op_opts(op, meta), ", ")
+      Logger.debug("[Git Agent] #{op}(#{args}) streamed items in #{duration_inspect(duration)} from #{agent_node}")
+    end
   end
 
   def handle_event([:gitrekt, :git_agent, :execute], %{duration: duration}, %{op: op, args: args} = meta, _config) do
