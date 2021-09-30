@@ -36,6 +36,10 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   @impl true
+  def handle_params(_params, _uri, socket) when is_nil(socket.assigns.repo.pushed_at) do
+    {:noreply, assign_page_title(socket)}
+  end
+
   def handle_params(params, _uri, socket) do
     {
       :noreply,
