@@ -18,10 +18,20 @@
 
           <hr />
 
-          <p class="is-size-7">
-            <span class="icon has-text-danger"><i class="fa fa-heart"></i></span>
-            GitLimo is open source and available under the MIT License.
-          </p>
+
+          <article class="media">
+            <figure class="media-left">
+              <span class="icon has-text-danger"><i class="fa fa-heart"></i></span>
+            </figure>
+            <div class="media-content">
+              <div class="content">
+                <p class="is-size-7">
+                  <a class="has-text-dark" href="https://appsignal.com">AppSignal</a> is sponsoring this project with free error tracking, performance monitoring and metric dashboards.
+                  You can find out more at <a href="https://appsignal.com">appsignal.com</a>.
+                </p>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
       <div class="column vertical-center">
