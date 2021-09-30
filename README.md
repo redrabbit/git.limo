@@ -17,7 +17,7 @@ A Git source code management tool written in Elixir.
 * [x] Code reviews.
 * [ ] Continuous integration.
 
-See the [Getting Started](http://almightycouch.com/gitgud/docs/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud/docs).
+See the [Getting Started](http://almightycouch.com/gitgud/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud).
 
 ## Install dependencies
 
