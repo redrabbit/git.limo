@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitGud.SmartHTTPBackend — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitGud.SmartHTTPBackend.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitGud.SmartHTTPBackend <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/smart_http_backend.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p><a href="https://hexdocs.pm/plug/1.12.1/Plug.html"><code class="inline">Plug</code></a> providing support for Git server commands over HTTP.</p><p>This plug handles following Git commands:</p><ul><li><code class="inline">git-receive-pack</code> - corresponding server-side command to <code class="inline">git push</code>.</li><li><code class="inline">git-upload-pack</code> - corresponding server-side command to <code class="inline">git fetch</code>.</li></ul><h2 id="module-example" class="section-heading">
+  <a href="#module-example" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Example
+</h2>
+<p>Here is an example of <a href="GitGud.SmartHTTPBackend.html#content"><code class="inline">GitGud.SmartHTTPBackend</code></a> used in a <a href="https://hexdocs.pm/plug/1.12.1/Plug.Router.html"><code class="inline">Plug.Router</code></a> to handle Git server commands:</p><pre><code class="makeup elixir"><span class="kd">defmodule</span><span class="w"> </span><span class="nc">SmartHTTPBackendRouter</span><span class="w"> </span><span class="k" data-group-id="4080896933-1">do</span><span class="w">
+  </span><span class="kn">use</span><span class="w"> </span><span class="nc">Plug.Router</span><span class="w">
+
+  </span><span class="n">plug</span><span class="w"> </span><span class="ss">:match</span><span class="w">
+  </span><span class="n">plug</span><span class="w"> </span><span class="ss">:fetch_query_params</span><span class="w">
+  </span><span class="n">plug</span><span class="w"> </span><span class="ss">:dispatch</span><span class="w">
+
+  </span><span class="n">get</span><span class="w"> </span><span class="s">&quot;/:user_login/:repo_name/info/refs&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">to</span><span class="p">:</span><span class="w"> </span><span class="nc">GitGud.SmartHTTPBackend</span><span class="p">,</span><span class="w"> </span><span class="ss">init_opts</span><span class="p">:</span><span class="w"> </span><span class="ss">:discover</span><span class="w">
+  </span><span class="n">post</span><span class="w"> </span><span class="s">&quot;/:user_login/:repo_name/git-receive-pack&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">to</span><span class="p">:</span><span class="w"> </span><span class="nc">GitGud.SmartHTTPBackend</span><span class="p">,</span><span class="w"> </span><span class="ss">init_opts</span><span class="p">:</span><span class="w"> </span><span class="ss">:receive_pack</span><span class="w">
+  </span><span class="n">post</span><span class="w"> </span><span class="s">&quot;/:user_login/:repo_name/git-upload-pack&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">to</span><span class="p">:</span><span class="w"> </span><span class="nc">GitGud.SmartHTTPBackend</span><span class="p">,</span><span class="w"> </span><span class="ss">init_opts</span><span class="p">:</span><span class="w"> </span><span class="ss">:upload_pack</span><span class="w">
+</span><span class="k" data-group-id="4080896933-1">end</span></code></pre><p>Note that <code class="inline">user_login</code> and <code class="inline">repo_name</code> path parameters are mandatory.</p><p>To process Git commands over HTTP, simply start a Cowboy server as part of your supervision tree:</p><pre><code class="makeup elixir"><span class="n">children</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="1982891557-1">[</span><span class="w">
+  </span><span class="p" data-group-id="1982891557-2">{</span><span class="nc">Plug.Cowboy</span><span class="p">,</span><span class="w"> </span><span class="ss">scheme</span><span class="p">:</span><span class="w"> </span><span class="ss">:http</span><span class="p">,</span><span class="w"> </span><span class="ss">plug</span><span class="p">:</span><span class="w"> </span><span class="nc">SmartHTTPBackendRouter</span><span class="p" data-group-id="1982891557-2">}</span><span class="w">
+</span><span class="p" data-group-id="1982891557-1">]</span><span class="w">
+
+</span><span class="nc">Supervisor</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="1982891557-3">(</span><span class="n">children</span><span class="p">,</span><span class="w"> </span><span class="ss">strategy</span><span class="p">:</span><span class="w"> </span><span class="ss">:one_for_one</span><span class="p" data-group-id="1982891557-3">)</span></code></pre><h2 id="module-authentication" class="section-heading">
+  <a href="#module-authentication" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Authentication
+</h2>
+<p>A registered <a href="GitGud.User.html"><code class="inline">GitGud.User</code></a> can authenticate over HTTP via <em>Basic Authentication</em>.
+This is required to execute commands with granted permissions (such as pushing commits and cloning private repos).</p><p>See <a href="GitGud.Authorization.html"><code class="inline">GitGud.Authorization</code></a> for more details.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#discover/2">discover(conn, opts)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns all references available for the given Git repository.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#receive_pack/2">receive_pack(conn, opts)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Processes <code class="inline">git-receive-pack</code> requests.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#upload_pack/2">upload_pack(conn, opts)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Processes <code class="inline">git-upload-pack</code> requests.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="discover/2">
+
+  <div class="detail-header">
+    <a href="#discover/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">discover(conn, opts)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/smart_http_backend.ex#L68" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>discover(<a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+
+      </div>
+
+<p>Returns all references available for the given Git repository.</p>
+  </section>
+</section>
+<section class="detail" id="receive_pack/2">
+
+  <div class="detail-header">
+    <a href="#receive_pack/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">receive_pack(conn, opts)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/smart_http_backend.ex#L81" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>receive_pack(<a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+
+      </div>
+
+<p>Processes <code class="inline">git-receive-pack</code> requests.</p>
+  </section>
+</section>
+<section class="detail" id="upload_pack/2">
+
+  <div class="detail-header">
+    <a href="#upload_pack/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">upload_pack(conn, opts)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/smart_http_backend.ex#L95" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>upload_pack(<a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html#t:t/0">Plug.Conn.t</a>()</pre>
+
+      </div>
+
+<p>Processes <code class="inline">git-upload-pack</code> requests.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

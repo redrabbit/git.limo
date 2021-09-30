@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>API Reference — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/api-reference.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+  API Reference <small class="app-vsn">git.limo v0.3.8</small>
+</h1>
+
+  <section class="details-list">
+    <h2 id="modules" class="section-heading">
+  <a href="#modules" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Modules
+</h2>
+
+    <div class="summary">
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Account.html">GitGud.Account</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Account schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Authorization.html">GitGud.Authorization</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for authorization and resource loading.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.AuthorizationPolicies.html">GitGud.AuthorizationPolicies</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Protocol for implementing resource authorization policies.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Comment.html">GitGud.Comment</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Comment schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.CommentQuery.html">GitGud.CommentQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for comment related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.CommentRevision.html">GitGud.CommentRevision</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Comment revision schema for keeping track of comment updates.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.CommitLineReview.html">GitGud.CommitLineReview</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Git commit review schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.DB.html">GitGud.DB</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Single source of data, mediates between domain and data mapping layer.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.DBQueryable.html">GitGud.DBQueryable</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Behaviour for implementing generic queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Email.html">GitGud.Email</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Email schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.GPGKey.html">GitGud.GPGKey</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>GNU Privacy Guard (GPG) key schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.GPGKeyQuery.html">GitGud.GPGKeyQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for GPG key related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.GraphQL.Resolvers.html">GitGud.GraphQL.Resolvers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module providing resolution functions for GraphQL related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.GraphQL.Schema.html">GitGud.GraphQL.Schema</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>GraphQL schema definition.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.GraphQL.Types.html">GitGud.GraphQL.Types</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>GraphQL types for <a href="GitGud.GraphQL.Schema.html"><code class="inline">GitGud.GraphQL.Schema</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Issue.html">GitGud.Issue</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Issue schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.IssueLabel.html">GitGud.IssueLabel</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Issue label schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.IssueQuery.html">GitGud.IssueQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for issue related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Mailer.html">GitGud.Mailer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for composing and sending emails.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Maintainer.html">GitGud.Maintainer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Repository maintainer schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.OAuth2.GitHub.html">GitGud.OAuth2.GitHub</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>An <em>OAuth2.0</em> authentication strategy for GitHub.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.OAuth2.GitLab.html">GitGud.OAuth2.GitLab</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>An <em>OAuth2.0</em> authentication strategy for GitLab.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.OAuth2.Provider.html">GitGud.OAuth2.Provider</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>OAuth2.0 provider schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.ReleaseTasks.html">GitGud.ReleaseTasks</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for executing DB release tasks when run in production without Mix installed.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Repo.html">GitGud.Repo</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Repository schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.RepoPool.html">GitGud.RepoPool</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Dynamic pool of Git repository agent processes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.RepoQuery.html">GitGud.RepoQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for repository related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.RepoStorage.html">GitGud.RepoStorage</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for storing Git objects and meta objects.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.RepoSupervisor.html">GitGud.RepoSupervisor</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Supervisor for dealing with repository processes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.ReviewQuery.html">GitGud.ReviewQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for review related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.SSHKey.html">GitGud.SSHKey</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Secure Shell (SSH) authentication key schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.SSHServer.html">GitGud.SSHServer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Secure Shell (SSH) server providing support for Git server commands.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.SmartHTTPBackend.html">GitGud.SmartHTTPBackend</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p><a href="https://hexdocs.pm/plug/1.12.1/Plug.html"><code class="inline">Plug</code></a> providing support for Git server commands over HTTP.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.User.html">GitGud.User</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>User account schema and helper functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.UserQuery.html">GitGud.UserQuery</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for user related queries.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.html">GitGud.Web</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module providing helper function for controllers, views, channels and so on.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.AuthenticationLiveHelpers.html">GitGud.Web.AuthenticationLiveHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for authentication related tasks in live views.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.AuthenticationPlug.html">GitGud.Web.AuthenticationPlug</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p><a href="https://hexdocs.pm/plug/1.12.1/Plug.html"><code class="inline">Plug</code></a> providing support for multiple authentication methods.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.BlobHeaderLive.html">GitGud.Web.BlobHeaderLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering the latest Git commit of Git blob objects.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.BranchSelectContainerLive.html">GitGud.Web.BranchSelectContainerLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view container for <a href="GitGud.Web.BranchSelectLive.html"><code class="inline">GitGud.Web.BranchSelectLive</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.BranchSelectLive.html">GitGud.Web.BranchSelectLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering Git revisions drop-down lists.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.CodebaseController.html">GitGud.Web.CodebaseController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.Repo.html"><code class="inline">GitGud.Repo</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.CommentFormLive.html">GitGud.Web.CommentFormLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering comment forms.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.CommentLive.html">GitGud.Web.CommentLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering comments.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.CommitDiffLive.html">GitGud.Web.CommitDiffLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering diffs between Git commits.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.CommitLineReviewLive.html">GitGud.Web.CommitLineReviewLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering commit line reviews.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.DateTimeFormatter.html">GitGud.Web.DateTimeFormatter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for formatting <a href="https://hexdocs.pm/elixir/DateTime.html"><code class="inline">DateTime</code></a>, <a href="https://hexdocs.pm/elixir/Date.html"><code class="inline">Date</code></a> and <a href="https://hexdocs.pm/elixir/Time.html"><code class="inline">Time</code></a> values.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.EmailController.html">GitGud.Web.EmailController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.Email.html"><code class="inline">GitGud.Email</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Emoji.html">GitGud.Web.Emoji</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for rendering emojis.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Endpoint.html">GitGud.Web.Endpoint</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>HTTP and WebSocket endpoints.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.ErrorHelpers.html">GitGud.Web.ErrorHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for translating and building error messages.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.ErrorView.html">GitGud.Web.ErrorView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module providing error views for most common errors.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.FallbackController.html">GitGud.Web.FallbackController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Translates controller action results into valid <a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html"><code class="inline">Plug.Conn</code></a> responses.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.FormHelpers.html">GitGud.Web.FormHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for custom HTML input validations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.GPGKeyController.html">GitGud.Web.GPGKeyController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.GPGKey.html"><code class="inline">GitGud.GPGKey</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Gettext.html">GitGud.Web.Gettext</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module providing Internationalization with a gettext-based API.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.GlobalSearchLive.html">GitGud.Web.GlobalSearchLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering the global search in the top-level navigation bar.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Gravatar.html">GitGud.Web.Gravatar</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for rendering Gravatars.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueController.html">GitGud.Web.IssueController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.Issue.html"><code class="inline">GitGud.Issue</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueEventLive.html">GitGud.Web.IssueEventLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering issue events.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueFormLive.html">GitGud.Web.IssueFormLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering issue forms.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueLabelController.html">GitGud.Web.IssueLabelController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.IssueLabel.html"><code class="inline">GitGud.IssueLabel</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueLabelSelectLive.html">GitGud.Web.IssueLabelSelectLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live component responsible for rendering issue labels drop-down lists.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.IssueLive.html">GitGud.Web.IssueLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering issues.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.LandingPageController.html">GitGud.Web.LandingPageController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for the landing page.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.MaintainerController.html">GitGud.Web.MaintainerController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.MaintainerSearchFormLive.html">GitGud.Web.MaintainerSearchFormLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering forms to add repository maintainers.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Markdown.html">GitGud.Web.Markdown</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for rendering Markdown.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.NavigationHelpers.html">GitGud.Web.NavigationHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for routing and navigation.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.OAuth2Controller.html">GitGud.Web.OAuth2Controller</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for <em>OAuth2.0</em> authentication.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.PaginationHelpers.html">GitGud.Web.PaginationHelpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for list pagination.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.ReactComponents.html">GitGud.Web.ReactComponents</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Functions to make rendering React components.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.RepoController.html">GitGud.Web.RepoController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.SSHKey.html"><code class="inline">GitGud.SSHKey</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.Router.Helpers.html">GitGud.Web.Router.Helpers</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module with named helpers generated from GitGud.Web.Router.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.SSHKeyController.html">GitGud.Web.SSHKeyController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.SSHKey.html"><code class="inline">GitGud.SSHKey</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.SessionController.html">GitGud.Web.SessionController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for user authentication.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.TrailingFormatPlug.html">GitGud.Web.TrailingFormatPlug</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p><a href="https://hexdocs.pm/plug/1.12.1/Plug.html"><code class="inline">Plug</code></a> providing support for routes with trailing format.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.TreeBrowserLive.html">GitGud.Web.TreeBrowserLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Live view responsible for rendering Git tree objects.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.UserController.html">GitGud.Web.UserController</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module responsible for CRUD actions on <a href="GitGud.User.html"><code class="inline">GitGud.User</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitGud.Web.XForwardedForPlug.html">GitGud.Web.XForwardedForPlug</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p><a href="https://hexdocs.pm/plug/1.12.1/Plug.html"><code class="inline">Plug</code></a> providing support for <code class="inline">X-Forwared-For</code> header.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.Cache.html">GitRekt.Cache</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Behaviour for caching Git operations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.Git.html">GitRekt.Git</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Erlang NIF that exposes a subset of <em>libgit2</em>'s library functions.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitAgent.html">GitRekt.GitAgent</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>High-level API for running Git commands on a repository.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitBlob.html">GitRekt.GitBlob</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git blob.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitCommit.html">GitRekt.GitCommit</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git commit.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitDiff.html">GitRekt.GitDiff</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git diff.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitIndex.html">GitRekt.GitIndex</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git index.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitIndexEntry.html">GitRekt.GitIndexEntry</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git index entry.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitOdb.html">GitRekt.GitOdb</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git ODB.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitRef.html">GitRekt.GitRef</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git reference.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitRepo.html">GitRekt.GitRepo</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Protocol for implementing access to Git repositories.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitTag.html">GitRekt.GitTag</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git tag.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitTree.html">GitRekt.GitTree</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git tree.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitTreeEntry.html">GitRekt.GitTreeEntry</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git tree entry.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.GitWritePack.html">GitRekt.GitWritePack</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Represents a Git writepack.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.Packfile.html">GitRekt.Packfile</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for reading and writting Git pack files.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.WireProtocol.html">GitRekt.WireProtocol</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Conveniences for Git transport protocol and server side commands.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.WireProtocol.ReceivePack.html">GitRekt.WireProtocol.ReceivePack</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module implementing the <code class="inline">git-receive-pack</code> command.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="GitRekt.WireProtocol.UploadPack.html">GitRekt.WireProtocol.UploadPack</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Module implementing the <code class="inline">git-upload-pack</code> command.</p></div>
+
+</div>
+
+    </div>
+  </section>
+
+
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="getting-started.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Getting Started
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

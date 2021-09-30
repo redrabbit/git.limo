@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>Getting Started — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/getting-started.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>Getting Started</h1><p>This guide is an introduction to <a href="https://github.com/almightycouch/gitgud">git.limo</a>, a Git repository web service written in Elixir.</p><p>This umbrella project is split into three applications:</p><ul><li><code class="inline">:gitrekt</code> - Low-level Git functionalities written in C available as NIFs (see <a href="GitRekt.Git.html"><code class="inline">GitRekt.Git</code></a>). It also provides native support for Git <a href="">transfer protocols</a> and <a href="">PACK format</a>.</li><li><code class="inline">:gitgud</code> - Defines database schemas such as <a href="GitGud.User.html"><code class="inline">GitGud.User</code></a> and <a href="GitGud.Repo.html"><code class="inline">GitGud.Repo</code></a> and provides building-blocks for authentication, authorization, Git SSH and HTTP <a href="">transport protocols</a>, etc.</li><li><code class="inline">:gitgud_web</code> - Web-frontend similar to the one offered by <a href="https://github.com">GitHub</a> providing a user-friendly management tool for Git repositories. It also features a <a href="">GraphQL API</a>.</li></ul><p>In the following sections, we will provide an overview of those components and how they interact with each other. Feel free to access their respective module documentation for more specific examples, options and configuration.</p>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="api-reference.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+API Reference
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

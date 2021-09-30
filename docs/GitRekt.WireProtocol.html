@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitRekt.WireProtocol — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitRekt.WireProtocol.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitRekt.WireProtocol <small>behaviour</small> <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>Conveniences for Git transport protocol and server side commands.</p><p><em>This module implements version 2 of <a href="https://git-scm.com/docs/protocol-v2">Git's wire protocol</a>.</em></p><p>It functions as a very basic finite-state machine by processing incoming client requests
+and forwarding them to the underlying service implementation (respectively <code class="inline">receive-pack</code> and <code class="inline">upload-pack</code>).</p><p>The state machine is initialized by calling <a href="#new/2"><code class="inline">new/2</code></a> with the Git repository and command to execute.
+By passing incoming data to <a href="#next/2"><code class="inline">next/2</code></a>, the underlying service transit to the next state. Once the client and the server
+are done with exchanging Git objects, the service will reach the <code class="inline">:done</code> state.</p><p>When processing a entire (not chunked), one can use <a href="#run/2"><code class="inline">run/2</code></a> to execute all the steps in a single call.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-callbacks summary">
+    <h2>
+      <a href="#callbacks">Callbacks</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:next/2">next(struct, list)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback used to transist a service to the next step.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:skip/1">skip(struct)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback used to transist a service to the next step without performing any action.</p></div>
+
+</div>
+
+  </div>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#decode/1">decode(pkt)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a stream of decoded <em>PKT-LINE</em>s for the given <code class="inline">pkt</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#done?/1">done?(service)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> if <code class="inline">service</code> is done; elsewise returns <code class="inline">false</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#encode/1">encode(lines)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an <em>PKT-LINE</em> encoded representation of the given <code class="inline">lines</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#new/3">new(agent, executable, init_values \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a new service object for the given <code class="inline">repo</code> and <code class="inline">executable</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#next/2">next(service, data \\ :discovery)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Runs the given <code class="inline">service</code> to the next step.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pkt_line/1">pkt_line(data \\ :flush)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the given <code class="inline">data</code> formatted as <em>PKT-LINE</em></p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reference_discovery/3">reference_discovery(agent, service, extra_capabilities \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a stream describing each ref and it current value.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#run/3">run(service, data \\ :discovery, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Runs all the steps of the given <code class="inline">service</code> at once.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#skip/1">skip(service)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Sets the given <code class="inline">service</code> to the next logical step without performing any action.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="callbacks" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#callbacks">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Callbacks
+          </h1>
+          <div class="callbacks-list">
+<section class="detail" id="c:next/2">
+
+  <div class="detail-header">
+    <a href="#c:next/2" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">next(struct, list)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L27" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>next(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]) :: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()]}</pre>
+
+      </div>
+
+<p>Callback used to transist a service to the next step.</p>
+  </section>
+</section>
+<section class="detail" id="c:skip/1">
+
+  <div class="detail-header">
+    <a href="#c:skip/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">skip(struct)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L32" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>skip(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()</pre>
+
+      </div>
+
+<p>Callback used to transist a service to the next step without performing any action.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="decode/1">
+
+  <div class="detail-header">
+    <a href="#decode/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">decode(pkt)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L46" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>decode(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()</pre>
+
+      </div>
+
+<p>Returns a stream of decoded <em>PKT-LINE</em>s for the given <code class="inline">pkt</code>.</p>
+  </section>
+</section>
+<section class="detail" id="done?/1">
+
+  <div class="detail-header">
+    <a href="#done?/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">done?(service)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L96" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>done?(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Returns <code class="inline">true</code> if <code class="inline">service</code> is done; elsewise returns <code class="inline">false</code>.</p>
+  </section>
+</section>
+<section class="detail" id="encode/1">
+
+  <div class="detail-header">
+    <a href="#encode/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">encode(lines)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>encode(<a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iolist</a>()</pre>
+
+      </div>
+
+<p>Returns an <em>PKT-LINE</em> encoded representation of the given <code class="inline">lines</code>.</p>
+  </section>
+</section>
+<section class="detail" id="new/3">
+
+    <span id="new/2"></span>
+
+  <div class="detail-header">
+    <a href="#new/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">new(agent, executable, init_values \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L54" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>new(<a href="GitRekt.GitAgent.html#t:agent/0">GitRekt.GitAgent.agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()</pre>
+
+      </div>
+
+<p>Returns a new service object for the given <code class="inline">repo</code> and <code class="inline">executable</code>.</p>
+  </section>
+</section>
+<section class="detail" id="next/2">
+
+    <span id="next/1"></span>
+
+  <div class="detail-header">
+    <a href="#next/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">next(service, data \\ :discovery)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L62" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>next(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :discovery) :: {:cont | :halt, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iolist</a>()}</pre>
+
+      </div>
+
+<p>Runs the given <code class="inline">service</code> to the next step.</p>
+  </section>
+</section>
+<section class="detail" id="pkt_line/1">
+
+    <span id="pkt_line/0"></span>
+
+  <div class="detail-header">
+    <a href="#pkt_line/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pkt_line(data \\ :flush)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L115" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pkt_line(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :flush) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()</pre>
+
+      </div>
+
+<p>Returns the given <code class="inline">data</code> formatted as <em>PKT-LINE</em></p>
+  </section>
+</section>
+<section class="detail" id="reference_discovery/3">
+
+    <span id="reference_discovery/2"></span>
+
+  <div class="detail-header">
+    <a href="#reference_discovery/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reference_discovery(agent, service, extra_capabilities \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L102" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>reference_discovery(<a href="GitRekt.GitAgent.html#t:agent/0">GitRekt.GitAgent.agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()]) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iolist</a>()</pre>
+
+      </div>
+
+<p>Returns a stream describing each ref and it current value.</p>
+  </section>
+</section>
+<section class="detail" id="run/3">
+
+    <span id="run/1"></span>
+
+    <span id="run/2"></span>
+
+  <div class="detail-header">
+    <a href="#run/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">run(service, data \\ :discovery, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L82" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>run(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | :discovery, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iolist</a>()}</pre>
+
+      </div>
+
+<p>Runs all the steps of the given <code class="inline">service</code> at once.</p>
+  </section>
+</section>
+<section class="detail" id="skip/1">
+
+  <div class="detail-header">
+    <a href="#skip/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">skip(service)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/wire_protocol.ex#L90" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>skip(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>()</pre>
+
+      </div>
+
+<p>Sets the given <code class="inline">service</code> to the next logical step without performing any action.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

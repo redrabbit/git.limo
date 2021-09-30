@@ -1,0 +1,2538 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitRekt.GitAgent — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitRekt.GitAgent.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitRekt.GitAgent <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>High-level API for running Git commands on a repository.</p><p>This module provides an API to manipulate Git repositories. In contrast to <a href="GitRekt.Git.html"><code class="inline">GitRekt.Git</code></a>, it offers
+an abstraction for serializing Git commands via message passing. By doing so it allows multiple processes
+to manipulate a single repository simultaneously (see “Thread safety” in <a href="GitRekt.Git.html"><code class="inline">GitRekt.Git</code></a> module).</p><p>At it core <a href="GitRekt.GitAgent.html#content"><code class="inline">GitRekt.GitAgent</code></a> implements <a href="https://hexdocs.pm/elixir/GenServer.html"><code class="inline">GenServer</code></a>. Therefore it makes it easy to fit into a supervision
+tree and furthermore, in a distributed environment.</p><p>An other major benefit is support for caching command results. In their nature Git objects are immutable;
+that is, once they have been created and stored in the data store, they cannot be modified. This allows for
+very naive caching strategy implementations without having to deal with cache invalidation.</p><h2 id="module-example" class="section-heading">
+  <a href="#module-example" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Example
+</h2>
+<p>Let's start by rewriting the example exposed in the <a href="GitRekt.Git.html"><code class="inline">GitRekt.Git</code></a> module:</p><pre><code class="makeup elixir"><span class="kn">alias</span><span class="w"> </span><span class="nc">GitRekt.GitAgent</span><span class="w">
+
+</span><span class="c1"># load repository</span><span class="w">
+</span><span class="p" data-group-id="0022096784-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">agent</span><span class="p" data-group-id="0022096784-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">start_link</span><span class="p" data-group-id="0022096784-2">(</span><span class="s">&quot;tmp/my-repo.git&quot;</span><span class="p" data-group-id="0022096784-2">)</span><span class="w">
+
+</span><span class="c1"># fetch master branch</span><span class="w">
+</span><span class="p" data-group-id="0022096784-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">branch</span><span class="p" data-group-id="0022096784-3">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">branch</span><span class="p" data-group-id="0022096784-4">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;master&quot;</span><span class="p" data-group-id="0022096784-4">)</span><span class="w">
+
+</span><span class="c1"># fetch commit pointed by master</span><span class="w">
+</span><span class="p" data-group-id="0022096784-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="0022096784-5">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">peel</span><span class="p" data-group-id="0022096784-6">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">branch</span><span class="p" data-group-id="0022096784-6">)</span><span class="w">
+
+</span><span class="c1"># fetch commit author &amp; message</span><span class="w">
+</span><span class="p" data-group-id="0022096784-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="0022096784-7">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_author</span><span class="p" data-group-id="0022096784-8">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="0022096784-8">)</span><span class="w">
+</span><span class="p" data-group-id="0022096784-9">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p" data-group-id="0022096784-9">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_message</span><span class="p" data-group-id="0022096784-10">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="0022096784-10">)</span><span class="w">
+
+</span><span class="nc">IO</span><span class="o">.</span><span class="n">puts</span><span class="w"> </span><span class="s">&quot;Last commit by </span><span class="si" data-group-id="0022096784-11">#{</span><span class="n">author</span><span class="o">.</span><span class="n">name</span><span class="si" data-group-id="0022096784-11">}</span><span class="s"> &lt;</span><span class="si" data-group-id="0022096784-12">#{</span><span class="n">author</span><span class="o">.</span><span class="n">email</span><span class="si" data-group-id="0022096784-12">}</span><span class="s">&gt;:&quot;</span><span class="w">
+</span><span class="nc">IO</span><span class="o">.</span><span class="n">puts</span><span class="w"> </span><span class="n">message</span></code></pre><p>This look very similar to the original example altought the API slightly differs.</p><p>You might have noticed that the first argument of each Git function is <code class="inline">agent</code>. In our example the agent is
+a PID referencing a dedicated process started with <a href="#start_link/1"><code class="inline">start_link/1</code></a>.</p><p>Note that replacing <a href="#start_link/1"><code class="inline">start_link/1</code></a> with <a href="GitRekt.Git.html#repository_open/1"><code class="inline">GitRekt.Git.repository_open/1</code></a> would print the exact same output.
+This works because <a href="#t:agent/0"><code class="inline">agent/0</code></a> can be either a process id (PID) or a <a href="GitRekt.Git.html#t:repo/0"><code class="inline">GitRekt.Git.repo/0</code></a>.</p><h2 id="module-transactions" class="section-heading">
+  <a href="#module-transactions" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Transactions
+</h2>
+<p>You can execute a serie of commands inside a transaction.</p><p>In the following example, we use <a href="#transaction/2"><code class="inline">transaction/2</code></a> to retrieve all informations for a given commit:</p><pre><code class="makeup elixir"><span class="nc">GitAgent</span><span class="o">.</span><span class="n">transaction</span><span class="p" data-group-id="1927255616-1">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="1927255616-2">fn</span><span class="w"> </span><span class="n">agent</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+  </span><span class="k">with</span><span class="w"> </span><span class="p" data-group-id="1927255616-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="1927255616-3">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_author</span><span class="p" data-group-id="1927255616-4">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-4">)</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="1927255616-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">committer</span><span class="p" data-group-id="1927255616-5">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_committer</span><span class="p" data-group-id="1927255616-6">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-6">)</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="1927255616-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p" data-group-id="1927255616-7">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_message</span><span class="p" data-group-id="1927255616-8">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-8">)</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="1927255616-9">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">parents</span><span class="p" data-group-id="1927255616-9">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_parents</span><span class="p" data-group-id="1927255616-10">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-10">)</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="1927255616-11">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">timestamp</span><span class="p" data-group-id="1927255616-11">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_timestamp</span><span class="p" data-group-id="1927255616-12">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-12">)</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="1927255616-13">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">gpg_sig</span><span class="p" data-group-id="1927255616-13">}</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">commit_gpg_signature</span><span class="p" data-group-id="1927255616-14">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="1927255616-14">)</span><span class="w"> </span><span class="k" data-group-id="1927255616-15">do</span><span class="w">
+    </span><span class="p" data-group-id="1927255616-16">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1927255616-17">%{</span><span class="w">
+      </span><span class="ss">oid</span><span class="p">:</span><span class="w"> </span><span class="n">commit</span><span class="o">.</span><span class="n">oid</span><span class="p">,</span><span class="w">
+      </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p">,</span><span class="w">
+      </span><span class="ss">committer</span><span class="p">:</span><span class="w"> </span><span class="n">committer</span><span class="p">,</span><span class="w">
+      </span><span class="ss">message</span><span class="p">:</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w">
+      </span><span class="ss">parents</span><span class="p">:</span><span class="w"> </span><span class="nc">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p" data-group-id="1927255616-18">(</span><span class="n">parents</span><span class="p" data-group-id="1927255616-18">)</span><span class="p">,</span><span class="w">
+      </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="n">timestamp</span><span class="p">,</span><span class="w">
+      </span><span class="ss">gpg_sig</span><span class="p">:</span><span class="w"> </span><span class="n">gpg_sig</span><span class="w">
+    </span><span class="p" data-group-id="1927255616-17">}</span><span class="p" data-group-id="1927255616-16">}</span><span class="w">
+  </span><span class="k" data-group-id="1927255616-15">end</span><span class="w">
+</span><span class="k" data-group-id="1927255616-2">end</span><span class="p" data-group-id="1927255616-1">)</span></code></pre><p>Transactions provide a simple entry point for implementing more complex commands. The function is
+executed by the agent in a single request; avoiding the costs of making six consecutive <a href="https://hexdocs.pm/elixir/GenServer.html#call/3"><code class="inline">GenServer.call/3</code></a>.</p><p>You can also use transactions to cache the result of a serie of commands. Let's wrap our previous example
+in a function and give the transaction an unique identifier.</p><pre><code class="makeup elixir"><span class="kd">def</span><span class="w"> </span><span class="nf">commit_info</span><span class="p" data-group-id="8729562868-1">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="p" data-group-id="8729562868-1">)</span><span class="w"> </span><span class="k" data-group-id="8729562868-2">do</span><span class="w">
+  </span><span class="c1"># identifier: {:commit_info, oid}</span><span class="w">
+  </span><span class="nc">GitAgent</span><span class="o">.</span><span class="n">transaction</span><span class="p" data-group-id="8729562868-3">(</span><span class="n">agent</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8729562868-4">{</span><span class="ss">:commit_info</span><span class="p">,</span><span class="w"> </span><span class="n">commit</span><span class="o">.</span><span class="n">oid</span><span class="p" data-group-id="8729562868-4">}</span><span class="p">,</span><span class="w"> </span><span class="k" data-group-id="8729562868-5">fn</span><span class="w"> </span><span class="n">agent</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">...</span><span class="w"> </span><span class="k" data-group-id="8729562868-5">end</span><span class="p" data-group-id="8729562868-3">)</span><span class="w">
+</span><span class="k" data-group-id="8729562868-2">end</span></code></pre><p>By using a unique identifier, we tell <a href="GitRekt.GitAgent.html#content"><code class="inline">GitRekt.GitAgent</code></a> that the result of our function should be cached.</p><p>Here's the log output for two consecutive <code class="inline">commit_info/2</code> calls:</p><pre><code class="log">[debug] [Git Agent] transaction(:commit_info, &quot;b662d32&quot;) executed in 361 µs
+[debug] [Git Agent] &gt; commit_author(&lt;GitCommit:b662d32&gt;) executed in 6 µs
+[debug] [Git Agent] &gt; commit_committer(&lt;GitCommit:b662d32&gt;) executed in 5 µs
+[debug] [Git Agent] &gt; commit_message(&lt;GitCommit:b662d32&gt;) executed in 1 µs
+[debug] [Git Agent] &gt; commit_parents(&lt;GitCommit:b662d32&gt;) executed in 4 µs
+[debug] [Git Agent] &gt; commit_timestamp(&lt;GitCommit:b662d32&gt;) executed in 11 µs
+[debug] [Git Agent] &gt; commit_gpg_signature(&lt;GitCommit:b662d32&gt;) executed in 6 µs
+[debug] [Git Agent] transaction(:commit_info, &quot;b662d32&quot;) executed in ⚡ 3 µs</code></pre><p>We can observe that the first call executes the different commands one by one and cache the result while
+the second one fetches the result directly from the cache without having to actually run the transaction.</p><p>Note that <a href="#transaction/3"><code class="inline">transaction/3</code></a> can be called recursively and still benefit from caching.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:agent/0">agent()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:git_object/0">git_object()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:git_revision/0">git_revision()</a>
+
+  </div>
+
+</div>
+
+  </div>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#blob_content/3">blob_content(agent, blob, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the content of the given <code class="inline">blob</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#blob_size/3">blob_size(agent, blob, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the size in byte of the given <code class="inline">blob</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#branch/3">branch(agent, name, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git branch with the given <code class="inline">name</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#branches/2">branches(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns all Git branches.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#child_spec/1">child_spec(init_arg)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a specification to start this module under a supervisor.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_author/3">commit_author(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the author of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_committer/3">commit_committer(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the committer of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_create/7">commit_create(agent, author, committer, message, tree_oid, parents_oids, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a commit with the given <code class="inline">tree_oid</code> and <code class="inline">parents_oid</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_gpg_signature/3">commit_gpg_signature(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the GPG signature of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_message/3">commit_message(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the message of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_parents/3">commit_parents(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the parent of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#commit_timestamp/3">commit_timestamp(agent, commit, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the timestamp of the given <code class="inline">commit</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#diff/4">diff(agent, obj1, obj2, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git diff of <code class="inline">obj1</code> and <code class="inline">obj2</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#diff_deltas/3">diff_deltas(agent, diff, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the deltas of the given <code class="inline">diff</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#diff_format/3">diff_format(agent, diff, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a binary formated representation of the given <code class="inline">diff</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#diff_stats/3">diff_stats(agent, diff, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the stats of the given <code class="inline">diff</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#empty?/2">empty?(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> if the repository is empty; otherwise returns <code class="inline">false</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#graph_ahead_behind/4">graph_ahead_behind(agent, local, upstream, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the number of unique commits between two commit objects.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#head/2">head(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git reference for <code class="inline">HEAD</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#history/3">history(agent, revision, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git commit history of the given <code class="inline">revision</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index/2">index(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git index of the repository.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_add/4">index_add(agent, index, index_entry, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Adds <code class="inline">index_entry</code> to the gieven <code class="inline">index</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_add/7">index_add(agent, index, oid, path, file_size, mode, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Adds an index entry to the given <code class="inline">index</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_read_tree/4">index_read_tree(agent, index, tree, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Reads the given <code class="inline">tree</code> into the given <code class="inline">index</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_remove/4">index_remove(agent, index, path, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Removes an index entry from the given <code class="inline">index</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_remove_dir/4">index_remove_dir(agent, index, path, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Remove all entries from the given <code class="inline">index</code> under a given directory <code class="inline">path</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#index_write_tree/3">index_write_tree(agent, index, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Writes the given <code class="inline">index</code> as a tree.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#object/3">object(agent, oid, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git object with the given <code class="inline">oid</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb/2">odb(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the ODB.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_object_exists?/4">odb_object_exists?(agent, odb, oid, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> if the given <code class="inline">oid</code> exists in <code class="inline">odb</code>; elsewise returns <code class="inline">false</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_read/4">odb_read(agent, odb, oid, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Return the raw data of the <code class="inline">odb</code> object with the given <code class="inline">oid</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_write/5">odb_write(agent, odb, data, type, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Writes the given <code class="inline">data</code> into the <code class="inline">odb</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_writepack/2">odb_writepack(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an ODB writepack.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_writepack_append/5">odb_writepack_append(agent, writepack, data, progress, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Appends <code class="inline">data</code> to the given <code class="inline">writepack</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#odb_writepack_commit/4">odb_writepack_commit(agent, writepack, progress, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Commits the given <code class="inline">writepack</code> to the ODB.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pack_create/3">pack_create(agent, oids, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a Git PACK representation of the given <code class="inline">oids</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#peel/3">peel(agent, obj, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Peels the given <code class="inline">obj</code> until a Git object of the specified type is met.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reference/3">reference(agent, name, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git reference with the given <code class="inline">name</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reference_create/5">reference_create(agent, name, type, target, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a reference with the given <code class="inline">name</code> and <code class="inline">target</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reference_delete/3">reference_delete(agent, name, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes a reference with the given <code class="inline">name</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#references/2">references(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns all Git references matching the given <code class="inline">glob</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#revision/3">revision(agent, spec, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git object matching the given <code class="inline">spec</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#start_link/2">start_link(path, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Starts a Git agent linked to the current process for the repository at the given <code class="inline">path</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tag/3">tag(agent, name, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tag with the given <code class="inline">name</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tag_author/3">tag_author(agent, tag, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tag author of the given <code class="inline">tag</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tag_message/3">tag_message(agent, tag, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tag message of the given <code class="inline">tag</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tags/2">tags(agent, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns all Git tags.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#transaction/4">transaction(agent, name \\ nil, cb, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Executes the given <code class="inline">cb</code> inside a transaction.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tree/3">tree(agent, revision, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tree of the given <code class="inline">revision</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tree_entries/3">tree_entries(agent, revision, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tree entries of the given <code class="inline">tree</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tree_entry_by_id/4">tree_entry_by_id(agent, revision, oid, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tree entry for the given <code class="inline">revision</code> and <code class="inline">oid</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#tree_entry_by_path/4">tree_entry_by_path(agent, revision, path, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the Git tree entry for the given <code class="inline">revision</code> and <code class="inline">path</code>.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Types
+          </h1>
+          <div class="types-list">
+<section class="detail" id="t:agent/0">
+
+  <div class="detail-header">
+    <a href="#t:agent/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">agent()</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L129" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>agent() :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pid</a>() | <a href="GitRekt.Git.html#t:repo/0">GitRekt.Git.repo</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:git_object/0">
+
+  <div class="detail-header">
+    <a href="#t:git_object/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">git_object()</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L131" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>git_object() ::
+  <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()
+  | <a href="GitRekt.GitBlob.html#t:t/0">GitRekt.GitBlob.t</a>()
+  | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>()
+  | <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:git_revision/0">
+
+  <div class="detail-header">
+    <a href="#t:git_revision/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">git_revision()</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L132" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>git_revision() ::
+  <a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>() | <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>() | <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="blob_content/3">
+
+    <span id="blob_content/2"></span>
+
+  <div class="detail-header">
+    <a href="#blob_content/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">blob_content(agent, blob, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L375" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>blob_content(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitBlob.html#t:t/0">GitRekt.GitBlob.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the content of the given <code class="inline">blob</code>.</p>
+  </section>
+</section>
+<section class="detail" id="blob_size/3">
+
+    <span id="blob_size/2"></span>
+
+  <div class="detail-header">
+    <a href="#blob_size/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">blob_size(agent, blob, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L381" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>blob_size(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitBlob.html#t:t/0">GitRekt.GitBlob.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the size in byte of the given <code class="inline">blob</code>.</p>
+  </section>
+</section>
+<section class="detail" id="branch/3">
+
+    <span id="branch/2"></span>
+
+  <div class="detail-header">
+    <a href="#branch/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">branch(agent, name, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L223" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>branch(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>() | {<a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git branch with the given <code class="inline">name</code>.</p>
+  </section>
+</section>
+<section class="detail" id="branches/2">
+
+    <span id="branches/1"></span>
+
+  <div class="detail-header">
+    <a href="#branches/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">branches(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L211" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>branches(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns all Git branches.</p>
+  </section>
+</section>
+<section class="detail" id="child_spec/1">
+
+  <div class="detail-header">
+    <a href="#child_spec/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">child_spec(init_arg)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L108" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a specification to start this module under a supervisor.</p><p>See <a href="https://hexdocs.pm/elixir/Supervisor.html"><code class="inline">Supervisor</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_author/3">
+
+    <span id="commit_author/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_author/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_author(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L327" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_author(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the author of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_committer/3">
+
+    <span id="commit_committer/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_committer/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_committer(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L333" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_committer(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the committer of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_create/7">
+
+    <span id="commit_create/6"></span>
+
+  <div class="detail-header">
+    <a href="#commit_create/7" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_create(agent, author, committer, message, tree_oid, parents_oids, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L366" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_create(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(),
+  [<a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()],
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Creates a commit with the given <code class="inline">tree_oid</code> and <code class="inline">parents_oid</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_gpg_signature/3">
+
+    <span id="commit_gpg_signature/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_gpg_signature/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_gpg_signature(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L360" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_gpg_signature(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the GPG signature of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_message/3">
+
+    <span id="commit_message/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_message/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_message(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L339" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_message(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the message of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_parents/3">
+
+    <span id="commit_parents/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_parents/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_parents(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L351" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_parents(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the parent of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="commit_timestamp/3">
+
+    <span id="commit_timestamp/2"></span>
+
+  <div class="detail-header">
+    <a href="#commit_timestamp/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">commit_timestamp(agent, commit, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L345" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>commit_timestamp(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/DateTime.html#t:t/0">DateTime.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the timestamp of the given <code class="inline">commit</code>.</p>
+  </section>
+</section>
+<section class="detail" id="diff/4">
+
+    <span id="diff/3"></span>
+
+  <div class="detail-header">
+    <a href="#diff/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">diff(agent, obj1, obj2, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L470" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>diff(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(),
+  <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="GitRekt.GitDiff.html#t:t/0">GitRekt.GitDiff.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git diff of <code class="inline">obj1</code> and <code class="inline">obj2</code>.</p>
+  </section>
+</section>
+<section class="detail" id="diff_deltas/3">
+
+    <span id="diff_deltas/2"></span>
+
+  <div class="detail-header">
+    <a href="#diff_deltas/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">diff_deltas(agent, diff, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L476" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>diff_deltas(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitDiff.html#t:t/0">GitRekt.GitDiff.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the deltas of the given <code class="inline">diff</code>.</p>
+  </section>
+</section>
+<section class="detail" id="diff_format/3">
+
+    <span id="diff_format/2"></span>
+
+  <div class="detail-header">
+    <a href="#diff_format/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">diff_format(agent, diff, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L482" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>diff_format(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitDiff.html#t:t/0">GitRekt.GitDiff.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns a binary formated representation of the given <code class="inline">diff</code>.</p>
+  </section>
+</section>
+<section class="detail" id="diff_stats/3">
+
+    <span id="diff_stats/2"></span>
+
+  <div class="detail-header">
+    <a href="#diff_stats/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">diff_stats(agent, diff, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L491" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>diff_stats(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitDiff.html#t:t/0">GitRekt.GitDiff.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the stats of the given <code class="inline">diff</code>.</p>
+  </section>
+</section>
+<section class="detail" id="empty?/2">
+
+    <span id="empty?/1"></span>
+
+  <div class="detail-header">
+    <a href="#empty?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">empty?(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L157" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>empty?(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns <code class="inline">true</code> if the repository is empty; otherwise returns <code class="inline">false</code>.</p>
+  </section>
+</section>
+<section class="detail" id="graph_ahead_behind/4">
+
+    <span id="graph_ahead_behind/3"></span>
+
+  <div class="detail-header">
+    <a href="#graph_ahead_behind/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">graph_ahead_behind(agent, local, upstream, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L309" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>graph_ahead_behind(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()}} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the number of unique commits between two commit objects.</p>
+  </section>
+</section>
+<section class="detail" id="head/2">
+
+    <span id="head/1"></span>
+
+  <div class="detail-header">
+    <a href="#head/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">head(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L205" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>head(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git reference for <code class="inline">HEAD</code>.</p>
+  </section>
+</section>
+<section class="detail" id="history/3">
+
+    <span id="history/2"></span>
+
+  <div class="detail-header">
+    <a href="#history/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">history(agent, revision, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L497" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>history(<a href="#t:agent/0">agent</a>(), <a href="#t:git_revision/0">git_revision</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git commit history of the given <code class="inline">revision</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index/2">
+
+    <span id="index/1"></span>
+
+  <div class="detail-header">
+    <a href="#index/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L428" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git index of the repository.</p>
+  </section>
+</section>
+<section class="detail" id="index_add/4">
+
+    <span id="index_add/3"></span>
+
+  <div class="detail-header">
+    <a href="#index_add/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_add(agent, index, index_entry, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L434" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_add(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(), <a href="GitRekt.GitIndexEntry.html#t:t/0">GitRekt.GitIndexEntry.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Adds <code class="inline">index_entry</code> to the gieven <code class="inline">index</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index_add/7">
+
+    <span id="index_add/6"></span>
+
+  <div class="detail-header">
+    <a href="#index_add/7" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_add(agent, index, oid, path, file_size, mode, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L440" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_add(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(),
+  <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(),
+  <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Adds an index entry to the given <code class="inline">index</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index_read_tree/4">
+
+    <span id="index_read_tree/3"></span>
+
+  <div class="detail-header">
+    <a href="#index_read_tree/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_read_tree(agent, index, tree, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L458" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_read_tree(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(), <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Reads the given <code class="inline">tree</code> into the given <code class="inline">index</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index_remove/4">
+
+    <span id="index_remove/3"></span>
+
+  <div class="detail-header">
+    <a href="#index_remove/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_remove(agent, index, path, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L446" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_remove(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(), <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Removes an index entry from the given <code class="inline">index</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index_remove_dir/4">
+
+    <span id="index_remove_dir/3"></span>
+
+  <div class="detail-header">
+    <a href="#index_remove_dir/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_remove_dir(agent, index, path, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L452" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_remove_dir(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(), <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Remove all entries from the given <code class="inline">index</code> under a given directory <code class="inline">path</code>.</p>
+  </section>
+</section>
+<section class="detail" id="index_write_tree/3">
+
+    <span id="index_write_tree/2"></span>
+
+  <div class="detail-header">
+    <a href="#index_write_tree/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">index_write_tree(agent, index, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L464" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>index_write_tree(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitIndex.html#t:t/0">GitRekt.GitIndex.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Writes the given <code class="inline">index</code> as a tree.</p>
+  </section>
+</section>
+<section class="detail" id="object/3">
+
+    <span id="object/2"></span>
+
+  <div class="detail-header">
+    <a href="#object/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">object(agent, oid, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L315" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>object(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:git_object/0">git_object</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git object with the given <code class="inline">oid</code>.</p>
+  </section>
+</section>
+<section class="detail" id="odb/2">
+
+    <span id="odb/1"></span>
+
+  <div class="detail-header">
+    <a href="#odb/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L163" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="GitRekt.GitOdb.html#t:t/0">GitRekt.GitOdb.t</a>()}</pre>
+
+      </div>
+
+<p>Returns the ODB.</p>
+  </section>
+</section>
+<section class="detail" id="odb_object_exists?/4">
+
+    <span id="odb_object_exists?/3"></span>
+
+  <div class="detail-header">
+    <a href="#odb_object_exists?/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_object_exists?(agent, odb, oid, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L181" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_object_exists?(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitOdb.html#t:t/0">GitRekt.GitOdb.t</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns <code class="inline">true</code> if the given <code class="inline">oid</code> exists in <code class="inline">odb</code>; elsewise returns <code class="inline">false</code>.</p>
+  </section>
+</section>
+<section class="detail" id="odb_read/4">
+
+    <span id="odb_read/3"></span>
+
+  <div class="detail-header">
+    <a href="#odb_read/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_read(agent, odb, oid, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L169" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_read(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitOdb.html#t:t/0">GitRekt.GitOdb.t</a>(), <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, {<a href="GitRekt.Git.html#t:obj_type/0">GitRekt.Git.obj_type</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()}} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Return the raw data of the <code class="inline">odb</code> object with the given <code class="inline">oid</code>.</p>
+  </section>
+</section>
+<section class="detail" id="odb_write/5">
+
+    <span id="odb_write/4"></span>
+
+  <div class="detail-header">
+    <a href="#odb_write/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_write(agent, odb, data, type, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L175" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_write(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitOdb.html#t:t/0">GitRekt.GitOdb.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Writes the given <code class="inline">data</code> into the <code class="inline">odb</code>.</p>
+  </section>
+</section>
+<section class="detail" id="odb_writepack/2">
+
+    <span id="odb_writepack/1"></span>
+
+  <div class="detail-header">
+    <a href="#odb_writepack/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_writepack(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L187" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_writepack(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.GitWritePack.html#t:t/0">GitRekt.GitWritePack.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns an ODB writepack.</p>
+  </section>
+</section>
+<section class="detail" id="odb_writepack_append/5">
+
+    <span id="odb_writepack_append/4"></span>
+
+  <div class="detail-header">
+    <a href="#odb_writepack_append/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_writepack_append(agent, writepack, data, progress, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L193" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_writepack_append(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="GitRekt.GitWritePack.html#t:t/0">GitRekt.GitWritePack.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="GitRekt.Git.html#t:odb_writepack_progress/0">GitRekt.Git.odb_writepack_progress</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="GitRekt.Git.html#t:odb_writepack_progress/0">GitRekt.Git.odb_writepack_progress</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Appends <code class="inline">data</code> to the given <code class="inline">writepack</code>.</p>
+  </section>
+</section>
+<section class="detail" id="odb_writepack_commit/4">
+
+    <span id="odb_writepack_commit/3"></span>
+
+  <div class="detail-header">
+    <a href="#odb_writepack_commit/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">odb_writepack_commit(agent, writepack, progress, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L199" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>odb_writepack_commit(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="GitRekt.GitWritePack.html#t:t/0">GitRekt.GitWritePack.t</a>(),
+  <a href="GitRekt.Git.html#t:odb_writepack_progress/0">GitRekt.Git.odb_writepack_progress</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="GitRekt.Git.html#t:odb_writepack_progress/0">GitRekt.Git.odb_writepack_progress</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Commits the given <code class="inline">writepack</code> to the ODB.</p>
+  </section>
+</section>
+<section class="detail" id="pack_create/3">
+
+    <span id="pack_create/2"></span>
+
+  <div class="detail-header">
+    <a href="#pack_create/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pack_create(agent, oids, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L515" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pack_create(<a href="#t:agent/0">agent</a>(), [<a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns a Git PACK representation of the given <code class="inline">oids</code>.</p>
+  </section>
+</section>
+<section class="detail" id="peel/3">
+
+    <span id="peel/2"></span>
+
+  <div class="detail-header">
+    <a href="#peel/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">peel(agent, obj, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L506" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>peel(<a href="#t:agent/0">agent</a>(), <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTreeEntry.html#t:t/0">GitRekt.GitTreeEntry.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:git_object/0">git_object</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Peels the given <code class="inline">obj</code> until a Git object of the specified type is met.</p>
+  </section>
+</section>
+<section class="detail" id="reference/3">
+
+    <span id="reference/2"></span>
+
+  <div class="detail-header">
+    <a href="#reference/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reference(agent, name, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L283" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>reference(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>() | {<a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git reference with the given <code class="inline">name</code>.</p>
+  </section>
+</section>
+<section class="detail" id="reference_create/5">
+
+    <span id="reference_create/4"></span>
+
+  <div class="detail-header">
+    <a href="#reference_create/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reference_create(agent, name, type, target, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L294" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>reference_create(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Creates a reference with the given <code class="inline">name</code> and <code class="inline">target</code>.</p>
+  </section>
+</section>
+<section class="detail" id="reference_delete/3">
+
+    <span id="reference_delete/2"></span>
+
+  <div class="detail-header">
+    <a href="#reference_delete/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reference_delete(agent, name, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L303" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>reference_delete(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: :ok | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Deletes a reference with the given <code class="inline">name</code>.</p>
+  </section>
+</section>
+<section class="detail" id="references/2">
+
+    <span id="references/1"></span>
+
+  <div class="detail-header">
+    <a href="#references/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">references(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L270" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>references(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns all Git references matching the given <code class="inline">glob</code>.</p>
+  </section>
+</section>
+<section class="detail" id="revision/3">
+
+    <span id="revision/2"></span>
+
+  <div class="detail-header">
+    <a href="#revision/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">revision(agent, spec, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L321" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>revision(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, {<a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>() | <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>() | nil}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git object matching the given <code class="inline">spec</code>.</p>
+  </section>
+</section>
+<section class="detail" id="start_link/2">
+
+    <span id="start_link/1"></span>
+
+  <div class="detail-header">
+    <a href="#start_link/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">start_link(path, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L148" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>start_link(<a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="https://hexdocs.pm/elixir/GenServer.html#t:on_start/0">GenServer.on_start</a>()</pre>
+
+      </div>
+
+<p>Starts a Git agent linked to the current process for the repository at the given <code class="inline">path</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tag/3">
+
+    <span id="tag/2"></span>
+
+  <div class="detail-header">
+    <a href="#tag/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tag(agent, name, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L247" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tag(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok,
+   <a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>()
+   | <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>()
+   | {<a href="GitRekt.GitRef.html#t:t/0">GitRekt.GitRef.t</a>() | <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tag with the given <code class="inline">name</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tag_author/3">
+
+    <span id="tag_author/2"></span>
+
+  <div class="detail-header">
+    <a href="#tag_author/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tag_author(agent, tag, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L258" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tag_author(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tag author of the given <code class="inline">tag</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tag_message/3">
+
+    <span id="tag_message/2"></span>
+
+  <div class="detail-header">
+    <a href="#tag_message/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tag_message(agent, tag, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L264" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tag_message(<a href="#t:agent/0">agent</a>(), <a href="GitRekt.GitTag.html#t:t/0">GitRekt.GitTag.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tag message of the given <code class="inline">tag</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tags/2">
+
+    <span id="tags/1"></span>
+
+  <div class="detail-header">
+    <a href="#tags/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tags(agent, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L234" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tags(<a href="#t:agent/0">agent</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns all Git tags.</p>
+  </section>
+</section>
+<section class="detail" id="transaction/4">
+
+    <span id="transaction/2"></span>
+
+    <span id="transaction/3"></span>
+
+  <div class="detail-header">
+    <a href="#transaction/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">transaction(agent, name \\ nil, cb, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L521" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>transaction(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  (<a href="GitRekt.Git.html#t:repo/0">GitRekt.Git.repo</a>() -&gt; {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Executes the given <code class="inline">cb</code> inside a transaction.</p>
+  </section>
+</section>
+<section class="detail" id="tree/3">
+
+    <span id="tree/2"></span>
+
+  <div class="detail-header">
+    <a href="#tree/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tree(agent, revision, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L387" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tree(<a href="#t:agent/0">agent</a>(), <a href="#t:git_revision/0">git_revision</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tree of the given <code class="inline">revision</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tree_entries/3">
+
+    <span id="tree_entries/2"></span>
+
+  <div class="detail-header">
+    <a href="#tree_entries/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tree_entries(agent, revision, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L415" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tree_entries(<a href="#t:agent/0">agent</a>(), <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/Enumerable.html#t:t/0">Enumerable.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tree entries of the given <code class="inline">tree</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tree_entry_by_id/4">
+
+    <span id="tree_entry_by_id/3"></span>
+
+  <div class="detail-header">
+    <a href="#tree_entry_by_id/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tree_entry_by_id(agent, revision, oid, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L393" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tree_entry_by_id(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(),
+  <a href="GitRekt.Git.html#t:oid/0">GitRekt.Git.oid</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) :: {:ok, <a href="GitRekt.GitTreeEntry.html#t:t/0">GitRekt.GitTreeEntry.t</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tree entry for the given <code class="inline">revision</code> and <code class="inline">oid</code>.</p>
+  </section>
+</section>
+<section class="detail" id="tree_entry_by_path/4">
+
+    <span id="tree_entry_by_path/3"></span>
+
+  <div class="detail-header">
+    <a href="#tree_entry_by_path/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">tree_entry_by_path(agent, revision, path, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitrekt/lib/gitrekt/git_agent.ex#L404" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>tree_entry_by_path(
+  <a href="#t:agent/0">agent</a>(),
+  <a href="#t:git_revision/0">git_revision</a>() | <a href="GitRekt.GitTree.html#t:t/0">GitRekt.GitTree.t</a>(),
+  <a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()
+) ::
+  {:ok,
+   <a href="GitRekt.GitTreeEntry.html#t:t/0">GitRekt.GitTreeEntry.t</a>() | {<a href="GitRekt.GitTreeEntry.html#t:t/0">GitRekt.GitTreeEntry.t</a>(), <a href="GitRekt.GitCommit.html#t:t/0">GitRekt.GitCommit.t</a>()}}
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+<p>Returns the Git tree entry for the given <code class="inline">revision</code> and <code class="inline">path</code>.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

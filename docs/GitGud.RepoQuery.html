@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitGud.RepoQuery — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitGud.RepoQuery.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitGud.RepoQuery <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>Conveniences for repository related queries.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:user_param/0">user_param()</a>
+
+  </div>
+
+</div>
+
+  </div>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_id/2">by_id(id, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a repository for the given <code class="inline">id</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#by_path/2">by_path(path, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a repository for the given <code class="inline">path</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#count_contributors/1">count_contributors(repo)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the number of contributors for the given <code class="inline">repo</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#issue_labels/2">issue_labels(repo, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of associated <a href="GitGud.IssueLabel.html"><code class="inline">GitGud.IssueLabel</code></a> for the given <code class="inline">repo</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maintainer/2">maintainer(repo_id, user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a single <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code> and <code class="inline">user</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maintainers/1">maintainers(repo)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of associated <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#permissions/2">permissions(repo, user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of permissions for the given <code class="inline">repo</code> and <code class="inline">user</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#search/2">search(input, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of users matching the given <code class="inline">input</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_repo/3">user_repo(user, name, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a single repository for the given <code class="inline">user</code> and <code class="inline">name</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_repos/2">user_repos(user, opts \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of repositories for the given <code class="inline">user</code>.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Types
+          </h1>
+          <div class="types-list">
+<section class="detail" id="t:user_param/0">
+
+  <div class="detail-header">
+    <a href="#t:user_param/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">user_param()</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>user_param() :: <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="by_id/2">
+
+    <span id="by_id/1"></span>
+
+  <div class="detail-header">
+    <a href="#by_id/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">by_id(id, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L25" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>by_id(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | nil</pre>
+
+          <pre>by_id([<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>()]</pre>
+
+      </div>
+
+<p>Returns a repository for the given <code class="inline">id</code>.</p>
+  </section>
+</section>
+<section class="detail" id="by_path/2">
+
+    <span id="by_path/1"></span>
+
+  <div class="detail-header">
+    <a href="#by_path/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">by_path(path, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>by_path(<a href="https://hexdocs.pm/elixir/Path.html#t:t/0">Path.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | nil</pre>
+
+      </div>
+
+<p>Returns a repository for the given <code class="inline">path</code>.</p>
+  </section>
+</section>
+<section class="detail" id="count_contributors/1">
+
+  <div class="detail-header">
+    <a href="#count_contributors/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">count_contributors(repo)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L134" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>count_contributors(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()</pre>
+
+          <pre>count_contributors([<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()]) :: %{
+  required(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">non_neg_integer</a>()
+}</pre>
+
+      </div>
+
+<p>Returns the number of contributors for the given <code class="inline">repo</code>.</p>
+  </section>
+</section>
+<section class="detail" id="issue_labels/2">
+
+    <span id="issue_labels/1"></span>
+
+  <div class="detail-header">
+    <a href="#issue_labels/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">issue_labels(repo, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L105" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>issue_labels(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [
+  <a href="GitGud.IssueLabel.html#t:t/0">GitGud.IssueLabel.t</a>()
+]</pre>
+
+      </div>
+
+<p>Returns a list of associated <a href="GitGud.IssueLabel.html"><code class="inline">GitGud.IssueLabel</code></a> for the given <code class="inline">repo</code>.</p>
+  </section>
+</section>
+<section class="detail" id="maintainer/2">
+
+  <div class="detail-header">
+    <a href="#maintainer/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">maintainer(repo_id, user)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L83" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>maintainer(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()) ::
+  <a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>() | nil</pre>
+
+      </div>
+
+<p>Returns a single <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code> and <code class="inline">user</code>.</p>
+  </section>
+</section>
+<section class="detail" id="maintainers/1">
+
+  <div class="detail-header">
+    <a href="#maintainers/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">maintainers(repo)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L95" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>maintainers(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>()) :: [<a href="GitGud.Maintainer.html#t:t/0">GitGud.Maintainer.t</a>()]</pre>
+
+      </div>
+
+<p>Returns a list of associated <a href="GitGud.Maintainer.html"><code class="inline">GitGud.Maintainer</code></a> for the given <code class="inline">repo</code>.</p>
+  </section>
+</section>
+<section class="detail" id="permissions/2">
+
+  <div class="detail-header">
+    <a href="#permissions/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">permissions(repo, user)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L115" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>permissions(<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()]</pre>
+
+      </div>
+
+<p>Returns a list of permissions for the given <code class="inline">repo</code> and <code class="inline">user</code>.</p>
+  </section>
+</section>
+<section class="detail" id="search/2">
+
+    <span id="search/1"></span>
+
+  <div class="detail-header">
+    <a href="#search/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">search(input, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L74" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>search(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>()]</pre>
+
+      </div>
+
+<p>Returns a list of users matching the given <code class="inline">input</code>.</p>
+  </section>
+</section>
+<section class="detail" id="user_repo/3">
+
+    <span id="user_repo/2"></span>
+
+  <div class="detail-header">
+    <a href="#user_repo/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">user_repo(user, name, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L52" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>user_repo(<a href="#t:user_param/0">user_param</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>() | nil</pre>
+
+      </div>
+
+<p>Returns a single repository for the given <code class="inline">user</code> and <code class="inline">name</code>.</p>
+  </section>
+</section>
+<section class="detail" id="user_repos/2">
+
+    <span id="user_repos/1"></span>
+
+  <div class="detail-header">
+    <a href="#user_repos/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">user_repos(user, opts \\ [])</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/queries/repo_query.ex#L61" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>user_repos(<a href="#t:user_param/0">user_param</a>() | [<a href="#t:user_param/0">user_param</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: [<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>()]</pre>
+
+      </div>
+
+<p>Returns a list of repositories for the given <code class="inline">user</code>.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

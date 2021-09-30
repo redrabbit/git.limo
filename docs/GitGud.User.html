@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitGud.User — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitGud.User.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitGud.User <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>User account schema and helper functions.</p><p>A user is an individual's account that owns repositories and can make new content.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:t/0">t()</a>
+
+  </div>
+
+</div>
+
+  </div>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create/1">create(params)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a new user with the given <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create!/1">create!(params)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Similar to <a href="#create/1"><code class="inline">create/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete/1">delete(user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes the given <code class="inline">user</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete!/1">delete!(user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Similar to <a href="#delete!/1"><code class="inline">delete!/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#email_changeset/3">email_changeset(user, email_type, email)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a changeset for the given <code class="inline">email</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#oauth2_changeset/2">oauth2_changeset(user, params \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a changeset for the given OAuth2.0 <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#password_changeset/2">password_changeset(user, params \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a changeset for the given password <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#profile_changeset/2">profile_changeset(user, params \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a changeset for the given profile <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#registration_changeset/2">registration_changeset(user, params \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a changeset for the given registration <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update/3">update(user, changeset_type, params)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Updates the given <code class="inline">user</code> with the given <code class="inline">changeset_type</code> and <code class="inline">params</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update!/3">update!(user, changeset_type, params)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Similar to <a href="#update/3"><code class="inline">update/3</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#verified?/1">verified?(user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> is <code class="inline">user</code> is verified; otherwise returns <code class="inline">false</code>.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Types
+          </h1>
+          <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">t()</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L39" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>t() :: %GitGud.User{
+  __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  account: <a href="GitGud.Account.html#t:t/0">GitGud.Account.t</a>(),
+  avatar_url: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  bio: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  emails: [<a href="GitGud.Email.html#t:t/0">GitGud.Email.t</a>()],
+  gpg_keys: [<a href="GitGud.GPGKey.html#t:t/0">GitGud.GPGKey.t</a>()],
+  id: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(),
+  inserted_at: <a href="https://hexdocs.pm/elixir/NaiveDateTime.html#t:t/0">NaiveDateTime.t</a>(),
+  location: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  login: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  primary_email: <a href="GitGud.Email.html#t:t/0">GitGud.Email.t</a>() | nil,
+  primary_email_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  public_email: <a href="GitGud.Email.html#t:t/0">GitGud.Email.t</a>() | nil,
+  public_email_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  repos: [<a href="GitGud.Repo.html#t:t/0">GitGud.Repo.t</a>()],
+  ssh_keys: [<a href="GitGud.SSHKey.html#t:t/0">GitGud.SSHKey.t</a>()],
+  updated_at: <a href="https://hexdocs.pm/elixir/NaiveDateTime.html#t:t/0">NaiveDateTime.t</a>(),
+  website_url: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()
+}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="create/1">
+
+  <div class="detail-header">
+    <a href="#create/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create(params)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L76" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>create(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
+
+      </div>
+
+<p>Creates a new user with the given <code class="inline">params</code>.</p><pre><code class="makeup elixir"><span class="p" data-group-id="3631410376-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="3631410376-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">create</span><span class="p" data-group-id="3631410376-2">(</span><span class="w">
+  </span><span class="ss">login</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redrabbit&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Mario Flach&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">emails</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3631410376-3">[</span><span class="w">
+    </span><span class="p" data-group-id="3631410376-4">%{</span><span class="ss">address</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;m.flach@almightycouch.com&quot;</span><span class="p" data-group-id="3631410376-4">}</span><span class="w">
+  </span><span class="p" data-group-id="3631410376-3">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">account</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3631410376-5">%{</span><span class="w">
+    </span><span class="ss">password</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwertz&quot;</span><span class="w">
+  </span><span class="p" data-group-id="3631410376-5">}</span><span class="w">
+</span><span class="p" data-group-id="3631410376-2">)</span></code></pre><p>This function validates the given <code class="inline">params</code> using <a href="#registration_changeset/2"><code class="inline">registration_changeset/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create!/1">
+
+  <div class="detail-header">
+    <a href="#create!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create!(params)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L89" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>create!(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
+
+      </div>
+
+<p>Similar to <a href="#create/1"><code class="inline">create/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</section>
+<section class="detail" id="delete/1">
+
+  <div class="detail-header">
+    <a href="#delete/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete(user)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L138" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>delete(<a href="#t:t/0">t</a>()) :: {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
+
+      </div>
+
+<p>Deletes the given <code class="inline">user</code>.</p><pre><code class="makeup elixir"><span class="p" data-group-id="0670922146-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="0670922146-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">delete</span><span class="p" data-group-id="0670922146-2">(</span><span class="n">user</span><span class="p" data-group-id="0670922146-2">)</span></code></pre><p>User associations (repositories, comments, etc.) will automatically be deleted.</p>
+  </section>
+</section>
+<section class="detail" id="delete!/1">
+
+  <div class="detail-header">
+    <a href="#delete!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete!(user)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L146" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>delete!(<a href="#t:t/0">t</a>()) :: <a href="#t:t/0">t</a>()</pre>
+
+      </div>
+
+<p>Similar to <a href="#delete!/1"><code class="inline">delete!/1</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</section>
+<section class="detail" id="email_changeset/3">
+
+  <div class="detail-header">
+    <a href="#email_changeset/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">email_changeset(user, email_type, email)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L190" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>email_changeset(<a href="#t:t/0">t</a>(), :primary_email | :public_email, <a href="GitGud.Email.html#t:t/0">GitGud.Email.t</a>()) ::
+  <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Returns a changeset for the given <code class="inline">email</code>.</p>
+  </section>
+</section>
+<section class="detail" id="oauth2_changeset/2">
+
+    <span id="oauth2_changeset/1"></span>
+
+  <div class="detail-header">
+    <a href="#oauth2_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">oauth2_changeset(user, params \\ %{})</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L223" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>oauth2_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Returns a changeset for the given OAuth2.0 <code class="inline">params</code>.</p><p>See <a href="GitGud.Account.html#oauth2_changeset/2"><code class="inline">GitGud.Account.oauth2_changeset/2</code></a> for more details.</p>
+  </section>
+</section>
+<section class="detail" id="password_changeset/2">
+
+    <span id="password_changeset/1"></span>
+
+  <div class="detail-header">
+    <a href="#password_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">password_changeset(user, params \\ %{})</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L211" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>password_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Returns a changeset for the given password <code class="inline">params</code>.</p><p>See <a href="GitGud.Account.html#password_changeset/2"><code class="inline">GitGud.Account.password_changeset/2</code></a> for more details.</p>
+  </section>
+</section>
+<section class="detail" id="profile_changeset/2">
+
+    <span id="profile_changeset/1"></span>
+
+  <div class="detail-header">
+    <a href="#profile_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">profile_changeset(user, params \\ %{})</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L177" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>profile_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Returns a changeset for the given profile <code class="inline">params</code>.</p>
+  </section>
+</section>
+<section class="detail" id="registration_changeset/2">
+
+    <span id="registration_changeset/1"></span>
+
+  <div class="detail-header">
+    <a href="#registration_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">registration_changeset(user, params \\ %{})</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L161" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>registration_changeset(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Returns a changeset for the given registration <code class="inline">params</code>.</p>
+  </section>
+</section>
+<section class="detail" id="update/3">
+
+  <div class="detail-header">
+    <a href="#update/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update(user, changeset_type, params)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L116" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>update(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, <a href="#t:t/0">t</a>()} | {:error, <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()}</pre>
+
+      </div>
+
+<p>Updates the given <code class="inline">user</code> with the given <code class="inline">changeset_type</code> and <code class="inline">params</code>.</p><pre><code class="makeup elixir"><span class="p" data-group-id="7688545862-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="7688545862-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="7688545862-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:profile</span><span class="p">,</span><span class="w"> </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Mario Bros&quot;</span><span class="p" data-group-id="7688545862-2">)</span></code></pre><p>Following changeset types are available:</p><ul><li><code class="inline">:profile</code> -- see <a href="#profile_changeset/2"><code class="inline">profile_changeset/2</code></a>.</li><li><code class="inline">:password</code> -- see <a href="#password_changeset/2"><code class="inline">password_changeset/2</code></a>.</li><li><code class="inline">:oauth2</code> -- see <a href="#oauth2_changeset/2"><code class="inline">oauth2_changeset/2</code></a>.</li></ul><p>This function can also be used to update email associations, for example:</p><pre><code class="makeup elixir"><span class="p" data-group-id="6734092588-1">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="6734092588-1">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.User</span><span class="o">.</span><span class="n">update</span><span class="p" data-group-id="6734092588-2">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="ss">:primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">email</span><span class="p" data-group-id="6734092588-2">)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update!/3">
+
+  <div class="detail-header">
+    <a href="#update!/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update!(user, changeset_type, params)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L124" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>update!(<a href="#t:t/0">t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">struct</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) :: <a href="#t:t/0">t</a>()</pre>
+
+      </div>
+
+<p>Similar to <a href="#update/3"><code class="inline">update/3</code></a>, but raises an <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.InvalidChangesetError.html"><code class="inline">Ecto.InvalidChangesetError</code></a> if an error occurs.</p>
+  </section>
+</section>
+<section class="detail" id="verified?/1">
+
+  <div class="detail-header">
+    <a href="#verified?/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">verified?(user)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/schemas/user.ex#L154" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>verified?(<a href="#t:t/0">t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Returns <code class="inline">true</code> is <code class="inline">user</code> is verified; otherwise returns <code class="inline">false</code>.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

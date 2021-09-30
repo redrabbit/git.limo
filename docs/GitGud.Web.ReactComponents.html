@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitGud.Web.ReactComponents — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitGud.Web.ReactComponents.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitGud.Web.ReactComponents <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>Functions to make rendering React components.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#react_component/1">react_component(name)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Generates a <code class="inline">:div</code> containing the named React component with no props or attrs.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#react_component/2">react_component(name, props)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#react_component/3">react_component(name, props, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code> and <code class="inline">attrs</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#react_component/4">react_component(name, props, attrs, inner_block)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code> and <code class="inline">attrs</code>.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="react_component/1">
+
+  <div class="detail-header">
+    <a href="#react_component/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">react_component(name)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L24" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>react_component(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()</pre>
+
+      </div>
+
+<p>Generates a <code class="inline">:div</code> containing the named React component with no props or attrs.</p><p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.</p><p>You can utilize this in your Phoenix views:</p><pre><code class="makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="7118718014-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p" data-group-id="7118718014-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
+helper to then turn into your named React component.</p>
+  </section>
+</section>
+<section class="detail" id="react_component/2">
+
+  <div class="detail-header">
+    <a href="#react_component/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">react_component(name, props)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L40" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>react_component(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()</pre>
+
+      </div>
+
+<p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code>.</p><p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.</p><p>You can utilize this in your Phoenix views:</p><pre><code class="makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="5975624095-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5975624095-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="5975624095-2">}</span><span class="p" data-group-id="5975624095-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
+helper to then turn into your named React component and then pass in the <code class="inline">props</code> specified.</p>
+  </section>
+</section>
+<section class="detail" id="react_component/3">
+
+  <div class="detail-header">
+    <a href="#react_component/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">react_component(name, props, attrs)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L57" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>react_component(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">iodata</a>()</pre>
+
+      </div>
+
+<p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code> and <code class="inline">attrs</code>.</p><p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.</p><p>You can utilize this in your Phoenix views:</p><pre><code class="makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="5389510347-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5389510347-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="5389510347-2">}</span><span class="p">,</span><span class="w"> </span><span class="ss">class</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my-component&quot;</span><span class="p" data-group-id="5389510347-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
+helper to then turn into your named React component and then pass in the <code class="inline">props</code> specified.</p>
+  </section>
+</section>
+<section class="detail" id="react_component/4">
+
+  <div class="detail-header">
+    <a href="#react_component/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">react_component(name, props, attrs, inner_block)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud_web/lib/gitgud_web/views/helpers/react_components.ex#L77" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Generates a <code class="inline">:div</code> containing the named React component with the given <code class="inline">props</code> and <code class="inline">attrs</code>.</p><p>Returns safe html: <code class="inline">{:safe, [60, &quot;div&quot;, ...]}</code>.</p><p>You can utilize this in your Phoenix views:</p><pre><code class="makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="nc">GitGud.Web.React</span><span class="o">.</span><span class="n">react_component</span><span class="p" data-group-id="4430172245-1">(</span><span class="s">&quot;MyComponent&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4430172245-2">%{</span><span class="ss">language</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;elixir&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">awesome</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="p" data-group-id="4430172245-2">}</span><span class="p">,</span><span class="w"> </span><span class="ss">class</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my-component&quot;</span><span class="p" data-group-id="4430172245-1">)</span><span class="w"> </span><span class="k" data-group-id="4430172245-3">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
+    </span><span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">this</span><span class="w"> </span><span class="n">text</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">rendered</span><span class="w"> </span><span class="n">until</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">component</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">initialized</span><span class="o">&lt;</span><span class="o">/</span><span class="n">em</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
+</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="4430172245-3">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>The resulting <code class="inline">&lt;div&gt;</code> tag is formatted specifically for the included javascript
+helper to then turn into your named React component and then pass in the <code class="inline">props</code> specified.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

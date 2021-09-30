@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.25.3">
+    <meta name="project" content="git.limo v0.3.8">
+
+    <title>GitGud.Authorization — git.limo v0.3.8</title>
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
+
+      <link rel="canonical" href="https://git.limo/GitGud.Authorization.html" />
+
+    <script src="dist/sidebar_items-925f378336.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-e5e774c81fa6257aba7f.js"></script>
+
+
+  </head>
+  <body data-type="modules">
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="getting-started.html" class="sidebar-projectName">
+git.limo
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.3.8
+      </strong>
+    </div>
+
+      <a href="getting-started.html">
+        <img src="assets/logo.svg" alt="git.limo" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
+
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+GitGud.Authorization <small class="app-vsn">(git.limo v0.3.8)</small>
+
+          <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/authorization.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>Conveniences for authorization and resource loading.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#authorized?/3">authorized?(user, resource, action)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns <code class="inline">true</code> if <code class="inline">user</code> is allowed to perform <code class="inline">action</code> on <code class="inline">resource</code>; otherwhise returns <code class="inline">false</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#enforce_policy/3">enforce_policy(user, resource, action)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Enforces the authorization policy.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#enforce_policy!/4">enforce_policy!(user, resource, action, default \\ nil)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Same as <a href="#enforce_policy/3"><code class="inline">enforce_policy/3</code></a> but returns the <code class="inline">resource</code> or <code class="inline">default</code> if the policy cannot be enforced.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#filter/3">filter(user, resources, action)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Filters the given list of <code class="inline">resources</code>, i.e. returns only those for which <a href="#authorized?/3"><code class="inline">authorized?/3</code></a> applies.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="authorized?/3">
+
+  <div class="detail-header">
+    <a href="#authorized?/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">authorized?(user, resource, action)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/authorization.ex#L12" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>authorized?(<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil, <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) ::
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Returns <code class="inline">true</code> if <code class="inline">user</code> is allowed to perform <code class="inline">action</code> on <code class="inline">resource</code>; otherwhise returns <code class="inline">false</code>.</p>
+  </section>
+</section>
+<section class="detail" id="enforce_policy/3">
+
+  <div class="detail-header">
+    <a href="#enforce_policy/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">enforce_policy(user, resource, action)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/authorization.ex#L20" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>enforce_policy(<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil, <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) ::
+  {:ok, <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>()} | {:error, :forbidden}</pre>
+
+      </div>
+
+<p>Enforces the authorization policy.</p>
+  </section>
+</section>
+<section class="detail" id="enforce_policy!/4">
+
+    <span id="enforce_policy!/3"></span>
+
+  <div class="detail-header">
+    <a href="#enforce_policy!/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">enforce_policy!(user, resource, action, default \\ nil)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/authorization.ex#L30" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>enforce_policy!(
+  <a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil,
+  <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+) :: <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>() | <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()</pre>
+
+      </div>
+
+<p>Same as <a href="#enforce_policy/3"><code class="inline">enforce_policy/3</code></a> but returns the <code class="inline">resource</code> or <code class="inline">default</code> if the policy cannot be enforced.</p>
+  </section>
+</section>
+<section class="detail" id="filter/3">
+
+  <div class="detail-header">
+    <a href="#filter/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">filter(user, resources, action)</h1>
+
+      <a href="https://github.com/almightycouch/gitgud/blob/v0.3.8/apps/gitgud/lib/gitgud/authorization.ex#L41" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>filter(<a href="GitGud.User.html#t:t/0">GitGud.User.t</a>() | nil, [<a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>()], <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) :: [
+  <a href="GitGud.AuthorizationPolicies.html#t:t/0">GitGud.AuthorizationPolicies.t</a>()
+]</pre>
+
+      </div>
+
+<p>Filters the given list of <code class="inline">resources</code>, i.e. returns only those for which <a href="#authorized?/3"><code class="inline">authorized?/3</code></a> applies.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.3) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>
