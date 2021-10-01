@@ -540,6 +540,16 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
+  defp resolve_tree_entry_type(_agent, _commit, []), do: {:ok, :tree}
+  defp resolve_tree_entry_type(agent, commit, tree_path) do
+    case GitAgent.tree_entry_by_path(agent, commit, Path.join(tree_path)) do
+      {:ok, tree_entry} ->
+        {:ok, tree_entry.type}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp resolve_tree(agent, revision, []) do
     with {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
          {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
@@ -589,10 +599,11 @@ defmodule GitGud.Web.CodebaseController do
     opts = Enum.empty?(tree_path) && [] || [pathspec: Path.join(tree_path)]
     with {:ok, {object, reference}} <- GitAgent.revision(agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
+         {:ok, tree_entry_type} <- resolve_tree_entry_type(agent, commit, tree_path),
          {:ok, history} <- GitAgent.history(agent, object, opts),
          {:ok, {slice, more?}} <- paginate_history(history, cursor, limit),
          {:ok, slice} <- resolve_commits_infos(agent, slice) do
-      {:ok, {reference, commit, :tree, {slice, more?}}}
+      {:ok, {reference, commit, tree_entry_type, {slice, more?}}}
     end
   end
 
