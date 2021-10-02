@@ -580,7 +580,7 @@ defmodule GitGud.Web.CodebaseController do
 
   defp resolve_branches(agent) do
     with {:ok, head} <- GitAgent.head(agent),
-         {:ok, branches} <- GitAgent.branches(agent, stream_chunk_size: :infinity),
+         {:ok, branches} <- GitAgent.branches(agent),
          {:ok, branches} <- resolve_revisions(agent, branches) do
       {:ok, {head, branches}}
     end
