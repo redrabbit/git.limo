@@ -1,18 +1,36 @@
-<%= render_layout "hero.html", assigns do %>
-<div class="columns">
-  <div class="column is-8 is-offset-2">
-    <div class="box">
-      <div class="is-pulled-right">
-        <a href="<%= Routes.landing_page_path(@conn, :index) %>">
-          <img src="<%= Routes.static_path(@conn, "/images/logo.svg") %>" alt="" width="72" height="72" />
-        </a>
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <%= csrf_meta_tag() %>
+
+    <title><%= title(@conn) %></title>
+
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+  </head>
+
+  <body>
+    <main class="hero">
+      <div class="hero-body">
+        <div class="container">
+          <div class="box">
+            <div class="is-pulled-right">
+              <a href="<%= Routes.landing_page_path(@conn, :index) %>">
+                <img src="<%= Routes.static_path(@conn, "/images/logo.svg") %>" alt="" width="72" height="72" />
+              </a>
+            </div>
+
+            <h1 class="title has-text-grey-lighter"><%= Plug.Conn.Status.reason_phrase(@conn.status) %></h1>
+            <%= @inner_content %>
+          </div>
+        </div>
       </div>
-
-      <h1 class="title has-text-grey-lighter"><%= Plug.Conn.Status.reason_phrase(@conn.status) %></h1>
-      <%= @inner_content %>
-    </div>
-  </div>
-</div>
-
-
-<% end %>
+    </main>
+    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  </body>
+</html>
