@@ -41,7 +41,7 @@
           <a class="<%= if @tab == :tag, do: "is-active" %>" phx-click="switch_tab" phx-value-tab="tag" phx-target="<%= @myself %>">Tags</a>
         </p>
         <%= if @tab == :branch do %>
-          <a class="panel-block" href="<%= Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @head, @tree_path) %>">
+          <a class="panel-block<%= if @head.oid == @commit.oid, do: " is-active" %>" href="<%= Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @head, @tree_path) %>">
             <div class="control">
               <span class="head"><%= @head.name %></span>
               <span class="tag is-pulled-right">default</span>
