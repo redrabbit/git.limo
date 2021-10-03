@@ -944,13 +944,19 @@ defmodule GitRekt.GitAgent do
     telemetry(:execute, op, fn ->
       case call(handle, op) do
         {:ok, stream} ->
-          if chunk_size == :infinity,
-            do: {:ok, Enum.to_list(stream)},
-          else: {:ok, async_stream(op, stream, chunk_size, pid)}
+          {:ok, async_stream(op, stream, chunk_size, pid)}
         {:error, reason} ->
           {:error, reason}
       end
     end, %{stream_chunk_size: chunk_size, pid: pid})
+  end
+
+  defp call_stream_next(op, stream, :infinity, pid) do
+    event_time = :os.system_time(:microsecond)
+    list = Enum.to_list(stream)
+    buffer_size = length(list)
+    telemetry(:stream, op, %{duration: :os.system_time(:microsecond) - event_time}, %{stream_buffer_size: buffer_size, stream_chunk_size: :infinity, pid: pid})
+    {list, :halt}
   end
 
   defp call_stream_next(op, stream, chunk_size, pid) do
