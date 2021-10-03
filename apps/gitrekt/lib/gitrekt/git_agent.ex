@@ -52,40 +52,45 @@ defmodule GitRekt.GitAgent do
   In the following example, we use `transaction/2` to retrieve all informations for a given commit:
 
   ```
-  GitAgent.transaction(agent, fn agent ->
-    with {:ok, author} <- GitAgent.commit_author(agent, commit),
-        {:ok, committer} <- GitAgent.commit_committer(agent, commit),
-        {:ok, message} <- GitAgent.commit_message(agent, commit),
-        {:ok, parents} <- GitAgent.commit_parents(agent, commit),
-        {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
-        {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(agent, commit) do
-      {:ok, %{
-        oid: commit.oid,
-        author: author,
-        committer: committer,
-        message: message,
-        parents: Enum.to_list(parents),
-        timestamp: timestamp,
-        gpg_sig: gpg_sig
-      }}
-    end
-  end)
+  def commit_info(agent, commit) do
+    GitAgent.transaction(agent, fn agent ->
+      with {:ok, author} <- GitAgent.commit_author(agent, commit),
+           {:ok, committer} <- GitAgent.commit_committer(agent, commit),
+           {:ok, message} <- GitAgent.commit_message(agent, commit),
+           {:ok, parents} <- GitAgent.commit_parents(agent, commit),
+           {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
+           {:ok, gpg_sig} <- GitAgent.commit_gpg_signature(agent, commit) do
+        {:ok, %{
+          oid: commit.oid,
+          author: author,
+          committer: committer,
+          message: message,
+          parents: Enum.to_list(parents),
+          timestamp: timestamp,
+          gpg_sig: gpg_sig
+        }}
+      end
+    end)
+  end
   ```
 
   Transactions provide a simple entry point for implementing more complex commands. The function is
   executed by the agent in a single request; avoiding the costs of making six consecutive `GenServer.call/3`.
 
-  You can also use transactions to cache the result of a serie of commands. Let's wrap our previous example
-  in a function and give the transaction an unique identifier.
+  ## Caching
+
+  You can also use transactions to cache the result of a function.
+
+  Let's rewrite the previous example and give the transaction a cache key for this purpose:
 
   ```
   def commit_info(agent, commit) do
-    # identifier: {:commit_info, oid}
-    GitAgent.transaction(agent, {:commit_info, commit.oid}, fn agent -> ... end)
+    GitAgent.transaction(agent, {:commit_info, commit.oid}, fn agent -> ...  end)
   end
   ```
 
-  By using a unique identifier, we tell `GitRekt.GitAgent` that the result of our function should be cached.
+  By passing a cache key as 2nd argument, we tell `GitRekt.GitAgent` to leverage caching for the transaction.
+  In our case we are using the commit oid to store and retrieve additional informations.
 
   Here's the log output for two consecutive `commit_info/2` calls:
 
@@ -103,7 +108,7 @@ defmodule GitRekt.GitAgent do
   We can observe that the first call executes the different commands one by one and cache the result while
   the second one fetches the result directly from the cache without having to actually run the transaction.
 
-  Note that `transaction/3` can be called recursively and still benefit from caching.
+  Note that `transaction/3` can be called recursively and still benefit from caching at each stage.
   """
   use GenServer
 
@@ -121,6 +126,7 @@ defmodule GitRekt.GitAgent do
     GitIndexEntry,
     GitDiff,
     GitWritePack,
+    GitStream,
     GitError
   }
 
@@ -563,10 +569,8 @@ defmodule GitRekt.GitAgent do
     opts_index = tuple_size(op) - 1
     {chunk_size, opts} = Keyword.pop(elem(op, opts_index), :stream_chunk_size, config.stream_chunk_size)
     case call_stream(handle, put_elem(op, opts_index, opts), chunk_size, pid) do
-      {:ok, list} when is_list(list) ->
-        {:reply, {:ok, list}, {handle, collect_result_refs(config, list, pid)}, config.idle_timeout}
       {:ok, stream} ->
-        {:reply, {:ok, stream}, state, config.idle_timeout}
+        {:reply, {:ok, stream}, {handle, collect_result_refs(config, stream, pid)}, config.idle_timeout}
       {:error, reason} ->
         {:reply, {:error, reason}, state, config.idle_timeout}
     end
@@ -994,6 +998,8 @@ defmodule GitRekt.GitAgent do
   defp scan_result_refs(%GitTag{__ref__: ref}, set), do: MapSet.put(set, ref)
   defp scan_result_refs(%GitBlob{__ref__: ref}, set), do: MapSet.put(set, ref)
   defp scan_result_refs(%GitTree{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(%GitStream{__ref__: ref}, set), do: MapSet.put(set, ref)
+  defp scan_result_refs(%Stream{enum: enum}, set) when is_struct(enum, GitStream), do: scan_result_refs(enum, set)
   defp scan_result_refs(_term, set), do: set
 
   defp resolve_odb(odb), do: %GitOdb{__ref__: odb}
@@ -1374,17 +1380,14 @@ defmodule GitRekt.GitAgent do
 
   defp async_stream(op, stream, chunk_size, pid) do
     agent = self()
-    Stream.resource(
-      fn -> stream end,
-      fn :halt ->
-          {:halt, agent}
-         stream ->
-          if agent == self(),
-            do: call_stream_next(op, stream, chunk_size, pid),
-          else: telemetry(:call_stream, op, fn -> GenServer.call(agent, {:stream_next, op, stream, chunk_size}, @default_config.timeout) end, %{stream_chunk_size: chunk_size, pid: agent})
-      end,
-      fn stream -> stream end
-    )
+    GitStream.transform(stream, fn
+      :halt ->
+        {:halt, stream}
+      stream ->
+        if agent == self(),
+          do: call_stream_next(op, stream, chunk_size, pid),
+        else: telemetry(:call_stream, op, fn -> GenServer.call(agent, {:stream_next, op, stream, chunk_size}, @default_config.timeout) end, %{stream_chunk_size: chunk_size, pid: agent})
+    end)
   end
 
   defp map_operation(op) when is_atom(op), do: {op, []}

@@ -236,6 +236,8 @@ defmodule GitRekt.Git do
   can use a dedicated process, so that its access can be serialized.
   """
 
+  alias GitRekt.GitStream
+
   @type repo                    :: reference
 
   @type oid                     :: binary
@@ -471,7 +473,7 @@ defmodule GitRekt.Git do
   @spec reference_stream(repo, binary | :undefined) :: {:ok, Enumerable.t} | {:error, term}
   def reference_stream(repo, glob \\ :undefined) do
     case reference_iterator(repo, glob) do
-      {:ok, iter} -> {:ok, Stream.resource(fn -> iter end, &reference_stream_next/1, fn _iter -> :ok end)}
+      {:ok, iter} -> {:ok, GitStream.new(iter, &reference_stream_next/1)}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -659,7 +661,7 @@ defmodule GitRekt.Git do
   def commit_parents(commit) do
     case commit_parent_count(commit) do
       {:ok, count} ->
-        {:ok, Stream.resource(fn -> {commit, 0, count} end, &commit_parent_stream_next/1, fn _iter -> :ok end)}
+        {:ok, GitStream.new(commit, {commit, 0, count}, &commit_parent_stream_next/1)}
     end
   end
 
@@ -788,7 +790,7 @@ defmodule GitRekt.Git do
   """
   @spec tree_entries(tree) :: {:ok, Enumerable.t} | {:error, term}
   def tree_entries(tree) do
-    {:ok, Stream.resource(fn -> {tree, 0} end, &tree_stream_next/1, fn _iter -> :ok end)}
+    {:ok, GitStream.new(tree, {tree, 0}, &tree_stream_next/1)}
   end
 
   @doc """
@@ -908,7 +910,7 @@ defmodule GitRekt.Git do
   """
   @spec revwalk_stream(revwalk) :: {:ok, Enumerable.t} | {:error, term}
   def revwalk_stream(walk) do
-    {:ok, Stream.resource(fn -> walk end, &revwalk_stream_next/1, fn _walk -> :ok end)}
+    {:ok, GitStream.new(walk, &revwalk_stream_next/1)}
   end
 
   @doc """
