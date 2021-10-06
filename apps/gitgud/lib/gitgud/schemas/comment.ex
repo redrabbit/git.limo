@@ -36,6 +36,7 @@ defmodule GitGud.Comment do
     parent_id: pos_integer | nil,
     parent: t | nil,
     children: [t],
+    revisions: [CommentRevision.t],
     body: binary,
     inserted_at: NaiveDateTime.t,
     updated_at: NaiveDateTime.t
