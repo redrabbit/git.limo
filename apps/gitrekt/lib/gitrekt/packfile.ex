@@ -13,7 +13,7 @@ defmodule GitRekt.Packfile do
   @doc """
   Returns a list of ODB objects and their type for the given *PACK* `data`.
   """
-  @spec parse(binary) :: [obj] | {:buffer, [obj], obj_iter}
+  @spec parse(binary) :: {:pack, [obj]} | {:buffer, [obj], obj_iter}
   def parse("PACK" <> pack), do: parse(pack)
   def parse(<<version::32, count::32, data::binary>> = _pack), do: unpack(version, count, data)
 
