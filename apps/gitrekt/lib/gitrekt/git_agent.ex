@@ -92,7 +92,7 @@ defmodule GitRekt.GitAgent do
   By passing a cache key as 2nd argument, we tell `GitRekt.GitAgent` to leverage caching for the transaction.
   In our case we are using the commit oid to store and retrieve additional informations.
 
-  Here's the log output for two consecutive `commit_info/2` calls:
+  Here's the log output for two consecutive `commit_info/2` calls with the same commit:
 
   ```log
   [debug] [Git Agent] transaction(:commit_info, "b662d32") executed in 361 µs
@@ -106,9 +106,128 @@ defmodule GitRekt.GitAgent do
   ```
 
   We can observe that the first call executes the different commands one by one and cache the result while
-  the second one fetches the result directly from the cache without having to actually run the transaction.
+  the second call fetches the result directly from the cache without having to actually run the transaction.
 
   Note that `transaction/3` can be called recursively and still benefit from caching at each stage.
+
+  ## Lazy enumerables
+
+  Functions such as `references/2`, `history/3`, `tree_entries/3`, `commit_parents/2` return streamable
+  Git resources (see `GitRekt.GitStream`). Due to their laziness, these functions do not actually compute any
+  operations. Instead they return a stream meant to be enumerated at a later moment.
+
+  Here's a brief example:
+
+  ```
+  # fetch HEAD
+  {:ok, head} = GitAgent.head(agent)
+
+  # fetch commit history
+  {:ok, stream} = GitAgent.history(agent, head)
+
+  # iterate and print first 10 commits
+  for commit <- Enum.take(stream, 10), commit_info = commit_info!(agent, commit) do
+    IO.puts "commit #{Git.oid_fmt(commit.oid)}"
+    IO.puts "Author: #{commit_info.author.name} <#{commit_info.author.email}>"
+    IO.puts "Date: #{commit_info.timestamp}"
+    IO.puts commit_info.message
+  end
+  ```
+
+  Let's have a look at the logs when running the previous example:
+
+  ```log
+  [debug] [Git Agent] head() executed in 5.83 ms
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 1000) executed in 1.52 ms
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 1000) streamed 1000 items in 20.81 ms
+  [debug] [Git Agent] transaction(#Function<0.117787472/1 in commit_info/2>) executed in 6.42 ms
+  [debug] [Git Agent] > commit_author(<GitCommit:13b8228>) executed in 4.59 ms
+  [debug] [Git Agent] > commit_committer(<GitCommit:13b8228>) executed in 7 µs
+  [debug] [Git Agent] > commit_message(<GitCommit:13b8228>) executed in 1 µs
+  [debug] [Git Agent] > commit_parents(<GitCommit:13b8228>, []) executed in 8 µs
+  [debug] [Git Agent] > commit_timestamp(<GitCommit:13b8228>) executed in 3 µs
+  [debug] [Git Agent] > commit_gpg_signature(<GitCommit:13b8228>) executed in 8 µs
+  commit 13b822815a1b321dbe1a97e685c2c2ffe2e6beef
+  Author: Mario Flach <m.flach@almightycouch.com>
+  Date: 2021-10-02 19:55:09Z
+  Small fix in GitGud.Web.CodebaseController
+
+  [debug] [Git Agent] transaction(#Function<0.117787472/1 in commit_info/2>) executed in 316 µs
+  [debug] [Git Agent] > commit_author(<GitCommit:79de857>) executed in 10 µs
+  [debug] [Git Agent] > commit_committer(<GitCommit:79de857>) executed in 5 µs
+  [debug] [Git Agent] > commit_message(<GitCommit:79de857>) executed in 3 µs
+  [debug] [Git Agent] > commit_parents(<GitCommit:79de857>, []) executed in 4 µs
+  [debug] [Git Agent] > commit_timestamp(<GitCommit:79de857>) executed in 4 µs
+  [debug] [Git Agent] > commit_gpg_signature(<GitCommit:79de857>) executed in 10 µs
+  commit 79de8573d20a1ebd51b0e2c793b390112f6f4c09
+  Author: Mario Flach <m.flach@almightycouch.com>
+  Date: 2021-10-02 19:47:50Z
+  Small fix in GitGud.Web.BranchSelectLive
+
+  ...
+  ```
+
+  To understand how `GitRekt.GitAgent` handles streams, the 2nd and third lines are quite relevant:
+
+  ```log
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 1000) executed in 1.52 ms
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 1000) streamed 1000 items in 20.81 ms
+  ```
+
+  We can deduce that our `history/2` call coresponds to the 1st line while enumerating the stream with
+  `Enum.take/2` corresponds to the 2nd line. You might have noticed that we actually streamed 1000
+  commits event though we only asked for 10. We'll solve that mistery in a bit but first, let's see
+  what's happening under the hood.
+
+  Internally, `GitRekt.GitAgent` ensures that the stream computation happens on the dedicated `agent`
+  process. This involves streaming items between processes.
+  Each time you pull data from the `GitRekt.GitStream`, an internal `GenServer.call/2` will fetch new
+  data from the associated `agent`. This happens in a seamless and transparent manner.
+
+  Stream related functions like `history/3` take an optional `:stream_chunk_size` option which is used
+  to reduced the amount of round-trips between processes. It's default to 1000 but can be overwritten:
+
+  ```
+  {:ok, stream} = GitAgent.history(agent, head, stream_chunk_size: 3)
+  for commit <- Enum.take(stream, 10) do
+    IO.puts "commit #{Git.oid_fmt(commit.oid)}"
+  end
+  ```
+
+  ```logs
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 3) executed in 138 µs
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 3) streamed 3 items in 139 µs
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 3) streamed 3 items in 127 µs
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 3) streamed 3 items in 86 µs
+  [debug] [Git Agent] history(<GitRef:refs/heads/master>, [], stream_chunk_size: 3) streamed 3 items in 88 µs
+  commit 13b822815a1b321dbe1a97e685c2c2ffe2e6beef
+  commit 79de8573d20a1ebd51b0e2c793b390112f6f4c09
+  commit cb7ce2e33cfe8dc21b54b95afce12cd390ef3ca6
+  commit 3a43dea794d15d0f991824ebce176025715a5d24
+  commit 272c85c2c0198ea0da62db28350d6adabaffc650
+  commit 3b0575b43678826f4bd0b487151552443487a557
+  commit f1e09e7e7c59d5eed32af3b2d3520e8c1f310282
+  commit d9f0ab452985f6a4d8cdc5f72675d308c8c87255
+  commit 5253d6d5b7068e88beaf7d8254f76881ca909eba
+  commit 171d3b53bdb83cf1a10ed96d79fcc703e3c7ee27
+  ```
+
+  ## Garbage collector
+
+  A small note about memory management and garbage collection.
+
+  The basic idea behind `GitRekt.GitAgent` is to provide a enhanced experience for `GitRekt.Git` functions
+  by running commands on a repository in a dedicated `GenServer`.
+
+  You pay a small latency penalty due to process comunication but have a safe way for interacting with
+  repositories in a concurrent environment out of the box.
+
+  Erlang relies on a reference counting garbage collection for NIF resources. This implies that resources
+  such as `GitRekt.GitCommit`, `GitRekt.GitTag`, `GitRekt.GitBlob`, and `GitRekt.GitTree` are not deallocated
+  until the last reference is garbage collected by the VM.
+
+  Note that this does not apply accross nodes. But don't worry, `GitRekt.GitAgent` has you covered and will
+  automatically track resources for client processes running on different nodes for you.
   """
   use GenServer
 
