@@ -44,11 +44,11 @@ defmodule GitGud.Web.Mixfile do
       {:gettext, "~> 0.17"},
       {:gitgud, in_umbrella: true},
       {:oauth2, "~> 2.0"},
-      {:phoenix, "~> 1.5"},
+      {:phoenix, "~> 1.6"},
       {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 2.14"},
+      {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
-      {:phoenix_live_view, "~> 0.15"},
+      {:phoenix_live_view, "~> 0.16"},
       {:phoenix_pubsub, "~> 2.0"},
       {:plug, "~> 1.12"},
       {:plug_cowboy, "~> 2.5"},
@@ -57,6 +57,9 @@ defmodule GitGud.Web.Mixfile do
   end
 
   defp aliases do
-    [test: ["ecto.create --quiet", "ecto.migrate", "test"]]
+    [
+      "assets.deploy": ["cmd --cd assets node build.js --deploy", "phx.digest"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
   end
 end

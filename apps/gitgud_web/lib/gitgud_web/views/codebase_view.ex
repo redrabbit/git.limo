@@ -23,7 +23,7 @@ defmodule GitGud.Web.CodebaseView do
   def branch_select_live(conn, repo, revision, tree_path, opts \\ []) do
     connect_later = !Keyword.get(opts, :autoconnect, false)
     live_render(conn, GitGud.Web.BranchSelectContainerLive,
-      container: {:div, id: "branch-select", class: "branch-select", data_phx_connect_later: connect_later},
+      container: {:div, class: "branch-select", data_phx_connect_later: connect_later},
       session: %{
         "repo_id" => repo.id,
         "rev_spec" => revision_spec(revision),

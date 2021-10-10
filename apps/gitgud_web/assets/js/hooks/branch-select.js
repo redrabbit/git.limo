@@ -7,7 +7,7 @@ function connectLiveSocket(e) {
 }
 
 export default () => {
-  const branchSelect = document.getElementById("branch-select")
+  const branchSelect = document.querySelector(".branch-select")
   if(branchSelect) {
     const branchSelectDropdown = branchSelect.querySelector(".dropdown")
     const observer = new MutationObserver((mutations) => {

@@ -37,7 +37,7 @@ $divider-thickness: $hr-height;
 @import "~bulma-timeline/src/sass/index";
 @import "~bulma-badge/src/sass/index";
 
-$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+$fa-font-path: "@fortawesome/fontawesome-free/webfonts";
 //$fa-font-path: "~@fortawesome/fontawesome-pro/webfonts";
 
 @import "~@fortawesome/fontawesome-free/scss/fontawesome";
@@ -54,7 +54,7 @@ main.container {
 }
 
 nav.navbar {
-  .search {
+  .global-search {
     input {
       width: 18rem;
       border: 0;

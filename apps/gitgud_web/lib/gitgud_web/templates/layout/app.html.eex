@@ -18,6 +18,8 @@
     <link rel="apple-touch-icon" href="<%= Routes.static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="manifest" href="<%= Routes.static_path(@conn, "/manifest.webmanifest") %>">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+    <link phx-track-static rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/index.css") %>" />
+    <script defer phx-track-static type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/index.js") %>"></script>
   </head>
 
   <body>
@@ -33,7 +35,7 @@
         <div class="navbar-menu">
           <div class="navbar-start">
             <div class="navbar-item">
-              <%= live_render(@conn, GitGud.Web.GlobalSearchLive, container: {:div, id: "global-search", class: "search", data_phx_connect_later: true}) %>
+              <%= live_render(@conn, GitGud.Web.GlobalSearchLive, container: {:div, class: "global-search", data_phx_connect_later: true}) %>
             </div>
           </div>
 

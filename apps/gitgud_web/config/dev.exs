@@ -8,24 +8,7 @@ config :gitgud_web, GitGud.Web.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    node: [
-      "node_modules/webpack/bin/webpack.js",
-      "--mode",
-      "development",
-      "--color",
-      "--watch",
-      cd: Path.expand("../assets", __DIR__)
-    ],
-    node: [
-      "node_modules/relay-compiler/bin/relay-compiler",
-      "--src",
-      "./js",
-      "--schema",
-      "../priv/graphql/schema.graphql",
-      "--quiet",
-      "--watch",
-      cd: Path.expand("../assets", __DIR__)
-    ]
+    node: ["build.js", "--watch", cd: Path.expand("../assets", __DIR__)]
   ],
   live_reload: [
     patterns: [

@@ -63,9 +63,9 @@ defmodule GitGud.Web.NavigationHelpers do
     conn.assigns[:live_action] || conn.private[:phoenix_action]
   end
 
-  for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.plug == Phoenix.LiveView.Plug && elem(&1.private.phoenix_live_view, 0) || &1.plug)) do
+  for route <- Enum.uniq_by(Enum.filter(__routes__(), &is_binary(&1.helper)), &(&1.plug == Phoenix.LiveView.Plug && elem(&1.metadata.phoenix_live_view, 0) || &1.plug)) do
     if route.plug == Phoenix.LiveView.Plug do
-      {live_module, _opts} = route.private.phoenix_live_view
+      {live_module, _action, _opts, _params} = route.metadata.phoenix_live_view
       with helper <- Module.split(live_module),
            ["GitGud"|helper] <- helper,
            ["Web"|helper] <- helper,

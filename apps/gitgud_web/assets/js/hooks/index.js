@@ -7,7 +7,6 @@ import globalSearch from "./global-search"
 import highlightCode from "./highlight-code"
 import issueLabelConfigurator from "./issue-label-configurator"
 import liveViews from "./live-views"
-import reactComponents from "./react-components"
 import treeBreadcrumb from "./tree-breadcrumb"
 
 export default [
@@ -20,6 +19,5 @@ export default [
     highlightCode,
     issueLabelConfigurator,
     liveViews,
-    reactComponents,
     treeBreadcrumb,
 ]

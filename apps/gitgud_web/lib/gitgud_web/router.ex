@@ -85,39 +85,41 @@ defmodule GitGud.Web.Router do
     get "/:user_login/repositories", RepoController, :index
 
     scope "/:user_login/:repo_name" do
-      live "/", TreeBrowserLive, :show, as: :codebase, layout: {GitGud.Web.LayoutView, "repo.html"}
+      live_session :repo, root_layout: {GitGud.Web.LayoutView, "repo.html"} do
+        live "/", TreeBrowserLive, :show, as: :codebase
 
-      get "/new/:revision/*path", CodebaseController, :new
-      get "/edit/:revision/*path", CodebaseController, :edit
-      get "/delete/:revision/*path", CodebaseController, :confirm_delete
+        get "/new/:revision/*path", CodebaseController, :new
+        get "/edit/:revision/*path", CodebaseController, :edit
+        get "/delete/:revision/*path", CodebaseController, :confirm_delete
 
-      get "/branches", CodebaseController, :branches
-      get "/tags", CodebaseController, :tags
-      get "/commit/:oid", CodebaseController, :commit
-      get "/history", CodebaseController, :history
-      get "/history/:revision/*path", CodebaseController, :history
-      live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase, layout: {GitGud.Web.LayoutView, "repo.html"}
-      get "/blob/:revision/*path", CodebaseController, :blob
+        get "/branches", CodebaseController, :branches
+        get "/tags", CodebaseController, :tags
+        get "/commit/:oid", CodebaseController, :commit
+        get "/history", CodebaseController, :history
+        get "/history/:revision/*path", CodebaseController, :history
+        live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase
+        get "/blob/:revision/*path", CodebaseController, :blob
 
-      get "/issues", IssueController, :index
-      get "/issues/new", IssueController, :new
-      post "/issues", IssueController, :create
-      get "/issues/labels", IssueLabelController, :index
-      put "/issues/labels", IssueLabelController, :update
-      live "/issues/:number", IssueLive, :show, as: :issue, layout: {GitGud.Web.LayoutView, "repo.html"}
+        get "/issues", IssueController, :index
+        get "/issues/new", IssueController, :new
+        post "/issues", IssueController, :create
+        get "/issues/labels", IssueLabelController, :index
+        put "/issues/labels", IssueLabelController, :update
+        live "/issues/:number", IssueLive, :show, as: :issue
 
-      get "/settings", RepoController, :edit
-      put "/settings", RepoController, :update
-      delete "/settings", RepoController, :delete
+        get "/settings", RepoController, :edit
+        put "/settings", RepoController, :update
+        delete "/settings", RepoController, :delete
 
-      get "/settings/maintainers", MaintainerController, :index
-      post "/settings/maintainers", MaintainerController, :create
-      put "/settings/maintainers", MaintainerController, :update
-      delete "/settings/maintainers", MaintainerController, :delete
+        get "/settings/maintainers", MaintainerController, :index
+        post "/settings/maintainers", MaintainerController, :create
+        put "/settings/maintainers", MaintainerController, :update
+        delete "/settings/maintainers", MaintainerController, :delete
 
-      post "/:revision/*path", CodebaseController, :create
-      put "/:revision/*path", CodebaseController, :update
-      delete "/:revision/*path", CodebaseController, :delete
+        post "/:revision/*path", CodebaseController, :create
+        put "/:revision/*path", CodebaseController, :update
+        delete "/:revision/*path", CodebaseController, :delete
+      end
     end
   end
 end

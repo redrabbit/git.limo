@@ -5,7 +5,7 @@ function connectLiveSocket() {
 }
 
 export default () => {
-  const globalSearch = document.getElementById("global-search")
+  const globalSearch = document.querySelector(".global-search")
   if(globalSearch) {
     const globalSearchInput = globalSearch.querySelector("input")
     const observer = new MutationObserver((mutations) => {
