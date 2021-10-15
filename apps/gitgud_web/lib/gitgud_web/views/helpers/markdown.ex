@@ -73,7 +73,7 @@ defmodule GitGud.Web.Markdown do
   defp transform_ast_node(content, opts) when is_binary(content) do
     transform_ast_node_text(
       content,
-      Regex.scan(~r/\B(@[a-zA-Z0-9_-]+)\b|\B(#[0-9]+)\b|:([a-z0-1_\+]+):|\b([a-f0-9]{7})\b/, content, capture: :first, return: :index),
+      Regex.scan(~r/\B(@[a-zA-Z0-9_-]+)\b|\B(#[0-9]+)\b|:([a-z0-1_\+]+):|\b([a-f0-9]{7,40})\b/, content, capture: :first, return: :index),
       Keyword.get(opts, :repo),
       Keyword.get(opts, :agent),
       Keyword.get(opts, :users),
@@ -101,7 +101,7 @@ defmodule GitGud.Web.Markdown do
               cond do
                 String.starts_with?(match, ":") && String.ends_with?(match, ":") ->
                   Emoji.render(String.slice(match, 1..-2)) || match
-                byte_size(match) == 7 && hexadecimal_str?(match) ->
+                byte_size(match) in 7..40 && hexadecimal_str?(match) ->
                   if agent do
                     case GitAgent.revision(agent, match) do
                       {:ok, {commit, _ref}} ->
