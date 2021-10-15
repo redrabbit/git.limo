@@ -1,0 +1,48 @@
+<div class="comment-container">
+  <%= cond do %>
+    <% @comment.__meta__.state == :deleted -> %>
+      <div id={@id} class="comment"></div>
+    <% is_nil(@changeset) -> %>
+      <div id={@id} class="comment">
+        <header class="comment-header">
+          <%= if connected?(@socket) && @permissions != [] do %>
+            <div class="buttons is-pulled-right">
+              <%= if :edit in @permissions do %>
+                <a class="button is-small" phx-click="toggle_edit" phx-target={@myself}>
+                  <span class="icon"><i class="fa fa-pen"></i></span>
+                </a>
+              <% end %>
+              <%= if :delete in @permissions do %>
+                <a class="button is-small" phx-click="delete" phx-target={@myself}>
+                  <span class="icon"><i class="fa fa-trash"></i></span>
+                </a>
+              <% end %>
+            </div>
+          <% end %>
+          <a href={Routes.user_path(@socket, :show, @comment.author)} class="tag user"><%= @comment.author %></a> commented <%= datetime_format(@comment.inserted_at, "{relative}") %>
+        </header>
+        <div class="content"><%= @comment_body_html %></div>
+      </div>
+    <% true -> %>
+      <div id={@id} class="comment-form">
+        <%= live_component(GitGud.Web.CommentFormLive,
+          id: "comment-#{@comment.id}-form",
+          current_user: @current_user,
+          repo: @repo,
+          agent: @agent,
+          changeset: @changeset,
+          autofocus: true,
+          phx_change: "validate",
+          phx_submit: "update",
+          phx_target: @myself) do %>
+          <% comment_form_assigns -> %>
+            <div class="control">
+              <button class="button" type="reset" phx-click="toggle_edit" phx-target={@myself}>Cancel</button>
+            </div>
+            <div class="control">
+              <%= submit "Update comment", class: "button is-link", disabled: Keyword.fetch!(comment_form_assigns, :changeset).changes == %{} %>
+            </div>
+        <% end %>
+      </div>
+  <% end %>
+</div>

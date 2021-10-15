@@ -1,6 +1,6 @@
 <tbody id="dynamic-forms" phx-update="append" phx-hook="CommitDiffDynamicForms">
   <%= for {oid, hunk_index, line_index} <- @forms do %>
-    <tr id="review-<%= oid_fmt(oid) %>-<%= hunk_index %>-<%= line_index %>-form" class="inline-comments">
+    <tr id={"review-#{oid_fmt(oid)}-#{hunk_index}-#{line_index}-form"} class="inline-comments">
       <td colspan="4">
         <div class="timeline">
           <div class="timeline-item">
@@ -15,11 +15,11 @@
                   minimized: false,
                   phx_change: "validate_comment",
                   phx_submit: "add_comment") do %>
-                  <input type="hidden" name="oid" value="<%= oid_fmt(oid) %>" />
-                  <input type="hidden" name="hunk" value="<%= hunk_index %>" />
-                  <input type="hidden" name="line" value="<%= line_index %>" />
+                  <input type="hidden" name="oid" value={oid_fmt(oid)} />
+                  <input type="hidden" name="hunk" value={hunk_index} />
+                  <input type="hidden" name="line" value={line_index} />
                   <div class="control">
-                    <button class="button" type="reset" phx-click="reset_review_form" phx-value-oid="<%= oid_fmt(oid) %>", phx-value-hunk="<%= hunk_index %>" phx-value-line="<%= line_index %>">Cancel</button>
+                    <button class="button" type="reset" phx-click="reset_review_form" phx-value-oid={oid_fmt(oid)}, phx-value-hunk={hunk_index} phx-value-line={line_index}>Cancel</button>
                   </div>
                   <div class="control">
                     <%= submit "Add comment", class: "button is-success", disabled: @changeset.changes == %{} %>

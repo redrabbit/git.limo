@@ -5,13 +5,13 @@
         Labels
         <div class="buttons is-pulled-right">
           <%= if @edit && (@push_ids != [] || @pull_ids != []) do %>
-            <button class="button is-link is-small is-inverted" phx-click="update_labels" phx-target="<%= @myself %>">
+            <button class="button is-link is-small is-inverted" phx-click="update_labels" phx-target={@myself}>
                 <span class="icon">
                 <i class="fa fa-check"></i>
                 </span>
             </button>
           <% end %>
-          <button class="button is-white is-small has-text-grey-light" phx-click="toggle_edit" phx-target="<%= @myself %>">
+          <button class="button is-white is-small has-text-grey-light" phx-click="toggle_edit" phx-target={@myself}>
             <span class="icon">
               <i class="fa fa-times"></i>
             </span>
@@ -21,7 +21,7 @@
      <% Map.has_key?(assigns, :issue) && @editable -> %>
        <div class="menu-label">
          Labels
-         <button class="button is-white is-small is-pulled-right has-text-grey-light" phx-click="toggle_edit" phx-target="<%= @myself %>">
+         <button class="button is-white is-small is-pulled-right has-text-grey-light" phx-click="toggle_edit" phx-target={@myself}>
            <span class="icon">
              <i class="fa fa-cog"></i>
            </span>
@@ -43,7 +43,7 @@
                 </span>
               <% end %>
             <% label.id in @pull_ids -> %>
-              <p class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>" phx-target="<%= @myself %>">
+              <p class="button issue-label" phx-click="add_label" phx-value-id={label.id} phx-target={@myself}>
                 <%= label.name %>
                 <span class="icon is-small is-pulled-right has-text-grey-light">
                   <i class="fa fa-plus"></i>
@@ -57,7 +57,7 @@
                 </span>
               <% end %>
             <% true -> %>
-              <p class="button issue-label"  phx-click="add_label" phx-value-id="<%= label.id %>"<%= if Map.has_key?(assigns, :issue) do %> phx-target="<%= @myself %>"<% end %>>
+              <p class="button issue-label"  phx-click="add_label" phx-value-id={label.id} phx-target={if Map.has_key?(assigns, :issue), do: @myself}>
                 <%= label.name %>
                 <span class="icon is-small is-pulled-right has-text-grey-light">
                   <i class="fa fa-plus"></i>

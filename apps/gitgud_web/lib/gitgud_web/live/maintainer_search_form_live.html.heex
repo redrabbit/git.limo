@@ -1,10 +1,10 @@
-<%= f = form_for @changeset, Routes.maintainer_path(@socket, :create, @repo.owner_login, @repo), [as: "maintainer", phx_change: "search", phx_submit: "submit", phx_trigger_action: @trigger_submit] %>
+<.form let={f} for={@changeset} action={Routes.maintainer_path(@socket, :create, @repo.owner_login, @repo)} as="maintainer" phx_change="search" phx_submit="submit" phx_trigger={@trigger_submit}>
   <div class="field">
     <%= label f, :user_login, "Add maintainer", class: "label" %>
     <div class="field is-grouped">
       <div class="control is-expanded">
         <div class="user-input">
-          <div class="dropdown<%= if @active, do: " is-active" %>">
+          <div class={["dropdown", @active && "is-active"]}>
             <div class="dropdown-trigger">
               <div class="control is-expanded">
                 <%= text_input f, :user_login, class: "input" %>
@@ -15,7 +15,7 @@
                 <div class="dropdown-content">
                 <%= unless Enum.empty?(@search_results) do %>
                   <%= for user <- @search_results do %>
-                    <a class="dropdown-item" phx-click="select", phx-value-user_login="<%= user.login %>">
+                    <a class="dropdown-item" phx-click="select", phx-value-user_login={user.login}>
                       <span class="tag user"><%= user %></span>
                     </a>
                   <% end %>
@@ -34,4 +34,4 @@
     </div>
     <%= error_tag f, :user_login %>
   </div>
-</form>
+</.form>

@@ -14,20 +14,20 @@
   <table class="table commit-stats-table is-fullwidth">
     <tbody>
       <%= for delta <- @diff_deltas do %>
-        <tr id="blob-<%= oid_fmt(delta.new_file.oid) %>">
+        <tr id={"blob-#{oid_fmt(delta.new_file.oid)}"}>
           <%= if diff_comment_count = @comment_count[delta.new_file.oid] do %>
             <td>
-              <a href="#<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
+              <a href={"##{oid_fmt(delta.new_file.oid)}"}><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
             </td>
             <td class="has-text-right">
-              <a href="#<%= oid_fmt(delta.new_file.oid) %>" class="button is-small is-white">
+              <a href={"##{oid_fmt(delta.new_file.oid)}"} class="button is-small is-white">
                 <span class="icon"><i class="fa fa-comment-alt"></i></span>
                 <span><%= diff_comment_count %></span>
               </a>
             </td>
           <% else %>
             <td colspan="2">
-              <a href="#<%= oid_fmt(delta.new_file.oid) %>"><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
+              <a href={"##{oid_fmt(delta.new_file.oid)}"}><span class="icon"><i class="fa fa-file"></i></span> <%= delta.new_file.path %></a>
             </td>
           <% end %>
         </tr>
@@ -45,12 +45,12 @@
               <%= delta.new_file.path %>
             </div>
             <p class="card-header-icon buttons">
-              <a href="<%= Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, Path.split(delta.old_file.path)) %>" class="button is-small is-link is-inverted">
+              <a href={Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, Path.split(delta.old_file.path))} class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-history"></i>
                 </span>
               </a>
-              <a href="<%= Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @commit, Path.split(delta.new_file.path)) %>" class="button is-small is-link is-inverted">
+              <a href={Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @commit, Path.split(delta.new_file.path))} class="button is-small is-link is-inverted">
                 <span class="icon">
                   <i class="fa fa-code"></i>
                 </span>
@@ -58,7 +58,7 @@
             </p>
           </header>
           <div class="card-content">
-            <table id="<%= oid_fmt(delta.new_file.oid) %>" class="commit-table" data-lang="<%= highlight_language_from_path(delta.new_file.path) %>" phx-hook="CommitDiffTable">
+            <table id={oid_fmt(delta.new_file.oid)} class="commit-table" data-lang={highlight_language_from_path(delta.new_file.path)} phx-hook="CommitDiffTable">
               <tbody>
                 <%= for {hunk, hunk_index} <- Enum.with_index(delta.hunks) do %>
                   <tr class="hunk">
@@ -68,18 +68,11 @@
                     </td>
                   </tr>
                   <%= for {line, line_index} <- Enum.with_index(hunk.lines) do %>
-                    <%= cond do %>
-                      <% line.origin == "+" -> %>
-                        <tr class="diff-addition">
-                      <% line.origin == "-" -> %>
-                        <tr class="diff-deletion">
-                      <% true -> %>
-                        <tr>
-                    <% end %>
+                    <tr class={(line.origin == "+" && "diff-addition") || (line.origin == "-" && "diff-deletion")}>
                       <td class="line-no"><%= if line.old_line_no != -1, do: line.old_line_no %></td>
                       <td class="line-no"><%= if line.new_line_no != -1, do: line.new_line_no %></td>
                       <td class="code origin">
-                        <button class="button is-link is-small" phx-click="add_review_form" phx-value-oid="<%= oid_fmt(delta.new_file.oid) %>" phx-value-hunk=<%= hunk_index %> phx-value-line=<%= line_index %>>
+                        <button class="button is-link is-small" phx-click="add_review_form" phx-value-oid={oid_fmt(delta.new_file.oid)} phx-value-hunk={hunk_index} phx-value-line={line_index}>
                           <span class="icon"><i class="fa fa-comment-alt"></i></span>
                         </button>
                         <%= line.origin %>
@@ -89,7 +82,7 @@
                       </td>
                     </tr>
                     <%= if review = Enum.find(@reviews, &(&1.blob_oid == delta.new_file.oid && &1.hunk == hunk_index && &1.line == line_index)) do %>
-                      <tr id="review-<%= oid_fmt(review.blob_oid) %>-<%= review.hunk %>-<%= review.line %>" class="inline-comments">
+                      <tr id={"review-#{oid_fmt(review.blob_oid)}-#{review.hunk}-#{review.line}"} class="inline-comments">
                         <td colspan="4">
                           <%= live_component(@socket, GitGud.Web.CommitLineReviewLive,
                             id: "review-#{review.id}",

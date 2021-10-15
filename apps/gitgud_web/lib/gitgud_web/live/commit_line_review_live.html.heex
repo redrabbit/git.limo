@@ -1,0 +1,46 @@
+<div class="commit-line-review-container">
+  <div class="timeline" id={"review-#{@review_id}"} phx-update="append">
+    <%= for comment <- Enum.sort_by(@comments, &(&1.inserted_at)) do %>
+      <div id={"review-comment-#{comment.id}"} class="timeline-item">
+        <div class="timeline-content">
+          <%= live_component(@socket, GitGud.Web.CommentLive,
+            id: "comment-#{comment.id}",
+            current_user: @current_user,
+            repo: @repo,
+            repo_permissions: @repo_permissions,
+            agent: @agent,
+            comment: comment
+          )%>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <%= if connected?(@socket) && verified?(@current_user) do %>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-content">
+          <div class="comment-form">
+            <%= live_component(GitGud.Web.CommentFormLive,
+              id: "review-#{@review_id}-comment-form",
+              current_user: @current_user,
+              repo: @repo,
+              agent: @agent,
+              phx_change: "validate_comment",
+              phx_submit: "add_comment") do %>
+              <% comment_form_assigns -> %>
+                <input type="hidden" name="review_id" value={@review_id} />
+                <%= unless Keyword.fetch!(comment_form_assigns, :minimized) do %>
+                  <div class="control">
+                    <button class="button" type="reset" phx-click="reset_review_form" phx-value-review_id={@review_id}>Cancel</button>
+                  </div>
+                <% end %>
+                <div class="control">
+                  <%= submit "Add comment", class: "button is-success", disabled: Keyword.fetch!(comment_form_assigns, :changeset).changes == %{} %>
+                </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,4 +1,4 @@
-<div class="dropdown<%= if @search != "", do: " is-active" %>">
+<div class={["dropdown", @search != "" && "is-active"]}>
   <div class="dropdown-trigger">
     <div class="control has-icons-left">
       <input type="text" class="input" placeholder="Search ..." phx-keyup="search">
@@ -12,11 +12,11 @@
         <%= for search_result <- @search_results do %>
           <%= case search_result do %>
             <% %User{} = user -> %>
-              <a href="<%= Routes.user_path(@socket, :show, user) %>" class="dropdown-item">
+              <a href={Routes.user_path(@socket, :show, user)} class="dropdown-item">
                 <span class="tag user"><%= user %></span>
               </a>
             <% %Repo{} = repo -> %>
-              <a href="<%= Routes.codebase_path(@socket, :show, repo.owner_login, repo) %>" class="dropdown-item">
+              <a href={Routes.codebase_path(@socket, :show, repo.owner_login, repo)} class="dropdown-item">
                 <div class="tags has-addons">
                   <span class="tag user"><%= repo.owner %></span>
                   <span class="tag is-link"><%= repo.name %></span>
