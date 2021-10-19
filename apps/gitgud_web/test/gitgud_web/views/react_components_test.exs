@@ -7,16 +7,22 @@ defmodule GitGud.Web.ReactComponentsTest do
 
   test "renders react component without props" do
     component = react_component("Calendar")
-    assert to_string(to_iodata(component)) == ~s(<div data-react-class="Calendar"></div>)
+    html = Floki.parse_fragment!(to_iodata(component))
+    assert Floki.attribute(html, "data-react-class") == ["Calendar"]
   end
 
   test "renders react component with props" do
     component = react_component("TodoList", %{count: 1, items: ["Buy the Milk"]})
-    assert to_string(to_iodata(component)) == ~s(<div data-react-class="TodoList" data-react-props="eyJjb3VudCI6MSwiaXRlbXMiOlsiQnV5IHRoZSBNaWxrIl19"></div>)
+    html = Floki.parse_fragment!(to_iodata(component))
+    assert Floki.attribute(html, "data-react-class") == ["TodoList"]
+    assert Floki.attribute(html, "data-react-props") == ["eyJjb3VudCI6MSwiaXRlbXMiOlsiQnV5IHRoZSBNaWxrIl19"]
   end
 
   test "renders react component with props and attrs" do
     component = react_component("CountrySelect", %{country_code: "FR"}, class: "select-box")
-    assert to_string(to_iodata(component)) == ~s(<div class="select-box" data-react-class="CountrySelect" data-react-props="eyJjb3VudHJ5Q29kZSI6IkZSIn0"></div>)
+    html = Floki.parse_fragment!(to_iodata(component))
+    assert Floki.attribute(html, "data-react-class") == ["CountrySelect"]
+    assert Floki.attribute(html, "data-react-props") == ["eyJjb3VudHJ5Q29kZSI6IkZSIn0"]
+    assert Floki.attribute(html, "class") == ["select-box"]
   end
 end
