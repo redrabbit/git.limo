@@ -45,7 +45,7 @@ defmodule GitGud.Web.UserControllerTest do
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
     assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
-    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|address: &1.address <> ".0"}) end))
+    conn = post(conn, Routes.user_path(conn, :create), user: Map.update!(user_params, :emails, fn emails -> List.update_at(emails, 0, &%{&1|address: &1.address <> ".$"}) end))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
     assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)

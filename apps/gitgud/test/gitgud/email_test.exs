@@ -16,7 +16,7 @@ defmodule GitGud.EmailTest do
     params = factory(:email)
     assert {:error, changeset} = Email.create(user, Map.delete(params, :address))
     assert "can't be blank" in errors_on(changeset).address
-    assert {:error, changeset} = Email.create(user, Map.update!(params, :address, &(&1 <> ".0")))
+    assert {:error, changeset} = Email.create(user, Map.update!(params, :address, &(&1 <> ".$")))
     assert "has invalid format" in errors_on(changeset).address
   end
 

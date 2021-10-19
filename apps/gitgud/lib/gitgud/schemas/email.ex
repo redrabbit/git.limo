@@ -115,7 +115,7 @@ defmodule GitGud.Email do
     email
     |> cast(params, [:address])
     |> validate_required([:address])
-    |> validate_format(:address, ~r/^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$/)
+    |> validate_format(:address, ~r/^[a-zA-Z0-9.!#$%&’*+\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/)
     |> check_constraint(:address, name: :emails_address_constraint, message: "already taken")
     |> unique_constraint(:address, name: :emails_user_id_address_index)
   end

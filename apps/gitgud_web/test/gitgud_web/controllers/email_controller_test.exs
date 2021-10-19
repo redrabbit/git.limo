@@ -37,7 +37,7 @@ defmodule GitGud.Web.EmailControllerTest do
   test "fails to create email with invalid email address", %{conn: conn, user: user} do
     email_params = factory(:email)
     conn = Plug.Test.init_test_session(conn, user_id: user.id)
-    conn = post(conn, Routes.email_path(conn, :create), email: Map.update!(email_params, :address, &(&1 <> ".0")))
+    conn = post(conn, Routes.email_path(conn, :create), email: Map.update!(email_params, :address, &(&1 <> ".$")))
     assert get_flash(conn, :error) == "Something went wrong! Please check error(s) below."
     assert {:ok, html} = Floki.parse_document(html_response(conn, 400))
     assert Floki.text(Floki.find(html, "title")) == LayoutView.title(conn)
