@@ -98,7 +98,7 @@ defmodule GitGud.Web.Router do
         get "/history", CodebaseController, :history
         get "/history/:revision/*path", CodebaseController, :history
         live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase
-        get "/blob/:revision/*path", CodebaseController, :blob
+        live "/blob/:revision/*path", BlobViewerLive, :blob, as: :codebase
 
         get "/issues", IssueController, :index
         get "/issues/new", IssueController, :new

@@ -291,31 +291,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
-  Renders a blob for a specific revision and path.
-  """
-  @spec blob(Plug.Conn.t, map) :: Plug.Conn.t
-  def blob(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => blob_path} = _params) do
-    unless Enum.empty?(blob_path) do
-      if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-        with {:ok, agent} <- GitRepo.get_agent(repo),
-             {:ok, {reference, commit, blob_content, blob_size}} <- GitAgent.transaction(agent, &resolve_blob(&1, revision, blob_path)) do
-          render(conn, "blob.html",
-            repo: repo,
-            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-            agent: agent,
-            revision: reference || commit,
-            commit: commit,
-            tree_path: blob_path,
-            breadcrumb: %{action: :tree, cwd?: true, tree?: false},
-            blob_content: blob_content,
-            blob_size: blob_size
-          )
-        end
-      end
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Renders all branches of a repository.
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t

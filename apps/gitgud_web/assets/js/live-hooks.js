@@ -3,7 +3,19 @@ import hljs from "highlight.js"
 import cloneRepo from "./hooks/clone-repo"
 import treeBreadcrumb from "./hooks/tree-breadcrumb"
 
-function highlightTable(table) {
+function highlightBlobTable(table) {
+  const {lang} = table.dataset
+  const langDetect = hljs.getLanguage(lang)
+  const highlight = (line) => {
+    const result = langDetect ? hljs.highlight(line.textContent, {language: lang, ignoreIllegals: true}, state) : hljs.highlightAuto(line.textContent)
+    state = result.top
+    line.innerHTML = result.value
+  }
+  let state
+  table.querySelectorAll("td.code .code-inner:not(.nohighlight)").forEach(highlight)
+}
+
+function highlightDiffTable(table) {
   const lang = table.dataset.lang
   const langDetect = hljs.getLanguage(lang)
 
@@ -74,6 +86,11 @@ Hooks.TreeBreadcrumb = {
   updated() { treeBreadcrumb() }
 }
 
+Hooks.BlobContentTable = {
+  mounted() { highlightBlobTable(this.el) },
+  updated() { highlightBlobTable(this.el) }
+}
+
 Hooks.CloneRepo = {
   mounted() { cloneRepo() }
 }
@@ -109,8 +126,8 @@ Hooks.CommitDiff = {
 }
 
 Hooks.CommitDiffTable = {
-  mounted() { highlightTable(this.el) },
-  updated() { highlightTable(this.el) }
+  mounted() { highlightDiffTable(this.el) },
+  updated() { highlightDiffTable(this.el) }
 }
 
 Hooks.CommitDiffDynamicForms = {

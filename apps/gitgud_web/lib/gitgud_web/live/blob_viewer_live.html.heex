@@ -1,0 +1,94 @@
+<nav class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <div class="branch-select">
+        <%= live_component(@socket, GitGud.Web.BranchSelectLive,
+            id: "branch_select",
+            repo: @repo,
+            agent: @agent,
+            revision: @revision,
+            commit: @commit,
+            tree_path: @blob_path,
+            action: :blob
+        ) %>
+      </div>
+    </div>
+    <div class="level-item">
+      <nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs" phx-hook="TreeBreadcrumb">
+        <ul>
+          <li>
+            <%= live_redirect @repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, []) %>
+          </li>
+          <%= unless Enum.empty?(@blob_path) do %>
+            <%= for {path, index} <- Enum.with_index(Enum.drop(@blob_path, -1), 1) do %>
+              <li><%= live_redirect path, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, Enum.take(@blob_path, index)) %></li>
+            <% end %>
+            <li class="is-active"><a><%= List.last(@blob_path) %></a></li>
+          <% end %>
+        </ul>
+      </nav>
+    </div>
+  </div>
+  <div class="level-right">
+    <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
+      <div class="level-item">
+        <div class="field has-addons">
+          <div class="control">
+            <%= live_redirect "Edit", to: Routes.codebase_path(@socket, :edit, @repo.owner_login, @repo.name, @revision, @blob_path), class: "button" %>
+          </div>
+          <div class="control">
+            <%= live_redirect "Delete", to: Routes.codebase_path(@socket, :confirm_delete, @repo.owner_login, @repo.name, @revision, @blob_path), class: "button" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    <div class="level-item">
+      <%= live_redirect "History", to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo.name, @revision, @blob_path), class: "button" %>
+    </div>
+  </div>
+</nav>
+
+<div id="blob" class="card blob">
+  <header class="card-header">
+    <div class="card-header-title">
+      <%= if @blob_commit_info do %>
+        <%= with %{author: _author, committer: committer} <- Map.take(@blob_commit_info, [:author, :committer]) do %>
+          <span>
+            <%= if Map.has_key?(committer, :id) do %>
+              <a href={Routes.user_path(@socket, :show, committer)} class="tag is-white user"><%= committer %></a>
+            <% else %>
+              <a href={"mailto:#{committer.email}"} class="tag tooltip is-white has-text-black" data-tooltip={committer.email}><%= committer.name %></a>
+            <% end %>
+            <a href={Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(@blob_commit_info.oid))} class="has-text-dark"><%= commit_message_title(@blob_commit_info.message) %></a>
+          </span>
+        <% end %>
+      <% else %>
+        <span class="tag placeholder is-white"></span>
+      <% end %>
+    </div>
+
+    <div class="card-header-icon has-text-right has-text-dark">
+      <%= if @blob_commit_info do %>
+        <%= datetime_format(@blob_commit_info.timestamp, "{relative}") %>
+      <% else %>
+        <span class="tag placeholder is-white"></span>
+      <% end %>
+    </div>
+  </header>
+
+  <div class="card-content">
+    <table id="blob-content" class="table blob-table" data-lang={highlight_language_from_path(Path.join(@blob_path))} phx-hook="BlobContentTable">
+      <tbody>
+        <%= for {line_content, line_no} <- Enum.with_index(String.split(@blob_content, "\n"), 1) do %>
+          <tr>
+            <td class="line-no"><%= line_no %></td>
+            <td class="code">
+              <div class="code-inner"><%= line_content %></div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+

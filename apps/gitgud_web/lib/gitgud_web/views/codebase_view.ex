@@ -39,18 +39,6 @@ defmodule GitGud.Web.CodebaseView do
     {ahead / total * 100, behind / total * 100}
   end
 
-  @spec blob_header_live(Plug.Conn.t, Repo.t, GitAgent.git_revision, Path.t) :: binary
-  def blob_header_live(conn, repo, revision, tree_path) do
-    live_render(conn, GitGud.Web.BlobHeaderLive,
-      container: {:header, class: "card-header"},
-      session: %{
-        "repo_id" => repo.id,
-        "rev_spec" => revision_spec(revision),
-        "tree_path" => tree_path
-      }
-    )
-  end
-
   @spec chunk_commits_by_timestamp([{GitCommit.t, map, non_neg_integer}]) :: [{Date, [{GitCommit.t, map, non_neg_integer}]}]
   def chunk_commits_by_timestamp(commits) do
     Enum.reduce(Enum.reverse(commits), [], fn {_commit, commit_info, _comment_count} = tuple, acc ->
