@@ -5,22 +5,22 @@
     <div class="tabs is-toggle is-fullwidth">
       <ul>
         <li>
-          <a href={Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, [])}>
+          <%= live_redirect to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, []) do %>
             <span class="icon"><i class="fa fa-layer-group" aria-hidden="true"></i></span>
             <span>Commits&nbsp;&nbsp;<span class="tag"><%= @stats[:commits] || 0 %></span></span>
-          </a>
+          <% end %>
         </li>
         <li>
-          <a href={Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo)}>
+          <%= live_redirect to: Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo) do %>
             <span class="icon"><i class="fa fa-code-branch" aria-hidden="true"></i></span>
             <span>Branches&nbsp;&nbsp;<span class="tag"><%= @stats[:branches] || 0 %></span></span>
-          </a>
+          <% end %>
         </li>
         <li>
-          <a href={Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo)}>
+          <%= live_redirect to: Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo) do %>
             <span class="icon"><i class="fa fa-tags" aria-hidden="true"></i></span>
             <span>Tags&nbsp;&nbsp;<span class="tag"><%= @stats[:tags] || 0 %></span></span>
-          </a>
+          <% end %>
         </li>
         <li>
           <a>
@@ -62,7 +62,6 @@
             <li></li>
           </ul>
         </nav>
-
       </div>
     </div>
     <div class="level-right">
@@ -98,12 +97,12 @@
       <% end %>
       <%= if revision_type(@revision) == :branch && authorized?(@current_user, @repo, :push) do %>
         <div class="level-item">
-          <a href={Routes.codebase_path(@socket, :new, @repo.owner_login, @repo.name, @revision, @tree_path)} class="button">New</a>
+          <%= live_redirect "New", to: Routes.codebase_path(@socket, :new, @repo.owner_login, @repo.name, @revision, @tree_path), class: "button" %>
         </div>
       <% end %>
       <%= unless Enum.empty?(@tree_path) do %>
         <div class="level-item">
-          <a href={Routes.codebase_path(@socket, :history, @repo.owner_login, @repo.name, @revision, @tree_path)} class="button">History</a>
+          <%= live_redirect "History", to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo.name, @revision, @tree_path), class: "button" %>
         </div>
       <% end %>
     </div>
@@ -120,7 +119,7 @@
               <% else %>
                 <a href={"mailto:#{committer.email}"} class="tag tooltip is-white has-text-black" data-tooltip={committer.email}><%= committer.name %></a>
               <% end %>
-              <a href={Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(@tree_commit_info.oid))} class="has-text-dark"><%= commit_message_title(@tree_commit_info.message) %></a>
+              <%= live_redirect commit_message_title(@tree_commit_info.message), to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(@tree_commit_info.oid)), class: "has-text-dark" %>
             <% end %>
           <% else %>
             <span class="tag placeholder is-white"></span>
@@ -146,15 +145,15 @@
                   <span><%= tree_entry.name %></span>
                 <% end %>
               <% :blob -> %>
-                <a href={Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name])}>
+                <%= live_redirect to: Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name]) do %>
                   <span class="icon"><i class="fa fa-file"></i></span>
                   <span><%= tree_entry.name %></span>
-                </a>
+                <% end %>
             <% end %>
           </td>
           <td class="is-fullwidth">
             <%= if commit_info do %>
-              <a href={Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(commit_info.oid))} class="has-text-dark"><%= commit_message_title(commit_info.message) %></a>
+              <%= live_redirect commit_message_title(commit_info.message), to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, oid_fmt(commit_info.oid)), class: "has-text-dark" %>
             <% else %>
               <span class="tag placeholder"></span>
             <% end %>
@@ -176,9 +175,9 @@
       <header class="card-header">
         <div class="card-header-title"><%= filename %></div>
           <p class="card-header-icon buttons">
-            <a href={Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [filename])} class="button is-small is-link is-inverted">
+            <%= live_redirect to: Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @revision, @tree_path ++ [filename]), class: "button is-small is-link is-inverted" do %>
               <span class="icon"><i class="fa fa-code"></i></span>
-            </a>
+            <% end %>
           </p>
       </header>
       <div class="card-content">
