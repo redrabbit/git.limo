@@ -41,22 +41,22 @@
           <a class={if @tab == :tag, do: "is-active"} phx-click="switch_tab" phx-value-tab="tag" phx-target={@myself}>Tags</a>
         </p>
         <%= if @tab == :branch do %>
-          <a class={["panel-block", @head.oid == @commit.oid && "is-active"]} href={Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @head, @tree_path)}>
+          <%= live_redirect to: Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @head, @tree_path), class: ["panel-block", @head.oid == @commit.oid && "is-active"] do %>
             <div class="control">
               <span class="head"><%= @head.name %></span>
               <span class="tag is-pulled-right">default</span>
             </div>
-          </a>
+          <% end %>
         <% end %>
         <%= for ref <- Enum.filter(@refs, &(&1.type == @tab && String.contains?(&1.name, @filter))) do %>
-          <a class={["panel-block", ref.oid == @commit.oid && "is-active"]} href={Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, ref, @tree_path)}><%= ref.name %></a>
+          <%= live_redirect ref.name, to: Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, ref, @tree_path), class: ["panel-block", ref.oid == @commit.oid && "is-active"] %>
         <% end %>
         <div class="panel-block">
             <%= case @tab do %>
             <% :branch -> %>
-                <a class="button is-small is-link is-fullwidth" href={Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo)}>all branches</a>
+              <%= live_redirect "all branches", to: Routes.codebase_path(@socket, :branches, @repo.owner_login, @repo), class: "button is-small is-link is-fullwidth" %>
             <% :tag -> %>
-                <a class="button is-small is-link is-fullwidth" href={Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo)}>all tags</a>
+              <%= live_redirect "all tags", to: Routes.codebase_path(@socket, :tags, @repo.owner_login, @repo), class: "button is-small is-link is-fullwidth" %>
             <% end %>
         </div>
       </nav>
