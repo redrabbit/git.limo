@@ -15,10 +15,9 @@ defmodule GitGud.Web.CodebaseController do
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
   alias GitGud.IssueQuery
-  alias GitGud.ReviewQuery
   alias GitGud.GPGKey
 
-  import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
+  import GitRekt.Git, only: [oid_parse: 1]
 
   plug :put_layout, :repo
   plug :ensure_authenticated when action in [:new, :create, :edit, :update, :confirm_delete, :delete]
@@ -340,28 +339,8 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
-  Renders all commits for a specific revision.
+  Redirects to history HEAD.
   """
-  @spec history(Plug.Conn.t, map) :: Plug.Conn.t
-  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name, "revision" => revision, "path" => tree_path} = params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      cursor = pagination_cursor(params)
-      with {:ok, agent} <- GitRepo.get_agent(repo),
-           {:ok, {reference, commit, tree_entry_type, {slice, more?}}} <- GitAgent.transaction(agent, &resolve_history(&1, revision, tree_path, cursor, 20)) do
-        render(conn, "commit_list.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          agent: agent,
-          revision: reference || commit,
-          commit: commit,
-          tree_path: tree_path,
-          breadcrumb: %{action: :history, cwd?: true, tree?: tree_entry_type == :tree},
-          page: pagination_page(resolve_commits_info_db(repo, slice), cursor, more?)
-        )
-      end
-    end || {:error, :not_found}
-  end
-
   def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
     if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
       case GitAgent.head(repo) do
@@ -412,31 +391,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp commit_changeset_update_ref(changeset), do: "refs/heads/" <> Ecto.Changeset.fetch_field!(changeset, :branch)
-
-  defp resolve_commits_infos(agent, commits) do
-    Enum.reduce_while(Enum.reverse(commits), {:ok, []}, &resolve_commit_info(agent, &1, &2))
-  end
-
-  defp resolve_commits_info_db(repo, commits_infos) do
-    {commits, infos} = Enum.unzip(commits_infos)
-    users = UserQuery.by_email(Enum.uniq(Enum.flat_map(infos, &[&1.author.email, &1.committer.email])), preload: [:emails, :gpg_keys])
-    count = Map.new(ReviewQuery.count_comments(repo, commits))
-    Enum.map(commits_infos, fn {commit, commit_info} ->
-      author = resolve_db_user(commit_info.author, users)
-      committer = resolve_db_user(commit_info.committer, users)
-      gpg_key = resolve_db_user_gpg_key(commit_info.gpg_sig, committer)
-      {commit, Map.merge(commit_info, %{author: author, committer: committer, gpg_key: gpg_key}), Map.get(count, commit.oid, 0)}
-    end)
-  end
-
-  defp resolve_commit_info(agent, commit, {:ok, acc}) do
-    case resolve_commit_info(agent, commit) do
-         {:ok, commit_info} ->
-            {:cont, {:ok, [{commit, commit_info}|acc]}}
-        {:error, reason} ->
-          {:halt, {:error, reason}}
-    end
-  end
 
   defp resolve_commit_info(agent, commit) do
     with {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
@@ -515,16 +469,6 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp resolve_tree_entry_type(_agent, _commit, []), do: {:ok, :tree}
-  defp resolve_tree_entry_type(agent, commit, tree_path) do
-    case GitAgent.tree_entry_by_path(agent, commit, Path.join(tree_path)) do
-      {:ok, tree_entry} ->
-        {:ok, tree_entry.type}
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   defp resolve_tree(agent, revision, []) do
     with {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
          {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
@@ -570,18 +514,6 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp resolve_history(agent, rev_spec, tree_path, cursor, limit) do
-    opts = Enum.empty?(tree_path) && [] || [pathspec: Path.join(tree_path)]
-    with {:ok, {object, reference}} <- GitAgent.revision(agent, rev_spec),
-         {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
-         {:ok, tree_entry_type} <- resolve_tree_entry_type(agent, commit, tree_path),
-         {:ok, history} <- GitAgent.history(agent, object, opts),
-         {:ok, {slice, more?}} <- paginate_history(history, cursor, limit),
-         {:ok, slice} <- resolve_commits_infos(agent, slice) do
-      {:ok, {reference, commit, tree_entry_type, {slice, more?}}}
-    end
-  end
-
   defp resolve_db_commit_info(commit_info) do
     users = UserQuery.by_email(Enum.uniq([commit_info.author.email, commit_info.committer.email]), preload: [:emails, :gpg_keys])
     author = resolve_db_user(commit_info.author, users)
@@ -604,64 +536,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
-
-  defp pagination_cursor(%{"before" => cursor}), do: {:before, oid_parse(cursor)}
-  defp pagination_cursor(%{"after" => cursor}), do: {:after, oid_parse(cursor)}
-  defp pagination_cursor(_params), do: nil
-
-  defp pagination_page(slice, {:before, _cursor_oid}, more?) do
-    %{
-      slice: slice,
-      previous?: more?,
-      before: more? && oid_fmt(elem(List.first(slice), 0).oid) || nil,
-      next?: true,
-      after: !Enum.empty?(slice) && oid_fmt(elem(List.last(slice), 0).oid) || nil
-    }
-  end
-
-  defp pagination_page(slice, {:after, _cursor_oid}, more?) do
-    %{
-      slice: slice,
-      previous?: true,
-      before: !Enum.empty?(slice) && oid_fmt(elem(List.first(slice), 0).oid) || nil,
-      next?: more?,
-      after: more? && oid_fmt(elem(List.last(slice), 0).oid) || nil
-    }
-  end
-
-  defp pagination_page(slice, nil, more?) do
-    %{
-      slice: slice,
-      previous?: false,
-      before: nil,
-      next?: more?,
-      after: more? && oid_fmt(elem(List.last(slice), 0).oid) || nil
-    }
-  end
-
-  defp paginate_history(stream, {:before, cursor_oid}, limit) do
-    stream = Enum.reverse(Stream.take_while(stream, &(&1.oid != cursor_oid)))
-    stream = Stream.take(stream, limit+1)
-    slice = Enum.to_list(stream)
-    {:ok, {Enum.reverse(Enum.take(slice, limit)), Enum.count(slice) > limit}}
-  end
-
-  defp paginate_history(stream, {:after, cursor_oid}, limit) do
-    stream = Stream.drop(Stream.drop_while(stream, &(&1.oid != cursor_oid)), 1)
-    stream = Stream.take(stream, limit+1)
-    slice = Enum.to_list(stream)
-    {:ok, {Enum.take(slice, limit), Enum.count(slice) > limit}}
-  end
-
-  defp paginate_history(stream, nil, limit) do
-    stream = Stream.take(stream, limit+1)
-    slice = Enum.to_list(stream)
-    {:ok, {Enum.take(slice, limit), Enum.count(slice) > limit}}
-  end
-
-  defp paginate_history(_stream, _cursor, _limit) do
-    {:error, :invalid_cursor}
-  end
 
   defp write_blob(agent, commit, blob_path, blob_content, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message) do
     with {:ok, tree} <- GitAgent.tree(agent, commit),

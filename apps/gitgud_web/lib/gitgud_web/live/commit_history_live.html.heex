@@ -1,0 +1,91 @@
+<nav class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <div class="branch-select">
+        <%= live_component(@socket, GitGud.Web.BranchSelectLive,
+            id: "branch_select",
+            repo: @repo,
+            agent: @agent,
+            revision: @revision,
+            commit: @commit,
+            tree_path: @tree_path,
+            action: :history
+        ) %>
+      </div>
+    </div>
+    <div class="level-item">
+      <nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs" phx-hook="TreeBreadcrumb">
+        <ul>
+          <li>
+            <%= live_redirect @repo.name, to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, []) %>
+          </li>
+          <%= unless Enum.empty?(@tree_path) do %>
+            <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
+              <li><%= live_patch path, to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @revision, Enum.take(@tree_path, index)) %></li>
+            <% end %>
+            <li class="is-active"><a><%= List.last(@tree_path) %></a></li>
+          <% end %>
+          <%= if @tree_entry_type == :tree do %>
+            <li></li>
+          <% end %>
+        </ul>
+      </nav>
+    </div>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <%= case @tree_entry_type do %>
+        <% :tree -> %>
+          <%= live_redirect "Browse tree", to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo.name, @revision, @tree_path), class: "button" %>
+        <% :blob -> %>
+          <%= live_redirect "View blob", to: Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo.name, @revision, @tree_path), class: "button" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<%= unless Enum.empty?(@page.slice) do %>
+  <div class="timeline commit-timeline">
+    <%= for {date, commits} <- chunk_commits_by_timestamp(@page.slice) do %>
+      <div class="timeline-header is-size-7"><%= datetime_format(date, "{D} {Mshort} {YYYY}") %></div>
+      <%= for {commit, commit_info, comment_count} <- commits do %>
+        <div class="timeline-item">
+          <div class="timeline-marker"></div>
+            <div class="timeline-content">
+            <div class="columns">
+              <div class="column is-three-quarters">
+                <%= if comment_count > 0 do %>
+                  <div class="is-pulled-right">
+                    <%= live_redirect to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, commit), class: "button is-small is-white" do %>
+                      <span class="icon"><i class="fa fa-comment-alt"></i></span>
+                      <span><%= comment_count %></span>
+                    <% end %>
+                  </div>
+                <% end %>
+                <p class="has-text-weight-bold">
+                  <%= live_redirect commit_message_title(commit_info.message), to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, commit) %>
+                </p>
+                <%= render "_commit_signature.html", conn: @socket, commit: commit, commit_info: commit_info %>
+              </div>
+              <div class="column has-text-right">
+                <p class="buttons is-pulled-right">
+                  <%= live_redirect commit, to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, commit), class: "button is-small is-link is-inverted has-text-weight-bold" %>
+                  <%= live_redirect to: Routes.codebase_path(@socket, @tree_entry_type, @repo.owner_login, @repo, commit, @tree_path), class: "button is-small is-link is-inverted" do %>
+                    <span class="icon"><i class="fa fa-code"></i></span>
+                  <% end %>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      <div class="timeline-item is-spacer"></div>
+    <% end %>
+  </div>
+  <.pagination page={@page} />
+<% else %>
+  <article class="message is-light">
+    <div class="message-body">No commit ancestors found.</div>
+  </article>
+<% end %>
+
