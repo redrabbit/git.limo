@@ -8,9 +8,15 @@ defmodule GitGud.Web.CommitDiffLive do
   alias GitRekt.GitRepo
   alias GitRekt.GitAgent
 
+  alias GitGud.DB
+  alias GitGud.DBQueryable
+
+  alias GitGud.User
   alias GitGud.CommitLineReview
   alias GitGud.Comment
+  alias GitGud.GPGKey
 
+  alias GitGud.UserQuery
   alias GitGud.RepoQuery
   alias GitGud.ReviewQuery
   alias GitGud.CommentQuery
@@ -26,20 +32,33 @@ defmodule GitGud.Web.CommitDiffLive do
   #
 
   @impl true
-  def mount(_params, %{"repo_id" => repo_id, "commit_oid" => oid} = session, socket) do
+  def mount(%{"user_login" => user_login, "repo_name" => repo_name} = _params, session, socket) do
     {
       :ok,
       socket
       |> authenticate(session)
-      |> assign_new(:repo, fn -> RepoQuery.by_id(repo_id) end)
+      |> assign_repo!(user_login, repo_name)
       |> assign_repo_permissions()
-      |> assign_agent!()
-      |> assign(:commit_oid, oid)
-      |> assign_diff!()
+      |> assign_repo_open_issue_count()
+      |> assign_agent!(),
+      temporary_assigns: [reviews: []]
+    }
+  end
+
+  @impl true
+  def handle_params(_params, _uri, socket) when is_nil(socket.assigns.repo.pushed_at) do
+    {:noreply, assign_page_title(socket)}
+  end
+
+  def handle_params(%{"oid" => commit_oid} = _params, _uri, socket) do
+    {
+      :noreply,
+      socket
+      |> assign_diff!(oid_parse(commit_oid))
       |> assign_reviews()
       |> assign_comment_count()
-      |> subscribe_topic(),
-      temporary_assigns: [reviews: []]
+      |> assign_page_title()
+      |> subscribe_topic()
     }
   end
 
@@ -143,6 +162,15 @@ defmodule GitGud.Web.CommitDiffLive do
     socket
   end
 
+  defp assign_repo!(socket, user_login, repo_name) do
+    query = DBQueryable.query({RepoQuery, :user_repo_query}, [user_login, repo_name], viewer: current_user(socket))
+    assign(socket, :repo, DB.one!(query))
+  end
+
+  defp assign_repo_open_issue_count(socket) do
+    assign(socket, :repo_open_issue_count, GitGud.IssueQuery.count_repo_issues(socket.assigns.repo, status: :open))
+  end
+
   defp assign_repo_permissions(socket) do
     if connected?(socket),
       do: assign(socket, :repo_permissions, RepoQuery.permissions(socket.assigns.repo, current_user(socket))),
@@ -150,21 +178,27 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   defp assign_agent!(socket) do
-    assign_new(socket, :agent, fn -> resolve_agent!(socket.assigns.repo) end)
+    assign(socket, :agent, resolve_agent!(socket.assigns.repo))
   end
 
-  defp assign_diff!(socket) do
-    assign(socket, resolve_diff!(socket.assigns.agent, socket.assigns.commit_oid))
+  defp assign_diff!(socket, oid) do
+    assigns = resolve_commit_diff!(socket.assigns.agent, oid)
+    assigns = Map.update!(assigns, :commit_info, &resolve_db_commit_info/1)
+    assign(socket, assigns)
   end
 
   defp assign_reviews(socket) do
-    assign(socket, :reviews, ReviewQuery.commit_line_reviews(socket.assigns.repo, socket.assigns.commit_oid, preload: {:comments, :author}))
+    assign(socket, :reviews, ReviewQuery.commit_line_reviews(socket.assigns.repo, socket.assigns.commit.oid, preload: {:comments, :author}))
   end
 
   defp assign_comment_count(socket) do
     assign(socket, :comment_count, Map.new(Enum.group_by(socket.assigns.reviews, &(&1.blob_oid)), fn {blob_oid, reviews} ->
       {blob_oid, Enum.reduce(reviews, 0, fn review, acc -> acc + Enum.count(review.comments) end)}
     end))
+  end
+
+  defp assign_page_title(socket) do
+    assign(socket, :page_title, GitGud.Web.CodebaseView.title(socket.assigns[:live_action], socket.assigns))
   end
 
   defp resolve_agent!(repo) do
@@ -176,22 +210,67 @@ defmodule GitGud.Web.CommitDiffLive do
     end
   end
 
-  defp resolve_diff!(agent, oid) do
-    case GitAgent.transaction(agent, &resolve_diff(&1, oid)) do
-      {:ok, {commit, diff_stats, diff_deltas}} ->
-        %{commit: commit, diff_stats: diff_stats, diff_deltas: diff_deltas}
+  defp resolve_commit_diff!(agent, oid) do
+    case GitAgent.transaction(agent, &resolve_commit_diff(&1, oid)) do
+      {:ok, {commit, commit_info, diff_stats, diff_deltas}} ->
+        %{commit: commit, commit_info: commit_info, diff_stats: diff_stats, diff_deltas: diff_deltas}
       {:error, error} ->
         raise error
     end
   end
 
-  defp resolve_diff(agent, oid) do
+  defp resolve_commit_diff(agent, oid) do
     with {:ok, commit} <- GitAgent.object(agent, oid),
-         {:ok, commit_parents} <- GitAgent.commit_parents(agent, commit),
-         {:ok, diff} <- GitAgent.diff(agent, Enum.at(commit_parents, 0), commit),
+         {:ok, commit_info} <- resolve_commit_info(agent, commit),
+         {:ok, diff} <- GitAgent.diff(agent, Enum.at(commit_info.parents, 0), commit),
          {:ok, diff_stats} <- GitAgent.diff_stats(agent, diff),
          {:ok, diff_deltas} <- GitAgent.diff_deltas(agent, diff) do
-      {:ok, {commit, diff_stats, diff_deltas}}
+      {:ok, {commit, commit_info, diff_stats, diff_deltas}}
     end
   end
+
+  defp resolve_commit_info(agent, commit) do
+    with {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
+         {:ok, message} <- GitAgent.commit_message(agent, commit),
+         {:ok, author} <- GitAgent.commit_author(agent, commit),
+         {:ok, committer} <- GitAgent.commit_committer(agent, commit),
+         {:ok, parents} <- GitAgent.commit_parents(agent, commit) do
+      gpg_sig =
+        case GitAgent.commit_gpg_signature(agent, commit) do
+          {:ok, gpg_sig} -> gpg_sig
+          {:error, _reason} -> nil
+        end
+      {:ok, %{
+        author: author,
+        committer: committer,
+        message: message,
+        timestamp: timestamp,
+        gpg_sig: gpg_sig,
+        parents: Enum.to_list(parents)}
+      }
+    end
+  end
+
+  defp resolve_db_commit_info(commit_info) do
+    users = UserQuery.by_email(Enum.uniq([commit_info.author.email, commit_info.committer.email]), preload: [:emails, :gpg_keys])
+    author = resolve_db_user(commit_info.author, users)
+    committer = resolve_db_user(commit_info.committer, users)
+    gpg_key = resolve_db_user_gpg_key(commit_info.gpg_sig, committer)
+    Map.merge(commit_info, %{author: author, committer: committer, gpg_key: gpg_key})
+  end
+
+  defp resolve_db_user(%{email: email} = map, users) do
+    Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
+  end
+
+  defp resolve_db_user_gpg_key(gpg_sig, %User{} = user) when not is_nil(gpg_sig) do
+    gpg_key_id =
+      gpg_sig
+      |> GPGKey.decode!()
+      |> GPGKey.parse!()
+      |> get_in([:sig, :sub_pack, :issuer])
+    Enum.find(user.gpg_keys, &String.ends_with?(&1.key_id, gpg_key_id))
+  end
+
+  defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
 end

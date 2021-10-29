@@ -11,13 +11,9 @@ defmodule GitGud.Web.CodebaseController do
   alias GitRekt.GitTag
 
   alias GitGud.DB
-  alias GitGud.User
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
   alias GitGud.IssueQuery
-  alias GitGud.GPGKey
-
-  import GitRekt.Git, only: [oid_parse: 1]
 
   plug :put_layout, :repo
   plug :ensure_authenticated when action in [:new, :create, :edit, :update, :confirm_delete, :delete]
@@ -271,25 +267,6 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   @doc """
-  Renders a single commit.
-  """
-  @spec commit(Plug.Conn.t, map) :: Plug.Conn.t
-  def commit(conn, %{"user_login" => user_login, "repo_name" => repo_name, "oid" => oid} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      with {:ok, agent} <- GitRepo.get_agent(repo),
-           {:ok, {commit, commit_info}} <- GitAgent.transaction(agent, &resolve_commit(&1, oid_parse(oid))) do
-        render(conn, "commit.html",
-          repo: repo,
-          repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
-          agent: agent,
-          commit: commit,
-          commit_info: resolve_db_commit_info(commit_info)
-        )
-      end
-    end || {:error, :not_found}
-  end
-
-  @doc """
   Renders all branches of a repository.
   """
   @spec branches(Plug.Conn.t, map) :: Plug.Conn.t
@@ -392,28 +369,6 @@ defmodule GitGud.Web.CodebaseController do
 
   defp commit_changeset_update_ref(changeset), do: "refs/heads/" <> Ecto.Changeset.fetch_field!(changeset, :branch)
 
-  defp resolve_commit_info(agent, commit) do
-    with {:ok, timestamp} <- GitAgent.commit_timestamp(agent, commit),
-         {:ok, message} <- GitAgent.commit_message(agent, commit),
-         {:ok, author} <- GitAgent.commit_author(agent, commit),
-         {:ok, committer} <- GitAgent.commit_committer(agent, commit),
-         {:ok, parents} <- GitAgent.commit_parents(agent, commit) do
-      gpg_sig =
-        case GitAgent.commit_gpg_signature(agent, commit) do
-          {:ok, gpg_sig} -> gpg_sig
-          {:error, _reason} -> nil
-        end
-      {:ok, %{
-        author: author,
-        committer: committer,
-        message: message,
-        timestamp: timestamp,
-        gpg_sig: gpg_sig,
-        parents: Enum.to_list(parents)}
-      }
-    end
-  end
-
   defp resolve_revisions(agent, revs) do
     GitAgent.transaction(agent, fn agent ->
       Enum.reduce_while(Enum.reverse(revs), {:ok, []}, &resolve_revision(agent, &1, &2))
@@ -462,13 +417,6 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp resolve_commit(agent, oid) do
-    with {:ok, commit} <- GitAgent.object(agent, oid),
-         {:ok, commit_info} <- resolve_commit_info(agent, commit) do
-      {:ok, {commit, commit_info}}
-    end
-  end
-
   defp resolve_tree(agent, revision, []) do
     with {:ok, {object, reference}} <- GitAgent.revision(agent, revision),
          {:ok, commit} <- GitAgent.peel(agent, object, target: :commit),
@@ -514,28 +462,9 @@ defmodule GitGud.Web.CodebaseController do
     end
   end
 
-  defp resolve_db_commit_info(commit_info) do
-    users = UserQuery.by_email(Enum.uniq([commit_info.author.email, commit_info.committer.email]), preload: [:emails, :gpg_keys])
-    author = resolve_db_user(commit_info.author, users)
-    committer = resolve_db_user(commit_info.committer, users)
-    gpg_key = resolve_db_user_gpg_key(commit_info.gpg_sig, committer)
-    Map.merge(commit_info, %{author: author, committer: committer, gpg_key: gpg_key})
-  end
-
   defp resolve_db_user(%{email: email} = map, users) do
     Enum.find(users, map, fn user -> email in Enum.map(user.emails, &(&1.address)) end)
   end
-
-  defp resolve_db_user_gpg_key(gpg_sig, %User{} = user) when not is_nil(gpg_sig) do
-    gpg_key_id =
-      gpg_sig
-      |> GPGKey.decode!()
-      |> GPGKey.parse!()
-      |> get_in([:sig, :sub_pack, :issuer])
-    Enum.find(user.gpg_keys, &String.ends_with?(&1.key_id, gpg_key_id))
-  end
-
-  defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
 
   defp write_blob(agent, commit, blob_path, blob_content, commit_update_ref, commit_author_sig, commit_committer_sig, commit_message) do
     with {:ok, tree} <- GitAgent.tree(agent, commit),

@@ -1,3 +1,54 @@
+<div class="columns">
+  <div class="column is-full">
+    <div class="card commit">
+      <%= with {message_title, message_body} <- commit_message_format(@repo, @commit_info.message) do %>
+        <header class="card-header ellipsis">
+          <p class="card-header-title"><span><%= message_title %></span></p>
+          <div class="card-header-icon">
+            <div class="buttons">
+              <button class="commit-oid button is-small is-dark is-inverted has-text-weight-bold">
+                <span class="is-family-monospace"><%= oid_fmt(@commit.oid) %></span>
+              </button>
+              <%= live_redirect to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, []), class: "button is-small is-link is-inverted" do %>
+                <span class="icon">
+                  <i class="fa fa-history"></i>
+                </span>
+              <% end %>
+              <%= live_redirect to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @commit, []), class: "button is-small is-link is-inverted" do %>
+                <span class="icon">
+                  <i class="fa fa-code"></i>
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </header>
+        <div class="card-content">
+          <div class="commit-parents">
+            <div class="field is-grouped">
+              <div class="control">
+                <%= if parent_count = Enum.count(@commit_info.parents) do %>
+                  <label class="label"><%= parent_count %> parent<%= if parent_count > 1 do %>s<% end %>:</label>
+                <% end %>
+              </div>
+              <div class="control">
+                <div class="buttons">
+                  <%= for parent <- @commit_info.parents do %>
+                    <%= live_patch parent, to: Routes.codebase_path(@socket, :commit, @repo.owner_login, @repo, parent), class: "button is-small is-link is-inverted has-text-weight-bold" %>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+          <%= render "_commit_signature.html", conn: @socket, commit: @commit, commit_info: @commit_info %>
+          <%= if message_body do %>
+            <div class="log-message"><%= message_body %></div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
 <div class="columns commit-stats">
   <div class="column is-full">
     <p class="button is-white">
@@ -45,16 +96,16 @@
               <%= delta.new_file.path %>
             </div>
             <p class="card-header-icon buttons">
-              <a href={Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, Path.split(delta.old_file.path))} class="button is-small is-link is-inverted">
+              <%= live_redirect to: Routes.codebase_path(@socket, :history, @repo.owner_login, @repo, @commit, Path.split(delta.old_file.path)), class: "button is-small is-link is-inverted" do %>
                 <span class="icon">
                   <i class="fa fa-history"></i>
                 </span>
-              </a>
-              <a href={Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @commit, Path.split(delta.new_file.path))} class="button is-small is-link is-inverted">
+              <% end %>
+              <%= live_redirect to: Routes.codebase_path(@socket, :blob, @repo.owner_login, @repo, @commit, Path.split(delta.new_file.path)), class: "button is-small is-link is-inverted" do %>
                 <span class="icon">
                   <i class="fa fa-code"></i>
                 </span>
-              </a>
+              <% end %>
             </p>
           </header>
           <div class="card-content">
