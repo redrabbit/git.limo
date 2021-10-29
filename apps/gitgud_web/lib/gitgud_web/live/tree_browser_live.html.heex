@@ -51,11 +51,11 @@
         <nav id="tree-breadcrumb" class="breadcrumb" aria-label="breadcrumbs" phx-hook="TreeBreadcrumb">
           <ul>
             <li>
-              <%= live_patch(@repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, [])) %>
+              <%= live_patch @repo.name, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, []) %>
             </li>
             <%= unless Enum.empty?(@tree_path) do %>
               <%= for {path, index} <- Enum.with_index(Enum.drop(@tree_path, -1), 1) do %>
-                <li><%= live_patch(path, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, Enum.take(@tree_path, index))) %></li>
+                <li><%= live_patch path, to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, Enum.take(@tree_path, index)) %></li>
               <% end %>
               <li class="is-active"><a><%= List.last(@tree_path) %></a></li>
             <% end %>
@@ -140,7 +140,7 @@
           <td>
             <%= case tree_entry.type do %>
               <% :tree -> %>
-                <%= live_patch(to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name])) do %>
+                <%= live_patch to: Routes.codebase_path(@socket, :tree, @repo.owner_login, @repo, @revision, @tree_path ++ [tree_entry.name]) do %>
                   <span class="icon"><i class="fa fa-folder"></i></span>
                   <span><%= tree_entry.name %></span>
                 <% end %>

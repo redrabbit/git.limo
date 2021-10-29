@@ -116,7 +116,7 @@
                       <% end %>
                     <% "close" -> %>
                       <%= if :reopen in @issue_permissions do %>
-                        <%= if Keyword.fetch(comment_form_assigns, :changeset).changes == %{} do %>
+                        <%= if Keyword.fetch!(comment_form_assigns, :changeset).changes == %{} do %>
                           <a class="button" phx-click="reopen">Reopen issue</a>
                         <% else %>
                           <%= submit "Reopen and comment", class: "button", phx_click: "reopen" %>

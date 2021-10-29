@@ -15,15 +15,16 @@
                   minimized: false,
                   phx_change: "validate_comment",
                   phx_submit: "add_comment") do %>
-                  <input type="hidden" name="oid" value={oid_fmt(oid)} />
-                  <input type="hidden" name="hunk" value={hunk_index} />
-                  <input type="hidden" name="line" value={line_index} />
-                  <div class="control">
-                    <button class="button" type="reset" phx-click="reset_review_form" phx-value-oid={oid_fmt(oid)}, phx-value-hunk={hunk_index} phx-value-line={line_index}>Cancel</button>
-                  </div>
-                  <div class="control">
-                    <%= submit "Add comment", class: "button is-success", disabled: @changeset.changes == %{} %>
-                  </div>
+                    <% comment_form_assigns -> %>
+                      <input type="hidden" name="oid" value={oid_fmt(oid)} />
+                      <input type="hidden" name="hunk" value={hunk_index} />
+                      <input type="hidden" name="line" value={line_index} />
+                      <div class="control">
+                        <button class="button" type="reset" phx-click="reset_review_form" phx-value-oid={oid_fmt(oid)}, phx-value-hunk={hunk_index} phx-value-line={line_index}>Cancel</button>
+                      </div>
+                      <div class="control">
+                        <%= submit "Add comment", class: "button is-success", disabled: Keyword.fetch!(comment_form_assigns, :changeset).changes == %{} %>
+                      </div>
                 <% end %>
               </div>
             </div>
