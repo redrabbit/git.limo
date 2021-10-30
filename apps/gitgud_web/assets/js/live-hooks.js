@@ -1,6 +1,7 @@
 import hljs from "highlight.js"
 
 import cloneRepo from "./hooks/clone-repo"
+import commitOidToClipBoard from "./hooks/commit-oid-to-clipboard"
 import treeBreadcrumb from "./hooks/tree-breadcrumb"
 
 function highlightBlobTable(table) {
@@ -97,6 +98,7 @@ Hooks.CloneRepo = {
 
 Hooks.CommitDiff = {
   mounted() {
+    commitOidToClipBoard()
     this.handleEvent("add_comment", ({comment_id}) => {
       setTimeout(() => {
         const comment = this.el.querySelector(`#review-comment-${comment_id}`)
