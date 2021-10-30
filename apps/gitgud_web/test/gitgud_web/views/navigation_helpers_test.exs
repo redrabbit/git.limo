@@ -6,10 +6,10 @@ defmodule GitGud.Web.NavigationHelpersTest do
   import GitGud.Web.NavigationHelpers
 
   test "route matches controller and action", %{conn: conn} do
-    conn = get(conn, "/user/repo/blob/master/config/config.exs")
+    conn = get(conn, "/user/repo/branches")
     assert current_route?(conn, :codebase)
-    assert current_route?(conn, :codebase, :blob)
-    assert current_route?(conn, :codebase, only: [:blob, :tree])
+    assert current_route?(conn, :codebase, :branches)
+    assert current_route?(conn, :codebase, only: [:branches, :tags])
     assert current_route?(conn, :codebase, except: [:show, :edit])
   end
 
