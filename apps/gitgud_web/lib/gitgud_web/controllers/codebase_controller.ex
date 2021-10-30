@@ -315,20 +315,6 @@ defmodule GitGud.Web.CodebaseController do
     end || {:error, :not_found}
   end
 
-  @doc """
-  Redirects to history HEAD.
-  """
-  def history(conn, %{"user_login" => user_login, "repo_name" => repo_name} = _params) do
-    if repo = RepoQuery.user_repo(user_login, repo_name, viewer: current_user(conn)) do
-      case GitAgent.head(repo) do
-        {:ok, head} ->
-          redirect(conn, to: Routes.codebase_path(conn, :history, user_login, repo_name, head, []))
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end || {:error, :not_found}
-  end
-
   #
   # Helpers
   #

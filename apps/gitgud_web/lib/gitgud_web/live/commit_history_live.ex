@@ -58,13 +58,22 @@ defmodule GitGud.Web.CommitHistoryLive do
     {:noreply, assign_page_title(socket)}
   end
 
-  def handle_params(params, _uri, socket) do
+  def handle_params(params, _uri, socket) when is_map_key(params, "revision") do
     {
       :noreply,
       socket
       |> assign_history!(params)
       |> assign_page_title()
     }
+  end
+
+  def handle_params(params, _uri, socket) do
+    case GitAgent.head(socket.assigns.agent) do
+      {:ok, head} ->
+        {:noreply, push_patch(socket, to: Routes.codebase_path(socket, :history, socket.assigns.repo.owner_login, socket.assigns.repo.name, head, Map.get(params, "path", [])))}
+      {:error, error} ->
+        raise error
+    end
   end
 
   #

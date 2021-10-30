@@ -87,24 +87,25 @@ defmodule GitGud.Web.Router do
     scope "/:user_login/:repo_name" do
       live_session :repo, root_layout: {GitGud.Web.LayoutView, "repo.html"} do
         live "/", TreeBrowserLive, :show, as: :codebase
+        live "/history", CommitHistoryLive, :history, as: :codebase
+        live "/history/:revision/*path", CommitHistoryLive, :history, as: :codebase
+        live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase
+        live "/blob/:revision/*path", BlobViewerLive, :blob, as: :codebase
+        live "/commit/:oid", CommitDiffLive, :commit, as: :codebase
+
+        get "/branches", CodebaseController, :branches
+        get "/tags", CodebaseController, :tags
 
         get "/new/:revision/*path", CodebaseController, :new
         get "/edit/:revision/*path", CodebaseController, :edit
         get "/delete/:revision/*path", CodebaseController, :confirm_delete
-
-        get "/branches", CodebaseController, :branches
-        get "/tags", CodebaseController, :tags
-        live "/commit/:oid", CommitDiffLive, :commit, as: :codebase
-        get "/history", CodebaseController, :history
-        live "/history/:revision/*path", CommitHistoryLive, :history, as: :codebase
-        live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase
-        live "/blob/:revision/*path", BlobViewerLive, :blob, as: :codebase
 
         get "/issues", IssueController, :index
         get "/issues/new", IssueController, :new
         post "/issues", IssueController, :create
         get "/issues/labels", IssueLabelController, :index
         put "/issues/labels", IssueLabelController, :update
+
         live "/issues/:number", IssueLive, :show, as: :issue
 
         get "/settings", RepoController, :edit
