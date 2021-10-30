@@ -6,7 +6,7 @@ defmodule GitGud.Web.PaginationHelpersTest do
   import GitGud.Web.PaginationHelpers
 
   test "paginates list of items from first page", %{conn: conn} do
-    conn = get(conn, "/user/repo/history")
+    conn = get(conn, "/user/repo/branches")
     list = Enum.to_list(1..100)
     page = paginate(conn, list, 10)
     assert page.current == 1
@@ -18,7 +18,7 @@ defmodule GitGud.Web.PaginationHelpersTest do
   end
 
   test "paginates list of items from third page", %{conn: conn} do
-    conn = get(conn, "/user/repo/history?p=3")
+    conn = get(conn, "/user/repo/branches?p=3")
     list = Enum.to_list(1..100)
     page = paginate(conn, list, 10)
     assert page.current == 3
@@ -31,7 +31,7 @@ defmodule GitGud.Web.PaginationHelpersTest do
   end
 
   test "paginates list of items from last page", %{conn: conn} do
-    conn = get(conn, "/user/repo/history?p=10")
+    conn = get(conn, "/user/repo/branches?p=10")
     list = Enum.to_list(1..100)
     page = paginate(conn, list, 10)
     assert page.current == 10
@@ -50,4 +50,3 @@ defmodule GitGud.Web.PaginationHelpersTest do
     assert to_string(to_iodata(html)) == ~s(<nav class="pagination is-right" role="navigation"><a class="pagination-previous" href="?p=1">Previous</a><a class="pagination-next" href="?p=3">Next</a><ul class="pagination-list"><li><a class="pagination-link" href="?p=1">1</a></li><li><a class="pagination-link is-current">2</a></li><li><a class="pagination-link" href="?p=3">3</a></li></ul></nav>)
   end
 end
-
