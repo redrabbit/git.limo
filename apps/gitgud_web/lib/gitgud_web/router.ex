@@ -87,10 +87,10 @@ defmodule GitGud.Web.Router do
     scope "/:user_login/:repo_name" do
       live_session :repo, root_layout: {GitGud.Web.LayoutView, "repo.html"} do
         live "/", TreeBrowserLive, :show, as: :codebase
-        live "/history", CommitHistoryLive, :history, as: :codebase
-        live "/history/:revision/*path", CommitHistoryLive, :history, as: :codebase
         live "/tree/:revision/*path", TreeBrowserLive, :tree, as: :codebase
         live "/blob/:revision/*path", BlobViewerLive, :blob, as: :codebase
+        live "/commits", CommitHistoryLive, :history, as: :codebase
+        live "/commits/:revision/*path", CommitHistoryLive, :history, as: :codebase
         live "/commit/:oid", CommitDiffLive, :commit, as: :codebase
 
         get "/branches", CodebaseController, :branches
