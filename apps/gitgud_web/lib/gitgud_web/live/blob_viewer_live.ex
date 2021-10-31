@@ -34,6 +34,7 @@ defmodule GitGud.Web.BlobViewerLive do
       |> assign_repo_open_issue_count()
       |> assign_agent!()
       |> assign_blob!(params)
+      |> assign_page_title()
       |> assign_blob_commit_async()
     }
   end
@@ -78,6 +79,10 @@ defmodule GitGud.Web.BlobViewerLive do
       send(self(), :assign_blob_commit)
     end
     socket
+  end
+
+  defp assign_page_title(socket) do
+    assign(socket, :page_title, GitGud.Web.CodebaseView.title(socket.assigns[:live_action], socket.assigns))
   end
 
   defp resolve_revision_blob!(agent, revision, blob_path) do

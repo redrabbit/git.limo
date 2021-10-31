@@ -132,8 +132,8 @@ defmodule GitGud.Web.CodebaseView do
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner_login}/#{repo.name}"
   def title(:commit, %{repo: repo, commit: commit, commit_info: commit_info}), do: "#{commit_message_title(commit_info.message)} · #{repo.owner_login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
   def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner_login}/#{repo.name} at #{to_param(rev)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
-  def title(:blob, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)}/ at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(:blob, %{repo: repo, revision: rev, blob_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
   def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
   def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}/#{Path.join(path)}"
 
