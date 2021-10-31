@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="<%= Routes.static_path(GitGud.Web.Endpoint, "/css/app.css") %>">
+    <link rel="stylesheet" href="<%= Routes.static_path(GitGud.Web.Endpoint, "/assets/index.css") %>">
   </head>
 
   <body>

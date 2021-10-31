@@ -17,7 +17,6 @@
     <link rel="icon" href="<%= Routes.static_path(@conn, "/images/logo.svg") %>">
     <link rel="apple-touch-icon" href="<%= Routes.static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="manifest" href="<%= Routes.static_path(@conn, "/manifest.webmanifest") %>">
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
     <link phx-track-static rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/index.css") %>" />
     <script defer phx-track-static type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/index.js") %>"></script>
   </head>
@@ -88,6 +87,5 @@
       <%= @inner_content %>
     </main>
 
-    <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

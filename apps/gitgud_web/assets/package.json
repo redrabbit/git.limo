@@ -1,4 +1,9 @@
 {
+  "repository": {},
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.js"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
     "@simonwep/pickr": "^1.8.2",
