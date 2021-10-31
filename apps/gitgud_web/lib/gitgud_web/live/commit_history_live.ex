@@ -22,20 +22,6 @@ defmodule GitGud.Web.CommitHistoryLive do
 
   import GitGud.Web.CodebaseView
 
-  def pagination(assigns) do
-    case assigns.page do
-      %{previous?: false, next?: false} ->
-        ~H""
-      %{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor} ->
-        ~H"""
-        <nav role="navigation">
-          <%= live_patch "Previous", to: pagination_cursor_query_string("before", before_cursor, previous?), class: "pagination-previous", disabled: !previous? %>
-          <%= live_patch "Next", to: pagination_cursor_query_string("after", after_cursor, next?), class: "pagination-next", disabled: !next? %>
-        </nav>
-        """
-    end
-  end
-
   #
   # Callbacks
   #
@@ -277,7 +263,4 @@ defmodule GitGud.Web.CommitHistoryLive do
   defp pagination_cursor(%{"before" => cursor}), do: {:before, oid_parse(cursor)}
   defp pagination_cursor(%{"after" => cursor}), do: {:after, oid_parse(cursor)}
   defp pagination_cursor(_params), do: nil
-
-  defp pagination_cursor_query_string(cursor, val, true), do: "?#{cursor}=#{val}"
-  defp pagination_cursor_query_string(_cursor, _val, false), do: nil
 end

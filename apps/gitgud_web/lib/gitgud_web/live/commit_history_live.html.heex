@@ -82,7 +82,14 @@
       <div class="timeline-item is-spacer"></div>
     <% end %>
   </div>
-  <.pagination page={@page} />
+  <%= case @page do %>
+    <% %{previous?: false, next?: false} -> %>
+    <% %{previous?: previous?, before: before_cursor, next?: next?, after: after_cursor} -> %>
+      <nav role="navigation">
+        <%= live_patch "Previous", to: previous? && "?before=#{before_cursor}", class: "pagination-previous", disabled: !previous? %>
+        <%= live_patch "Next", to: next? && "?after=#{after_cursor}", class: "pagination-next", disabled: !next? %>
+      </nav>
+  <% end %>
 <% else %>
   <article class="message is-light">
     <div class="message-body">No commit ancestors found.</div>
