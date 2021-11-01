@@ -6,7 +6,7 @@ export default () => {
   const liveViews = document.querySelectorAll("[data-phx-session]:not([data-phx-connect-later])")
   if(liveViews.length) {
     topbar.config({
-      barThickness: 1,
+      barThickness: 1.5,
       barColors: {
         0: "#2ec2a7",
         1: "#f3d270"
