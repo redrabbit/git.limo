@@ -121,7 +121,7 @@ defmodule GitGud.Web.TreeBrowserLive do
     with {:ok, false} <- GitAgent.empty?(agent),
          {:ok, head} <- GitAgent.head(agent),
          {:ok, commit} <- GitAgent.peel(agent, head) do
-      {:ok, {head, commit}}
+      {:ok, {head, head, commit}}
     else
       {:ok, true} ->
         {:error, "repository is empty"}
@@ -131,16 +131,17 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp resolve_revision(agent, rev_spec) do
-    with {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
+    with {:ok, head} <- GitAgent.head(agent),
+         {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(agent, obj, target: :commit) do
-      {:ok, {ref, commit}}
+      {:ok, {head, ref, commit}}
     end
   end
 
   defp resolve_revision_tree!(agent, revision, tree_path) do
     case GitAgent.transaction(agent, &resolve_revision_tree(&1, revision, tree_path)) do
-      {:ok, {ref, commit, commit_info, tree_entries, readme}} ->
-        %{revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
+      {:ok, {head, ref, commit, commit_info, tree_entries, readme}} ->
+        %{head: head, revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
       {:ok, {commit_info, tree_entries, readme}} ->
         %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
       {:error, error} ->
@@ -150,9 +151,9 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_revision_tree(agent, commit, tree_path) when is_struct(commit), do: resolve_tree(agent, commit, tree_path)
   defp resolve_revision_tree(agent, rev_spec, tree_path) do
-    with {:ok, {ref, commit}} <- resolve_revision(agent, rev_spec),
+    with {:ok, {head, ref, commit}} <- resolve_revision(agent, rev_spec),
          {:ok, {commit_info, tree_entries, readme}} <- resolve_tree(agent, commit, tree_path) do
-      {:ok, {ref, commit, commit_info, tree_entries, readme}}
+      {:ok, {head, ref, commit, commit_info, tree_entries, readme}}
     else
       {:error, reason} ->
         {:error, reason}
@@ -161,8 +162,8 @@ defmodule GitGud.Web.TreeBrowserLive do
 
   defp resolve_revision_tree_with_stats!(agent, rev_spec, tree_path) do
     case GitAgent.transaction(agent, &resolve_revision_tree_with_stats(&1, rev_spec, tree_path)) do
-      {:ok, {ref, commit, commit_info, tree_entries, readme, stats}} ->
-        %{revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
+      {:ok, {head, ref, commit, commit_info, tree_entries, readme, stats}} ->
+        %{head: head, revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
       {:ok, {commit_info, tree_entries, readme, stats}} ->
         %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
       {:error, error} ->
@@ -178,9 +179,9 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp resolve_revision_tree_with_stats(agent, rev_spec, tree_path) do
-    with {:ok, {ref, commit, commit_info, tree_entries, readme}} <- resolve_revision_tree(agent, rev_spec, tree_path),
+    with {:ok, {head, ref, commit, commit_info, tree_entries, readme}} <- resolve_revision_tree(agent, rev_spec, tree_path),
          {:ok, stats} <- resolve_stats(agent, commit) do
-      {:ok, {ref, commit, commit_info, tree_entries, readme, stats}}
+      {:ok, {head, ref, commit, commit_info, tree_entries, readme, stats}}
     end
   end
 

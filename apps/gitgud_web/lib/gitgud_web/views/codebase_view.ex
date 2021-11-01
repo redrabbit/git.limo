@@ -13,8 +13,6 @@ defmodule GitGud.Web.CodebaseView do
   import Phoenix.HTML.Link
   import Phoenix.HTML.Tag
 
-  import Phoenix.Param
-
   import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   @external_resource highlight_languages = Path.join(:code.priv_dir(:gitgud_web), "highlight-languages.txt")
@@ -120,22 +118,25 @@ defmodule GitGud.Web.CodebaseView do
   end
 
   @spec title(atom, map) :: binary
-  def title(:show, %{repo: repo}) do
+  def title(action, %{repo: repo} = assigns) when action == :show or (action == :tree and assigns.head == assigns.revision and assigns.tree_path == []) do
     if desc = repo.description,
       do: "#{repo.owner_login}/#{repo.name}: #{desc}",
     else: "#{repo.owner_login}/#{repo.name}"
   end
 
   def title(action, %{repo: repo}) when action in [:new, :create], do: "New file · #{repo.owner_login}/#{repo.name}"
-  def title(action, %{repo: repo, tree_path: path}) when action in [:edit, :update], do: "Edit #{Path.join(path)} · #{repo.owner_login}/#{repo.name}"
+  def title(action, %{repo: repo, revision: rev, tree_path: path}) when action in [:edit, :update], do: "Editing #{Path.join(repo.name, List.last(path))} at #{revision_name(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(action, %{repo: repo, revision: rev, tree_path: path}) when action in [:confirm_delete, :delete], do: "Deleting #{Path.join(repo.name, List.last(path))} at #{revision_name(rev)} · #{repo.owner_login}/#{repo.name}"
   def title(:branches, %{repo: repo}), do: "Branches · #{repo.owner_login}/#{repo.name}"
   def title(:tags, %{repo: repo}), do: "Tags · #{repo.owner_login}/#{repo.name}"
-  def title(:commit, %{repo: repo, commit: commit, commit_info: commit_info}), do: "#{commit_message_title(commit_info.message)} · #{repo.owner_login}/#{repo.name}@#{oid_fmt_short(commit.oid)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner_login}/#{repo.name} at #{to_param(rev)}"
-  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join(path)}/ at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
-  def title(:blob, %{repo: repo, revision: rev, blob_path: path}), do: "#{Path.join(path)} at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}"
-  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "Commits at #{to_param(rev)} · #{repo.owner_login}/#{repo.name}/#{Path.join(path)}"
+  def title(:commit, %{repo: repo, commit: commit, commit_info: commit_info}), do: "#{commit_message_title(commit_info.message)} · #{repo.owner_login}/#{repo.name}@#{revision_name(commit)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: []}), do: "#{repo.owner_login}/#{repo.name} at #{revision_name(rev)}"
+  def title(:tree, %{repo: repo, revision: rev, tree_path: path}), do: "#{Path.join([repo.name|path])} at #{revision_name(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(:blob, %{repo: repo, revision: rev, blob_path: path}), do: "#{Path.join(repo.name, List.last(path))} at #{revision_name(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(:history, %{repo: repo, head: head, revision: head, tree_path: []}), do: "Commits · #{repo.owner_login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: []}), do: "Commits at #{revision_name(rev)} · #{repo.owner_login}/#{repo.name}"
+  def title(:history, %{repo: repo, head: head, revision: head, tree_path: path}), do: "History for #{Path.join(path)} · #{repo.owner_login}/#{repo.name}"
+  def title(:history, %{repo: repo, revision: rev, tree_path: path}), do: "History for #{Path.join(path)} · #{repo.owner_login}/#{repo.name}@#{revision_name(rev)}"
 
   #
   # Helpers

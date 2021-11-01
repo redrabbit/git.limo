@@ -36,7 +36,7 @@ defmodule GitGud.Web.CodebaseController do
             revision: reference,
             commit: commit,
             tree_path: tree_path,
-            breadcrumb: %{action: :tree, cwd?: true, tree?: true},
+            breadcrumb: %{action: :new, cwd?: true, tree?: true},
             changeset: blob_commit_changeset(%{branch: reference.name}, %{})
           )
         end
@@ -54,7 +54,7 @@ defmodule GitGud.Web.CodebaseController do
       if authorized?(user, repo, :push) do
         with {:ok, agent} <- GitRepo.get_agent(repo),
              {:ok, {reference, commit, tree}} <- GitAgent.transaction(agent, &resolve_tree(&1, revision, tree_path)) do
-          breadcrumb = %{action: :tree, cwd?: true, tree?: true}
+          breadcrumb = %{action: :new, cwd?: true, tree?: true}
           changeset = blob_commit_changeset(%{}, commit_params)
           if changeset.valid? do # TODO
             blob_name = blob_changeset_name(changeset)

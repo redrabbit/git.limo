@@ -101,9 +101,9 @@ defmodule GitGud.Web.CommitHistoryLive do
 
   defp resolve_revision_history!(repo, agent, revision, tree_path, cursor, limit) do
     case GitAgent.transaction(agent, &resolve_revision_history(&1, revision, tree_path, cursor, limit)) do
-      {:ok, {ref, commit, tree_entry_type, {slice, more?}}} ->
+      {:ok, {head, ref, commit, tree_entry_type, {slice, more?}}} ->
         page = pagination_page(resolve_commits_info_db(repo, slice), cursor, more?)
-        %{revision: ref || commit, commit: commit, tree_entry_type: tree_entry_type, page: page}
+        %{head: head, revision: ref || commit, commit: commit, tree_entry_type: tree_entry_type, page: page}
       {:ok, {tree_entry_type, {slice, more?}}} ->
         page = pagination_page(resolve_commits_info_db(repo, slice), cursor, more?)
         %{tree_entry_type: tree_entry_type, page: page}
@@ -114,10 +114,11 @@ defmodule GitGud.Web.CommitHistoryLive do
 
   defp resolve_revision_history(agent, commit, tree_path, cursor, limit) when is_struct(commit), do: resolve_history(agent, commit, tree_path, cursor, limit)
   defp resolve_revision_history(agent, rev_spec, tree_path, cursor, limit) do
-    with {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
+    with {:ok, head} <- GitAgent.head(agent),
+         {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(agent, obj, target: :commit),
          {:ok, {tree_entry_type, page}} <- resolve_history(agent, commit, tree_path, cursor, limit) do
-      {:ok, {ref, commit, tree_entry_type, page}}
+      {:ok, {head, ref, commit, tree_entry_type, page}}
     else
       {:error, reason} ->
         {:error, reason}
