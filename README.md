@@ -4,7 +4,7 @@
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/almightycouch/gitgud/master/LICENSE)
 [![Github Issues](https://img.shields.io/github/issues/almightycouch/gitgud.svg)](http://github.com/almightycouch/gitgud/issues)
 
-<img src="https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/assets/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
+<img src="https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/priv/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
 
 A Git source code management tool written in Elixir.
 
@@ -81,3 +81,7 @@ Finally, start both HTTP (port 4000) and SSH (port 8989) endpoints:
 ```bash
 mix phx.server
 ```
+
+---
+
+![Illustration by @ahruygt](https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/priv/static/images/illustration.png?sanitize=true)
