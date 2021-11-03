@@ -15,17 +15,10 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   """
   @spec authenticate(Phoenix.LiveView.Socket.t, map) :: Phoenix.LiveView.Socket.t
   def authenticate(socket, session) do
-    assign_new(socket, :current_user, fn -> if user_id = session["user_id"], do: UserQuery.by_id(user_id) end)
-  end
-
-  @doc """
-  Similar to `authenticate/2` but only applies when `socket` is connected.
-  """
-  @spec authenticate_when_connected(Phoenix.LiveView.Socket.t, map) :: Phoenix.LiveView.Socket.t
-  def authenticate_when_connected(socket, session) do
-    if connected?(socket),
-      do: assign(socket, :current_user, UserQuery.by_id(session["user_id"])),
-    else: assign(socket, :current_user, nil)
+    user_id = session["user_id"]
+    socket
+    |> assign(:current_user_id, user_id)
+    |> assign_new( :current_user, fn -> if user_id, do: UserQuery.by_id(user_id) end)
   end
 
   @doc """
@@ -33,15 +26,13 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   """
   @spec authenticate_later(Phoenix.LiveView.Socket.t, map) :: Phoenix.LiveView.Socket.t
   def authenticate_later(socket, session) do
-    if connected?(socket),
-      do: assign(socket, current_user: nil, user_id: session["user_id"]),
-    else: assign(socket, :current_user, nil)
+    assign(socket, current_user_id: session["user_id"], current_user: nil)
   end
 
   @doc """
   Authenticates `socket`.
   """
-  def authenticate(socket) when is_nil(socket.assigns.current_user) and not is_nil(socket.assigns.user_id), do: assign(socket, :current_user, UserQuery.by_id(socket.assigns.user_id))
+  def authenticate(socket) when is_nil(socket.assigns.current_user) and not is_nil(socket.assigns.current_user_id), do: assign(socket, :current_user, UserQuery.by_id(socket.assigns.current_user_id))
   def authenticate(socket), do: socket
 
   @doc """
