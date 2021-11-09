@@ -836,7 +836,10 @@ textarea.textarea {
 }
 
 .inline-comments .timeline {
-  padding: 0 1rem 1rem;
+  padding: 0 1rem 0;
+  &:last-child {
+    padding-bottom: 1rem;
+  }
 }
 
 table.branches-table, table.tags-table {

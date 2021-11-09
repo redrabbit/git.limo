@@ -25,6 +25,6 @@ defmodule GitGud.Web.CommitLineReviewLive do
 
   @impl true
   def mount(socket) do
-    {:ok, socket, temporary_assigns: [comments: []]}
+    {:ok, assign(socket, comments: [], users_typing: []), temporary_assigns: [comments: []]}
   end
 end

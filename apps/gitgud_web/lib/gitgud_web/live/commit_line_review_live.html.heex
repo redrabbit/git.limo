@@ -15,6 +15,33 @@
       </div>
     <% end %>
   </div>
+  <%= unless Enum.empty?(@users_typing) do %>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-marker is-icon">
+          <i class="fa fa-keyboard"></i>
+        </div>
+        <div class="timeline-content">
+          <%= case Enum.reverse(@users_typing) do %>
+            <% [user_login] -> %>
+              <a href={Routes.user_path(@socket, :show, user_login)} class="has-text-dark"><%= user_login %></a>
+              <span class="loading-ellipsis">is typing</span>
+            <% [second_user_login, first_user_login] -> %>
+              <a href={Routes.user_path(@socket, :show, first_user_login)} class="has-text-dark"><%= first_user_login %></a>
+              and
+              <a href={Routes.user_path(@socket, :show, second_user_login)} class="has-text-dark"><%= second_user_login %></a>
+              <span class="loading-ellipsis">are typing</span>
+            <% [last_user_login|users_logins] -> %>
+              <%= for user_login <- Enum.reverse(users_logins) do %>
+                <a href={Routes.user_path(@socket, :show, user_login)} class="has-text-dark"><%= user_login %></a>,
+              <% end %>
+              <a href={Routes.user_path(@socket, :show, last_user_login)} class="has-text-dark"><%= last_user_login %></a>
+              <span class="loading-ellipsis">are typing</span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
   <%= if connected?(@socket) && verified?(@current_user) do %>
     <div class="timeline">
       <div class="timeline-item">

@@ -21,6 +21,8 @@ defmodule GitGud.Web.CommitDiffLive do
   alias GitGud.ReviewQuery
   alias GitGud.CommentQuery
 
+  alias GitGud.Web.Presence
+
   import GitRekt.Git, only: [oid_fmt: 1, oid_parse: 1]
 
   import GitGud.Web.Endpoint, only: [broadcast_from: 4, subscribe: 1]
@@ -58,7 +60,10 @@ defmodule GitGud.Web.CommitDiffLive do
       |> assign_reviews()
       |> assign_comment_count()
       |> assign_page_title()
-      |> subscribe_topic()
+      |> assign_presence!()
+      |> assign_presence_map()
+      |> assign_users_typing()
+      |> subscribe_topic!()
     }
   end
 
@@ -67,7 +72,7 @@ defmodule GitGud.Web.CommitDiffLive do
     case CommitLineReview.add_comment(socket.assigns.repo, socket.assigns.commit.oid, oid_parse(oid), String.to_integer(hunk), String.to_integer(line), current_user(socket), comment_params["body"], with_review: true) do
       {:ok, comment, review} ->
         send_update(GitGud.Web.CommitDiffDynamicReviewsLive, id: "dynamic-reviews", reviews: [struct(review, comments: [comment])])
-        broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "add_review", %{review_id: review.id})
+        broadcast_from(self(), commit_topic(socket), "add_review", %{review_id: review.id})
         {
           :noreply,
           socket
@@ -86,11 +91,16 @@ defmodule GitGud.Web.CommitDiffLive do
       {:ok, comment} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
         send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{review_id}", review_id: review_id, comments: [comment])
-        broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "add_comment", %{review_id: review_id, comment_id: comment.id})
-        {:noreply, push_event(socket, "add_comment", %{comment_id: comment.id})}
+        broadcast_from(self(), commit_topic(socket), "add_comment", %{review_id: review_id, comment_id: comment.id})
+        {
+          :noreply,
+          socket
+          |> assign_presence_typing!(review_id, false)
+          |> push_event("add_comment", %{comment_id: comment.id})
+        }
       {:error, changeset} ->
         send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: changeset)
-        {:noreply, socket}
+        {:noreply, assign_presence_typing!(socket, review_id, false)}
     end
   end
 
@@ -100,8 +110,9 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   def handle_event("validate_comment", %{"review_id" => review_id, "comment" => comment_params}, socket) do
+    changeset = Comment.changeset(%Comment{}, comment_params)
     send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", changeset: Comment.changeset(%Comment{}, comment_params))
-    {:noreply, socket}
+    {:noreply, assign_presence_typing!(socket, String.to_integer(review_id), !!Ecto.Changeset.get_change(changeset, :body))}
   end
 
   def handle_event("add_review_form", %{"oid" => oid, "hunk" => hunk, "line" => line}, socket) do
@@ -115,17 +126,17 @@ defmodule GitGud.Web.CommitDiffLive do
 
   def handle_event("reset_review_form", %{"review_id" => review_id}, socket) do
     send_update(GitGud.Web.CommentFormLive, id: "review-#{review_id}-comment-form", minimized: true, changeset: Comment.changeset(%Comment{}))
-    {:noreply, socket}
+    {:noreply, assign_presence_typing!(socket, String.to_integer(review_id), false)}
   end
 
   @impl true
   def handle_info({:update_comment, comment_id}, socket) do
-    broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "update_comment", %{comment_id: comment_id})
+    broadcast_from(self(), commit_topic(socket), "update_comment", %{comment_id: comment_id})
     {:noreply, push_event(socket, "update_comment", %{comment_id: comment_id})}
   end
 
   def handle_info({:delete_comment, comment_id}, socket) do
-    broadcast_from(self(), "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}", "delete_comment", %{comment_id: comment_id})
+    broadcast_from(self(), commit_topic(socket), "delete_comment", %{comment_id: comment_id})
     {:noreply, push_event(socket, "delete_comment", %{comment_id: comment_id})}
   end
 
@@ -151,16 +162,17 @@ defmodule GitGud.Web.CommitDiffLive do
     {:noreply, push_event(socket, "delete_comment", %{comment_id: comment_id})}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", payload: %{joins: joins, leaves: leaves}}, socket) do
+    {:noreply,
+     socket
+     |> assign_presence_map(joins, leaves)
+     |> send_presence_updates(joins, leaves)
+    }
+  end
+
   #
   # Helpers
   #
-
-  defp subscribe_topic(socket) do
-    if connected?(socket) do
-      subscribe("commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}")
-    end
-    socket
-  end
 
   defp assign_repo!(socket, user_login, repo_name) do
     query = DBQueryable.query({RepoQuery, :user_repo_query}, [user_login, repo_name], viewer: current_user(socket))
@@ -199,6 +211,49 @@ defmodule GitGud.Web.CommitDiffLive do
 
   defp assign_page_title(socket) do
     assign(socket, :page_title, GitGud.Web.CodebaseView.title(socket.assigns[:live_action], socket.assigns))
+  end
+
+  defp assign_presence!(socket) do
+    if connected?(socket) && authenticated?(socket) do
+      {:ok, presence_ref} = Presence.track(self(), commit_topic(socket), current_user(socket).login, %{typing: []})
+      assign(socket, presence_ref: presence_ref, presence_typing: [])
+    else
+      assign(socket, presence_ref: nil, presence_typing: [])
+    end
+  end
+
+  defp assign_presence_map(socket) do
+    assign(socket, :presence_map, Presence.list(commit_topic(socket)))
+  end
+
+  defp assign_presence_map(socket, joins, leaves) do
+    presences = socket.assigns.presence_map
+    presences = Enum.reduce(leaves, presences, fn {key, _presence}, acc -> Map.delete(acc, key) end)
+    presences = Enum.reduce(joins, presences, fn {key, presence}, acc -> Map.put(acc, key, presence) end)
+    assign(socket, :presence_map, presences)
+  end
+
+  defp assign_presence_typing!(socket, review_id, true) do
+    unless review_id in socket.assigns.presence_typing do
+      {:ok, presence_ref} = Presence.update(self(), commit_topic(socket), current_user(socket).login, &update_in(&1, [:typing], fn reviews -> Enum.uniq([review_id|reviews]) end))
+      assign(socket, presence_ref: presence_ref, presence_typing: Enum.uniq([review_id|socket.assigns.presence_typing]))
+    else
+      socket
+    end
+  end
+
+  defp assign_presence_typing!(socket, review_id, false) do
+    if review_id in socket.assigns.presence_typing do
+      {:ok, presence_ref} = Presence.update(self(), commit_topic(socket), current_user(socket).login, &update_in(&1, [:typing], fn reviews -> List.delete(reviews, review_id) end))
+      assign(socket, presence_ref: presence_ref, presence_typing: List.delete(socket.assigns.presence_typing, review_id))
+    else
+      socket
+    end
+  end
+
+  defp assign_users_typing(socket) do
+    reviews_typing = Enum.reduce(socket.assigns.presence_map, %{}, &reduce_presence_reviews(&1, &2, socket.assigns.presence_ref))
+    assign(socket, :reviews, Enum.map(socket.assigns.reviews, &map_review_users_typing(&1, reviews_typing)))
   end
 
   defp resolve_agent!(repo) do
@@ -273,4 +328,34 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   defp resolve_db_user_gpg_key(_gpg_sig, _user), do: nil
+
+  defp map_review_users_typing(review, reviews_typing) when is_struct(review, CommitLineReview), do: map_review_users_typing(Map.from_struct(review), reviews_typing)
+  defp map_review_users_typing(review, reviews_typing), do: Map.put(review, :users_typing, Map.get(reviews_typing, review.id, []))
+
+  defp reduce_presence_reviews({user_login, presence}, acc, presence_ref) do
+    Enum.reduce(presence.metas, acc, fn meta, acc ->
+      if meta.phx_ref != presence_ref,
+        do: Enum.reduce(meta.typing, acc, fn review_id, acc -> Map.update(acc, review_id, [user_login], &[user_login|&1]) end),
+      else: acc
+    end)
+  end
+
+  defp send_presence_updates(socket, joins, leaves) do
+    reviews_typing = Enum.reduce(socket.assigns.presence_map, %{}, &reduce_presence_reviews(&1, &2, socket.assigns.presence_ref))
+    join_ids = Map.keys(Enum.reduce(joins, %{}, &reduce_presence_reviews(&1, &2, socket.assigns.presence_ref)))
+    leave_ids = Map.keys(Enum.reduce(leaves, %{}, &reduce_presence_reviews(&1, &2, socket.assigns.presence_ref)))
+    Enum.concat(join_ids, leave_ids)
+    |> Enum.uniq()
+    |> Enum.each(&send_update(GitGud.Web.CommitLineReviewLive, id: "review-#{&1}", review_id: &1, comments: [], users_typing: Map.get(reviews_typing, &1, [])))
+    socket
+  end
+
+  defp subscribe_topic!(socket) do
+    if connected?(socket) do
+      :ok = subscribe(commit_topic(socket))
+    end
+    socket
+  end
+
+  defp commit_topic(socket), do: "commit:#{socket.assigns.repo.id}-#{oid_fmt(socket.assigns.commit.oid)}"
 end
