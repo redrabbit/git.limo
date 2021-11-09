@@ -1067,7 +1067,9 @@ defmodule GitRekt.GitAgent do
     telemetry(:execute, op, fn ->
       case call(handle, op) do
         {:ok, stream} ->
-          {:ok, async_stream(op, stream, chunk_size, pid)}
+          if chunk_size == :infinity,
+            do: {:ok, Enum.to_list(stream)},
+          else: {:ok, async_stream(op, stream, chunk_size, pid)}
         {:error, reason} ->
           {:error, reason}
       end
