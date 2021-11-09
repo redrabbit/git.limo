@@ -297,7 +297,7 @@ defmodule GitGud.Web.IssueLive do
   end
 
   defp assign_presence!(socket) do
-    if connected?(socket) && authenticated?(socket) do
+    if connected?(socket) && verified?(socket) do
       {:ok, presence_ref} = Presence.track(self(), issue_topic(socket), current_user(socket).login, %{typing: false})
       assign(socket, presence_ref: presence_ref, presence_typing: false)
     else

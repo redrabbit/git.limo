@@ -4,7 +4,7 @@
       <h2 class="subtitle">Issues</h2>
     </div>
   </div>
-  <%= if authenticated?(@conn) do %>
+  <%= if verified?(@conn) do %>
     <div class="level-right">
       <div class="level-item">
         <%= if verified?(@current_user) do %>

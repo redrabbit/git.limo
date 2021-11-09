@@ -123,9 +123,11 @@
                       <td class="line-no"><%= if line.old_line_no != -1, do: line.old_line_no %></td>
                       <td class="line-no"><%= if line.new_line_no != -1, do: line.new_line_no %></td>
                       <td class="code origin">
-                        <button class="button is-link is-small" phx-click="add_review_form" phx-value-oid={oid_fmt(delta.new_file.oid)} phx-value-hunk={hunk_index} phx-value-line={line_index}>
-                          <span class="icon"><i class="fa fa-comment-alt"></i></span>
-                        </button>
+                        <%= if verified?(@current_user) do %>
+                          <button class="button is-link is-small" phx-click="add_review_form" phx-value-oid={oid_fmt(delta.new_file.oid)} phx-value-hunk={hunk_index} phx-value-line={line_index}>
+                            <span class="icon"><i class="fa fa-comment-alt"></i></span>
+                          </button>
+                        <% end %>
                         <%= line.origin %>
                       </td>
                       <td class="code">

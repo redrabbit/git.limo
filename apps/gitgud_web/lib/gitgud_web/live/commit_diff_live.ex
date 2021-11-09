@@ -214,7 +214,7 @@ defmodule GitGud.Web.CommitDiffLive do
   end
 
   defp assign_presence!(socket) do
-    if connected?(socket) && authenticated?(socket) do
+    if connected?(socket) && verified?(socket) do
       {:ok, presence_ref} = Presence.track(self(), commit_topic(socket), current_user(socket).login, %{typing: []})
       assign(socket, presence_ref: presence_ref, presence_typing: [])
     else
