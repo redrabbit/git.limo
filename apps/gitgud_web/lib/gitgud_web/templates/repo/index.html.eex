@@ -26,7 +26,7 @@
     <% end %>
   </article>
 <% else %>
-  <%= for repo <- Enum.sort_by(@user.repos, &(&1.pushed_at), :desc) do %>
+  <%= for repo <- Enum.sort_by(@user.repos, &(&1.pushed_at), {:desc, NaiveDateTime}) do %>
     <div class="columns">
       <div class="column is-full">
         <div class="repo card">
