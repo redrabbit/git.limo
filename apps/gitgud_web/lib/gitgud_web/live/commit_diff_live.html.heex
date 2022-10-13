@@ -137,7 +137,7 @@
                     <%= if review = Enum.find(@reviews, &(&1.blob_oid == delta.new_file.oid && &1.hunk == hunk_index && &1.line == line_index)) do %>
                       <tr id={"review-#{oid_fmt(review.blob_oid)}-#{review.hunk}-#{review.line}"} class="inline-comments">
                         <td colspan="4">
-                          <%= live_component(@socket, GitGud.Web.CommitLineReviewLive,
+                          <%= live_component(GitGud.Web.CommitLineReviewLive,
                             id: "review-#{review.id}",
                             current_user: @current_user,
                             repo: @repo,
@@ -163,7 +163,7 @@
 
   <%= if connected?(@socket) do %>
     <table class="table is-hidden">
-      <%= live_component(@socket, GitGud.Web.CommitDiffDynamicReviewsLive,
+      <%= live_component(GitGud.Web.CommitDiffDynamicReviewsLive,
         id: "dynamic-reviews",
         current_user: @current_user,
         repo: @repo,
@@ -171,7 +171,7 @@
         agent: @agent,
         commit: @commit
       ) %>
-      <%= live_component(@socket, GitGud.Web.CommitDiffDynamicFormsLive,
+      <%= live_component(GitGud.Web.CommitDiffDynamicFormsLive,
         id: "dynamic-forms",
         current_user: @current_user,
         repo: @repo,

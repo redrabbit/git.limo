@@ -8,7 +8,7 @@ defmodule GitGud.Web.AuthenticationLiveHelpers do
   alias GitGud.User
   alias GitGud.UserQuery
 
-  import Phoenix.LiveView
+  import Phoenix.Component
 
   @doc """
   Authenticates `socket` with `session`.

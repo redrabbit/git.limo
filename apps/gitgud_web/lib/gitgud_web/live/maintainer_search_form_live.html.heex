@@ -1,4 +1,4 @@
-<.form let={f} for={@changeset} action={Routes.maintainer_path(@socket, :create, @repo.owner_login, @repo)} as="maintainer" phx_change="search" phx_submit="submit" phx_trigger={@trigger_submit}>
+<.form let={f} for={@changeset} action={Routes.maintainer_path(@socket, :create, @repo.owner_login, @repo)} as={:maintainer} phx-change="search" phx-submit="submit" phx-trigger={@trigger_submit}>
   <div class="field">
     <%= label f, :user_login, "Add maintainer", class: "label" %>
     <div class="field is-grouped">

@@ -27,7 +27,7 @@ defmodule GitGud.Web.BranchSelectContainerLive do
   @impl true
   def render(assigns) do
     ~L"""
-      <%= live_component(@socket, GitGud.Web.BranchSelectLive,
+      <%= live_component(GitGud.Web.BranchSelectLive,
         id: "branch_select",
         repo: @repo,
         agent: @agent,

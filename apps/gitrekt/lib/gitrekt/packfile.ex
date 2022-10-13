@@ -3,7 +3,7 @@ defmodule GitRekt.Packfile do
   Conveniences for reading and writting Git pack files.
   """
 
-  use Bitwise, only_operators: true
+  import Bitwise
 
   alias GitRekt.Git
 

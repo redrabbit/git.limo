@@ -33,19 +33,19 @@ defmodule GitGud.Mixfile do
 
   defp deps do
     [
-      {:absinthe, "~> 1.5", optional: true},
-      {:argon2_elixir, "~> 2.4"},
-      {:ecto, "~> 3.7"},
-      {:ecto_sql, "~> 3.7"},
-      {:faker, "~> 0.16", only: :test},
+      {:absinthe, "~> 1.7", optional: true},
+      {:argon2_elixir, "~> 3.0"},
+      {:ecto, "~> 3.9"},
+      {:ecto_sql, "~> 3.9"},
+      {:faker, "~> 0.17", only: :test},
       {:gitrekt, in_umbrella: true},
-      {:jason, "~> 1.2"},
+      {:jason, "~> 1.4"},
       {:phoenix, "~> 1.6", optional: true},
-      {:phoenix_pubsub, "~> 2.0", optional: true},
-      {:plug, "~> 1.12", optional: true},
+      {:phoenix_pubsub, "~> 2.1", optional: true},
+      {:plug, "~> 1.13", optional: true},
       {:plug_cowboy, "~> 2.5", only: :test},
-      {:postgrex, "~> 0.15"},
-      {:telemetry, "~> 0.4"},
+      {:postgrex, "~> 0.16"},
+      {:telemetry, "~> 1.1"},
       {:libcluster, "~> 3.3"}
     ]
   end

@@ -3,7 +3,7 @@
     <%= for comment <- Enum.sort_by(@comments, &(&1.inserted_at)) do %>
       <div id={"review-comment-#{comment.id}"} class="timeline-item">
         <div class="timeline-content">
-          <%= live_component(@socket, GitGud.Web.CommentLive,
+          <%= live_component(GitGud.Web.CommentLive,
             id: "comment-#{comment.id}",
             current_user: @current_user,
             repo: @repo,

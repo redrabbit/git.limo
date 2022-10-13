@@ -1,7 +1,7 @@
 <div class="columns issue">
   <div class="column is-12">
     <%= if @title_edit do %>
-      <.form let={f} for={@title_changeset} as="issue" class="mb-3" phx_change="validate_title", phx_submit="update_title">
+      <.form let={f} for={@title_changeset} as={:issue} class="mb-3" phx-change="validate_title" phx-submit="update_title">
         <div class="field is-grouped">
           <div class="control is-expanded">
             <%= text_input f, :title, class: "input" %>
@@ -74,7 +74,7 @@
             <% %Comment{} = comment -> %>
               <div id={"issue-comment-#{comment.id}"} class="timeline-item">
                 <div class="timeline-content">
-                  <%= live_component(@socket, GitGud.Web.CommentLive,
+                  <%= live_component(GitGud.Web.CommentLive,
                     id: "comment-#{comment.id}",
                     current_user: @current_user,
                     repo: @repo,
@@ -161,7 +161,7 @@
   </div>
   <div class="column is-one-quarter">
     <aside class="menu is-sticky">
-      <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
+      <%= live_component(GitGud.Web.IssueLabelSelectLive,
         id: "issue-label-select",
         repo: @repo,
         issue: @issue,

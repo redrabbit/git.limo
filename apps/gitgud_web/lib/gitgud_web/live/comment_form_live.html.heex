@@ -29,7 +29,7 @@
         <% end %>
       </div>
     <% else %>
-      <.form let={f} for={@changeset} id="comment-form" phx_hook="CommentForm" {@form_opts}>
+      <.form let={f} for={@changeset} id="comment-form" phx-hook="CommentForm" {@form_opts}>
         <div class="field">
           <%= case @tab do %>
             <% :editor -> %>

@@ -2,7 +2,7 @@
   <%= for review <- @reviews do %>
     <tr id={"review-#{oid_fmt(review.blob_oid)}-#{review.hunk}-#{review.line}"} class="inline-comments">
       <td colspan="4">
-        <%= live_component(@socket, GitGud.Web.CommitLineReviewLive,
+        <%= live_component(GitGud.Web.CommitLineReviewLive,
           id: "review-#{review.id}",
           current_user: @current_user,
           repo: @repo,

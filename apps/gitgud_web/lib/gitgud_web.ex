@@ -137,6 +137,7 @@ defmodule GitGud.Web do
 
       import Phoenix.View
       import Phoenix.LiveView.Helpers
+      import Phoenix.Component
 
       import GitGud.GraphQL.Schema, only: [to_relay_id: 1, to_relay_id: 2]
 

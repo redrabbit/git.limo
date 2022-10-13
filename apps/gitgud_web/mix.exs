@@ -11,7 +11,7 @@ defmodule GitGud.Web.Mixfile do
       lockfile: "../../mix.lock",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers,
+      compilers: [:phoenix] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
       aliases: aliases(),
       deps: deps()
@@ -34,25 +34,25 @@ defmodule GitGud.Web.Mixfile do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6"},
+      {:absinthe, "~> 1.7"},
       {:absinthe_relay, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
       {:bamboo, "~> 2.2"},
       {:bamboo_phoenix, "~> 1.0"},
       {:earmark, "~> 1.4"},
-      {:floki, "~> 0.31", only: :test},
-      {:gettext, "~> 0.17"},
+      {:floki, "~> 0.33", only: :test},
+      {:gettext, "~> 0.20"},
       {:gitgud, in_umbrella: true},
       {:oauth2, "~> 2.0"},
       {:phoenix, "~> 1.6"},
       {:phoenix_ecto, "~> 4.4"},
-      {:phoenix_html, "~> 3.0"},
+      {:phoenix_html, "~> 3.2"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
-      {:phoenix_live_view, "~> 0.16"},
-      {:phoenix_pubsub, "~> 2.0"},
-      {:plug, "~> 1.12"},
+      {:phoenix_live_view, "~> 0.18"},
+      {:phoenix_pubsub, "~> 2.1"},
+      {:plug, "~> 1.13"},
       {:plug_cowboy, "~> 2.5"},
-      {:timex, "~> 3.6"},
+      {:timex, "~> 3.7"},
     ]
   end
 

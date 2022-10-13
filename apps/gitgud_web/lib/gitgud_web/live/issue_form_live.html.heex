@@ -1,5 +1,5 @@
 <div class="issue-form-container">
-  <.form let={f} for={@changeset} action={Routes.issue_path(@socket, :create, @repo.owner_login, @repo)} as="issue" phx_change="validate", phy_submit="submit" phx_trigger_action={@trigger_submit}>
+  <.form let={f} for={@changeset} action={Routes.issue_path(@socket, :create, @repo.owner_login, @repo)} as={:issue} phx-change="validate" phx-submit="submit" phx-trigger_action={@trigger_submit}>
     <div class="columns">
       <div class="column is-three-quarters">
         <div class="box">
@@ -12,7 +12,7 @@
 
           <div class="field comment-form">
             <%= for fc <- inputs_for(f, :comment) do %>
-              <%= live_component(@socket, GitGud.Web.CommentFormLive,
+              <%= live_component(GitGud.Web.CommentFormLive,
                 id: "comment-form",
                 current_user: @current_user,
                 repo: @repo,
@@ -30,7 +30,7 @@
     <div class="column is-one-quarter">
       <%= if connected?(@socket) && authorized?(@current_user, @repo, :admin) do %>
         <aside class="menu is-sticky">
-          <%= live_component(@socket, GitGud.Web.IssueLabelSelectLive,
+          <%= live_component(GitGud.Web.IssueLabelSelectLive,
             id: "label-select",
             repo: @repo,
             labels: Enum.filter(@repo.issue_labels, &(&1.id in @labels))
