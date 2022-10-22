@@ -16,6 +16,7 @@ ERL_NIF_TERM geef_repository_is_empty(ErlNifEnv *env, int argc, const ERL_NIF_TE
 ERL_NIF_TERM geef_repository_odb(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 ERL_NIF_TERM geef_repository_config(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM geef_repository_set_head(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]);
 
 void geef_repository_free(ErlNifEnv *env, void *cd);
 

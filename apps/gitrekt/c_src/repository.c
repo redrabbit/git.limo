@@ -239,3 +239,27 @@ geef_repository_index(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
 	return enif_make_tuple2(env, atoms.ok, term_index);
 }
+
+ERL_NIF_TERM
+geef_repository_set_head(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
+{
+	int error;
+	geef_repository *repo;
+        ErlNifBinary bin;
+
+	if (!enif_get_resource(env, argv[0], geef_repository_type, (void **)&repo))
+                return enif_make_badarg(env);
+
+	if (!enif_inspect_binary(env, argv[1], &bin))
+                return enif_make_badarg(env);
+
+        if (!geef_terminate_binary(&bin))
+                return geef_oom(env);
+
+        error = git_repository_set_head(repo->repo, (char *)bin.data);
+        enif_release_binary(&bin);
+        if (error < 0)
+            return geef_error_struct(env, error);
+
+	return atoms.ok;
+}

@@ -380,6 +380,14 @@ defmodule GitRekt.Git do
   end
 
   @doc """
+  Make the `repo` HEAD point to the specified reference.
+  """
+  @spec repository_set_head(repo, binary) :: :ok | {:error, term}
+  def repository_set_head(_repo, _refname) do
+    raise Code.LoadError, file: nif_path() <> ".so"
+  end
+
+  @doc """
   Initializes a new repository at the given `path`.
   """
   @spec repository_init(Path.t, boolean) :: {:ok, repo} | {:error, term}

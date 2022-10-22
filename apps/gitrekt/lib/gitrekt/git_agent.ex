@@ -755,7 +755,16 @@ defmodule GitRekt.GitAgent do
       {:ok, name, shorthand, oid} ->
         {:ok, resolve_reference({name, shorthand, :oid, oid})}
       {:error, reason} ->
-        {:error, reason}
+        case Git.reference_stream(handle, "refs/heads/*") do
+          {:ok, stream} ->
+            with %GitRef{name: name} =
+              ref <- Enum.at(Stream.map(stream, &resolve_reference_peel!(&1, :undefined, handle)), 0),
+                 :ok <- Git.repository_set_head(handle, "refs/heads/#{name}") do
+              {:ok, ref}
+            end || {:error, reason}
+          {:error, reason} ->
+            {:error, reason}
+        end
     end
   end
 
