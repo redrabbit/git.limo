@@ -200,13 +200,13 @@
     git add README.md
     git commit -m "first commit"
     git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner_login, @repo) %>.git
-    git push -u origin master
+    git push -u origin <%= @repo.default_branch %>
     </pre>
 
     <p>or push an existing repository from the command line</p>
     <pre>
     git remote add origin <%= Routes.codebase_url(@socket, :show, @repo.owner_login, @repo) %>.git
-    git push -u origin master
+    git push -u origin <%= @repo.default_branch %>
     </pre>
   </div>
 <% end %>

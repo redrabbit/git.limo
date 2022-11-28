@@ -30,10 +30,17 @@
     </div>
   </div>
 
+  <div class="field">
+    <%= label f, :default_branch, class: "label" %>
+    <div class="control">
+      <%= text_input f, :default_branch, class: "input" %>
+    </div>
+    <%= error_tag f, :default_branch %>
+  </div>
+
   <hr />
 
   <div class="field">
     <%= submit "Create repository", class: "button is-success" %>
   </div>
 <% end %>
-

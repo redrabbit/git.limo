@@ -23,7 +23,7 @@ defmodule GitGud.RepoStorage do
   """
   @spec init(Repo.t, boolean) :: {:ok, Git.repo} | {:error, term}
   def init(%Repo{} = repo, bare?) do
-    GenServer.call(RepoSupervisor.volume_name(__MODULE__, repo.volume), {:init, workdir(repo), bare?})
+    GenServer.call(RepoSupervisor.volume_name(__MODULE__, repo.volume), {:init, workdir(repo), bare?, repo.default_branch})
   end
 
   @doc """
@@ -93,8 +93,8 @@ defmodule GitGud.RepoStorage do
   end
 
   @impl true
-  def handle_call({:init, workdir, bare?}, _from, state) do
-    {:reply, Git.repository_init(workdir, bare?), state}
+  def handle_call({:init, workdir, bare?, initial_head}, _from, state) do
+    {:reply, Git.repository_init(workdir, bare?, initial_head), state}
   end
 
   def handle_call({:rename, old_workdir, new_workdir}, _from, state) do

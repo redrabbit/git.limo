@@ -58,7 +58,7 @@ defmodule GitGud.Web.CommitHistoryLive do
       {:ok, head} ->
         {:noreply, push_patch(socket, to: Routes.codebase_path(socket, :history, socket.assigns.repo.owner_login, socket.assigns.repo.name, head, Map.get(params, "path", [])))}
       {:error, error} ->
-        raise error
+        {:noreply, put_flash(socket, :error, error)}
     end
   end
 
@@ -114,11 +114,15 @@ defmodule GitGud.Web.CommitHistoryLive do
 
   defp resolve_revision_history(agent, commit, tree_path, cursor, limit) when is_struct(commit), do: resolve_history(agent, commit, tree_path, cursor, limit)
   defp resolve_revision_history(agent, rev_spec, tree_path, cursor, limit) do
-    with {:ok, head} <- GitAgent.head(agent),
-         {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
+    with {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(agent, obj, target: :commit),
          {:ok, {tree_entry_type, page}} <- resolve_history(agent, commit, tree_path, cursor, limit) do
-      {:ok, {head, ref, commit, tree_entry_type, page}}
+      case GitAgent.head(agent) do
+        {:ok, head} ->
+          {:ok, {head, ref, commit, tree_entry_type, page}}
+        {:error, _reason} ->
+          {:ok,{nil, ref, commit, tree_entry_type, page}}
+      end
     else
       {:error, reason} ->
         {:error, reason}

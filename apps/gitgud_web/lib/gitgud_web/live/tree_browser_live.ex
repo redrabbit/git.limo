@@ -87,17 +87,22 @@ defmodule GitGud.Web.TreeBrowserLive do
       if resolve_stats?,
         do: resolve_revision_tree_with_stats!(socket.assigns.agent, resolve_revision? && rev_spec || socket.assigns.commit, tree_path),
       else: resolve_revision_tree!(socket.assigns.agent, resolve_revision? && rev_spec || socket.assigns.commit, tree_path)
-    assigns = Map.update!(assigns, :tree_commit_info, &resolve_commit_info_db/1)
-    assigns = Map.update!(assigns, :tree_entries, &Enum.sort_by(&1, fn tree_entry -> tree_entry.name end))
-    assigns = Map.update!(assigns, :tree_entries, &Enum.map(&1, fn tree_entry -> {tree_entry, nil} end))
-    assigns =
-      if resolve_stats?,
-        do: Map.update(assigns, :stats, %{}, &Map.put(&1, :contributors, RepoQuery.count_contributors(socket.assigns.repo))),
-      else: assigns
 
-    socket
-    |> assign(rev_spec: rev_spec, tree_path: tree_path)
-    |> assign(assigns)
+    if assigns != %{} do
+      assigns = Map.update!(assigns, :tree_commit_info, &resolve_commit_info_db/1)
+      assigns = Map.update!(assigns, :tree_entries, &Enum.sort_by(&1, fn tree_entry -> tree_entry.name end))
+      assigns = Map.update!(assigns, :tree_entries, &Enum.map(&1, fn tree_entry -> {tree_entry, nil} end))
+      assigns =
+        if resolve_stats?,
+          do: Map.update(assigns, :stats, %{}, &Map.put(&1, :contributors, RepoQuery.count_contributors(socket.assigns.repo))),
+        else: assigns
+
+      socket
+      |> assign(rev_spec: rev_spec, tree_path: tree_path)
+      |> assign(assigns)
+    else
+      socket
+    end
   end
 
   defp assign_tree_commits_async(socket) do
@@ -118,23 +123,28 @@ defmodule GitGud.Web.TreeBrowserLive do
   end
 
   defp resolve_revision(agent, nil) do
-    with {:ok, false} <- GitAgent.empty?(agent),
-         {:ok, head} <- GitAgent.head(agent),
-         {:ok, commit} <- GitAgent.peel(agent, head) do
-      {:ok, {head, head, commit}}
-    else
-      {:ok, true} ->
-        {:error, "repository is empty"}
-      {:error, reason} ->
-        {:error, reason}
+    case GitAgent.head(agent) do
+      {:ok, head} ->
+        case GitAgent.peel(agent, head) do
+          {:ok, commit} ->
+            {:ok, {head, head, commit}}
+          {:error, reason} ->
+            {:error, reason}
+        end
+      {:error, _reason} ->
+        {:error, :invalid_head}
     end
   end
 
   defp resolve_revision(agent, rev_spec) do
-    with {:ok, head} <- GitAgent.head(agent),
-         {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
+    with {:ok, {obj, ref}} <- GitAgent.revision(agent, rev_spec),
          {:ok, commit} <- GitAgent.peel(agent, obj, target: :commit) do
-      {:ok, {head, ref, commit}}
+      case GitAgent.head(agent) do
+        {:ok, head} ->
+          {:ok, {head, ref, commit}}
+        {:error, _reason} ->
+          {:ok, {nil, ref, commit}}
+      end
     end
   end
 
@@ -144,6 +154,8 @@ defmodule GitGud.Web.TreeBrowserLive do
         %{head: head, revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
       {:ok, {commit_info, tree_entries, readme}} ->
         %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme}
+      {:error, :invalid_head} ->
+        %{}
       {:error, error} ->
         raise error
     end
@@ -166,6 +178,8 @@ defmodule GitGud.Web.TreeBrowserLive do
         %{head: head, revision: ref || commit, commit: commit, tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
       {:ok, {commit_info, tree_entries, readme, stats}} ->
         %{tree_commit_info: commit_info, tree_entries: tree_entries, tree_readme: readme, stats: stats}
+      {:error, :invalid_head} ->
+        %{}
       {:error, error} ->
         raise error
     end

@@ -290,6 +290,17 @@ defmodule GitGud.Web.CodebaseController do
             {:error, reason} ->
               {:error, reason}
           end
+        else
+          branches = Enum.sort_by(branches, &elem(&1, 2), {:desc, Date})
+          page = paginate(conn, branches)
+          slice = resolve_revisions_db(page.slice)
+          slice = Enum.map(slice, fn {ref, author, timestamp} -> {ref, author, timestamp, {0, 0}} end)
+          render(conn, "branch_list.html",
+            repo: repo,
+            repo_open_issue_count: IssueQuery.count_repo_issues(repo, status: :open),
+            head: head,
+            page: Map.put(page, :slice, slice)
+          )
         end
       end
     end || {:error, :not_found}
@@ -432,10 +443,14 @@ defmodule GitGud.Web.CodebaseController do
   end
 
   defp resolve_branches(agent) do
-    with {:ok, head} <- GitAgent.head(agent),
-         {:ok, branches} <- GitAgent.branches(agent),
+    with {:ok, branches} <- GitAgent.branches(agent),
          {:ok, branches} <- resolve_revisions(agent, branches) do
-      {:ok, {head, branches}}
+      case GitAgent.head(agent) do
+        {:ok, head} ->
+          {:ok, {head, branches}}
+        {:error, _reason} ->
+          {:ok, {nil, branches}}
+      end
     end
   end
 

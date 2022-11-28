@@ -40,10 +40,10 @@
           <a class={if @tab == :branch, do: "is-active"} phx-click="switch_tab" phx-value-tab="branch" phx-target={@myself}>Branches</a>
           <a class={if @tab == :tag, do: "is-active"} phx-click="switch_tab" phx-value-tab="tag" phx-target={@myself}>Tags</a>
         </p>
-        <%= if @tab == :branch do %>
-          <%= live_redirect to: Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @head, @tree_path), class: ["panel-block", @head.oid == @commit.oid && "is-active"] do %>
+        <%= if @tab == :branch && @head do %>
+          <%= live_redirect to: Routes.codebase_path(@socket, @action, @repo.owner_login, @repo, @repo.default_branch, @tree_path), class: ["panel-block", @head.oid == @commit.oid && "is-active"] do %>
             <div class="control">
-              <span class="head"><%= @head.name %></span>
+              <span class="head"><%= @repo.default_branch %></span>
               <span class="tag is-pulled-right">default</span>
             </div>
           <% end %>

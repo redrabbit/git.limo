@@ -9,6 +9,8 @@ defmodule GitGud.Repo do
 
   alias Ecto.Multi
 
+  alias GitRekt.GitAgent
+
   alias GitGud.DB
   alias GitGud.Issue
   alias GitGud.IssueLabel
@@ -25,6 +27,7 @@ defmodule GitGud.Repo do
     field :owner_login, :string
     field :name, :string
     field :public, :boolean, default: true
+    field :default_branch, :string, default: "main"
     field :volume, :string, autogenerate: {RepoStorage, :volume, []}
     field :description, :string
     has_many :issue_labels, IssueLabel, on_replace: :delete
@@ -41,6 +44,7 @@ defmodule GitGud.Repo do
     owner: User.t,
     name: binary,
     public: boolean,
+    default_branch: binary,
     volume: binary,
     description: binary,
     maintainers: [User.t],
@@ -217,8 +221,8 @@ defmodule GitGud.Repo do
   @spec changeset(t, map) :: Ecto.Changeset.t
   def changeset(%__MODULE__{} = repo, params \\ %{}) do
     repo
-    |> cast(params, [:name, :public, :description, :pushed_at])
-    |> validate_required([:name])
+    |> cast(params, [:name, :public, :description, :default_branch, :pushed_at])
+    |> validate_required([:name, :default_branch])
     |> validate_format(:name, ~r/^[a-zA-Z0-9_-]+$/)
     |> validate_length(:name, min: 3, max: 80)
     |> validate_exclusion(:name, ["repositories", "settings"])
@@ -285,6 +289,7 @@ defmodule GitGud.Repo do
   defp update_and_rename(changeset) do
     Multi.new()
     |> Multi.update(:repo, changeset)
+    |> Multi.run(:update_head, &update_head(&1, &2, changeset))
     |> Multi.run(:rename, &rename(&1, &2, changeset))
     |> DB.transaction()
   end
@@ -304,6 +309,20 @@ defmodule GitGud.Repo do
     unless get_change(changeset, :name),
       do: {:ok, RepoStorage.workdir(repo)},
     else: RepoStorage.rename(changeset.data, repo)
+  end
+
+  defp update_head(_db, %{repo: repo}, changeset) do
+    if branch = get_change(changeset, :default_branch) do
+      target = "refs/heads/" <> branch
+      case GitAgent.reference_create(repo, "HEAD", :symbolic, target, force: true) do
+        :ok ->
+          {:ok, target}
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:ok, false}
+    end
   end
 
   defp cleanup(_db, %{repo: repo}), do: RepoStorage.cleanup(repo)

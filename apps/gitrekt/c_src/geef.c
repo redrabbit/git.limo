@@ -303,7 +303,7 @@ int geef_string_to_bin(ErlNifBinary *bin, const char *str)
 
 static ErlNifFunc geef_funcs[] =
 {
-	{"repository_init", 2, geef_repository_init, 0},
+	{"repository_init", 3, geef_repository_init, 0},
 	{"repository_open", 1, geef_repository_open, 0},
 	{"repository_discover", 1, geef_repository_discover, 0},
 	{"repository_bare?", 1, geef_repository_is_bare, 0},

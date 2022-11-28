@@ -382,8 +382,8 @@ defmodule GitRekt.Git do
   @doc """
   Initializes a new repository at the given `path`.
   """
-  @spec repository_init(Path.t, boolean) :: {:ok, repo} | {:error, term}
-  def repository_init(_path, _bare \\ false) do
+  @spec repository_init(Path.t, boolean, binary) :: {:ok, repo} | {:error, term}
+  def repository_init(_path, _bare \\ false, _initial_head \\ "master") do
     raise Code.LoadError, file: nif_path() <> ".so"
   end
 

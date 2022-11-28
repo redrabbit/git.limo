@@ -20,7 +20,7 @@ geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	int bare, error;
 	git_repository *repo;
 	geef_repository *res_repo;
-	ErlNifBinary bin;
+	ErlNifBinary bin, head;
 	ERL_NIF_TERM term_repo;
 
 	if (!enif_inspect_binary(env, argv[0], &bin))
@@ -29,8 +29,23 @@ geef_repository_init(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 	if (!geef_terminate_binary(&bin))
 		return geef_oom(env);
 
+	git_repository_init_options options = GIT_REPOSITORY_INIT_OPTIONS_INIT;
+	options.flags = GIT_REPOSITORY_INIT_MKPATH;
+
 	bare = !enif_compare(argv[1], atoms.true);
-	error = git_repository_init(&repo, (char *)bin.data, bare);
+	if (bare) {
+		options.flags |= GIT_REPOSITORY_INIT_BARE;
+	}
+
+	if (!enif_inspect_binary(env, argv[2], &head))
+		return enif_make_badarg(env);
+
+	if (!geef_terminate_binary(&head))
+		return geef_oom(env);
+
+	options.initial_head = (char *)head.data;
+
+	error = git_repository_init_ext(&repo, (char *)bin.data, &options);
 	if (error < 0)
 		return geef_error_struct(env, error);
 
