@@ -4,7 +4,7 @@ defmodule GitGud.Web.Mixfile do
   def project do
     [
       app: :gitgud_web,
-      version: "0.3.8",
+      version: "0.3.9",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
