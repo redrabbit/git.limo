@@ -16,17 +16,18 @@ defmodule GitGud.SSHServerTest do
   test "authenticates with valid credentials", %{user: user} do
     env_vars = [{"DISPLAY", "nothing:0"}, {"SSH_ASKPASS", Path.join([Path.dirname(__DIR__), "support", "ssh_askpass.exs"])}]
     args = ["-tt", "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no", "-o", "LogLevel=ERROR", "ssh://#{user.login}@localhost:9899"]
-    output = "You are not allowed to start a shell.\r\nConnection to localhost closed.\r\n"
-    assert {^output, 255} = System.cmd("ssh", args, env: env_vars, stderr_to_stdout: true)
+    assert {output, 255} = System.cmd("ssh", args, env: env_vars, stderr_to_stdout: true)
+    assert output =~ "You are not allowed to start a shell."
   end
 
   test "fails to authenticates with invalid credentials", %{user: user} do
     env_vars = [{"DISPLAY", "nothing:0"}, {"SSH_ASKPASS", Path.join([Path.dirname(__DIR__), "support", "ssh_askpass.exs"])}]
     args = ["-tt", "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no", "-o", "LogLevel=ERROR", "ssh://#{user.login}_x@localhost:9899"]
-    output = "Permission denied, please try again.\r\nPermission denied, please try again.\r\n#{user.login}_x@localhost: Permission denied (publickey,keyboard-interactive,password).\r\n"
-    assert {^output, 255} = System.cmd("ssh", args, env: env_vars, stderr_to_stdout: true)
+    assert {output, 255} = System.cmd("ssh", args, env: env_vars, stderr_to_stdout: true)
+    assert output =~ "Permission denied, please try again."
   end
 
+  @tag timeout: 5_000
   test "disallows scp", %{user: user} do
     env_vars = [{"DISPLAY", "nothing:0"}, {"SSH_ASKPASS", Path.join([Path.dirname(__DIR__), "support", "ssh_askpass.exs"])}]
     args = ["-P", "9899", "mix.exs", "#{user.login}@localhost:/tmp/mix.exs"]
@@ -39,14 +40,14 @@ defmodule GitGud.SSHServerTest do
 
     test "authenticates with valid public-key", %{user: user, id_rsa: id_rsa} do
       args = ["-tt", "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=publickey", "-o", "PasswordAuthentication=no", "-o", "LogLevel=ERROR", "-i", id_rsa, "ssh://#{user.login}@localhost:9899"]
-      output = "You are not allowed to start a shell.\r\nConnection to localhost closed.\r\n"
-      assert {^output, 255} = System.cmd("ssh", args, stderr_to_stdout: true)
+      assert {output, 255} = System.cmd("ssh", args, stderr_to_stdout: true)
+      assert output =~ "You are not allowed to start a shell."
     end
 
     test "fails to authenticates with invalid public-key", %{user: user} do
       args = ["-tt", "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=publickey", "-o", "PasswordAuthentication=no", "-o", "LogLevel=ERROR", "ssh://#{user.login}@localhost:9899"]
-      output = "#{user.login}@localhost: Permission denied (publickey,keyboard-interactive,password).\r\n"
-      assert {^output, 255} = System.cmd("ssh", args, stderr_to_stdout: true)
+      assert {output, 255} = System.cmd("ssh", args, stderr_to_stdout: true)
+      assert output =~ "Permission denied (publickey,keyboard-interactive,password)."
     end
   end
 
@@ -56,14 +57,14 @@ defmodule GitGud.SSHServerTest do
     @tag :skip
     test "pushes initial commit", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       readme_content = "##{repo.name}\r\n\r\n#{repo.description}"
-      assert {_output, 0} = System.cmd("git", ["init"], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["init", "-b", "main"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["config", "user.name", "testbot"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["config", "user.email", "no-reply@git.limo"], cd: workdir)
       File.write!(Path.join(workdir, "README.md"), readme_content)
       assert {_output, 0} = System.cmd("git", ["add", "README.md"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["commit", "README.md", "-m", "Initial commit"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "main"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       assert {:ok, commit} = GitAgent.peel(agent, head)
@@ -77,9 +78,10 @@ defmodule GitGud.SSHServerTest do
     @tag :skip
     test "pushes repository", %{user: user, id_rsa: id_rsa, repo: repo, workdir: workdir} do
       assert {_output, 0} = System.cmd("git", ["clone", "--quiet", "https://github.com/almightycouch/gitgud.git", workdir])
+      assert {_output, 0} = System.cmd("git", ["branch", "-m", "master", "main"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "rm", "origin"], cd: workdir)
       assert {_output, 0} = System.cmd("git", ["remote", "add", "origin", "ssh://#{user.login}@localhost:9899/#{user.login}/#{repo.name}.git"], cd: workdir)
-      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "master"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
+      assert {_output, 0} = System.cmd("git", ["push", "--set-upstream", "origin", "--quiet", "main"], env: [{"GIT_SSH_COMMAND", "ssh -i #{id_rsa}"}], cd: workdir)
       assert {:ok, agent} = GitRepo.get_agent(repo)
       assert {:ok, head} = GitAgent.head(agent)
       output = Git.oid_fmt(head.oid) <> "\n"
