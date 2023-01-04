@@ -180,6 +180,7 @@ defmodule GitGud.SSHServer do
      ssh_cli: {__MODULE__, []},
      parallel_login: true,
      pwdfun: &check_credentials/2,
+     subsystems: [],
      system_dir: to_charlist(system_dir)]
   end
 

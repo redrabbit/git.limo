@@ -27,6 +27,13 @@ defmodule GitGud.SSHServerTest do
     assert {^output, 255} = System.cmd("ssh", args, env: env_vars, stderr_to_stdout: true)
   end
 
+  test "disallows scp", %{user: user} do
+    env_vars = [{"DISPLAY", "nothing:0"}, {"SSH_ASKPASS", Path.join([Path.dirname(__DIR__), "support", "ssh_askpass.exs"])}]
+    args = ["-P", "9899", "mix.exs", "#{user.login}@localhost:/tmp/mix.exs"]
+    assert {output, 255} = System.cmd("scp", args, env: env_vars, stderr_to_stdout: true)
+    assert output =~ "subsystem request failed on channel"
+  end
+
   describe "when user has ssh public-key" do
     setup :create_ssh_key
 
