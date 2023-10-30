@@ -14,7 +14,7 @@ defmodule GitGud.Web.TreeBrowserLive do
   alias GitGud.UserQuery
   alias GitGud.RepoQuery
 
-  import GitRekt.Git, only: [oid_fmt: 1]
+  import GitRekt.Git, only: [oid_fmt: 1, oid_fmt_short: 1]
 
   import GitGud.Web.CodebaseView
 

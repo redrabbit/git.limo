@@ -149,6 +149,9 @@
                   <span class="icon"><i class="fa fa-file"></i></span>
                   <span><%= tree_entry.name %></span>
                 <% end %>
+              <% :commit -> %>
+                <span class="icon"><i class="fa fa-folder-plus"></i></span>
+                <span><%= "#{tree_entry.name} @ #{oid_fmt_short(tree_entry.oid)}" %></span>
             <% end %>
           </td>
           <td class="is-fullwidth">
