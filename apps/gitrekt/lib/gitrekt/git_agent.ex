@@ -1224,6 +1224,10 @@ defmodule GitRekt.GitAgent do
     end
   end
 
+  defp fetch_tree(nil, _handle) do
+    {:ok, %GitTree{oid: <<0::160>>, __ref__: nil}}
+  end
+
   defp fetch_tree(%GitCommit{__ref__: commit}, _handle) do
     case Git.commit_tree(commit) do
       {:ok, oid, tree} ->
