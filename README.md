@@ -17,13 +17,13 @@ A Git source code management tool written in Elixir.
 * [x] Code reviews.
 * [ ] Continuous integration.
 
-See the [Getting Started](http://almightycouch.com/gitgud/getting-started.html) guide and the [online documentation](http://almightycouch.com/gitgud).
+![Illustration by @ahruygt](https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/priv/static/images/illustration.png?sanitize=true)
 
 ## Install dependencies
 
 First, ensure you have [libgit2](https://libgit2.github.com) installed on your system:
 
-#### OSX
+#### Mac OS
 ```bash
 brew install libgit2
 ```
@@ -81,7 +81,3 @@ Finally, start both HTTP (port 4000) and SSH (port 8989) endpoints:
 ```bash
 mix phx.server
 ```
-
----
-
-![Illustration by @ahruygt](https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/priv/static/images/illustration.png?sanitize=true)
