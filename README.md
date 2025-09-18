@@ -1,10 +1,10 @@
-# Git.limo
+# git.limo
 
-[![Elixir CI](https://github.com/almightycouch/gitgud/workflows/Elixir%20CI/badge.svg)](https://github.com/almightycouch/gitgud/actions?query=workflow%3A%22Elixir+CI%22)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/almightycouch/gitgud/master/LICENSE)
-[![Github Issues](https://img.shields.io/github/issues/almightycouch/gitgud.svg)](http://github.com/almightycouch/gitgud/issues)
+[![Elixir CI](https://github.com/redrabbit/git.limo/workflows/Elixir%20CI/badge.svg)](https://github.com/redrabbit/git.limo/actions?query=workflow%3A%22Elixir+CI%22)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/redrabbit/git.limo/master/LICENSE)
+[![Github Issues](https://img.shields.io/github/issues/redrabbit/git.limo.svg)](http://github.com/redrabbit/git.limo/issues)
 
-<img src="https://raw.githubusercontent.com/almightycouch/gitgud/master/apps/gitgud_web/priv/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
+<img src="https://raw.githubusercontent.com/redrabbit/git.limo/master/apps/gitgud_web/priv/static/images/logo.svg?sanitize=true" align="right" width="240" height="240">
 
 A Git source code management tool written in Elixir.
 
